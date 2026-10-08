@@ -13,7 +13,7 @@ Manage on-call duty user overrides, for example if the user is on leave you can 
 
 ```terraform
 resource "oneuptime_on_call_time_log" "example" {
-  user_id = "123e4567-e89b-12d3-a456-426614174000"
+  user_id   = data.oneuptime_user.example.id
   starts_at = "2030-01-01T00:00:00Z"
 }
 ```
@@ -22,31 +22,38 @@ resource "oneuptime_on_call_time_log" "example" {
 
 ### Required
 
-- `user_id` (String) A unique identifier for an object, represented as a UUID..
-- `starts_at` (String) A date time object..
+- `starts_at` (String) When does this start?
+- `user_id` (String) User ID for which this log belongs. The ID of a `oneuptime_user` (see the data source).
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID..
-- `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID..
-- `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID..
-- `team_id` (String) A unique identifier for an object, represented as a UUID..
-- `more_info` (String) More information about this log record...
-- `ends_at` (String) A date time object..
+- `ends_at` (String) When does this end?
+- `more_info` (String) More information about this log record.
+- `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule ID where this escalation rule belongs.
+- `on_call_duty_policy_id` (String) ID of your On-Call Policy where this escalation rule belongs.
+- `on_call_duty_policy_schedule_id` (String) ID of your On-Call Policy Schedule where this escalation rule belongs.
+- `team_id` (String) ID of your On-Call Policy Team ID where this escalation rule belongs.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing on call time log by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_on_call_time_log.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_on_call_time_log.example <id>

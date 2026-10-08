@@ -13,12 +13,9 @@ Manage incident roles for your project (Incident Commander, Responder, etc.). Ad
 
 ```terraform
 resource "oneuptime_incident_role" "example" {
-  name = "Example short text"
-  color = jsonencode({
-    "_type": "Color",
-    "value": "#ff0000"
-  })
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example incident role"
+  color       = "#ff0000"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -26,32 +23,38 @@ resource "oneuptime_incident_role" "example" {
 
 ### Required
 
-- `name` (String) Any friendly name of this object..
-- `color` (String) Color object.
+- `color` (String) Color of this resource in Hex (#32a852 for example).
+- `name` (String) Any friendly name of this object.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Friendly description that will help you remember..
-- `role_icon` (String) Icon for this incident role (e.g., User, Shield, etc.)..
-- `can_assign_multiple_users` (Bool) Can multiple users be assigned to this role? If false, only one user can be assigned...
+- `can_assign_multiple_users` (Boolean) Can multiple users be assigned to this role? If false, only one user can be assigned.
+- `description` (String) Friendly description that will help you remember.
+- `role_icon` (String) Icon for this incident role (e.g., User, Shield, etc.).
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `slug` (String) Friendly globally unique name for your object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `is_primary_role` (Bool) Is this the primary incident role? Primary roles like Incident Commander have special significance...
-- `is_deleteable` (Bool) Can this role be deleted? Primary roles cannot be deleted...
+- `is_deleteable` (Boolean) Can this role be deleted? Primary roles cannot be deleted.
+- `is_primary_role` (Boolean) Is this the primary incident role? Primary roles like Incident Commander have special significance.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `slug` (String) Friendly globally unique name for your object.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing incident role by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_incident_role.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_incident_role.example <id>

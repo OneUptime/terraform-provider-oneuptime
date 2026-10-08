@@ -28,14 +28,12 @@ type NetworkInterfaceDataSource struct {
 // NetworkInterfaceDataSourceModel describes the data source data model.
 type NetworkInterfaceDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     NetworkDeviceId types.String `tfsdk:"network_device_id"`
     InterfaceIndex types.Number `tfsdk:"interface_index"`
+    Name types.String `tfsdk:"name"`
     Alias types.String `tfsdk:"alias"`
     MacAddress types.String `tfsdk:"mac_address"`
     InterfaceType types.Number `tfsdk:"interface_type"`
@@ -56,93 +54,98 @@ func (d *NetworkInterfaceDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *NetworkInterfaceDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Interfaces discovered on Network Devices via SNMP walks. Rows are upserted by the server; users can toggle per-interface monitoring. Look up an existing network_interface by `id` or by `name`.",
+        MarkdownDescription: "Interfaces discovered on Network Devices via SNMP walks. Rows are upserted by the server; users can toggle per-interface monitoring. Look up an existing network interface by `id`, or by any of its other arguments (`name`, `alias`, `errors_per_second`, ...): each one set must match, and exactly one network interface may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "network_device_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Device this interface was discovered on. The ID of a `oneuptime_network_device`.",
+                Optional: true,
                 Computed: true,
             },
             "interface_index": schema.NumberAttribute{
                 MarkdownDescription: "SNMP ifIndex of this interface on the device.",
+                Optional: true,
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Interface name (ifName / ifDescr) from SNMP.",
+                Optional: true,
                 Computed: true,
             },
             "alias": schema.StringAttribute{
                 MarkdownDescription: "Interface alias (ifAlias) from SNMP.",
+                Optional: true,
                 Computed: true,
             },
             "mac_address": schema.StringAttribute{
                 MarkdownDescription: "Physical address (ifPhysAddress) from SNMP, colon-separated hex.",
+                Optional: true,
                 Computed: true,
             },
             "interface_type": schema.NumberAttribute{
                 MarkdownDescription: "IANAifType number (ifType) from SNMP — 6 = ethernetCsmacd, 24 = softwareLoopback.",
+                Optional: true,
                 Computed: true,
             },
             "is_monitored": schema.BoolAttribute{
-                MarkdownDescription: "Include this interface in down/utilization/error alerting..",
+                MarkdownDescription: "Include this interface in down/utilization/error alerting.",
+                Optional: true,
                 Computed: true,
             },
             "is_operationally_up": schema.BoolAttribute{
                 MarkdownDescription: "Operational status (ifOperStatus) from the last SNMP walk.",
+                Optional: true,
                 Computed: true,
             },
             "is_administratively_up": schema.BoolAttribute{
                 MarkdownDescription: "Administrative status (ifAdminStatus) from the last SNMP walk.",
+                Optional: true,
                 Computed: true,
             },
             "speed_in_mbps": schema.NumberAttribute{
-                MarkdownDescription: "Negotiated interface speed in Mbps. Stored as decimal so 10G+ links don't overflow integers..",
+                MarkdownDescription: "Negotiated interface speed in Mbps. Stored as decimal so 10G+ links don't overflow integers.",
+                Optional: true,
                 Computed: true,
             },
             "in_rate_mbps": schema.NumberAttribute{
-                MarkdownDescription: "Most recent inbound throughput in Mbps, computed from SNMP counters..",
+                MarkdownDescription: "Most recent inbound throughput in Mbps, computed from SNMP counters.",
+                Optional: true,
                 Computed: true,
             },
             "out_rate_mbps": schema.NumberAttribute{
-                MarkdownDescription: "Most recent outbound throughput in Mbps, computed from SNMP counters..",
+                MarkdownDescription: "Most recent outbound throughput in Mbps, computed from SNMP counters.",
+                Optional: true,
                 Computed: true,
             },
             "utilization_percent": schema.NumberAttribute{
-                MarkdownDescription: "Most recent utilization as a percent of interface speed (max of in/out)..",
+                MarkdownDescription: "Most recent utilization as a percent of interface speed (max of in/out).",
+                Optional: true,
                 Computed: true,
             },
             "errors_per_second": schema.NumberAttribute{
-                MarkdownDescription: "Most recent error rate (in + out errors per second) computed from SNMP counters..",
+                MarkdownDescription: "Most recent error rate (in + out errors per second) computed from SNMP counters.",
+                Optional: true,
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this interface was last seen in an SNMP walk.",
                 Computed: true,
             },
         },
@@ -179,25 +182,90 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.NetworkDeviceId.IsNull() && !data.NetworkDeviceId.IsUnknown() {
+        filters["networkDeviceId"] = data.NetworkDeviceId.ValueString()
+        filterNames = append(filterNames, "network_device_id = "+fmt.Sprintf("%q", data.NetworkDeviceId.ValueString()))
+    }
+    if !data.InterfaceIndex.IsNull() && !data.InterfaceIndex.IsUnknown() {
+        filters["interfaceIndex"] = lookupNumber(data.InterfaceIndex)
+        filterNames = append(filterNames, "interface_index = "+data.InterfaceIndex.ValueBigFloat().String())
+    }
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Alias.IsNull() && !data.Alias.IsUnknown() {
+        filters["alias"] = data.Alias.ValueString()
+        filterNames = append(filterNames, "alias = "+fmt.Sprintf("%q", data.Alias.ValueString()))
+    }
+    if !data.MacAddress.IsNull() && !data.MacAddress.IsUnknown() {
+        filters["macAddress"] = data.MacAddress.ValueString()
+        filterNames = append(filterNames, "mac_address = "+fmt.Sprintf("%q", data.MacAddress.ValueString()))
+    }
+    if !data.InterfaceType.IsNull() && !data.InterfaceType.IsUnknown() {
+        filters["interfaceType"] = lookupNumber(data.InterfaceType)
+        filterNames = append(filterNames, "interface_type = "+data.InterfaceType.ValueBigFloat().String())
+    }
+    if !data.IsMonitored.IsNull() && !data.IsMonitored.IsUnknown() {
+        filters["isMonitored"] = data.IsMonitored.ValueBool()
+        filterNames = append(filterNames, "is_monitored = "+fmt.Sprintf("%t", data.IsMonitored.ValueBool()))
+    }
+    if !data.IsOperationallyUp.IsNull() && !data.IsOperationallyUp.IsUnknown() {
+        filters["isOperationallyUp"] = data.IsOperationallyUp.ValueBool()
+        filterNames = append(filterNames, "is_operationally_up = "+fmt.Sprintf("%t", data.IsOperationallyUp.ValueBool()))
+    }
+    if !data.IsAdministrativelyUp.IsNull() && !data.IsAdministrativelyUp.IsUnknown() {
+        filters["isAdministrativelyUp"] = data.IsAdministrativelyUp.ValueBool()
+        filterNames = append(filterNames, "is_administratively_up = "+fmt.Sprintf("%t", data.IsAdministrativelyUp.ValueBool()))
+    }
+    if !data.SpeedInMbps.IsNull() && !data.SpeedInMbps.IsUnknown() {
+        filters["speedInMbps"] = lookupNumber(data.SpeedInMbps)
+        filterNames = append(filterNames, "speed_in_mbps = "+data.SpeedInMbps.ValueBigFloat().String())
+    }
+    if !data.InRateMbps.IsNull() && !data.InRateMbps.IsUnknown() {
+        filters["inRateMbps"] = lookupNumber(data.InRateMbps)
+        filterNames = append(filterNames, "in_rate_mbps = "+data.InRateMbps.ValueBigFloat().String())
+    }
+    if !data.OutRateMbps.IsNull() && !data.OutRateMbps.IsUnknown() {
+        filters["outRateMbps"] = lookupNumber(data.OutRateMbps)
+        filterNames = append(filterNames, "out_rate_mbps = "+data.OutRateMbps.ValueBigFloat().String())
+    }
+    if !data.UtilizationPercent.IsNull() && !data.UtilizationPercent.IsUnknown() {
+        filters["utilizationPercent"] = lookupNumber(data.UtilizationPercent)
+        filterNames = append(filterNames, "utilization_percent = "+data.UtilizationPercent.ValueBigFloat().String())
+    }
+    if !data.ErrorsPerSecond.IsNull() && !data.ErrorsPerSecond.IsUnknown() {
+        filters["errorsPerSecond"] = lookupNumber(data.ErrorsPerSecond)
+        filterNames = append(filterNames, "errors_per_second = "+data.ErrorsPerSecond.ValueBigFloat().String())
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a network_interface.",
+            "Look the network interface up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the network interface up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "networkDeviceId": true,
         "interfaceIndex": true,
+        "name": true,
         "alias": true,
         "macAddress": true,
         "interfaceType": true,
@@ -222,7 +290,7 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_interface found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network interface found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -235,11 +303,10 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -256,11 +323,11 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_interface found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network interface matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_interface matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network interface matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -288,23 +355,6 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -339,34 +389,6 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -412,6 +434,23 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
         }
     } else {
         data.InterfaceIndex = types.NumberNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["alias"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

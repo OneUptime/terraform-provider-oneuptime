@@ -13,7 +13,7 @@ BLOB or File storage
 
 ```terraform
 resource "oneuptime_file" "example" {
-  name = "Example short text"
+  name      = "Example file"
   file_type = "Example short text"
 }
 ```
@@ -22,19 +22,19 @@ resource "oneuptime_file" "example" {
 
 ### Required
 
-- `name` (String) Any friendly name of this object..
-- `file_type` (String) File file_type.
+- `file_type` (String)
+- `name` (String) Any friendly name of this object.
 
 ### Optional
 
-- `file` (String) File file.
-- `slug` (String) File slug.
+- `file` (String)
+- `slug` (String)
 
 ### Read-Only
 
 - `id` (String) Unique identifier for the resource.
-- `is_public` (Bool) Whether anyone may read the file without signing in. Set by OneUptime: every upload starts private, and a file becomes public only when a record that shows it to everyone, such as a public note or a probe's icon, is published...
-- `image_access_token` (String) File image_access_token.
+- `image_access_token` (String)
+- `is_public` (Boolean) Whether anyone may read the file without signing in. Set by OneUptime: every upload starts private, and a file becomes public only when a record that shows it to everyone, such as a public note or a probe's icon, is published.
 
 ## Import
 

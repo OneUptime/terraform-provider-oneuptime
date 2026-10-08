@@ -101,14 +101,11 @@ type NetworkDeviceResourceModel struct {
     InterfacesDown types.Number `tfsdk:"interfaces_down"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     LastWalkLog JSONSubsetValue `tfsdk:"last_walk_log"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (r *NetworkDeviceResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -116,19 +113,23 @@ func (r *NetworkDeviceResource) Metadata(ctx context.Context, req resource.Metad
 }
 
 func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Network Devices (routers, switches, firewalls) that are being monitored in this project via SNMP polling and traps.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -151,7 +152,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 Required: true,
             },
             "dns_name": schema.StringAttribute{
-                MarkdownDescription: "Fully qualified DNS name of this device, from its reverse-DNS (PTR) record when it was discovered, or its previous full name when its name was shortened to the hostname. Kept so the device can still be found, and matched by site-assignment hostname patterns, by the name DNS gives it..",
+                MarkdownDescription: "Fully qualified DNS name of this device, from its reverse-DNS (PTR) record when it was discovered, or its previous full name when its name was shortened to the hostname. Kept so the device can still be found, and matched by site-assignment hostname patterns, by the name DNS gives it.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -159,7 +160,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "mac_address": schema.StringAttribute{
-                MarkdownDescription: "MAC address of this device. Lets the topology map find the switch port it is plugged into from the forwarding tables of walked switches, for a device that speaks neither LLDP nor CDP (one monitored by ping alone). Optional: a device whose hostname is an IP address that a walked router's ARP table resolves is matched by address, and the MAC learned that way is stored here..",
+                MarkdownDescription: "MAC address of this device. Lets the topology map find the switch port it is plugged into from the forwarding tables of walked switches, for a device that speaks neither LLDP nor CDP (one monitored by ping alone). Optional: a device whose hostname is an IP address that a walked router's ARP table resolves is matched by address, and the MAC learned that way is stored here.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -167,7 +168,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "is_mac_address_learned": schema.BoolAttribute{
-                MarkdownDescription: "True when the MAC Address was filled in from a walked device's ARP table rather than typed. A learned MAC is corrected when a later walk binds the device's address to a different MAC; a typed one is never touched..",
+                MarkdownDescription: "True when the MAC Address was filled in from a walked device's ARP table rather than typed. A learned MAC is corrected when a later walk binds the device's address to a different MAC; a typed one is never touched.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -176,7 +177,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "probe_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Probe that polls this network device. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -184,7 +185,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "site_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Site this network device belongs to. The ID of a `oneuptime_network_site`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -192,7 +193,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "oid_template_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the OID Collection Template this device collects. The ID of a `oneuptime_oid_collection_template`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -200,7 +201,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "snmp_credential_profile_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the SNMP Credential Profile this device is walked with. The ID of a `oneuptime_snmp_credential_profile`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -208,7 +209,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "monitoring_method": schema.StringAttribute{
-                MarkdownDescription: "How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP..",
+                MarkdownDescription: "How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -216,7 +217,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "device_role": schema.StringAttribute{
-                MarkdownDescription: "Deprecated legacy device role key. Use the Network Device Role relation instead; this column exists only for the backfill migration and will be removed..",
+                MarkdownDescription: "Deprecated legacy device role key. Use the Network Device Role relation instead; this column exists only for the backfill migration and will be removed.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -224,7 +225,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "network_device_role_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Device Role this device is assigned. The ID of a `oneuptime_network_device_role`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -232,7 +233,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "monitor_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the monitor that reports this device's health when its monitoring method is Monitor. The ID of a `oneuptime_monitor`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -264,7 +265,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "snmp_v3_auth": schema.StringAttribute{
-                MarkdownDescription: "Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices..",
+                MarkdownDescription: "Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -324,7 +325,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "is_polling_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether the assigned probe polls this device on a schedule. Disable to pause SNMP polling without deleting the device..",
+                MarkdownDescription: "Whether the assigned probe polls this device on a schedule. Disable to pause SNMP polling without deleting the device.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -341,7 +342,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "walk_interfaces": schema.BoolAttribute{
-                MarkdownDescription: "Walk the IF-MIB interface tables on each poll to inventory interfaces, bandwidth, and errors. Also collects LLDP/CDP neighbors for the topology graph..",
+                MarkdownDescription: "Walk the IF-MIB interface tables on each poll to inventory interfaces, bandwidth, and errors. Also collects LLDP/CDP neighbors for the topology graph.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -350,7 +351,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "collect_endpoints": schema.BoolAttribute{
-                MarkdownDescription: "Also walk the device's ARP cache and bridge forwarding database on each poll to discover endpoints (laptops, printers, POS terminals) attached to it. Strictly opt-in: costs extra SNMP table walks per poll. Only meaningful when Walk Interfaces is on..",
+                MarkdownDescription: "Also walk the device's ARP cache and bridge forwarding database on each poll to discover endpoints (laptops, printers, POS terminals) attached to it. Strictly opt-in: costs extra SNMP table walks per poll. Only meaningful when Walk Interfaces is on.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -359,7 +360,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "snmp_oids": schema.StringAttribute{
-                MarkdownDescription: "SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead..",
+                MarkdownDescription: "SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -371,7 +372,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "snmp_tables": schema.StringAttribute{
-                MarkdownDescription: "SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device..",
+                MarkdownDescription: "SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -383,7 +384,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "auto_apply_vendor_health_template": schema.BoolAttribute{
-                MarkdownDescription: "When the device's vendor is fingerprinted from its SNMP sysObjectID and no Health OIDs are configured yet, apply the matching vendor health template automatically on the next poll. Off by default for hand-made devices — the vendor template banner stays the manual path; auto-imported devices enable it so the zero-touch pipeline ends with health metrics, not an empty OID list..",
+                MarkdownDescription: "When the device's vendor is fingerprinted from its SNMP sysObjectID and no Health OIDs are configured yet, apply the matching vendor health template automatically on the next poll. Off by default for hand-made devices — the vendor template banner stays the manual path; auto-imported devices enable it so the zero-touch pipeline ends with health metrics, not an empty OID list.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -392,7 +393,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this network device archived? Archived network devices are hidden from lists but keep collecting telemetry..",
+                MarkdownDescription: "Is this network device archived? Archived network devices are hidden from lists but keep collecting telemetry.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -401,7 +402,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -410,7 +411,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "current_monitor_status_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Whats the current status ID of this network device? Stamped from the monitor that polls it. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -418,7 +419,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "next_poll_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the assigned probe should next poll this device. Advanced by the claim cycle; a device created now is due immediately.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -443,7 +444,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "sys_object_id": schema.StringAttribute{
-                MarkdownDescription: "sysObjectID — the vendor's registered OID for this device model, enriched from SNMP walks. Used to fingerprint the vendor and suggest an OID template..",
+                MarkdownDescription: "sysObjectID — the vendor's registered OID for this device model, enriched from SNMP walks. Used to fingerprint the vendor and suggest an OID template.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -467,7 +468,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "vendor": schema.StringAttribute{
-                MarkdownDescription: "Hardware vendor, from ENTITY-MIB or derived from sysObjectID. Managed by the probe..",
+                MarkdownDescription: "Hardware vendor, from ENTITY-MIB or derived from sysObjectID. Managed by the probe.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -475,7 +476,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "device_model": schema.StringAttribute{
-                MarkdownDescription: "Hardware model from ENTITY-MIB (entPhysicalModelName). Managed by the probe..",
+                MarkdownDescription: "Hardware model from ENTITY-MIB (entPhysicalModelName). Managed by the probe.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -483,7 +484,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "serial_number": schema.StringAttribute{
-                MarkdownDescription: "Chassis serial number from ENTITY-MIB (entPhysicalSerialNum). Managed by the probe..",
+                MarkdownDescription: "Chassis serial number from ENTITY-MIB (entPhysicalSerialNum). Managed by the probe.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -491,7 +492,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "firmware_version": schema.StringAttribute{
-                MarkdownDescription: "Firmware revision from ENTITY-MIB (entPhysicalFirmwareRev). Managed by the probe..",
+                MarkdownDescription: "Firmware revision from ENTITY-MIB (entPhysicalFirmwareRev). Managed by the probe.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -499,7 +500,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "software_version": schema.StringAttribute{
-                MarkdownDescription: "Operating system / software revision from ENTITY-MIB (entPhysicalSoftwareRev). Managed by the probe..",
+                MarkdownDescription: "Operating system / software revision from ENTITY-MIB (entPhysicalSoftwareRev). Managed by the probe.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -507,7 +508,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "last_rebooted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Device boot time computed from sysUpTime on each walk. Managed by the probe.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -516,7 +517,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "cdp_neighbors": schema.StringAttribute{
-                MarkdownDescription: "CDP neighbors discovered on the last SNMP walk, complementing LLDP for the topology graph. Managed by the probe..",
+                MarkdownDescription: "CDP neighbors discovered on the last SNMP walk, complementing LLDP for the topology graph. Managed by the probe. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -528,7 +529,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "lldp_neighbors": schema.StringAttribute{
-                MarkdownDescription: "LLDP neighbors discovered on the last SNMP walk, used to build the network topology graph. Managed by the probe..",
+                MarkdownDescription: "LLDP neighbors discovered on the last SNMP walk, used to build the network topology graph. Managed by the probe. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -540,7 +541,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "snmp_table_snapshot": schema.StringAttribute{
-                MarkdownDescription: "The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe..",
+                MarkdownDescription: "The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -552,7 +553,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When SNMP data was last received from this device.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -561,7 +562,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "last_polled_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the assigned probe last ATTEMPTED an SNMP walk of this device, whether or not the device answered. Paired with lastSeenAt (which only moves on a successful walk) this is what separates \"the device did not answer\" from \"we have not asked recently\". Managed by the probe.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -570,7 +571,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "is_reachable": schema.BoolAttribute{
-                MarkdownDescription: "Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe..",
+                MarkdownDescription: "Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -578,7 +579,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "is_snmp_reachable": schema.BoolAttribute{
-                MarkdownDescription: "Whether the most recent SNMP walk of this device succeeded. Separate from isReachable, which is the ping verdict: a device that answers ping but not SNMP is Up with a failing SNMP walk, which almost always means wrong credentials or SNMP disabled on the device. NULL means no walk was attempted — the device has no usable SNMP credentials (it is pinged only) or has never been polled. Managed by the probe..",
+                MarkdownDescription: "Whether the most recent SNMP walk of this device succeeded. Separate from isReachable, which is the ping verdict: a device that answers ping but not SNMP is Up with a failing SNMP walk, which almost always means wrong credentials or SNMP disabled on the device. NULL means no walk was attempted — the device has no usable SNMP credentials (it is pinged only) or has never been polled. Managed by the probe.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -586,7 +587,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "last_snmp_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the last SUCCESSFUL SNMP walk of this device completed — the moment its interfaces, inventory and health OIDs were last refreshed. Only moves on a successful walk, so it stays honest while lastSeenAt keeps moving on ping alone. Managed by the probe.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -619,22 +620,16 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -642,25 +637,24 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 Computed: true,
             },
             "last_walk_log": schema.StringAttribute{
-                MarkdownDescription: "The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server..",
+                MarkdownDescription: "The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this network device archived?",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
         },
@@ -697,6 +691,14 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config NetworkDeviceResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -912,14 +914,11 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "interfacesDown": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "lastWalkLog": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -2591,34 +2590,6 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2778,43 +2749,6 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2822,6 +2756,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     }
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -2902,14 +2839,11 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "interfacesDown": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "lastWalkLog": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -4582,34 +4516,6 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4769,43 +4675,6 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -4834,6 +4703,14 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config NetworkDeviceResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     networkDeviceRequest := map[string]interface{}{
@@ -5125,14 +5002,11 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "interfacesDown": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "lastWalkLog": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -6799,34 +6673,6 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6986,49 +6832,15 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
     data.Id = state.Id
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -7066,6 +6878,182 @@ func (r *NetworkDeviceResource) Delete(ctx context.Context, req resource.DeleteR
 
 func (r *NetworkDeviceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *NetworkDeviceResource) keepPlannedValues(data *NetworkDeviceResourceModel, plan *NetworkDeviceResourceModel, config *NetworkDeviceResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.DnsName.IsNull() && !plan.DnsName.IsUnknown() {
+        data.DnsName = plan.DnsName
+    }
+    if config.MacAddress.IsNull() && !plan.MacAddress.IsUnknown() {
+        data.MacAddress = plan.MacAddress
+    }
+    if config.IsMacAddressLearned.IsNull() && !plan.IsMacAddressLearned.IsUnknown() {
+        data.IsMacAddressLearned = plan.IsMacAddressLearned
+    }
+    if config.ProbeId.IsNull() && !plan.ProbeId.IsUnknown() {
+        data.ProbeId = plan.ProbeId
+    }
+    if config.SiteId.IsNull() && !plan.SiteId.IsUnknown() {
+        data.SiteId = plan.SiteId
+    }
+    if config.OidTemplateId.IsNull() && !plan.OidTemplateId.IsUnknown() {
+        data.OidTemplateId = plan.OidTemplateId
+    }
+    if config.SnmpCredentialProfileId.IsNull() && !plan.SnmpCredentialProfileId.IsUnknown() {
+        data.SnmpCredentialProfileId = plan.SnmpCredentialProfileId
+    }
+    if config.MonitoringMethod.IsNull() && !plan.MonitoringMethod.IsUnknown() {
+        data.MonitoringMethod = plan.MonitoringMethod
+    }
+    if config.DeviceRole.IsNull() && !plan.DeviceRole.IsUnknown() {
+        data.DeviceRole = plan.DeviceRole
+    }
+    if config.NetworkDeviceRoleId.IsNull() && !plan.NetworkDeviceRoleId.IsUnknown() {
+        data.NetworkDeviceRoleId = plan.NetworkDeviceRoleId
+    }
+    if config.MonitorId.IsNull() && !plan.MonitorId.IsUnknown() {
+        data.MonitorId = plan.MonitorId
+    }
+    if config.SnmpVersion.IsNull() && !plan.SnmpVersion.IsUnknown() {
+        data.SnmpVersion = plan.SnmpVersion
+    }
+    if config.SnmpCommunityString.IsNull() && !plan.SnmpCommunityString.IsUnknown() {
+        data.SnmpCommunityString = plan.SnmpCommunityString
+    }
+    if config.SnmpPort.IsNull() && !plan.SnmpPort.IsUnknown() {
+        data.SnmpPort = plan.SnmpPort
+    }
+    if config.SnmpV3Auth.IsNull() && !plan.SnmpV3Auth.IsUnknown() {
+        data.SnmpV3Auth = plan.SnmpV3Auth
+    }
+    if config.SnmpV3SecurityLevel.IsNull() && !plan.SnmpV3SecurityLevel.IsUnknown() {
+        data.SnmpV3SecurityLevel = plan.SnmpV3SecurityLevel
+    }
+    if config.SnmpV3Username.IsNull() && !plan.SnmpV3Username.IsUnknown() {
+        data.SnmpV3Username = plan.SnmpV3Username
+    }
+    if config.SnmpV3AuthProtocol.IsNull() && !plan.SnmpV3AuthProtocol.IsUnknown() {
+        data.SnmpV3AuthProtocol = plan.SnmpV3AuthProtocol
+    }
+    if config.SnmpV3AuthKey.IsNull() && !plan.SnmpV3AuthKey.IsUnknown() {
+        data.SnmpV3AuthKey = plan.SnmpV3AuthKey
+    }
+    if config.SnmpV3PrivProtocol.IsNull() && !plan.SnmpV3PrivProtocol.IsUnknown() {
+        data.SnmpV3PrivProtocol = plan.SnmpV3PrivProtocol
+    }
+    if config.SnmpV3PrivKey.IsNull() && !plan.SnmpV3PrivKey.IsUnknown() {
+        data.SnmpV3PrivKey = plan.SnmpV3PrivKey
+    }
+    if config.IsPollingEnabled.IsNull() && !plan.IsPollingEnabled.IsUnknown() {
+        data.IsPollingEnabled = plan.IsPollingEnabled
+    }
+    if config.PollingIntervalInMinutes.IsNull() && !plan.PollingIntervalInMinutes.IsUnknown() {
+        data.PollingIntervalInMinutes = plan.PollingIntervalInMinutes
+    }
+    if config.WalkInterfaces.IsNull() && !plan.WalkInterfaces.IsUnknown() {
+        data.WalkInterfaces = plan.WalkInterfaces
+    }
+    if config.CollectEndpoints.IsNull() && !plan.CollectEndpoints.IsUnknown() {
+        data.CollectEndpoints = plan.CollectEndpoints
+    }
+    if config.SnmpOids.IsNull() && !plan.SnmpOids.IsUnknown() {
+        data.SnmpOids = plan.SnmpOids
+    }
+    if config.SnmpTables.IsNull() && !plan.SnmpTables.IsUnknown() {
+        data.SnmpTables = plan.SnmpTables
+    }
+    if config.AutoApplyVendorHealthTemplate.IsNull() && !plan.AutoApplyVendorHealthTemplate.IsUnknown() {
+        data.AutoApplyVendorHealthTemplate = plan.AutoApplyVendorHealthTemplate
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.CurrentMonitorStatusId.IsNull() && !plan.CurrentMonitorStatusId.IsUnknown() {
+        data.CurrentMonitorStatusId = plan.CurrentMonitorStatusId
+    }
+    if config.NextPollAt.IsNull() && !plan.NextPollAt.IsUnknown() {
+        data.NextPollAt = plan.NextPollAt
+    }
+    if config.SysDescr.IsNull() && !plan.SysDescr.IsUnknown() {
+        data.SysDescr = plan.SysDescr
+    }
+    if config.SysName.IsNull() && !plan.SysName.IsUnknown() {
+        data.SysName = plan.SysName
+    }
+    if config.SysObjectId.IsNull() && !plan.SysObjectId.IsUnknown() {
+        data.SysObjectId = plan.SysObjectId
+    }
+    if config.SysLocation.IsNull() && !plan.SysLocation.IsUnknown() {
+        data.SysLocation = plan.SysLocation
+    }
+    if config.SysContact.IsNull() && !plan.SysContact.IsUnknown() {
+        data.SysContact = plan.SysContact
+    }
+    if config.Vendor.IsNull() && !plan.Vendor.IsUnknown() {
+        data.Vendor = plan.Vendor
+    }
+    if config.DeviceModel.IsNull() && !plan.DeviceModel.IsUnknown() {
+        data.DeviceModel = plan.DeviceModel
+    }
+    if config.SerialNumber.IsNull() && !plan.SerialNumber.IsUnknown() {
+        data.SerialNumber = plan.SerialNumber
+    }
+    if config.FirmwareVersion.IsNull() && !plan.FirmwareVersion.IsUnknown() {
+        data.FirmwareVersion = plan.FirmwareVersion
+    }
+    if config.SoftwareVersion.IsNull() && !plan.SoftwareVersion.IsUnknown() {
+        data.SoftwareVersion = plan.SoftwareVersion
+    }
+    if config.LastRebootedAt.IsNull() && !plan.LastRebootedAt.IsUnknown() {
+        data.LastRebootedAt = plan.LastRebootedAt
+    }
+    if config.CdpNeighbors.IsNull() && !plan.CdpNeighbors.IsUnknown() {
+        data.CdpNeighbors = plan.CdpNeighbors
+    }
+    if config.LldpNeighbors.IsNull() && !plan.LldpNeighbors.IsUnknown() {
+        data.LldpNeighbors = plan.LldpNeighbors
+    }
+    if config.SnmpTableSnapshot.IsNull() && !plan.SnmpTableSnapshot.IsUnknown() {
+        data.SnmpTableSnapshot = plan.SnmpTableSnapshot
+    }
+    if config.LastSeenAt.IsNull() && !plan.LastSeenAt.IsUnknown() {
+        data.LastSeenAt = plan.LastSeenAt
+    }
+    if config.LastPolledAt.IsNull() && !plan.LastPolledAt.IsUnknown() {
+        data.LastPolledAt = plan.LastPolledAt
+    }
+    if config.IsReachable.IsNull() && !plan.IsReachable.IsUnknown() {
+        data.IsReachable = plan.IsReachable
+    }
+    if config.IsSnmpReachable.IsNull() && !plan.IsSnmpReachable.IsUnknown() {
+        data.IsSnmpReachable = plan.IsSnmpReachable
+    }
+    if config.LastSnmpSeenAt.IsNull() && !plan.LastSnmpSeenAt.IsUnknown() {
+        data.LastSnmpSeenAt = plan.LastSnmpSeenAt
+    }
+    if config.InterfacesTotal.IsNull() && !plan.InterfacesTotal.IsUnknown() {
+        data.InterfacesTotal = plan.InterfacesTotal
+    }
+    if config.InterfacesUp.IsNull() && !plan.InterfacesUp.IsUnknown() {
+        data.InterfacesUp = plan.InterfacesUp
+    }
+    if config.InterfacesDown.IsNull() && !plan.InterfacesDown.IsUnknown() {
+        data.InterfacesDown = plan.InterfacesDown
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

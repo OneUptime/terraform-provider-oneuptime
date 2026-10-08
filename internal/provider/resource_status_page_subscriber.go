@@ -60,8 +60,6 @@ type StatusPageSubscriberResourceModel struct {
     InternalNote types.String `tfsdk:"internal_note"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     UnsubscribedAt RFC3339Value `tfsdk:"unsubscribed_at"`
     IsAddedByTeam types.Bool `tfsdk:"is_added_by_team"`
@@ -72,33 +70,37 @@ func (r *StatusPageSubscriberResource) Metadata(ctx context.Context, req resourc
 }
 
 func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Subscriber that subscribed to your status page",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "subscriber_email": schema.StringAttribute{
-                MarkdownDescription: "Email object",
+                MarkdownDescription: "Email address of the subscriber.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -110,7 +112,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "subscriber_phone": schema.StringAttribute{
-                MarkdownDescription: "Phone object",
+                MarkdownDescription: "Phone number of subscriber.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -169,14 +171,14 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "subscription_confirmation_token": schema.StringAttribute{
-                MarkdownDescription: "Token used to confirm subscription. This is a random token that is sent to the subscriber's email address to confirm their subscription..",
+                MarkdownDescription: "Token used to confirm subscription. This is a random token that is sent to the subscriber's email address to confirm their subscription.",
                 Optional: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "is_unsubscribed": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Unsubscribed?.",
+                MarkdownDescription: "Is Subscriber Unsubscribed?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -185,7 +187,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "send_you_have_subscribed_message": schema.BoolAttribute{
-                MarkdownDescription: "Send You Have Subscribed Message when subscriber is created?.",
+                MarkdownDescription: "Send You Have Subscribed Message when subscriber is created?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -195,7 +197,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "is_subscribed_to_all_resources": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Subscribed to All Resources on this status page?.",
+                MarkdownDescription: "Is Subscriber Subscribed to All Resources on this status page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -204,7 +206,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "is_subscribed_to_all_event_types": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?.",
+                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -213,7 +215,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "status_page_resources": schema.SetAttribute{
-                MarkdownDescription: "Relation to Status Page Resources where this subscriber is subscribed to.",
+                MarkdownDescription: "Relation to Status Page Resources where this subscriber is subscribed to. IDs of `oneuptime_status_page_resource` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -222,7 +224,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "status_page_event_types": schema.StringAttribute{
-                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements).",
+                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -234,7 +236,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "internal_note": schema.StringAttribute{
-                MarkdownDescription: "Any notes or text you would like to add to this subscriber object. This is for internal use only..",
+                MarkdownDescription: "Any notes or text you would like to add to this subscriber object. This is for internal use only.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -242,35 +244,32 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "unsubscribed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this subscriber unsubscribed. Set by OneUptime when Is Unsubscribed is turned on, and cleared when it is turned off; any value sent for it is ignored.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "is_added_by_team": schema.BoolAttribute{
-                MarkdownDescription: "Whether your team added this subscriber (from the dashboard, with an API key or by a workflow) rather than the subscriber signing up on the status page. Set by OneUptime when the subscriber is created; any value sent for it is ignored..",
+                MarkdownDescription: "Whether your team added this subscriber (from the dashboard, with an API key or by a workflow) rather than the subscriber signing up on the status page. Set by OneUptime when the subscriber is created; any value sent for it is ignored.",
                 Computed: true,
             },
         },
@@ -307,6 +306,14 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config StatusPageSubscriberResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -431,8 +438,6 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
         "internalNote": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "unsubscribedAt": true,
         "isAddedByTeam": true,
@@ -844,34 +849,6 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -931,6 +908,9 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -967,8 +947,6 @@ func (r *StatusPageSubscriberResource) Read(ctx context.Context, req resource.Re
         "internalNote": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "unsubscribedAt": true,
         "isAddedByTeam": true,
@@ -1381,34 +1359,6 @@ func (r *StatusPageSubscriberResource) Read(ctx context.Context, req resource.Re
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1488,6 +1438,14 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config StatusPageSubscriberResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     statusPageSubscriberRequest := map[string]interface{}{
@@ -1586,8 +1544,6 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
         "internalNote": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "unsubscribedAt": true,
         "isAddedByTeam": true,
@@ -1994,34 +1950,6 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2080,6 +2008,9 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2116,6 +2047,56 @@ func (r *StatusPageSubscriberResource) Delete(ctx context.Context, req resource.
 
 func (r *StatusPageSubscriberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *StatusPageSubscriberResource) keepPlannedValues(data *StatusPageSubscriberResourceModel, plan *StatusPageSubscriberResourceModel, config *StatusPageSubscriberResourceModel) {
+    if config.SubscriberEmail.IsNull() && !plan.SubscriberEmail.IsUnknown() {
+        data.SubscriberEmail = plan.SubscriberEmail
+    }
+    if config.SubscriberPhone.IsNull() && !plan.SubscriberPhone.IsUnknown() {
+        data.SubscriberPhone = plan.SubscriberPhone
+    }
+    if config.SubscriberWebhook.IsNull() && !plan.SubscriberWebhook.IsUnknown() {
+        data.SubscriberWebhook = plan.SubscriberWebhook
+    }
+    if config.SlackWorkspaceName.IsNull() && !plan.SlackWorkspaceName.IsUnknown() {
+        data.SlackWorkspaceName = plan.SlackWorkspaceName
+    }
+    if config.MicrosoftTeamsWorkspaceName.IsNull() && !plan.MicrosoftTeamsWorkspaceName.IsUnknown() {
+        data.MicrosoftTeamsWorkspaceName = plan.MicrosoftTeamsWorkspaceName
+    }
+    if config.IsSubscriptionConfirmed.IsNull() && !plan.IsSubscriptionConfirmed.IsUnknown() {
+        data.IsSubscriptionConfirmed = plan.IsSubscriptionConfirmed
+    }
+    if config.IsUnsubscribed.IsNull() && !plan.IsUnsubscribed.IsUnknown() {
+        data.IsUnsubscribed = plan.IsUnsubscribed
+    }
+    if config.SendYouHaveSubscribedMessage.IsNull() && !plan.SendYouHaveSubscribedMessage.IsUnknown() {
+        data.SendYouHaveSubscribedMessage = plan.SendYouHaveSubscribedMessage
+    }
+    if config.IsSubscribedToAllResources.IsNull() && !plan.IsSubscribedToAllResources.IsUnknown() {
+        data.IsSubscribedToAllResources = plan.IsSubscribedToAllResources
+    }
+    if config.IsSubscribedToAllEventTypes.IsNull() && !plan.IsSubscribedToAllEventTypes.IsUnknown() {
+        data.IsSubscribedToAllEventTypes = plan.IsSubscribedToAllEventTypes
+    }
+    if config.StatusPageResources.IsNull() && !plan.StatusPageResources.IsUnknown() {
+        data.StatusPageResources = plan.StatusPageResources
+    }
+    if config.StatusPageEventTypes.IsNull() && !plan.StatusPageEventTypes.IsUnknown() {
+        data.StatusPageEventTypes = plan.StatusPageEventTypes
+    }
+    if config.InternalNote.IsNull() && !plan.InternalNote.IsUnknown() {
+        data.InternalNote = plan.InternalNote
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

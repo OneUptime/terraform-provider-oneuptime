@@ -7,44 +7,48 @@ description: |-
 
 # oneuptime_incoming_call_policy (Data Source)
 
-Manage incoming call routing policies with escalation rules for on-call teams Look up by `id` or by `name` (must match exactly one item).
+Manage incoming call routing policies with escalation rules for on-call teams
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one incoming call policy may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_incoming_call_policy" "by_name" {
-  name = "example-incoming_call_policy"
+data "oneuptime_incoming_call_policy" "example" {
+  name = "Example incoming call policy"
 }
 
+# Or by id:
 data "oneuptime_incoming_call_policy" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Friendly description that will help you remember.. Computed.
-- `slug` (String) Friendly globally unique name for your object.. Computed.
-- `routing_phone_number` (String) Phone object. Computed.
-- `call_provider_phone_number_id` (String) The call provider's ID for the phone number (e.g., Twilio SID).. Computed.
-- `phone_number_country_code` (String) Country code of the phone number (US, GB, etc.).. Computed.
-- `phone_number_area_code` (String) Area code of the phone number.. Computed.
-- `phone_number_purchased_at` (String) A date time object.. Computed.
-- `greeting_message` (String) Custom TTS greeting message for incoming calls.. Computed.
-- `no_answer_message` (String) Message when escalation is exhausted and no one answers.. Computed.
-- `no_one_available_message` (String) Message when no one is on-call or reachable.. Computed.
-- `is_enabled` (Bool) Enable or disable this incoming call policy.. Computed.
-- `repeat_policy_if_no_one_answers` (Bool) Restart from first rule if all fail.. Computed.
-- `repeat_policy_if_no_one_answers_times` (Number) Maximum repeat attempts if no one answers.. Computed.
-- `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
-- `project_call_sms_config_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `call_provider_phone_number_id` (String) The call provider's ID for the phone number (e.g., Twilio SID).
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `description` (String) Friendly description that will help you remember.
+- `greeting_message` (String) Custom TTS greeting message for incoming calls.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_enabled` (Boolean) Enable or disable this incoming call policy.
+- `name` (String) Any friendly name of this policy.
+- `no_answer_message` (String) Message when escalation is exhausted and no one answers.
+- `no_one_available_message` (String) Message when no one is on-call or reachable.
+- `phone_number_area_code` (String) Area code of the phone number.
+- `phone_number_country_code` (String) Country code of the phone number (US, GB, etc.).
+- `project_call_sms_config_id` (String) ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply.
+- `repeat_policy_if_no_one_answers` (Boolean) Restart from first rule if all fail.
+- `repeat_policy_if_no_one_answers_times` (Number) Maximum repeat attempts if no one answers.
+- `slug` (String) Friendly globally unique name for your object.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `phone_number_purchased_at` (String) When the phone number was purchased.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `routing_phone_number` (String) The phone number for incoming calls to this policy.
+- `updated_at` (String) Date and Time when the object was updated.

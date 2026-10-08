@@ -30,7 +30,6 @@ type KubernetesCostAllocationDataSource struct {
 // KubernetesCostAllocationDataSourceModel describes the data source data model.
 type KubernetesCostAllocationDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     KubernetesClusterId types.String `tfsdk:"kubernetes_cluster_id"`
     ClusterName types.String `tfsdk:"cluster_name"`
@@ -80,182 +79,216 @@ func (d *KubernetesCostAllocationDataSource) Metadata(ctx context.Context, req d
 
 func (d *KubernetesCostAllocationDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "API endpoints for Kubernetes Cost Allocation Look up an existing kubernetes_cost_allocation by `id` or by `name`.",
+        MarkdownDescription: "API endpoints for Kubernetes Cost Allocation Look up an existing kubernetes cost allocation by `id`, or by any of its other arguments (`cluster_name`, `container_name`, `controller_kind`, ...): each one set must match, and exactly one kubernetes cost allocation may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Project ID",
+                MarkdownDescription: "Project ID.",
                 Computed: true,
             },
             "kubernetes_cluster_id": schema.StringAttribute{
-                MarkdownDescription: "Kubernetes Cluster ID",
+                MarkdownDescription: "Kubernetes Cluster ID.",
+                Optional: true,
                 Computed: true,
             },
             "cluster_name": schema.StringAttribute{
-                MarkdownDescription: "Cluster Name",
+                MarkdownDescription: "Cluster Name.",
+                Optional: true,
                 Computed: true,
             },
             "k8s_cluster_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Kubernetes Cluster Entity Key",
+                MarkdownDescription: "Kubernetes Cluster Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "window_start": schema.StringAttribute{
-                MarkdownDescription: "Window Start",
+                MarkdownDescription: "Window Start.",
+                Optional: true,
                 Computed: true,
             },
             "window_end": schema.StringAttribute{
-                MarkdownDescription: "Window End",
+                MarkdownDescription: "Window End.",
+                Optional: true,
                 Computed: true,
             },
             "namespace": schema.StringAttribute{
-                MarkdownDescription: "Namespace",
+                MarkdownDescription: "Namespace.",
+                Optional: true,
                 Computed: true,
             },
             "controller_kind": schema.StringAttribute{
-                MarkdownDescription: "Controller Kind",
+                MarkdownDescription: "Controller Kind.",
+                Optional: true,
                 Computed: true,
             },
             "controller_name": schema.StringAttribute{
-                MarkdownDescription: "Controller Name",
+                MarkdownDescription: "Controller Name.",
+                Optional: true,
                 Computed: true,
             },
             "pod_name": schema.StringAttribute{
-                MarkdownDescription: "Pod Name",
+                MarkdownDescription: "Pod Name.",
+                Optional: true,
                 Computed: true,
             },
             "container_name": schema.StringAttribute{
-                MarkdownDescription: "Container Name",
+                MarkdownDescription: "Container Name.",
+                Optional: true,
                 Computed: true,
             },
             "node_name": schema.StringAttribute{
-                MarkdownDescription: "Node Name",
+                MarkdownDescription: "Node Name.",
+                Optional: true,
                 Computed: true,
             },
             "provider_id": schema.StringAttribute{
-                MarkdownDescription: "Provider ID",
+                MarkdownDescription: "Provider ID.",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.StringAttribute{
-                MarkdownDescription: "Labels",
+                MarkdownDescription: "Labels.",
+                Optional: true,
                 Computed: true,
             },
             "label_keys": schema.SetAttribute{
-                MarkdownDescription: "Label Keys",
+                MarkdownDescription: "Label Keys.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "cpu_core_hours": schema.NumberAttribute{
-                MarkdownDescription: "CPU Core Hours",
+                MarkdownDescription: "CPU Core Hours.",
+                Optional: true,
                 Computed: true,
             },
             "cpu_core_request_average": schema.NumberAttribute{
-                MarkdownDescription: "CPU Core Request Average",
+                MarkdownDescription: "CPU Core Request Average.",
+                Optional: true,
                 Computed: true,
             },
             "cpu_core_usage_average": schema.NumberAttribute{
-                MarkdownDescription: "CPU Core Usage Average",
+                MarkdownDescription: "CPU Core Usage Average.",
+                Optional: true,
                 Computed: true,
             },
             "cpu_core_limit_average": schema.NumberAttribute{
-                MarkdownDescription: "CPU Core Limit Average",
+                MarkdownDescription: "CPU Core Limit Average.",
+                Optional: true,
                 Computed: true,
             },
             "cpu_cost": schema.NumberAttribute{
-                MarkdownDescription: "CPU Cost",
+                MarkdownDescription: "CPU Cost.",
+                Optional: true,
                 Computed: true,
             },
             "gpu_hours": schema.NumberAttribute{
-                MarkdownDescription: "GPU Hours",
+                MarkdownDescription: "GPU Hours.",
+                Optional: true,
                 Computed: true,
             },
             "gpu_cost": schema.NumberAttribute{
-                MarkdownDescription: "GPU Cost",
+                MarkdownDescription: "GPU Cost.",
+                Optional: true,
                 Computed: true,
             },
             "ram_byte_hours": schema.NumberAttribute{
-                MarkdownDescription: "RAM Byte Hours",
+                MarkdownDescription: "RAM Byte Hours.",
+                Optional: true,
                 Computed: true,
             },
             "ram_bytes_request_average": schema.NumberAttribute{
-                MarkdownDescription: "RAM Bytes Request Average",
+                MarkdownDescription: "RAM Bytes Request Average.",
+                Optional: true,
                 Computed: true,
             },
             "ram_bytes_usage_average": schema.NumberAttribute{
-                MarkdownDescription: "RAM Bytes Usage Average",
+                MarkdownDescription: "RAM Bytes Usage Average.",
+                Optional: true,
                 Computed: true,
             },
             "ram_bytes_limit_average": schema.NumberAttribute{
-                MarkdownDescription: "RAM Bytes Limit Average",
+                MarkdownDescription: "RAM Bytes Limit Average.",
+                Optional: true,
                 Computed: true,
             },
             "ram_bytes_usage_max": schema.NumberAttribute{
-                MarkdownDescription: "RAM Bytes Usage Max",
+                MarkdownDescription: "RAM Bytes Usage Max.",
+                Optional: true,
                 Computed: true,
             },
             "ram_cost": schema.NumberAttribute{
-                MarkdownDescription: "RAM Cost",
+                MarkdownDescription: "RAM Cost.",
+                Optional: true,
                 Computed: true,
             },
             "pv_byte_hours": schema.NumberAttribute{
-                MarkdownDescription: "PV Byte Hours",
+                MarkdownDescription: "PV Byte Hours.",
+                Optional: true,
                 Computed: true,
             },
             "pv_cost": schema.NumberAttribute{
-                MarkdownDescription: "PV Cost",
+                MarkdownDescription: "PV Cost.",
+                Optional: true,
                 Computed: true,
             },
             "network_cost": schema.NumberAttribute{
-                MarkdownDescription: "Network Cost",
+                MarkdownDescription: "Network Cost.",
+                Optional: true,
                 Computed: true,
             },
             "load_balancer_cost": schema.NumberAttribute{
-                MarkdownDescription: "Load Balancer Cost",
+                MarkdownDescription: "Load Balancer Cost.",
+                Optional: true,
                 Computed: true,
             },
             "shared_cost": schema.NumberAttribute{
-                MarkdownDescription: "Shared Cost",
+                MarkdownDescription: "Shared Cost.",
+                Optional: true,
                 Computed: true,
             },
             "external_cost": schema.NumberAttribute{
-                MarkdownDescription: "External Cost",
+                MarkdownDescription: "External Cost.",
+                Optional: true,
                 Computed: true,
             },
             "total_cost": schema.NumberAttribute{
-                MarkdownDescription: "Total Cost",
+                MarkdownDescription: "Total Cost.",
+                Optional: true,
                 Computed: true,
             },
             "cpu_efficiency": schema.NumberAttribute{
-                MarkdownDescription: "CPU Efficiency",
+                MarkdownDescription: "CPU Efficiency.",
+                Optional: true,
                 Computed: true,
             },
             "ram_efficiency": schema.NumberAttribute{
-                MarkdownDescription: "RAM Efficiency",
+                MarkdownDescription: "RAM Efficiency.",
+                Optional: true,
                 Computed: true,
             },
             "total_efficiency": schema.NumberAttribute{
-                MarkdownDescription: "Total Efficiency",
+                MarkdownDescription: "Total Efficiency.",
+                Optional: true,
                 Computed: true,
             },
             "currency": schema.StringAttribute{
-                MarkdownDescription: "Currency",
+                MarkdownDescription: "Currency.",
+                Optional: true,
                 Computed: true,
             },
             "shipment_id": schema.StringAttribute{
-                MarkdownDescription: "Shipment ID",
+                MarkdownDescription: "Shipment ID.",
+                Optional: true,
                 Computed: true,
             },
             "shipment_chunk": schema.NumberAttribute{
-                MarkdownDescription: "Shipment Chunk",
+                MarkdownDescription: "Shipment Chunk.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -292,18 +325,184 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.KubernetesClusterId.IsNull() && !data.KubernetesClusterId.IsUnknown() {
+        filters["kubernetesClusterId"] = data.KubernetesClusterId.ValueString()
+        filterNames = append(filterNames, "kubernetes_cluster_id = "+fmt.Sprintf("%q", data.KubernetesClusterId.ValueString()))
+    }
+    if !data.ClusterName.IsNull() && !data.ClusterName.IsUnknown() {
+        filters["clusterName"] = data.ClusterName.ValueString()
+        filterNames = append(filterNames, "cluster_name = "+fmt.Sprintf("%q", data.ClusterName.ValueString()))
+    }
+    if !data.K8sClusterEntityKey.IsNull() && !data.K8sClusterEntityKey.IsUnknown() {
+        filters["k8sClusterEntityKey"] = data.K8sClusterEntityKey.ValueString()
+        filterNames = append(filterNames, "k8s_cluster_entity_key = "+fmt.Sprintf("%q", data.K8sClusterEntityKey.ValueString()))
+    }
+    if !data.WindowStart.IsNull() && !data.WindowStart.IsUnknown() {
+        filters["windowStart"] = data.WindowStart.ValueString()
+        filterNames = append(filterNames, "window_start = "+fmt.Sprintf("%q", data.WindowStart.ValueString()))
+    }
+    if !data.WindowEnd.IsNull() && !data.WindowEnd.IsUnknown() {
+        filters["windowEnd"] = data.WindowEnd.ValueString()
+        filterNames = append(filterNames, "window_end = "+fmt.Sprintf("%q", data.WindowEnd.ValueString()))
+    }
+    if !data.Namespace.IsNull() && !data.Namespace.IsUnknown() {
+        filters["namespace"] = data.Namespace.ValueString()
+        filterNames = append(filterNames, "namespace = "+fmt.Sprintf("%q", data.Namespace.ValueString()))
+    }
+    if !data.ControllerKind.IsNull() && !data.ControllerKind.IsUnknown() {
+        filters["controllerKind"] = data.ControllerKind.ValueString()
+        filterNames = append(filterNames, "controller_kind = "+fmt.Sprintf("%q", data.ControllerKind.ValueString()))
+    }
+    if !data.ControllerName.IsNull() && !data.ControllerName.IsUnknown() {
+        filters["controllerName"] = data.ControllerName.ValueString()
+        filterNames = append(filterNames, "controller_name = "+fmt.Sprintf("%q", data.ControllerName.ValueString()))
+    }
+    if !data.PodName.IsNull() && !data.PodName.IsUnknown() {
+        filters["podName"] = data.PodName.ValueString()
+        filterNames = append(filterNames, "pod_name = "+fmt.Sprintf("%q", data.PodName.ValueString()))
+    }
+    if !data.ContainerName.IsNull() && !data.ContainerName.IsUnknown() {
+        filters["containerName"] = data.ContainerName.ValueString()
+        filterNames = append(filterNames, "container_name = "+fmt.Sprintf("%q", data.ContainerName.ValueString()))
+    }
+    if !data.NodeName.IsNull() && !data.NodeName.IsUnknown() {
+        filters["nodeName"] = data.NodeName.ValueString()
+        filterNames = append(filterNames, "node_name = "+fmt.Sprintf("%q", data.NodeName.ValueString()))
+    }
+    if !data.ProviderId.IsNull() && !data.ProviderId.IsUnknown() {
+        filters["providerId"] = data.ProviderId.ValueString()
+        filterNames = append(filterNames, "provider_id = "+fmt.Sprintf("%q", data.ProviderId.ValueString()))
+    }
+    if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+        filters["labels"] = data.Labels.ValueString()
+        filterNames = append(filterNames, "labels = "+fmt.Sprintf("%q", data.Labels.ValueString()))
+    }
+    if !data.CpuCoreHours.IsNull() && !data.CpuCoreHours.IsUnknown() {
+        filters["cpuCoreHours"] = lookupNumber(data.CpuCoreHours)
+        filterNames = append(filterNames, "cpu_core_hours = "+data.CpuCoreHours.ValueBigFloat().String())
+    }
+    if !data.CpuCoreRequestAverage.IsNull() && !data.CpuCoreRequestAverage.IsUnknown() {
+        filters["cpuCoreRequestAverage"] = lookupNumber(data.CpuCoreRequestAverage)
+        filterNames = append(filterNames, "cpu_core_request_average = "+data.CpuCoreRequestAverage.ValueBigFloat().String())
+    }
+    if !data.CpuCoreUsageAverage.IsNull() && !data.CpuCoreUsageAverage.IsUnknown() {
+        filters["cpuCoreUsageAverage"] = lookupNumber(data.CpuCoreUsageAverage)
+        filterNames = append(filterNames, "cpu_core_usage_average = "+data.CpuCoreUsageAverage.ValueBigFloat().String())
+    }
+    if !data.CpuCoreLimitAverage.IsNull() && !data.CpuCoreLimitAverage.IsUnknown() {
+        filters["cpuCoreLimitAverage"] = lookupNumber(data.CpuCoreLimitAverage)
+        filterNames = append(filterNames, "cpu_core_limit_average = "+data.CpuCoreLimitAverage.ValueBigFloat().String())
+    }
+    if !data.CpuCost.IsNull() && !data.CpuCost.IsUnknown() {
+        filters["cpuCost"] = lookupNumber(data.CpuCost)
+        filterNames = append(filterNames, "cpu_cost = "+data.CpuCost.ValueBigFloat().String())
+    }
+    if !data.GpuHours.IsNull() && !data.GpuHours.IsUnknown() {
+        filters["gpuHours"] = lookupNumber(data.GpuHours)
+        filterNames = append(filterNames, "gpu_hours = "+data.GpuHours.ValueBigFloat().String())
+    }
+    if !data.GpuCost.IsNull() && !data.GpuCost.IsUnknown() {
+        filters["gpuCost"] = lookupNumber(data.GpuCost)
+        filterNames = append(filterNames, "gpu_cost = "+data.GpuCost.ValueBigFloat().String())
+    }
+    if !data.RamByteHours.IsNull() && !data.RamByteHours.IsUnknown() {
+        filters["ramByteHours"] = lookupNumber(data.RamByteHours)
+        filterNames = append(filterNames, "ram_byte_hours = "+data.RamByteHours.ValueBigFloat().String())
+    }
+    if !data.RamBytesRequestAverage.IsNull() && !data.RamBytesRequestAverage.IsUnknown() {
+        filters["ramBytesRequestAverage"] = lookupNumber(data.RamBytesRequestAverage)
+        filterNames = append(filterNames, "ram_bytes_request_average = "+data.RamBytesRequestAverage.ValueBigFloat().String())
+    }
+    if !data.RamBytesUsageAverage.IsNull() && !data.RamBytesUsageAverage.IsUnknown() {
+        filters["ramBytesUsageAverage"] = lookupNumber(data.RamBytesUsageAverage)
+        filterNames = append(filterNames, "ram_bytes_usage_average = "+data.RamBytesUsageAverage.ValueBigFloat().String())
+    }
+    if !data.RamBytesLimitAverage.IsNull() && !data.RamBytesLimitAverage.IsUnknown() {
+        filters["ramBytesLimitAverage"] = lookupNumber(data.RamBytesLimitAverage)
+        filterNames = append(filterNames, "ram_bytes_limit_average = "+data.RamBytesLimitAverage.ValueBigFloat().String())
+    }
+    if !data.RamBytesUsageMax.IsNull() && !data.RamBytesUsageMax.IsUnknown() {
+        filters["ramBytesUsageMax"] = lookupNumber(data.RamBytesUsageMax)
+        filterNames = append(filterNames, "ram_bytes_usage_max = "+data.RamBytesUsageMax.ValueBigFloat().String())
+    }
+    if !data.RamCost.IsNull() && !data.RamCost.IsUnknown() {
+        filters["ramCost"] = lookupNumber(data.RamCost)
+        filterNames = append(filterNames, "ram_cost = "+data.RamCost.ValueBigFloat().String())
+    }
+    if !data.PvByteHours.IsNull() && !data.PvByteHours.IsUnknown() {
+        filters["pvByteHours"] = lookupNumber(data.PvByteHours)
+        filterNames = append(filterNames, "pv_byte_hours = "+data.PvByteHours.ValueBigFloat().String())
+    }
+    if !data.PvCost.IsNull() && !data.PvCost.IsUnknown() {
+        filters["pvCost"] = lookupNumber(data.PvCost)
+        filterNames = append(filterNames, "pv_cost = "+data.PvCost.ValueBigFloat().String())
+    }
+    if !data.NetworkCost.IsNull() && !data.NetworkCost.IsUnknown() {
+        filters["networkCost"] = lookupNumber(data.NetworkCost)
+        filterNames = append(filterNames, "network_cost = "+data.NetworkCost.ValueBigFloat().String())
+    }
+    if !data.LoadBalancerCost.IsNull() && !data.LoadBalancerCost.IsUnknown() {
+        filters["loadBalancerCost"] = lookupNumber(data.LoadBalancerCost)
+        filterNames = append(filterNames, "load_balancer_cost = "+data.LoadBalancerCost.ValueBigFloat().String())
+    }
+    if !data.SharedCost.IsNull() && !data.SharedCost.IsUnknown() {
+        filters["sharedCost"] = lookupNumber(data.SharedCost)
+        filterNames = append(filterNames, "shared_cost = "+data.SharedCost.ValueBigFloat().String())
+    }
+    if !data.ExternalCost.IsNull() && !data.ExternalCost.IsUnknown() {
+        filters["externalCost"] = lookupNumber(data.ExternalCost)
+        filterNames = append(filterNames, "external_cost = "+data.ExternalCost.ValueBigFloat().String())
+    }
+    if !data.TotalCost.IsNull() && !data.TotalCost.IsUnknown() {
+        filters["totalCost"] = lookupNumber(data.TotalCost)
+        filterNames = append(filterNames, "total_cost = "+data.TotalCost.ValueBigFloat().String())
+    }
+    if !data.CpuEfficiency.IsNull() && !data.CpuEfficiency.IsUnknown() {
+        filters["cpuEfficiency"] = lookupNumber(data.CpuEfficiency)
+        filterNames = append(filterNames, "cpu_efficiency = "+data.CpuEfficiency.ValueBigFloat().String())
+    }
+    if !data.RamEfficiency.IsNull() && !data.RamEfficiency.IsUnknown() {
+        filters["ramEfficiency"] = lookupNumber(data.RamEfficiency)
+        filterNames = append(filterNames, "ram_efficiency = "+data.RamEfficiency.ValueBigFloat().String())
+    }
+    if !data.TotalEfficiency.IsNull() && !data.TotalEfficiency.IsUnknown() {
+        filters["totalEfficiency"] = lookupNumber(data.TotalEfficiency)
+        filterNames = append(filterNames, "total_efficiency = "+data.TotalEfficiency.ValueBigFloat().String())
+    }
+    if !data.Currency.IsNull() && !data.Currency.IsUnknown() {
+        filters["currency"] = data.Currency.ValueString()
+        filterNames = append(filterNames, "currency = "+fmt.Sprintf("%q", data.Currency.ValueString()))
+    }
+    if !data.ShipmentId.IsNull() && !data.ShipmentId.IsUnknown() {
+        filters["shipmentId"] = data.ShipmentId.ValueString()
+        filterNames = append(filterNames, "shipment_id = "+fmt.Sprintf("%q", data.ShipmentId.ValueString()))
+    }
+    if !data.ShipmentChunk.IsNull() && !data.ShipmentChunk.IsUnknown() {
+        filters["shipmentChunk"] = lookupNumber(data.ShipmentChunk)
+        filterNames = append(filterNames, "shipment_chunk = "+data.ShipmentChunk.ValueBigFloat().String())
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a kubernetes_cost_allocation.",
+            "Look the kubernetes cost allocation up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the kubernetes cost allocation up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "projectId": true,
         "kubernetesClusterId": true,
         "clusterName": true,
@@ -357,7 +556,7 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No kubernetes_cost_allocation found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No kubernetes cost allocation found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -370,11 +569,10 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -391,11 +589,11 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No kubernetes_cost_allocation found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No kubernetes cost allocation matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one kubernetes_cost_allocation matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one kubernetes cost allocation matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -423,23 +621,6 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -28,11 +28,8 @@ type IncomingCallLogDataSource struct {
 // IncomingCallLogDataSourceModel describes the data source data model.
 type IncomingCallLogDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     IncomingCallPolicyId types.String `tfsdk:"incoming_call_policy_id"`
     CallerPhoneNumber types.String `tfsdk:"caller_phone_number"`
@@ -57,97 +54,95 @@ func (d *IncomingCallLogDataSource) Metadata(ctx context.Context, req datasource
 
 func (d *IncomingCallLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Parent log for each incoming call instance. Groups all escalation attempts together. Look up an existing incoming_call_log by `id` or by `name`.",
+        MarkdownDescription: "Parent log for each incoming call instance. Groups all escalation attempts together. Look up an existing incoming call log by `id`, or by any of its other arguments (`answered_by_user_id`, `call_cost_in_usd_cents`, `call_duration_in_seconds`, ...): each one set must match, and exactly one incoming call log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "incoming_call_policy_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Incoming Call Policy. The ID of a `oneuptime_incoming_call_policy`.",
+                Optional: true,
                 Computed: true,
             },
             "caller_phone_number": schema.StringAttribute{
-                MarkdownDescription: "Phone object",
+                MarkdownDescription: "Incoming caller's phone number.",
                 Computed: true,
             },
             "routing_phone_number": schema.StringAttribute{
-                MarkdownDescription: "Phone object",
+                MarkdownDescription: "The routing number that was called.",
                 Computed: true,
             },
             "call_provider_call_id": schema.StringAttribute{
                 MarkdownDescription: "Call provider's call identifier.",
+                Optional: true,
                 Computed: true,
             },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Current status of the incoming call.",
+                Optional: true,
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Additional status information.",
+                Optional: true,
                 Computed: true,
             },
             "call_duration_in_seconds": schema.NumberAttribute{
                 MarkdownDescription: "Total call duration in seconds.",
+                Optional: true,
                 Computed: true,
             },
             "call_cost_in_usd_cents": schema.NumberAttribute{
                 MarkdownDescription: "Total cost for this call in USD cents.",
+                Optional: true,
                 Computed: true,
             },
             "incoming_call_cost_in_usd_cents": schema.NumberAttribute{
                 MarkdownDescription: "Cost for incoming leg in USD cents.",
+                Optional: true,
                 Computed: true,
             },
             "outgoing_call_cost_in_usd_cents": schema.NumberAttribute{
                 MarkdownDescription: "Cost for all forwarding attempts in USD cents.",
+                Optional: true,
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the call started.",
                 Computed: true,
             },
             "ended_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the call ended.",
                 Computed: true,
             },
             "answered_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who answered the call. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "current_escalation_rule_order": schema.NumberAttribute{
                 MarkdownDescription: "The current escalation rule order being processed.",
+                Optional: true,
                 Computed: true,
             },
             "repeat_count": schema.NumberAttribute{
                 MarkdownDescription: "Number of times the policy has been repeated.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -184,22 +179,74 @@ func (d *IncomingCallLogDataSource) Read(ctx context.Context, req datasource.Rea
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.IncomingCallPolicyId.IsNull() && !data.IncomingCallPolicyId.IsUnknown() {
+        filters["incomingCallPolicyId"] = data.IncomingCallPolicyId.ValueString()
+        filterNames = append(filterNames, "incoming_call_policy_id = "+fmt.Sprintf("%q", data.IncomingCallPolicyId.ValueString()))
+    }
+    if !data.CallProviderCallId.IsNull() && !data.CallProviderCallId.IsUnknown() {
+        filters["callProviderCallId"] = data.CallProviderCallId.ValueString()
+        filterNames = append(filterNames, "call_provider_call_id = "+fmt.Sprintf("%q", data.CallProviderCallId.ValueString()))
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.StatusMessage.IsNull() && !data.StatusMessage.IsUnknown() {
+        filters["statusMessage"] = data.StatusMessage.ValueString()
+        filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
+    }
+    if !data.CallDurationInSeconds.IsNull() && !data.CallDurationInSeconds.IsUnknown() {
+        filters["callDurationInSeconds"] = lookupNumber(data.CallDurationInSeconds)
+        filterNames = append(filterNames, "call_duration_in_seconds = "+data.CallDurationInSeconds.ValueBigFloat().String())
+    }
+    if !data.CallCostInUsdCents.IsNull() && !data.CallCostInUsdCents.IsUnknown() {
+        filters["callCostInUSDCents"] = lookupNumber(data.CallCostInUsdCents)
+        filterNames = append(filterNames, "call_cost_in_usd_cents = "+data.CallCostInUsdCents.ValueBigFloat().String())
+    }
+    if !data.IncomingCallCostInUsdCents.IsNull() && !data.IncomingCallCostInUsdCents.IsUnknown() {
+        filters["incomingCallCostInUSDCents"] = lookupNumber(data.IncomingCallCostInUsdCents)
+        filterNames = append(filterNames, "incoming_call_cost_in_usd_cents = "+data.IncomingCallCostInUsdCents.ValueBigFloat().String())
+    }
+    if !data.OutgoingCallCostInUsdCents.IsNull() && !data.OutgoingCallCostInUsdCents.IsUnknown() {
+        filters["outgoingCallCostInUSDCents"] = lookupNumber(data.OutgoingCallCostInUsdCents)
+        filterNames = append(filterNames, "outgoing_call_cost_in_usd_cents = "+data.OutgoingCallCostInUsdCents.ValueBigFloat().String())
+    }
+    if !data.AnsweredByUserId.IsNull() && !data.AnsweredByUserId.IsUnknown() {
+        filters["answeredByUserId"] = data.AnsweredByUserId.ValueString()
+        filterNames = append(filterNames, "answered_by_user_id = "+fmt.Sprintf("%q", data.AnsweredByUserId.ValueString()))
+    }
+    if !data.CurrentEscalationRuleOrder.IsNull() && !data.CurrentEscalationRuleOrder.IsUnknown() {
+        filters["currentEscalationRuleOrder"] = lookupNumber(data.CurrentEscalationRuleOrder)
+        filterNames = append(filterNames, "current_escalation_rule_order = "+data.CurrentEscalationRuleOrder.ValueBigFloat().String())
+    }
+    if !data.RepeatCount.IsNull() && !data.RepeatCount.IsUnknown() {
+        filters["repeatCount"] = lookupNumber(data.RepeatCount)
+        filterNames = append(filterNames, "repeat_count = "+data.RepeatCount.ValueBigFloat().String())
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a incoming_call_log.",
+            "Look the incoming call log up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the incoming call log up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "incomingCallPolicyId": true,
         "callerPhoneNumber": true,
@@ -228,7 +275,7 @@ func (d *IncomingCallLogDataSource) Read(ctx context.Context, req datasource.Rea
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incoming_call_log found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incoming call log found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -241,11 +288,10 @@ func (d *IncomingCallLogDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -262,11 +308,11 @@ func (d *IncomingCallLogDataSource) Read(ctx context.Context, req datasource.Rea
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incoming_call_log found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incoming call log matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incoming_call_log matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incoming call log matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -294,23 +340,6 @@ func (d *IncomingCallLogDataSource) Read(ctx context.Context, req datasource.Rea
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -345,34 +374,6 @@ func (d *IncomingCallLogDataSource) Read(ctx context.Context, req datasource.Rea
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

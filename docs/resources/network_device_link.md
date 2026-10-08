@@ -13,9 +13,9 @@ Operator-declared links between two Network Devices, for cables LLDP and CDP can
 
 ```terraform
 resource "oneuptime_network_device_link" "example" {
-  from_device_id = "123e4567-e89b-12d3-a456-426614174000"
-  to_device_id = "123e4567-e89b-12d3-a456-426614174000"
-  name = "Example short text"
+  from_device_id = oneuptime_network_device.example.id
+  to_device_id   = oneuptime_network_device.example.id
+  name           = "Example network device link"
 }
 ```
 
@@ -23,31 +23,37 @@ resource "oneuptime_network_device_link" "example" {
 
 ### Required
 
-- `from_device_id` (String) A unique identifier for an object, represented as a UUID..
-- `to_device_id` (String) A unique identifier for an object, represented as a UUID..
+- `from_device_id` (String) ID of the Network Device this link starts from. The ID of a `oneuptime_network_device`.
+- `to_device_id` (String) ID of the Network Device this link ends at. The ID of a `oneuptime_network_device`.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `name` (String) Friendly name for this link..
-- `parent_device_id` (String) A unique identifier for an object, represented as a UUID..
-- `from_port_name` (String) Port on the starting device, as free text. Nothing resolves it to an interface row — a hand-drawn link usually exists precisely because the port is not discoverable...
-- `to_port_name` (String) Port on the ending device, as free text...
-- `monitor_id` (String) A unique identifier for an object, represented as a UUID..
+- `from_port_name` (String) Port on the starting device, as free text. Nothing resolves it to an interface row — a hand-drawn link usually exists precisely because the port is not discoverable.
+- `monitor_id` (String) ID of the Monitor whose status colors this link on the topology map. The ID of a `oneuptime_monitor`.
+- `name` (String) Friendly name for this link.
+- `parent_device_id` (String) ID of whichever end of this link is the parent. Must be the From Device or the To Device. Empty means the two are peers and the map infers the hierarchy. The ID of a `oneuptime_network_device`.
+- `to_port_name` (String) Port on the ending device, as free text.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing network device link by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_network_device_link.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_network_device_link.example <id>

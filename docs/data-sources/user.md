@@ -7,23 +7,46 @@ description: |-
 
 # oneuptime_user (Data Source)
 
-A signed up or invited OneUptime user. Look up by `id` or by `name` (must match exactly one item).
+A signed up or invited OneUptime user.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one user may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_user" "by_name" {
-  name = "example-user"
+data "oneuptime_user" "example" {
+  name = "Example user"
 }
 
+# Or by id:
 data "oneuptime_user" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
+### Optional
+
+- `company_name` (String)
+- `company_size` (String)
+- `enable_two_factor_auth` (Boolean) Is two factor authentication enabled?
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_blocked` (Boolean)
+- `is_disabled` (Boolean)
+- `is_email_verified` (Boolean)
+- `job_role` (String)
+- `name` (String)
+- `profile_picture_id` (String) The ID of a `oneuptime_file`.
+- `referral` (String)
+- `timezone` (String)
+- `two_factor_auth_enabled` (Boolean)
+
+### Read-Only
+
+- `company_phone_number` (String)
+- `created_at` (String) Date and Time when the object was created.
+- `email` (String) Email.
+- `new_unverified_temporary_email` (String)
+- `password` (String, Sensitive) Password.
+- `updated_at` (String) Date and Time when the object was updated.

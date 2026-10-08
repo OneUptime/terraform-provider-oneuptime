@@ -13,10 +13,10 @@ Notification Rule for Third Party Workspaces
 
 ```terraform
 resource "oneuptime_workspace_notification_rule" "example" {
-  name = "This is an example of longer text content that might be stored in this field."
-  event_type = "Example short text"
+  name           = "Example workspace notification rule"
+  event_type     = "Example short text"
   workspace_type = "This is an example of longer text content that might be stored in this field."
-  description = "This is an example of longer text content that might be stored in this field."
+  description    = "Managed by Terraform"
 }
 ```
 
@@ -24,29 +24,35 @@ resource "oneuptime_workspace_notification_rule" "example" {
 
 ### Required
 
-- `name` (String) Name of the Notification Rule..
-- `event_type` (String) Event Type for the Workspace like Incident Created, Monitor Status Updated, etc...
-- `workspace_type` (String) Type of Workspace - slack, microsoft teams etc...
+- `event_type` (String) Event Type for the Workspace like Incident Created, Monitor Status Updated, etc.
+- `name` (String) Name of the Notification Rule.
+- `workspace_type` (String) Type of Workspace - slack, microsoft teams etc.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Description of the Notification Rule..
-- `notification_rule` (String) Notification Rules for the Workspace..
+- `description` (String) Description of the Notification Rule.
+- `notification_rule` (String) Notification Rules for the Workspace. A JSON value: write it with `jsonencode()`.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing workspace notification rule by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_workspace_notification_rule.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_workspace_notification_rule.example <id>

@@ -64,13 +64,10 @@ type KubernetesClusterResourceModel struct {
     AiKubectlCommandAllowlist JSONSubsetValue `tfsdk:"ai_kubectl_command_allowlist"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     AiAccessLastVerifiedAt RFC3339Value `tfsdk:"ai_access_last_verified_at"`
     AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
     AiAccessConfiguredAt RFC3339Value `tfsdk:"ai_access_configured_at"`
@@ -82,19 +79,23 @@ func (r *KubernetesClusterResource) Metadata(ctx context.Context, req resource.M
 }
 
 func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *KubernetesClusterResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Kubernetes Clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime kubernetes-agent sends metrics, or can be manually registered.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -125,7 +126,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this Kubernetes cluster archived? Archived Kubernetes clusters are hidden from lists but keep collecting telemetry..",
+                MarkdownDescription: "Is this Kubernetes cluster archived? Archived Kubernetes clusters are hidden from lists but keep collecting telemetry.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -134,7 +135,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -143,7 +144,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry data for this Kubernetes cluster. Leave blank to use the project-wide default..",
+                MarkdownDescription: "Number of days to retain telemetry data for this Kubernetes cluster. Leave blank to use the project-wide default.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -151,7 +152,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this Kubernetes cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the cluster default, then the project's retention settings..",
+                MarkdownDescription: "Per-pillar retention overrides for this Kubernetes cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the cluster default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -179,7 +180,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When metrics were last received from this cluster.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -212,7 +213,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "ai_access_runner_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Runner OneUptime AI uses to run kubectl against this cluster. Another cluster's in-cluster Runner cannot be bound. Binding a Runner, or switching to a different one, needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can clear it. The ID of a `oneuptime_runner`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -220,7 +221,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "ai_access_credential_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Kubernetes credential the AI access Runner uses for this cluster; the credential must be assigned to that Runner. Empty for the in-cluster Runner, which is never given a credential. Binding a credential needs Project Owner, Project Admin or Edit Auto Remediation Rule, and also permission to read credentials (Project Owner, Project Admin or Read Runbook Credential); anyone who may edit the cluster can clear it. The ID of a `oneuptime_runbook_credential`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -228,7 +229,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
-                MarkdownDescription: "When on, OneUptime AI runs read-only kubectl commands (get, describe, logs, events, top, rollout status) on this cluster, through the cluster's Kubernetes AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the cluster can turn it on or off..",
+                MarkdownDescription: "When on, OneUptime AI runs read-only kubectl commands (get, describe, logs, events, top, rollout status) on this cluster, through the cluster's Kubernetes AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the cluster can turn it on or off.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -237,7 +238,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "ai_remediation_mode": schema.StringAttribute{
-                MarkdownDescription: "Disabled: AI never proposes or runs a change on this cluster. RequireApproval: AI composes a kubectl plan and a human approves it with one click before anything runs. Any follow-up plan asks again. Automatic: AI runs safe changes without a human — each on ONE named object: rollout restart/undo/pause/resume of one workload, scale one workload above zero, delete one named pod, cordon/uncordon one node, label/annotate one pod or workload with unreserved keys. A riskier change (patch, set image, drain, taint, scale to zero, deleting workloads or jobs, anything touching several objects) never runs without one: when the round could only find riskier fixes it ends by proposing exactly those for one-click approval; when it also ran safe fixes, a riskier fix is proposed only if verification shows the safe ones did not recover the signal (the follow-up round, which asks). Shapes on the cluster's kubectl allowlist run on their own. BypassApproval: AI does not ask. Every change the policy allows — safe AND riskier — runs on its own, follow-up rounds included, except for what always asks (below). In EVERY mode, Bypass approval included: destructive commands (Denied tier) never run; a write in a protected namespace (kube-system, kube-public, kube-node-lease), a node drain, a node taint and a patch of a Node always need a human; the in-cluster Runner never changes its own namespace or anything outside the namespaces its chart may write; and an unattended run becomes a proposal when the hourly per-cluster circuit breaker trips or another unattended round already holds the cluster. Anyone who may edit the cluster can lower the mode (to Disabled, RequireApproval, or from BypassApproval to Automatic); raising it to Automatic or BypassApproval needs Project Owner, Project Admin or Edit Auto Remediation Rule..",
+                MarkdownDescription: "Disabled: AI never proposes or runs a change on this cluster. RequireApproval: AI composes a kubectl plan and a human approves it with one click before anything runs. Any follow-up plan asks again. Automatic: AI runs safe changes without a human — each on ONE named object: rollout restart/undo/pause/resume of one workload, scale one workload above zero, delete one named pod, cordon/uncordon one node, label/annotate one pod or workload with unreserved keys. A riskier change (patch, set image, drain, taint, scale to zero, deleting workloads or jobs, anything touching several objects) never runs without one: when the round could only find riskier fixes it ends by proposing exactly those for one-click approval; when it also ran safe fixes, a riskier fix is proposed only if verification shows the safe ones did not recover the signal (the follow-up round, which asks). Shapes on the cluster's kubectl allowlist run on their own. BypassApproval: AI does not ask. Every change the policy allows — safe AND riskier — runs on its own, follow-up rounds included, except for what always asks (below). In EVERY mode, Bypass approval included: destructive commands (Denied tier) never run; a write in a protected namespace (kube-system, kube-public, kube-node-lease), a node drain, a node taint and a patch of a Node always need a human; the in-cluster Runner never changes its own namespace or anything outside the namespaces its chart may write; and an unattended run becomes a proposal when the hourly per-cluster circuit breaker trips or another unattended round already holds the cluster. Anyone who may edit the cluster can lower the mode (to Disabled, RequireApproval, or from BypassApproval to Automatic); raising it to Automatic or BypassApproval needs Project Owner, Project Admin or Edit Auto Remediation Rule.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Disabled"),
@@ -246,7 +247,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "ai_kubectl_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of kubectl command patterns that Automatic mode may run without approval even though they are riskier changes, for example: [\"kubectl set image deployment/web * -n web\"]. A pattern is compared with the command word by word: * stands for exactly one word (an image, a name), never for extra objects, flags or a second -n, every flag the command uses must be written out in the pattern, and the leading \"kubectl\" is optional. At most 100 patterns of at most 500 characters each; a pattern that is not one kubectl command line is refused. Destructive commands (Denied tier) never run regardless, and a write in a protected namespace (kube-system, kube-public, kube-node-lease) or a node drain still needs a human. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can remove patterns or clear the list..",
+                MarkdownDescription: "Optional JSON array of kubectl command patterns that Automatic mode may run without approval even though they are riskier changes, for example: [\"kubectl set image deployment/web * -n web\"]. A pattern is compared with the command word by word: * stands for exactly one word (an image, a name), never for extra objects, flags or a second -n, every flag the command uses must be written out in the pattern, and the leading \"kubectl\" is optional. At most 100 patterns of at most 500 characters each; a pattern that is not one kubectl command line is refused. Destructive commands (Denied tier) never run regardless, and a write in a protected namespace (kube-system, kube-public, kube-node-lease) or a node drain still needs a human. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -258,22 +259,16 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -281,38 +276,37 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this Kubernetes cluster archived?",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a kubectl command from OneUptime AI last succeeded on this cluster. Set by the server.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "ai_access_last_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent failure OneUptime AI hit while running kubectl on this cluster, kept until the next successful command. Set by the server..",
+                MarkdownDescription: "The most recent failure OneUptime AI hit while running kubectl on this cluster, kept until the next successful command. Set by the server.",
                 Computed: true,
             },
             "ai_access_configured_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When OneUptime AI access to this cluster was first configured: by the in-cluster Runner's first registration, or by anyone saving an AI access setting. Set by the server; never cleared, so an in-cluster Runner that registers later never overwrites a setting an operator chose.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "ai_access_runner_bound_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a Runner was first bound to this cluster for OneUptime AI access. Set by the server; never cleared, so a cluster whose Runner was cleared or deleted is not silently re-bound when the in-cluster Runner registers again.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -350,6 +344,14 @@ func (r *KubernetesClusterResource) Create(ctx context.Context, req resource.Cre
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config KubernetesClusterResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -452,13 +454,10 @@ func (r *KubernetesClusterResource) Create(ctx context.Context, req resource.Cre
         "aiKubectlCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
@@ -1052,34 +1051,6 @@ func (r *KubernetesClusterResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1202,43 +1173,6 @@ func (r *KubernetesClusterResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
@@ -1317,6 +1251,9 @@ func (r *KubernetesClusterResource) Create(ctx context.Context, req resource.Cre
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1358,13 +1295,10 @@ func (r *KubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
         "aiKubectlCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
@@ -1959,34 +1893,6 @@ func (r *KubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2109,43 +2015,6 @@ func (r *KubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
@@ -2244,6 +2113,14 @@ func (r *KubernetesClusterResource) Update(ctx context.Context, req resource.Upd
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config KubernetesClusterResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     kubernetesClusterRequest := map[string]interface{}{
@@ -2363,13 +2240,10 @@ func (r *KubernetesClusterResource) Update(ctx context.Context, req resource.Upd
         "aiKubectlCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
@@ -2958,34 +2832,6 @@ func (r *KubernetesClusterResource) Update(ctx context.Context, req resource.Upd
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3108,43 +2954,6 @@ func (r *KubernetesClusterResource) Update(ctx context.Context, req resource.Upd
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
@@ -3222,6 +3031,9 @@ func (r *KubernetesClusterResource) Update(ctx context.Context, req resource.Upd
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3258,6 +3070,68 @@ func (r *KubernetesClusterResource) Delete(ctx context.Context, req resource.Del
 
 func (r *KubernetesClusterResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *KubernetesClusterResource) keepPlannedValues(data *KubernetesClusterResourceModel, plan *KubernetesClusterResourceModel, config *KubernetesClusterResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.ProviderValue.IsNull() && !plan.ProviderValue.IsUnknown() {
+        data.ProviderValue = plan.ProviderValue
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.RetainTelemetryDataForDays.IsNull() && !plan.RetainTelemetryDataForDays.IsUnknown() {
+        data.RetainTelemetryDataForDays = plan.RetainTelemetryDataForDays
+    }
+    if config.TelemetryRetentionConfig.IsNull() && !plan.TelemetryRetentionConfig.IsUnknown() {
+        data.TelemetryRetentionConfig = plan.TelemetryRetentionConfig
+    }
+    if config.OtelCollectorStatus.IsNull() && !plan.OtelCollectorStatus.IsUnknown() {
+        data.OtelCollectorStatus = plan.OtelCollectorStatus
+    }
+    if config.AgentVersion.IsNull() && !plan.AgentVersion.IsUnknown() {
+        data.AgentVersion = plan.AgentVersion
+    }
+    if config.LastSeenAt.IsNull() && !plan.LastSeenAt.IsUnknown() {
+        data.LastSeenAt = plan.LastSeenAt
+    }
+    if config.NodeCount.IsNull() && !plan.NodeCount.IsUnknown() {
+        data.NodeCount = plan.NodeCount
+    }
+    if config.PodCount.IsNull() && !plan.PodCount.IsUnknown() {
+        data.PodCount = plan.PodCount
+    }
+    if config.NamespaceCount.IsNull() && !plan.NamespaceCount.IsUnknown() {
+        data.NamespaceCount = plan.NamespaceCount
+    }
+    if config.AiAccessRunnerId.IsNull() && !plan.AiAccessRunnerId.IsUnknown() {
+        data.AiAccessRunnerId = plan.AiAccessRunnerId
+    }
+    if config.AiAccessCredentialId.IsNull() && !plan.AiAccessCredentialId.IsUnknown() {
+        data.AiAccessCredentialId = plan.AiAccessCredentialId
+    }
+    if config.IsAiInvestigationEnabled.IsNull() && !plan.IsAiInvestigationEnabled.IsUnknown() {
+        data.IsAiInvestigationEnabled = plan.IsAiInvestigationEnabled
+    }
+    if config.AiRemediationMode.IsNull() && !plan.AiRemediationMode.IsUnknown() {
+        data.AiRemediationMode = plan.AiRemediationMode
+    }
+    if config.AiKubectlCommandAllowlist.IsNull() && !plan.AiKubectlCommandAllowlist.IsUnknown() {
+        data.AiKubectlCommandAllowlist = plan.AiKubectlCommandAllowlist
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

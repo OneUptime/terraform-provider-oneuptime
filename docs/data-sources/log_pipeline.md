@@ -7,34 +7,37 @@ description: |-
 
 # oneuptime_log_pipeline (Data Source)
 
-Configure server-side log processing pipelines that transform logs at ingest time. Look up by `id` or by `name` (must match exactly one item).
+Configure server-side log processing pipelines that transform logs at ingest time.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one log pipeline may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_log_pipeline" "by_name" {
-  name = "example-log_pipeline"
+data "oneuptime_log_pipeline" "example" {
+  name = "Example log pipeline"
 }
 
+# Or by id:
 data "oneuptime_log_pipeline" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Description of what this log pipeline does... Computed.
-- `filter_query` (String) Filter expression that determines which logs this pipeline applies to... Computed.
-- `is_enabled` (Bool) Whether this log pipeline is active... Computed.
-- `sort_order` (Number) Where this pipeline runs among the project's log pipelines, lowest number first. A new pipeline is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `created_by_user_id` (String) ID of the user who created this log pipeline. The ID of a `oneuptime_user` (see the data source).
+- `description` (String) Description of what this log pipeline does.
+- `filter_query` (String) Filter expression that determines which logs this pipeline applies to.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_enabled` (Boolean) Whether this log pipeline is active.
+- `name` (String) Friendly name for this log pipeline.
+- `sort_order` (Number) Where this pipeline runs among the project's log pipelines, lowest number first. A new pipeline is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of the project this log pipeline belongs to. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

@@ -30,7 +30,6 @@ type SecurityEventDataSource struct {
 // SecurityEventDataSourceModel describes the data source data model.
 type SecurityEventDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
     PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
@@ -71,148 +70,170 @@ func (d *SecurityEventDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *SecurityEventDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "API endpoints for Security Event Look up an existing security_event by `id` or by `name`.",
+        MarkdownDescription: "API endpoints for Security Event Look up an existing security event by `id`, or by any of its other arguments (`activity_name`, `attributes`, `category_name`, ...): each one set must match, and exactly one security event may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Project ID",
+                MarkdownDescription: "Project ID.",
                 Computed: true,
             },
             "primary_entity_id": schema.StringAttribute{
-                MarkdownDescription: "Source ID",
+                MarkdownDescription: "Source ID.",
+                Optional: true,
                 Computed: true,
             },
             "primary_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Source Type",
+                MarkdownDescription: "Source Type.",
+                Optional: true,
                 Computed: true,
             },
             "time": schema.StringAttribute{
-                MarkdownDescription: "Time",
+                MarkdownDescription: "Time.",
+                Optional: true,
                 Computed: true,
             },
             "event_uid": schema.StringAttribute{
-                MarkdownDescription: "Event UID",
+                MarkdownDescription: "Event UID.",
+                Optional: true,
                 Computed: true,
             },
             "category_uid": schema.NumberAttribute{
-                MarkdownDescription: "Category UID",
+                MarkdownDescription: "Category UID.",
+                Optional: true,
                 Computed: true,
             },
             "category_name": schema.StringAttribute{
-                MarkdownDescription: "Category",
+                MarkdownDescription: "Category.",
+                Optional: true,
                 Computed: true,
             },
             "class_uid": schema.NumberAttribute{
-                MarkdownDescription: "Class UID",
+                MarkdownDescription: "Class UID.",
+                Optional: true,
                 Computed: true,
             },
             "class_name": schema.StringAttribute{
-                MarkdownDescription: "Event Class",
+                MarkdownDescription: "Event Class.",
+                Optional: true,
                 Computed: true,
             },
             "activity_name": schema.StringAttribute{
-                MarkdownDescription: "Activity",
+                MarkdownDescription: "Activity.",
+                Optional: true,
                 Computed: true,
             },
             "severity_id": schema.NumberAttribute{
-                MarkdownDescription: "Severity ID",
+                MarkdownDescription: "Severity ID.",
+                Optional: true,
                 Computed: true,
             },
             "severity_name": schema.StringAttribute{
-                MarkdownDescription: "Severity",
+                MarkdownDescription: "Severity.",
+                Optional: true,
                 Computed: true,
             },
             "status_name": schema.StringAttribute{
-                MarkdownDescription: "Status",
+                MarkdownDescription: "Status.",
+                Optional: true,
                 Computed: true,
             },
             "message": schema.StringAttribute{
-                MarkdownDescription: "Message",
+                MarkdownDescription: "Message.",
+                Optional: true,
                 Computed: true,
             },
             "vendor_name": schema.StringAttribute{
-                MarkdownDescription: "Vendor",
+                MarkdownDescription: "Vendor.",
+                Optional: true,
                 Computed: true,
             },
             "product_name": schema.StringAttribute{
-                MarkdownDescription: "Product",
+                MarkdownDescription: "Product.",
+                Optional: true,
                 Computed: true,
             },
             "rule_id": schema.StringAttribute{
-                MarkdownDescription: "Rule ID",
+                MarkdownDescription: "Rule ID.",
+                Optional: true,
                 Computed: true,
             },
             "rule_name": schema.StringAttribute{
-                MarkdownDescription: "Rule Name",
+                MarkdownDescription: "Rule Name.",
+                Optional: true,
                 Computed: true,
             },
             "mitre_tactics": schema.SetAttribute{
-                MarkdownDescription: "MITRE Tactics",
+                MarkdownDescription: "MITRE Tactics.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "mitre_techniques": schema.SetAttribute{
-                MarkdownDescription: "MITRE Techniques",
+                MarkdownDescription: "MITRE Techniques.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "principal_user": schema.StringAttribute{
-                MarkdownDescription: "Principal User",
+                MarkdownDescription: "Principal User.",
+                Optional: true,
                 Computed: true,
             },
             "principal_host": schema.StringAttribute{
-                MarkdownDescription: "Principal Host",
+                MarkdownDescription: "Principal Host.",
+                Optional: true,
                 Computed: true,
             },
             "principal_ip": schema.StringAttribute{
-                MarkdownDescription: "Principal IP",
+                MarkdownDescription: "Principal IP.",
+                Optional: true,
                 Computed: true,
             },
             "principal_process": schema.StringAttribute{
-                MarkdownDescription: "Principal Process",
+                MarkdownDescription: "Principal Process.",
+                Optional: true,
                 Computed: true,
             },
             "target_user": schema.StringAttribute{
-                MarkdownDescription: "Target User",
+                MarkdownDescription: "Target User.",
+                Optional: true,
                 Computed: true,
             },
             "target_host": schema.StringAttribute{
-                MarkdownDescription: "Target Host",
+                MarkdownDescription: "Target Host.",
+                Optional: true,
                 Computed: true,
             },
             "target_ip": schema.StringAttribute{
-                MarkdownDescription: "Target IP",
+                MarkdownDescription: "Target IP.",
+                Optional: true,
                 Computed: true,
             },
             "target_port": schema.NumberAttribute{
-                MarkdownDescription: "Target Port",
+                MarkdownDescription: "Target Port.",
+                Optional: true,
                 Computed: true,
             },
             "target_resource": schema.StringAttribute{
-                MarkdownDescription: "Target Resource",
+                MarkdownDescription: "Target Resource.",
+                Optional: true,
                 Computed: true,
             },
             "observables": schema.SetAttribute{
-                MarkdownDescription: "Observables",
+                MarkdownDescription: "Observables.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "attributes": schema.StringAttribute{
-                MarkdownDescription: "Attributes",
+                MarkdownDescription: "Attributes.",
+                Optional: true,
                 Computed: true,
             },
             "attribute_keys": schema.SetAttribute{
-                MarkdownDescription: "Attribute Keys",
+                MarkdownDescription: "Attribute Keys.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -250,18 +271,136 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.PrimaryEntityId.IsNull() && !data.PrimaryEntityId.IsUnknown() {
+        filters["primaryEntityId"] = data.PrimaryEntityId.ValueString()
+        filterNames = append(filterNames, "primary_entity_id = "+fmt.Sprintf("%q", data.PrimaryEntityId.ValueString()))
+    }
+    if !data.PrimaryEntityType.IsNull() && !data.PrimaryEntityType.IsUnknown() {
+        filters["primaryEntityType"] = data.PrimaryEntityType.ValueString()
+        filterNames = append(filterNames, "primary_entity_type = "+fmt.Sprintf("%q", data.PrimaryEntityType.ValueString()))
+    }
+    if !data.Time.IsNull() && !data.Time.IsUnknown() {
+        filters["time"] = data.Time.ValueString()
+        filterNames = append(filterNames, "time = "+fmt.Sprintf("%q", data.Time.ValueString()))
+    }
+    if !data.EventUid.IsNull() && !data.EventUid.IsUnknown() {
+        filters["eventUid"] = data.EventUid.ValueString()
+        filterNames = append(filterNames, "event_uid = "+fmt.Sprintf("%q", data.EventUid.ValueString()))
+    }
+    if !data.CategoryUid.IsNull() && !data.CategoryUid.IsUnknown() {
+        filters["categoryUid"] = lookupNumber(data.CategoryUid)
+        filterNames = append(filterNames, "category_uid = "+data.CategoryUid.ValueBigFloat().String())
+    }
+    if !data.CategoryName.IsNull() && !data.CategoryName.IsUnknown() {
+        filters["categoryName"] = data.CategoryName.ValueString()
+        filterNames = append(filterNames, "category_name = "+fmt.Sprintf("%q", data.CategoryName.ValueString()))
+    }
+    if !data.ClassUid.IsNull() && !data.ClassUid.IsUnknown() {
+        filters["classUid"] = lookupNumber(data.ClassUid)
+        filterNames = append(filterNames, "class_uid = "+data.ClassUid.ValueBigFloat().String())
+    }
+    if !data.ClassName.IsNull() && !data.ClassName.IsUnknown() {
+        filters["className"] = data.ClassName.ValueString()
+        filterNames = append(filterNames, "class_name = "+fmt.Sprintf("%q", data.ClassName.ValueString()))
+    }
+    if !data.ActivityName.IsNull() && !data.ActivityName.IsUnknown() {
+        filters["activityName"] = data.ActivityName.ValueString()
+        filterNames = append(filterNames, "activity_name = "+fmt.Sprintf("%q", data.ActivityName.ValueString()))
+    }
+    if !data.SeverityId.IsNull() && !data.SeverityId.IsUnknown() {
+        filters["severityId"] = lookupNumber(data.SeverityId)
+        filterNames = append(filterNames, "severity_id = "+data.SeverityId.ValueBigFloat().String())
+    }
+    if !data.SeverityName.IsNull() && !data.SeverityName.IsUnknown() {
+        filters["severityName"] = data.SeverityName.ValueString()
+        filterNames = append(filterNames, "severity_name = "+fmt.Sprintf("%q", data.SeverityName.ValueString()))
+    }
+    if !data.StatusName.IsNull() && !data.StatusName.IsUnknown() {
+        filters["statusName"] = data.StatusName.ValueString()
+        filterNames = append(filterNames, "status_name = "+fmt.Sprintf("%q", data.StatusName.ValueString()))
+    }
+    if !data.Message.IsNull() && !data.Message.IsUnknown() {
+        filters["message"] = data.Message.ValueString()
+        filterNames = append(filterNames, "message = "+fmt.Sprintf("%q", data.Message.ValueString()))
+    }
+    if !data.VendorName.IsNull() && !data.VendorName.IsUnknown() {
+        filters["vendorName"] = data.VendorName.ValueString()
+        filterNames = append(filterNames, "vendor_name = "+fmt.Sprintf("%q", data.VendorName.ValueString()))
+    }
+    if !data.ProductName.IsNull() && !data.ProductName.IsUnknown() {
+        filters["productName"] = data.ProductName.ValueString()
+        filterNames = append(filterNames, "product_name = "+fmt.Sprintf("%q", data.ProductName.ValueString()))
+    }
+    if !data.RuleId.IsNull() && !data.RuleId.IsUnknown() {
+        filters["ruleId"] = data.RuleId.ValueString()
+        filterNames = append(filterNames, "rule_id = "+fmt.Sprintf("%q", data.RuleId.ValueString()))
+    }
+    if !data.RuleName.IsNull() && !data.RuleName.IsUnknown() {
+        filters["ruleName"] = data.RuleName.ValueString()
+        filterNames = append(filterNames, "rule_name = "+fmt.Sprintf("%q", data.RuleName.ValueString()))
+    }
+    if !data.PrincipalUser.IsNull() && !data.PrincipalUser.IsUnknown() {
+        filters["principalUser"] = data.PrincipalUser.ValueString()
+        filterNames = append(filterNames, "principal_user = "+fmt.Sprintf("%q", data.PrincipalUser.ValueString()))
+    }
+    if !data.PrincipalHost.IsNull() && !data.PrincipalHost.IsUnknown() {
+        filters["principalHost"] = data.PrincipalHost.ValueString()
+        filterNames = append(filterNames, "principal_host = "+fmt.Sprintf("%q", data.PrincipalHost.ValueString()))
+    }
+    if !data.PrincipalIp.IsNull() && !data.PrincipalIp.IsUnknown() {
+        filters["principalIp"] = data.PrincipalIp.ValueString()
+        filterNames = append(filterNames, "principal_ip = "+fmt.Sprintf("%q", data.PrincipalIp.ValueString()))
+    }
+    if !data.PrincipalProcess.IsNull() && !data.PrincipalProcess.IsUnknown() {
+        filters["principalProcess"] = data.PrincipalProcess.ValueString()
+        filterNames = append(filterNames, "principal_process = "+fmt.Sprintf("%q", data.PrincipalProcess.ValueString()))
+    }
+    if !data.TargetUser.IsNull() && !data.TargetUser.IsUnknown() {
+        filters["targetUser"] = data.TargetUser.ValueString()
+        filterNames = append(filterNames, "target_user = "+fmt.Sprintf("%q", data.TargetUser.ValueString()))
+    }
+    if !data.TargetHost.IsNull() && !data.TargetHost.IsUnknown() {
+        filters["targetHost"] = data.TargetHost.ValueString()
+        filterNames = append(filterNames, "target_host = "+fmt.Sprintf("%q", data.TargetHost.ValueString()))
+    }
+    if !data.TargetIp.IsNull() && !data.TargetIp.IsUnknown() {
+        filters["targetIp"] = data.TargetIp.ValueString()
+        filterNames = append(filterNames, "target_ip = "+fmt.Sprintf("%q", data.TargetIp.ValueString()))
+    }
+    if !data.TargetPort.IsNull() && !data.TargetPort.IsUnknown() {
+        filters["targetPort"] = lookupNumber(data.TargetPort)
+        filterNames = append(filterNames, "target_port = "+data.TargetPort.ValueBigFloat().String())
+    }
+    if !data.TargetResource.IsNull() && !data.TargetResource.IsUnknown() {
+        filters["targetResource"] = data.TargetResource.ValueString()
+        filterNames = append(filterNames, "target_resource = "+fmt.Sprintf("%q", data.TargetResource.ValueString()))
+    }
+    if !data.Attributes.IsNull() && !data.Attributes.IsUnknown() {
+        filters["attributes"] = data.Attributes.ValueString()
+        filterNames = append(filterNames, "attributes = "+fmt.Sprintf("%q", data.Attributes.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a security_event.",
+            "Look the security event up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the security event up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "projectId": true,
         "primaryEntityId": true,
         "primaryEntityType": true,
@@ -306,7 +445,7 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security_event found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security event found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -319,11 +458,10 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -340,11 +478,11 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security_event found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security event matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one security_event matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one security event matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -372,23 +510,6 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

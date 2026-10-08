@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -30,11 +29,8 @@ type StatusPageSubscriberDataSource struct {
 // StatusPageSubscriberDataSourceModel describes the data source data model.
 type StatusPageSubscriberDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
     SubscriberEmail types.String `tfsdk:"subscriber_email"`
@@ -61,106 +57,105 @@ func (d *StatusPageSubscriberDataSource) Metadata(ctx context.Context, req datas
 
 func (d *StatusPageSubscriberDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Subscriber that subscribed to your status page Look up an existing status_page_subscriber by `id` or by `name`.",
+        MarkdownDescription: "Subscriber that subscribed to your status page Look up an existing status page subscriber by `id`, or by any of its other arguments (`created_by_user_id`, `internal_note`, `is_added_by_team`, ...): each one set must match, and exactly one status page subscriber may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
+                Optional: true,
                 Computed: true,
             },
             "subscriber_email": schema.StringAttribute{
-                MarkdownDescription: "Email object",
+                MarkdownDescription: "Email address of the subscriber.",
                 Computed: true,
             },
             "subscriber_phone": schema.StringAttribute{
-                MarkdownDescription: "Phone object",
+                MarkdownDescription: "Phone number of subscriber.",
                 Computed: true,
             },
             "subscriber_webhook": schema.StringAttribute{
                 MarkdownDescription: "Webhook to ping when events happen on Status Page.",
+                Optional: true,
                 Computed: true,
             },
             "slack_workspace_name": schema.StringAttribute{
                 MarkdownDescription: "Name of the Slack workspace for validation and identification.",
+                Optional: true,
                 Computed: true,
             },
             "microsoft_teams_workspace_name": schema.StringAttribute{
                 MarkdownDescription: "Name of the Microsoft Teams workspace for validation and identification.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_subscription_confirmed": schema.BoolAttribute{
                 MarkdownDescription: "Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email).",
+                Optional: true,
                 Computed: true,
             },
             "is_unsubscribed": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Unsubscribed?.",
+                MarkdownDescription: "Is Subscriber Unsubscribed?",
+                Optional: true,
                 Computed: true,
             },
             "unsubscribed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this subscriber unsubscribed. Set by OneUptime when Is Unsubscribed is turned on, and cleared when it is turned off; any value sent for it is ignored.",
                 Computed: true,
             },
             "is_added_by_team": schema.BoolAttribute{
-                MarkdownDescription: "Whether your team added this subscriber (from the dashboard, with an API key or by a workflow) rather than the subscriber signing up on the status page. Set by OneUptime when the subscriber is created; any value sent for it is ignored..",
+                MarkdownDescription: "Whether your team added this subscriber (from the dashboard, with an API key or by a workflow) rather than the subscriber signing up on the status page. Set by OneUptime when the subscriber is created; any value sent for it is ignored.",
+                Optional: true,
                 Computed: true,
             },
             "send_you_have_subscribed_message": schema.BoolAttribute{
-                MarkdownDescription: "Send You Have Subscribed Message when subscriber is created?.",
+                MarkdownDescription: "Send You Have Subscribed Message when subscriber is created?",
+                Optional: true,
                 Computed: true,
             },
             "is_subscribed_to_all_resources": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Subscribed to All Resources on this status page?.",
+                MarkdownDescription: "Is Subscriber Subscribed to All Resources on this status page?",
+                Optional: true,
                 Computed: true,
             },
             "is_subscribed_to_all_event_types": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?.",
+                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?",
+                Optional: true,
                 Computed: true,
             },
             "status_page_resources": schema.SetAttribute{
-                MarkdownDescription: "Relation to Status Page Resources where this subscriber is subscribed to.",
+                MarkdownDescription: "Relation to Status Page Resources where this subscriber is subscribed to. IDs of `oneuptime_status_page_resource` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "status_page_event_types": schema.StringAttribute{
-                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements).",
+                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "internal_note": schema.StringAttribute{
-                MarkdownDescription: "Any notes or text you would like to add to this subscriber object. This is for internal use only..",
+                MarkdownDescription: "Any notes or text you would like to add to this subscriber object. This is for internal use only.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -197,22 +192,78 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.StatusPageId.IsNull() && !data.StatusPageId.IsUnknown() {
+        filters["statusPageId"] = data.StatusPageId.ValueString()
+        filterNames = append(filterNames, "status_page_id = "+fmt.Sprintf("%q", data.StatusPageId.ValueString()))
+    }
+    if !data.SubscriberWebhook.IsNull() && !data.SubscriberWebhook.IsUnknown() {
+        filters["subscriberWebhook"] = data.SubscriberWebhook.ValueString()
+        filterNames = append(filterNames, "subscriber_webhook = "+fmt.Sprintf("%q", data.SubscriberWebhook.ValueString()))
+    }
+    if !data.SlackWorkspaceName.IsNull() && !data.SlackWorkspaceName.IsUnknown() {
+        filters["slackWorkspaceName"] = data.SlackWorkspaceName.ValueString()
+        filterNames = append(filterNames, "slack_workspace_name = "+fmt.Sprintf("%q", data.SlackWorkspaceName.ValueString()))
+    }
+    if !data.MicrosoftTeamsWorkspaceName.IsNull() && !data.MicrosoftTeamsWorkspaceName.IsUnknown() {
+        filters["microsoftTeamsWorkspaceName"] = data.MicrosoftTeamsWorkspaceName.ValueString()
+        filterNames = append(filterNames, "microsoft_teams_workspace_name = "+fmt.Sprintf("%q", data.MicrosoftTeamsWorkspaceName.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsSubscriptionConfirmed.IsNull() && !data.IsSubscriptionConfirmed.IsUnknown() {
+        filters["isSubscriptionConfirmed"] = data.IsSubscriptionConfirmed.ValueBool()
+        filterNames = append(filterNames, "is_subscription_confirmed = "+fmt.Sprintf("%t", data.IsSubscriptionConfirmed.ValueBool()))
+    }
+    if !data.IsUnsubscribed.IsNull() && !data.IsUnsubscribed.IsUnknown() {
+        filters["isUnsubscribed"] = data.IsUnsubscribed.ValueBool()
+        filterNames = append(filterNames, "is_unsubscribed = "+fmt.Sprintf("%t", data.IsUnsubscribed.ValueBool()))
+    }
+    if !data.IsAddedByTeam.IsNull() && !data.IsAddedByTeam.IsUnknown() {
+        filters["isAddedByTeam"] = data.IsAddedByTeam.ValueBool()
+        filterNames = append(filterNames, "is_added_by_team = "+fmt.Sprintf("%t", data.IsAddedByTeam.ValueBool()))
+    }
+    if !data.SendYouHaveSubscribedMessage.IsNull() && !data.SendYouHaveSubscribedMessage.IsUnknown() {
+        filters["sendYouHaveSubscribedMessage"] = data.SendYouHaveSubscribedMessage.ValueBool()
+        filterNames = append(filterNames, "send_you_have_subscribed_message = "+fmt.Sprintf("%t", data.SendYouHaveSubscribedMessage.ValueBool()))
+    }
+    if !data.IsSubscribedToAllResources.IsNull() && !data.IsSubscribedToAllResources.IsUnknown() {
+        filters["isSubscribedToAllResources"] = data.IsSubscribedToAllResources.ValueBool()
+        filterNames = append(filterNames, "is_subscribed_to_all_resources = "+fmt.Sprintf("%t", data.IsSubscribedToAllResources.ValueBool()))
+    }
+    if !data.IsSubscribedToAllEventTypes.IsNull() && !data.IsSubscribedToAllEventTypes.IsUnknown() {
+        filters["isSubscribedToAllEventTypes"] = data.IsSubscribedToAllEventTypes.ValueBool()
+        filterNames = append(filterNames, "is_subscribed_to_all_event_types = "+fmt.Sprintf("%t", data.IsSubscribedToAllEventTypes.ValueBool()))
+    }
+    if !data.InternalNote.IsNull() && !data.InternalNote.IsUnknown() {
+        filters["internalNote"] = data.InternalNote.ValueString()
+        filterNames = append(filterNames, "internal_note = "+fmt.Sprintf("%q", data.InternalNote.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a status_page_subscriber.",
+            "Look the status page subscriber up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the status page subscriber up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "statusPageId": true,
         "subscriberEmail": true,
@@ -243,7 +294,7 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status_page_subscriber found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status page subscriber found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -256,11 +307,10 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -277,11 +327,11 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status_page_subscriber found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status page subscriber matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one status_page_subscriber matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one status page subscriber matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -309,23 +359,6 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -360,34 +393,6 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

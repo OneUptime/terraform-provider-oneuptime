@@ -51,10 +51,7 @@ type StatusPageOidcResourceModel struct {
     IsTested types.Bool `tfsdk:"is_tested"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (r *StatusPageOidcResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -62,26 +59,30 @@ func (r *StatusPageOidcResource) Metadata(ctx context.Context, req resource.Meta
 }
 
 func (r *StatusPageOidcResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *StatusPageOidcResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Manage OpenID Connect (OIDC) authentication for your status page",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -95,31 +96,31 @@ func (r *StatusPageOidcResource) Schema(ctx context.Context, req resource.Schema
                 Required: true,
             },
             "discovery_url": schema.StringAttribute{
-                MarkdownDescription: "OIDC discovery URL (typically ends in /.well-known/openid-configuration). Used to discover authorization, token, JWKS and userinfo endpoints..",
+                MarkdownDescription: "OIDC discovery URL (typically ends in /.well-known/openid-configuration). Used to discover authorization, token, JWKS and userinfo endpoints.",
                 Required: true,
             },
             "issuer_url": schema.StringAttribute{
-                MarkdownDescription: "Expected OIDC issuer URL. Must match the 'iss' claim in the ID token returned by the identity provider..",
+                MarkdownDescription: "Expected OIDC issuer URL. Must match the 'iss' claim in the ID token returned by the identity provider.",
                 Required: true,
             },
             "client_id": schema.StringAttribute{
-                MarkdownDescription: "OIDC client ID issued by the identity provider..",
+                MarkdownDescription: "OIDC client ID issued by the identity provider.",
                 Required: true,
             },
             "client_secret": schema.StringAttribute{
-                MarkdownDescription: "OIDC client secret issued by the identity provider. Stored encrypted at rest..",
+                MarkdownDescription: "OIDC client secret issued by the identity provider. Stored encrypted at rest.",
                 Required: true,
             },
             "scopes": schema.StringAttribute{
-                MarkdownDescription: "Space-separated list of OIDC scopes to request. Must include 'openid'..",
+                MarkdownDescription: "Space-separated list of OIDC scopes to request. Must include 'openid'.",
                 Required: true,
             },
             "email_claim_name": schema.StringAttribute{
-                MarkdownDescription: "Claim name in the ID token (or userinfo response) that contains the user's email address..",
+                MarkdownDescription: "Claim name in the ID token (or userinfo response) that contains the user's email address.",
                 Required: true,
             },
             "name_claim_name": schema.StringAttribute{
-                MarkdownDescription: "Claim name in the ID token (or userinfo response) that contains the user's display name..",
+                MarkdownDescription: "Claim name in the ID token (or userinfo response) that contains the user's display name.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -144,31 +145,24 @@ func (r *StatusPageOidcResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -204,6 +198,14 @@ func (r *StatusPageOidcResource) Create(ctx context.Context, req resource.Create
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config StatusPageOidcResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -311,10 +313,7 @@ func (r *StatusPageOidcResource) Create(ctx context.Context, req resource.Create
         "isTested": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -756,34 +755,6 @@ func (r *StatusPageOidcResource) Create(ctx context.Context, req resource.Create
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -821,43 +792,6 @@ func (r *StatusPageOidcResource) Create(ctx context.Context, req resource.Create
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -865,6 +799,9 @@ func (r *StatusPageOidcResource) Create(ctx context.Context, req resource.Create
     }
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -900,10 +837,7 @@ func (r *StatusPageOidcResource) Read(ctx context.Context, req resource.ReadRequ
         "isTested": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -1346,34 +1280,6 @@ func (r *StatusPageOidcResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1411,43 +1317,6 @@ func (r *StatusPageOidcResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1476,6 +1345,14 @@ func (r *StatusPageOidcResource) Update(ctx context.Context, req resource.Update
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config StatusPageOidcResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     statusPageOidcRequest := map[string]interface{}{
@@ -1551,10 +1428,7 @@ func (r *StatusPageOidcResource) Update(ctx context.Context, req resource.Update
         "isTested": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -1991,34 +1865,6 @@ func (r *StatusPageOidcResource) Update(ctx context.Context, req resource.Update
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2056,49 +1902,15 @@ func (r *StatusPageOidcResource) Update(ctx context.Context, req resource.Update
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
     data.Id = state.Id
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2136,6 +1948,26 @@ func (r *StatusPageOidcResource) Delete(ctx context.Context, req resource.Delete
 
 func (r *StatusPageOidcResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *StatusPageOidcResource) keepPlannedValues(data *StatusPageOidcResourceModel, plan *StatusPageOidcResourceModel, config *StatusPageOidcResourceModel) {
+    if config.NameClaimName.IsNull() && !plan.NameClaimName.IsUnknown() {
+        data.NameClaimName = plan.NameClaimName
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.IsTested.IsNull() && !plan.IsTested.IsUnknown() {
+        data.IsTested = plan.IsTested
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

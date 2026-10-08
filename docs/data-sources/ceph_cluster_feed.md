@@ -7,36 +7,39 @@ description: |-
 
 # oneuptime_ceph_cluster_feed (Data Source)
 
-Log of everything that happened to this Ceph cluster - creation, updates, owner changes and the rules that made them. Look up by `id` or by `name` (must match exactly one item).
+Log of everything that happened to this Ceph cluster - creation, updates, owner changes and the rules that made them.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one ceph cluster feed may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_ceph_cluster_feed" "by_name" {
-  name = "example-ceph_cluster_feed"
+data "oneuptime_ceph_cluster_feed" "example" {
+  ceph_cluster_id = oneuptime_ceph_cluster.example.id
 }
 
+# Or by id:
 data "oneuptime_ceph_cluster_feed" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `ceph_cluster_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `feed_info_in_markdown` (String) Log of the Ceph cluster change in Markdown.. Computed.
-- `more_information_in_markdown` (String) More information in Markdown.. Computed.
-- `ceph_cluster_feed_event_type` (String) Ceph Cluster Feed Event.. Computed.
-- `display_color` (String) Color object. Computed.
-- `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `posted_at` (String) A date time object.. Computed.
+### Optional
+
+- `ceph_cluster_feed_event_type` (String) Ceph Cluster Feed Event.
+- `ceph_cluster_id` (String) Relation to Ceph Cluster ID in which this resource belongs. The ID of a `oneuptime_ceph_cluster`.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `feed_info_in_markdown` (String) Log of the Ceph cluster change in Markdown.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `more_information_in_markdown` (String) More information in Markdown.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `display_color` (String) Display color for this feed item.
+- `posted_at` (String) Date and time when the feed was posted.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

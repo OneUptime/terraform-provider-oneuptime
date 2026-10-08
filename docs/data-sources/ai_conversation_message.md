@@ -7,39 +7,42 @@ description: |-
 
 # oneuptime_ai_conversation_message (Data Source)
 
-A message in an AI conversation. Assistant messages carry citations, tool events and cost. Look up by `id` or by `name` (must match exactly one item).
+A message in an AI conversation. Assistant messages carry citations, tool events and cost.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one ai conversation message may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_ai_conversation_message" "by_name" {
-  name = "example-ai_conversation_message"
+data "oneuptime_ai_conversation_message" "example" {
+  conversation_id = oneuptime_ai_conversation.example.id
 }
 
+# Or by id:
 data "oneuptime_ai_conversation_message" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `conversation_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `role` (String) Who authored this message: User or Assistant... Computed.
-- `content_in_markdown` (String) Message content in markdown... Computed.
-- `status` (String) Current status of this message... Computed.
-- `ai_run_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `citations` (String) Server-minted citations for this assistant message. Each citation records the tool, the exact validated query arguments and the row count... Computed.
-- `widgets` (String) Inline widgets (charts, tables, trace waterfalls, resource cards) built from this assistant message's tool results and rendered inline in the chat... Computed.
-- `tool_actions` (String) Mutating actions the agent proposed or performed in this turn, with their approval status (pending, approved, denied, executed)... Computed.
-- `error_message` (String) Error message if this message failed to generate... Computed.
-- `user_feedback` (String) Thumbs feedback the user left on this assistant message: Up or Down... Computed.
+### Optional
+
+- `ai_run_id` (String) ID of the AI run that produced this assistant message.
+- `content_in_markdown` (String) Message content in markdown.
+- `conversation_id` (String) ID of the conversation this message belongs to. The ID of a `oneuptime_ai_conversation`.
+- `error_message` (String) Error message if this message failed to generate.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `role` (String) Who authored this message: User or Assistant.
+- `status` (String) Current status of this message.
+- `user_feedback` (String) Thumbs feedback the user left on this assistant message: Up or Down.
+- `user_id` (String) ID of the user who owns the conversation. The ID of a `oneuptime_user` (see the data source).
+
+### Read-Only
+
+- `citations` (String) Server-minted citations for this assistant message. Each citation records the tool, the exact validated query arguments and the row count. A JSON value: write it with `jsonencode()`.
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of the project this message belongs to. The ID of a `oneuptime_project`.
+- `tool_actions` (String) Mutating actions the agent proposed or performed in this turn, with their approval status (pending, approved, denied, executed). A JSON value: write it with `jsonencode()`.
+- `updated_at` (String) Date and Time when the object was updated.
+- `widgets` (String) Inline widgets (charts, tables, trace waterfalls, resource cards) built from this assistant message's tool results and rendered inline in the chat. A JSON value: write it with `jsonencode()`.

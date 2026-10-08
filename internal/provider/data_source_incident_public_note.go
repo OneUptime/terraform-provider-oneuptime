@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -30,11 +29,8 @@ type IncidentPublicNoteDataSource struct {
 // IncidentPublicNoteDataSourceModel describes the data source data model.
 type IncidentPublicNoteDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     IncidentId types.String `tfsdk:"incident_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -57,90 +53,88 @@ func (d *IncidentPublicNoteDataSource) Metadata(ctx context.Context, req datasou
 
 func (d *IncidentPublicNoteDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage public notes for your incident Look up an existing incident_public_note by `id` or by `name`.",
+        MarkdownDescription: "Manage public notes for your incident Look up an existing incident public note by `id`, or by any of its other arguments (`created_by_user_id`, `incident_id`, `is_owner_notified`, ...): each one set must match, and exactly one incident public note may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Incident ID in which this resource belongs. The ID of a `oneuptime_incident`.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "note": schema.StringAttribute{
                 MarkdownDescription: "Notes in markdown.",
+                Optional: true,
                 Computed: true,
             },
             "attachments": schema.SetAttribute{
-                MarkdownDescription: "Files attached to this note.",
+                MarkdownDescription: "Files attached to this note. IDs of `oneuptime_file` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "subscriber_notification_status_on_note_created": schema.StringAttribute{
                 MarkdownDescription: "Status of notification sent to subscribers about this note.",
+                Optional: true,
                 Computed: true,
             },
             "subscriber_notification_status_message": schema.StringAttribute{
                 MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.",
+                Optional: true,
                 Computed: true,
             },
             "subscriber_notification_status_on_note_updated": schema.StringAttribute{
-                MarkdownDescription: "Status of the notification sent to subscribers when this note was last updated. Empty until an update notification is requested..",
+                MarkdownDescription: "Status of the notification sent to subscribers when this note was last updated. Empty until an update notification is requested.",
+                Optional: true,
                 Computed: true,
             },
             "subscriber_notification_status_message_on_note_updated": schema.StringAttribute{
                 MarkdownDescription: "Status message for the notification sent to subscribers when this note was last updated - includes success messages, failure reasons, or skip reasons.",
+                Optional: true,
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_on_note_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this note? If left out, this follows the incident: true when subscribers were notified that the incident was declared, false when it was declared without notifying them..",
+                MarkdownDescription: "Should subscribers be notified about this note? If left out, this follows the incident: true when subscribers were notified that the incident was declared, false when it was declared without notifying them.",
+                Optional: true,
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?.",
+                MarkdownDescription: "Are owners notified of this resource ownership?",
+                Optional: true,
                 Computed: true,
             },
             "posted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and time when the note was posted.",
                 Computed: true,
             },
             "posted_from_slack_message_id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message..",
+                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.",
+                Optional: true,
                 Computed: true,
             },
             "posted_with_incident_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The state the incident moved to when this note was posted with that state change. Subscribers are told this state with the note. Empty for a note posted on its own. The ID of a `oneuptime_incident_state`.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -177,22 +171,74 @@ func (d *IncidentPublicNoteDataSource) Read(ctx context.Context, req datasource.
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.IncidentId.IsNull() && !data.IncidentId.IsUnknown() {
+        filters["incidentId"] = data.IncidentId.ValueString()
+        filterNames = append(filterNames, "incident_id = "+fmt.Sprintf("%q", data.IncidentId.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.Note.IsNull() && !data.Note.IsUnknown() {
+        filters["note"] = data.Note.ValueString()
+        filterNames = append(filterNames, "note = "+fmt.Sprintf("%q", data.Note.ValueString()))
+    }
+    if !data.SubscriberNotificationStatusOnNoteCreated.IsNull() && !data.SubscriberNotificationStatusOnNoteCreated.IsUnknown() {
+        filters["subscriberNotificationStatusOnNoteCreated"] = data.SubscriberNotificationStatusOnNoteCreated.ValueString()
+        filterNames = append(filterNames, "subscriber_notification_status_on_note_created = "+fmt.Sprintf("%q", data.SubscriberNotificationStatusOnNoteCreated.ValueString()))
+    }
+    if !data.SubscriberNotificationStatusMessage.IsNull() && !data.SubscriberNotificationStatusMessage.IsUnknown() {
+        filters["subscriberNotificationStatusMessage"] = data.SubscriberNotificationStatusMessage.ValueString()
+        filterNames = append(filterNames, "subscriber_notification_status_message = "+fmt.Sprintf("%q", data.SubscriberNotificationStatusMessage.ValueString()))
+    }
+    if !data.SubscriberNotificationStatusOnNoteUpdated.IsNull() && !data.SubscriberNotificationStatusOnNoteUpdated.IsUnknown() {
+        filters["subscriberNotificationStatusOnNoteUpdated"] = data.SubscriberNotificationStatusOnNoteUpdated.ValueString()
+        filterNames = append(filterNames, "subscriber_notification_status_on_note_updated = "+fmt.Sprintf("%q", data.SubscriberNotificationStatusOnNoteUpdated.ValueString()))
+    }
+    if !data.SubscriberNotificationStatusMessageOnNoteUpdated.IsNull() && !data.SubscriberNotificationStatusMessageOnNoteUpdated.IsUnknown() {
+        filters["subscriberNotificationStatusMessageOnNoteUpdated"] = data.SubscriberNotificationStatusMessageOnNoteUpdated.ValueString()
+        filterNames = append(filterNames, "subscriber_notification_status_message_on_note_updated = "+fmt.Sprintf("%q", data.SubscriberNotificationStatusMessageOnNoteUpdated.ValueString()))
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated.IsUnknown() {
+        filters["shouldStatusPageSubscribersBeNotifiedOnNoteCreated"] = data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated.ValueBool()
+        filterNames = append(filterNames, "should_status_page_subscribers_be_notified_on_note_created = "+fmt.Sprintf("%t", data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated.ValueBool()))
+    }
+    if !data.IsOwnerNotified.IsNull() && !data.IsOwnerNotified.IsUnknown() {
+        filters["isOwnerNotified"] = data.IsOwnerNotified.ValueBool()
+        filterNames = append(filterNames, "is_owner_notified = "+fmt.Sprintf("%t", data.IsOwnerNotified.ValueBool()))
+    }
+    if !data.PostedFromSlackMessageId.IsNull() && !data.PostedFromSlackMessageId.IsUnknown() {
+        filters["postedFromSlackMessageId"] = data.PostedFromSlackMessageId.ValueString()
+        filterNames = append(filterNames, "posted_from_slack_message_id = "+fmt.Sprintf("%q", data.PostedFromSlackMessageId.ValueString()))
+    }
+    if !data.PostedWithIncidentStateId.IsNull() && !data.PostedWithIncidentStateId.IsUnknown() {
+        filters["postedWithIncidentStateId"] = data.PostedWithIncidentStateId.ValueString()
+        filterNames = append(filterNames, "posted_with_incident_state_id = "+fmt.Sprintf("%q", data.PostedWithIncidentStateId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a incident_public_note.",
+            "Look the incident public note up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the incident public note up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "incidentId": true,
         "createdByUserId": true,
@@ -219,7 +265,7 @@ func (d *IncidentPublicNoteDataSource) Read(ctx context.Context, req datasource.
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident_public_note found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident public note found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -232,11 +278,10 @@ func (d *IncidentPublicNoteDataSource) Read(ctx context.Context, req datasource.
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -253,11 +298,11 @@ func (d *IncidentPublicNoteDataSource) Read(ctx context.Context, req datasource.
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident_public_note found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident public note matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incident_public_note matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incident public note matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -285,23 +330,6 @@ func (d *IncidentPublicNoteDataSource) Read(ctx context.Context, req datasource.
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -336,34 +364,6 @@ func (d *IncidentPublicNoteDataSource) Read(ctx context.Context, req datasource.
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

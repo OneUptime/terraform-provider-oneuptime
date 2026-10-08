@@ -72,8 +72,6 @@ type RumApplicationResourceModel struct {
     IsArchived types.Bool `tfsdk:"is_archived"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     ClientType types.String `tfsdk:"client_type"`
     SdkLanguage types.String `tfsdk:"sdk_language"`
@@ -85,7 +83,6 @@ type RumApplicationResourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (r *RumApplicationResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -93,19 +90,23 @@ func (r *RumApplicationResource) Metadata(ctx context.Context, req resource.Meta
 }
 
 func (r *RumApplicationResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *RumApplicationResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Browser & mobile applications auto-discovered from OpenTelemetry RUM telemetry (browser.* / device.* resource attributes). One row per application, aggregating all end-user clients.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -124,14 +125,14 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "app_identifier": schema.StringAttribute{
-                MarkdownDescription: "Stable identifier for this application from the service.name OpenTelemetry resource attribute. Identity key for this RUM application..",
+                MarkdownDescription: "Stable identifier for this application from the service.name OpenTelemetry resource attribute. Identity key for this RUM application.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -140,7 +141,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry data for this application. Leave blank to use the project-wide default..",
+                MarkdownDescription: "Number of days to retain telemetry data for this application. Leave blank to use the project-wide default.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -148,7 +149,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this application. Unset fields fall back to the application default, then the project's retention settings..",
+                MarkdownDescription: "Per-pillar retention overrides for this application. Unset fields fall back to the application default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -160,7 +161,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "is_session_replay_enabled": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the browser recorder may record and upload session replays for this application. On by default; Project.isSessionReplayAllowed must also be on. Turn it off here to stop recording for one application without affecting the rest of the project..",
+                MarkdownDescription: "When enabled, the browser recorder may record and upload session replays for this application. On by default; Project.isSessionReplayAllowed must also be on. Turn it off here to stop recording for one application without affecting the rest of the project.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -169,7 +170,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_masking_mode": schema.StringAttribute{
-                MarkdownDescription: "How aggressively the recorder masks page content before it leaves the end user's device. MaskSensitiveInputsOnly (default) masks passwords and card / one-time-code fields and records everything else verbatim. MaskInputsOnly additionally masks every other input value. MaskAllText masks static page text too, producing a wireframe..",
+                MarkdownDescription: "How aggressively the recorder masks page content before it leaves the end user's device. MaskSensitiveInputsOnly (default) masks passwords and card / one-time-code fields and records everything else verbatim. MaskInputsOnly additionally masks every other input value. MaskAllText masks static page text too, producing a wireframe.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("MaskSensitiveInputsOnly"),
@@ -178,7 +179,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_mask_selectors": schema.StringAttribute{
-                MarkdownDescription: "CSS selectors whose text content the recorder masks, in addition to whatever the masking mode already covers..",
+                MarkdownDescription: "CSS selectors whose text content the recorder masks, in addition to whatever the masking mode already covers. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -190,7 +191,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_block_selectors": schema.StringAttribute{
-                MarkdownDescription: "CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked..",
+                MarkdownDescription: "CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -202,7 +203,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_ignore_error_patterns": schema.StringAttribute{
-                MarkdownDescription: "Regex patterns matched against an uncaught error's message and source URL. Matching errors are still recorded in the session but no longer trigger an upload — the remedy for a chronically-throwing third-party tag that would otherwise convert error-triggered capture into always-on recording..",
+                MarkdownDescription: "Regex patterns matched against an uncaught error's message and source URL. Matching errors are still recorded in the session but no longer trigger an upload — the remedy for a chronically-throwing third-party tag that would otherwise convert error-triggered capture into always-on recording. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -214,7 +215,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_trace_propagation_origins": schema.StringAttribute{
-                MarkdownDescription: "APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id..",
+                MarkdownDescription: "APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -226,7 +227,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_same_origin_trace_propagation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the recorder adds a W3C traceparent and a tracestate member carrying the replay session id (oneuptime=sid:<session id>) to the fetch and XHR requests the page makes to its own origin while a session is uploading, so the backend spans, logs and exceptions those requests cause link to the recording automatically, with no code in your frontend or backend. Nothing is added before consent, after consent is revoked, or before an on-error trigger fires, and a request that already carries a traceparent or tracestate keeps its own. A traceparent the recorder generates is marked sampled, so ParentBased samplers in your backend keep every browser-originated trace (to keep ratio sampling, set a remoteParentSampled ratio delegate only on the service(s) your pages call directly, never on the services they call: ratio decisions differ between language SDKs; for one rate across services, use tail sampling in an OpenTelemetry Collector). Your backend's OpenTelemetry forwards the tracestate, and with it the session id, to every service it calls, third parties included; the visitor id is never sent. On by default. Narrower create/update ACL than the other replay settings: it links recordings to backend telemetry that may name the user..",
+                MarkdownDescription: "When enabled, the recorder adds a W3C traceparent and a tracestate member carrying the replay session id (oneuptime=sid:<session id>) to the fetch and XHR requests the page makes to its own origin while a session is uploading, so the backend spans, logs and exceptions those requests cause link to the recording automatically, with no code in your frontend or backend. Nothing is added before consent, after consent is revoked, or before an on-error trigger fires, and a request that already carries a traceparent or tracestate keeps its own. A traceparent the recorder generates is marked sampled, so ParentBased samplers in your backend keep every browser-originated trace (to keep ratio sampling, set a remoteParentSampled ratio delegate only on the service(s) your pages call directly, never on the services they call: ratio decisions differ between language SDKs; for one rate across services, use tail sampling in an OpenTelemetry Collector). Your backend's OpenTelemetry forwards the tracestate, and with it the session id, to every service it calls, third parties included; the visitor id is never sent. On by default. Narrower create/update ACL than the other replay settings: it links recordings to backend telemetry that may name the user.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -235,7 +236,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_lcp_budget_ms": schema.NumberAttribute{
-                MarkdownDescription: "Largest Contentful Paint budget in milliseconds. A session whose LCP exceeds it uploads with the Performance trigger. 0 disables the trigger..",
+                MarkdownDescription: "Largest Contentful Paint budget in milliseconds. A session whose LCP exceeds it uploads with the Performance trigger. 0 disables the trigger.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
@@ -244,7 +245,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_long_task_budget_ms": schema.NumberAttribute{
-                MarkdownDescription: "Main-thread long-task budget in milliseconds. A single task blocking longer than this uploads the session with the Performance trigger. 0 disables the trigger..",
+                MarkdownDescription: "Main-thread long-task budget in milliseconds. A single task blocking longer than this uploads the session with the Performance trigger. 0 disables the trigger.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
@@ -253,7 +254,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_slow_request_budget_ms": schema.NumberAttribute{
-                MarkdownDescription: "Request duration budget in milliseconds. An instrumented request slower than this uploads the session with the Performance trigger. 0 disables the trigger..",
+                MarkdownDescription: "Request duration budget in milliseconds. An instrumented request slower than this uploads the session with the Performance trigger. 0 disables the trigger.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
@@ -262,7 +263,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_allowed_origins": schema.StringAttribute{
-                MarkdownDescription: "Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity..",
+                MarkdownDescription: "Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -274,7 +275,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_consent_mode": schema.StringAttribute{
-                MarkdownDescription: "NotRequired (default) uploads immediately, asserting a lawful basis that does not need a per-session grant. RequireExplicit buffers in memory and uploads nothing until the host page calls grantConsent(); set it if you need a per-session consent handshake, which most EU deployments will..",
+                MarkdownDescription: "NotRequired (default) uploads immediately, asserting a lawful basis that does not need a per-session grant. RequireExplicit buffers in memory and uploads nothing until the host page calls grantConsent(); set it if you need a per-session consent handshake, which most EU deployments will.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("NotRequired"),
@@ -283,7 +284,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_capture_trigger": schema.StringAttribute{
-                MarkdownDescription: "Always (default) uploads every sampled session from its first event, so an ordinary session is just as watchable as a broken one. OnErrorOrFrustration keeps a rolling in-memory buffer and uploads only when something actually went wrong, which costs roughly 15x less and stores far less end-user data..",
+                MarkdownDescription: "Always (default) uploads every sampled session from its first event, so an ordinary session is just as watchable as a broken one. OnErrorOrFrustration keeps a rolling in-memory buffer and uploads only when something actually went wrong, which costs roughly 15x less and stores far less end-user data.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Always"),
@@ -292,7 +293,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_sample_percentage": schema.NumberAttribute{
-                MarkdownDescription: "Percentage of sessions (0 to 100) eligible for recording. 100 by default, so with the default Always trigger every session is recorded. Lower it to cut storage and end-user data at rest; the decision is made once per session from a hash of the session id, so a session is never half-recorded..",
+                MarkdownDescription: "Percentage of sessions (0 to 100) eligible for recording. 100 by default, so with the default Always trigger every session is recorded. Lower it to cut storage and end-user data at rest; the decision is made once per session from a hash of the session id, so a session is never half-recorded.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(100)),
@@ -301,7 +302,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_capture_user_identity": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the end-user reference supplied by the host page is stored alongside the recording - as a one-way per-project HMAC for lookup and erasure, plus the raw reference behind its own narrower column ACL - so a support engineer can find the session a named customer is complaining about. When off, the reference is never attached to a recording and neither column is stored. (It is still sent once on the policy request, which is how targeted capture matches a named user; it is not persisted.) The reference must be supplied at load time - identify() called later reaches the server only on the session's final chunk, which the header is not rebuilt from. On by default. Narrower create/update ACL than the other replay settings: this is the switch that turns a pseudonymous recording into an identified one..",
+                MarkdownDescription: "When enabled, the end-user reference supplied by the host page is stored alongside the recording - as a one-way per-project HMAC for lookup and erasure, plus the raw reference behind its own narrower column ACL - so a support engineer can find the session a named customer is complaining about. When off, the reference is never attached to a recording and neither column is stored. (It is still sent once on the policy request, which is how targeted capture matches a named user; it is not persisted.) The reference must be supplied at load time - identify() called later reaches the server only on the session's final chunk, which the header is not rebuilt from. On by default. Narrower create/update ACL than the other replay settings: this is the switch that turns a pseudonymous recording into an identified one.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -310,7 +311,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_capture_geo": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, a country code is derived from the request and stored on the session. On by default. The end user's IP address is never stored either way - the country is the only geographic fact this keeps..",
+                MarkdownDescription: "When enabled, a country code is derived from the request and stored on the session. On by default. The end user's IP address is never stored either way - the country is the only geographic fact this keeps.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -319,7 +320,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_record_canvas": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, canvas contents are recorded. Off by default because canvas capture is expensive on the end user's device and canvases routinely render content the text masking cannot reach..",
+                MarkdownDescription: "When enabled, canvas contents are recorded. Off by default because canvas capture is expensive on the end user's device and canvases routinely render content the text masking cannot reach.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -328,7 +329,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_retention_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How long session recordings are kept for this application. Clamped to 1, 7, 14, 30 or 90 days. Defaults to 7 rather than the 15 the other telemetry pillars use, because a short retention is itself a privacy control..",
+                MarkdownDescription: "How long session recordings are kept for this application. Clamped to 1, 7, 14, 30 or 90 days. Defaults to 7 rather than the 15 the other telemetry pillars use, because a short retention is itself a privacy control.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(7)),
@@ -337,7 +338,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_monthly_budget_in_gb": schema.NumberAttribute{
-                MarkdownDescription: "Optional ceiling on replay bytes ingested per calendar month for this application. Once exceeded, live recorders are told to stop. Leave blank for no application-level ceiling..",
+                MarkdownDescription: "Optional ceiling on replay bytes ingested per calendar month for this application. Once exceeded, live recorders are told to stop. Leave blank for no application-level ceiling.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -345,7 +346,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry..",
+                MarkdownDescription: "Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -354,22 +355,16 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -377,51 +372,50 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 Computed: true,
             },
             "client_type": schema.StringAttribute{
-                MarkdownDescription: "Whether this application's clients are browsers or mobile devices (browser / mobile), derived from browser.* / device.* attributes..",
+                MarkdownDescription: "Whether this application's clients are browsers or mobile devices (browser / mobile), derived from browser.* / device.* attributes.",
                 Computed: true,
             },
             "sdk_language": schema.StringAttribute{
-                MarkdownDescription: "Last-seen telemetry.sdk.language resource attribute (e.g. webjs, swift, android). Used to scope this application's client telemetry apart from a same-named backend service..",
+                MarkdownDescription: "Last-seen telemetry.sdk.language resource attribute (e.g. webjs, swift, android). Used to scope this application's client telemetry apart from a same-named backend service.",
                 Computed: true,
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Whether telemetry is currently being received (connected) or has gone stale (disconnected)..",
+                MarkdownDescription: "Whether telemetry is currently being received (connected) or has gone stale (disconnected).",
                 Computed: true,
             },
             "agent_version": schema.StringAttribute{
-                MarkdownDescription: "Version of the OpenTelemetry SDK reporting this application..",
+                MarkdownDescription: "Version of the OpenTelemetry SDK reporting this application.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When telemetry was last received for this application.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "session_replay_last_chunk_received_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a session replay chunk was last accepted for this application.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "session_replay_budget_exceeded_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the session replay byte budget was last hit for this application. Non-null means recorders are currently being told to stop.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this RUM application archived?",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
         },
@@ -458,6 +452,14 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config RumApplicationResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -621,8 +623,6 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "clientType": true,
         "sdkLanguage": true,
@@ -634,7 +634,6 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -1313,34 +1312,6 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1644,43 +1615,6 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1688,6 +1622,9 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     }
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -1737,8 +1674,6 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "clientType": true,
         "sdkLanguage": true,
@@ -1750,7 +1685,6 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -2430,34 +2364,6 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2761,43 +2667,6 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2826,6 +2695,14 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config RumApplicationResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     rumApplicationRequest := map[string]interface{}{
@@ -2990,8 +2867,6 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "clientType": true,
         "sdkLanguage": true,
@@ -3003,7 +2878,6 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -3677,34 +3551,6 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4008,49 +3854,15 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
     data.Id = state.Id
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -4088,6 +3900,89 @@ func (r *RumApplicationResource) Delete(ctx context.Context, req resource.Delete
 
 func (r *RumApplicationResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *RumApplicationResource) keepPlannedValues(data *RumApplicationResourceModel, plan *RumApplicationResourceModel, config *RumApplicationResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.RetainTelemetryDataForDays.IsNull() && !plan.RetainTelemetryDataForDays.IsUnknown() {
+        data.RetainTelemetryDataForDays = plan.RetainTelemetryDataForDays
+    }
+    if config.TelemetryRetentionConfig.IsNull() && !plan.TelemetryRetentionConfig.IsUnknown() {
+        data.TelemetryRetentionConfig = plan.TelemetryRetentionConfig
+    }
+    if config.IsSessionReplayEnabled.IsNull() && !plan.IsSessionReplayEnabled.IsUnknown() {
+        data.IsSessionReplayEnabled = plan.IsSessionReplayEnabled
+    }
+    if config.SessionReplayMaskingMode.IsNull() && !plan.SessionReplayMaskingMode.IsUnknown() {
+        data.SessionReplayMaskingMode = plan.SessionReplayMaskingMode
+    }
+    if config.SessionReplayMaskSelectors.IsNull() && !plan.SessionReplayMaskSelectors.IsUnknown() {
+        data.SessionReplayMaskSelectors = plan.SessionReplayMaskSelectors
+    }
+    if config.SessionReplayBlockSelectors.IsNull() && !plan.SessionReplayBlockSelectors.IsUnknown() {
+        data.SessionReplayBlockSelectors = plan.SessionReplayBlockSelectors
+    }
+    if config.SessionReplayIgnoreErrorPatterns.IsNull() && !plan.SessionReplayIgnoreErrorPatterns.IsUnknown() {
+        data.SessionReplayIgnoreErrorPatterns = plan.SessionReplayIgnoreErrorPatterns
+    }
+    if config.SessionReplayTracePropagationOrigins.IsNull() && !plan.SessionReplayTracePropagationOrigins.IsUnknown() {
+        data.SessionReplayTracePropagationOrigins = plan.SessionReplayTracePropagationOrigins
+    }
+    if config.SessionReplaySameOriginTracePropagation.IsNull() && !plan.SessionReplaySameOriginTracePropagation.IsUnknown() {
+        data.SessionReplaySameOriginTracePropagation = plan.SessionReplaySameOriginTracePropagation
+    }
+    if config.SessionReplayLcpBudgetMs.IsNull() && !plan.SessionReplayLcpBudgetMs.IsUnknown() {
+        data.SessionReplayLcpBudgetMs = plan.SessionReplayLcpBudgetMs
+    }
+    if config.SessionReplayLongTaskBudgetMs.IsNull() && !plan.SessionReplayLongTaskBudgetMs.IsUnknown() {
+        data.SessionReplayLongTaskBudgetMs = plan.SessionReplayLongTaskBudgetMs
+    }
+    if config.SessionReplaySlowRequestBudgetMs.IsNull() && !plan.SessionReplaySlowRequestBudgetMs.IsUnknown() {
+        data.SessionReplaySlowRequestBudgetMs = plan.SessionReplaySlowRequestBudgetMs
+    }
+    if config.SessionReplayAllowedOrigins.IsNull() && !plan.SessionReplayAllowedOrigins.IsUnknown() {
+        data.SessionReplayAllowedOrigins = plan.SessionReplayAllowedOrigins
+    }
+    if config.SessionReplayConsentMode.IsNull() && !plan.SessionReplayConsentMode.IsUnknown() {
+        data.SessionReplayConsentMode = plan.SessionReplayConsentMode
+    }
+    if config.SessionReplayCaptureTrigger.IsNull() && !plan.SessionReplayCaptureTrigger.IsUnknown() {
+        data.SessionReplayCaptureTrigger = plan.SessionReplayCaptureTrigger
+    }
+    if config.SessionReplaySamplePercentage.IsNull() && !plan.SessionReplaySamplePercentage.IsUnknown() {
+        data.SessionReplaySamplePercentage = plan.SessionReplaySamplePercentage
+    }
+    if config.SessionReplayCaptureUserIdentity.IsNull() && !plan.SessionReplayCaptureUserIdentity.IsUnknown() {
+        data.SessionReplayCaptureUserIdentity = plan.SessionReplayCaptureUserIdentity
+    }
+    if config.SessionReplayCaptureGeo.IsNull() && !plan.SessionReplayCaptureGeo.IsUnknown() {
+        data.SessionReplayCaptureGeo = plan.SessionReplayCaptureGeo
+    }
+    if config.SessionReplayRecordCanvas.IsNull() && !plan.SessionReplayRecordCanvas.IsUnknown() {
+        data.SessionReplayRecordCanvas = plan.SessionReplayRecordCanvas
+    }
+    if config.SessionReplayRetentionInDays.IsNull() && !plan.SessionReplayRetentionInDays.IsUnknown() {
+        data.SessionReplayRetentionInDays = plan.SessionReplayRetentionInDays
+    }
+    if config.SessionReplayMonthlyBudgetInGb.IsNull() && !plan.SessionReplayMonthlyBudgetInGb.IsUnknown() {
+        data.SessionReplayMonthlyBudgetInGb = plan.SessionReplayMonthlyBudgetInGb
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

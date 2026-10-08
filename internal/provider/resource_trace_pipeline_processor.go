@@ -47,8 +47,6 @@ type TracePipelineProcessorResourceModel struct {
     SortOrder types.Number `tfsdk:"sort_order"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -57,33 +55,37 @@ func (r *TracePipelineProcessorResource) Metadata(ctx context.Context, req resou
 }
 
 func (r *TracePipelineProcessorResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *TracePipelineProcessorResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Individual processors within a trace pipeline that transform span data during ingestion.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this trace pipeline processor belongs to. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "trace_pipeline_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the trace pipeline this processor belongs to. The ID of a `oneuptime_trace_pipeline`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name object",
+                MarkdownDescription: "Friendly name for this processor.",
                 CustomType: JSONSubsetType{},
                 Required: true,
                 Validators: []validator.String{
@@ -91,11 +93,11 @@ func (r *TracePipelineProcessorResource) Schema(ctx context.Context, req resourc
                 },
             },
             "processor_type": schema.StringAttribute{
-                MarkdownDescription: "The type of processor: AttributeRemapper, SpanNameRemapper, StatusRemapper, SpanKindRemapper, or CategoryProcessor..",
+                MarkdownDescription: "The type of processor: AttributeRemapper, SpanNameRemapper, StatusRemapper, SpanKindRemapper, or CategoryProcessor.",
                 Required: true,
             },
             "configuration": schema.StringAttribute{
-                MarkdownDescription: "Processor-specific configuration as JSON (e.g., source/target fields, mapping rules)..",
+                MarkdownDescription: "Processor-specific configuration as JSON (e.g., source/target fields, mapping rules). A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -107,7 +109,7 @@ func (r *TracePipelineProcessorResource) Schema(ctx context.Context, req resourc
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this processor is active..",
+                MarkdownDescription: "Whether this processor is active.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -116,7 +118,7 @@ func (r *TracePipelineProcessorResource) Schema(ctx context.Context, req resourc
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Where this processor runs within its pipeline, lowest number first. A new processor is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
+                MarkdownDescription: "Where this processor runs within its pipeline, lowest number first. A new processor is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -124,27 +126,24 @@ func (r *TracePipelineProcessorResource) Schema(ctx context.Context, req resourc
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user who created this trace pipeline processor. The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -180,6 +179,14 @@ func (r *TracePipelineProcessorResource) Create(ctx context.Context, req resourc
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config TracePipelineProcessorResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -263,8 +270,6 @@ func (r *TracePipelineProcessorResource) Create(ctx context.Context, req resourc
         "sortOrder": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -499,34 +504,6 @@ func (r *TracePipelineProcessorResource) Create(ctx context.Context, req resourc
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -572,6 +549,9 @@ func (r *TracePipelineProcessorResource) Create(ctx context.Context, req resourc
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -600,8 +580,6 @@ func (r *TracePipelineProcessorResource) Read(ctx context.Context, req resource.
         "sortOrder": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -837,34 +815,6 @@ func (r *TracePipelineProcessorResource) Read(ctx context.Context, req resource.
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -931,6 +881,14 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config TracePipelineProcessorResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     tracePipelineProcessorRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -994,8 +952,6 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
         "sortOrder": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1225,34 +1181,6 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1297,6 +1225,9 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1333,6 +1264,26 @@ func (r *TracePipelineProcessorResource) Delete(ctx context.Context, req resourc
 
 func (r *TracePipelineProcessorResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *TracePipelineProcessorResource) keepPlannedValues(data *TracePipelineProcessorResourceModel, plan *TracePipelineProcessorResourceModel, config *TracePipelineProcessorResourceModel) {
+    if config.Configuration.IsNull() && !plan.Configuration.IsUnknown() {
+        data.Configuration = plan.Configuration
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.SortOrder.IsNull() && !plan.SortOrder.IsUnknown() {
+        data.SortOrder = plan.SortOrder
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

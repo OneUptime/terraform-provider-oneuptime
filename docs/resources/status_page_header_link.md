@@ -13,9 +13,9 @@ Manage header links on your status page
 
 ```terraform
 resource "oneuptime_status_page_header_link" "example" {
-  status_page_id = "123e4567-e89b-12d3-a456-426614174000"
-  title = "Example short text"
-  link = "https://short.url/abc123"
+  status_page_id = oneuptime_status_page.example.id
+  title          = "Example short text"
+  link           = "https://short.url/abc123"
 }
 ```
 
@@ -23,27 +23,34 @@ resource "oneuptime_status_page_header_link" "example" {
 
 ### Required
 
-- `status_page_id` (String) A unique identifier for an object, represented as a UUID..
-- `title` (String) Title of this resource..
-- `link` (String) URL to a website or any other resource on the internet..
+- `link` (String) URL to a website or any other resource on the internet.
+- `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
+- `title` (String) Title of this resource.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `order` (Number) Where this link appears among the status page's header links, lowest number first. A new link is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them...
+- `order` (Number) Where this link appears among the status page's header links, lowest number first. A new link is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing status page header link by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_status_page_header_link.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_status_page_header_link.example <id>

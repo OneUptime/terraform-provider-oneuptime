@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,17 +27,13 @@ type NetworkTopologySuppressionDataSource struct {
 // NetworkTopologySuppressionDataSourceModel describes the data source data model.
 type NetworkTopologySuppressionDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     NodeKey types.String `tfsdk:"node_key"`
     NodeName types.String `tfsdk:"node_name"`
     Reason types.String `tfsdk:"reason"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *NetworkTopologySuppressionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -47,57 +42,44 @@ func (d *NetworkTopologySuppressionDataSource) Metadata(ctx context.Context, req
 
 func (d *NetworkTopologySuppressionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Nodes hidden from the Network Topology map for the whole project. Display only — the device and its monitoring are untouched. Look up an existing network_topology_suppression by `id` or by `name`.",
+        MarkdownDescription: "Nodes hidden from the Network Topology map for the whole project. Display only — the device and its monitoring are untouched. Look up an existing network topology suppression by `id`, or by any of its other arguments (`created_by_user_id`, `node_key`, `node_name`, ...): each one set must match, and exactly one network topology suppression may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "node_key": schema.StringAttribute{
-                MarkdownDescription: "The topology node id to hide. A device id for a managed device, 'unmanaged:<name>' for a discovery-protocol peer, or 'endpoint:<id>' for a discovered endpoint. Free text rather than a foreign key because two of the three are synthesised by the topology builder and have no row of their own..",
+                MarkdownDescription: "The topology node id to hide. A device id for a managed device, 'unmanaged:<name>' for a discovery-protocol peer, or 'endpoint:<id>' for a discovered endpoint. Free text rather than a foreign key because two of the three are synthesised by the topology builder and have no row of their own.",
+                Optional: true,
                 Computed: true,
             },
             "node_name": schema.StringAttribute{
-                MarkdownDescription: "What the node was called when it was hidden, so the hidden list is readable without rebuilding the graph..",
+                MarkdownDescription: "What the node was called when it was hidden, so the hidden list is readable without rebuilding the graph.",
+                Optional: true,
                 Computed: true,
             },
             "reason": schema.StringAttribute{
-                MarkdownDescription: "Why this node was hidden — the note the next person needs to decide whether it should stay hidden..",
+                MarkdownDescription: "Why this node was hidden — the note the next person needs to decide whether it should stay hidden.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -134,28 +116,51 @@ func (d *NetworkTopologySuppressionDataSource) Read(ctx context.Context, req dat
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.NodeKey.IsNull() && !data.NodeKey.IsUnknown() {
+        filters["nodeKey"] = data.NodeKey.ValueString()
+        filterNames = append(filterNames, "node_key = "+fmt.Sprintf("%q", data.NodeKey.ValueString()))
+    }
+    if !data.NodeName.IsNull() && !data.NodeName.IsUnknown() {
+        filters["nodeName"] = data.NodeName.ValueString()
+        filterNames = append(filterNames, "node_name = "+fmt.Sprintf("%q", data.NodeName.ValueString()))
+    }
+    if !data.Reason.IsNull() && !data.Reason.IsUnknown() {
+        filters["reason"] = data.Reason.ValueString()
+        filterNames = append(filterNames, "reason = "+fmt.Sprintf("%q", data.Reason.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a network_topology_suppression.",
+            "Look the network topology suppression up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the network topology suppression up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "nodeKey": true,
         "nodeName": true,
         "reason": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -168,7 +173,7 @@ func (d *NetworkTopologySuppressionDataSource) Read(ctx context.Context, req dat
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_topology_suppression found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network topology suppression found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -181,11 +186,10 @@ func (d *NetworkTopologySuppressionDataSource) Read(ctx context.Context, req dat
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -202,11 +206,11 @@ func (d *NetworkTopologySuppressionDataSource) Read(ctx context.Context, req dat
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_topology_suppression found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network topology suppression matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_topology_suppression matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network topology suppression matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -234,23 +238,6 @@ func (d *NetworkTopologySuppressionDataSource) Read(ctx context.Context, req dat
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -285,34 +272,6 @@ func (d *NetworkTopologySuppressionDataSource) Read(ctx context.Context, req dat
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -398,23 +357,6 @@ func (d *NetworkTopologySuppressionDataSource) Read(ctx context.Context, req dat
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

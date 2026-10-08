@@ -28,11 +28,8 @@ type AiAgentTaskPullRequestDataSource struct {
 // AiAgentTaskPullRequestDataSourceModel describes the data source data model.
 type AiAgentTaskPullRequestDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     AiRunId types.String `tfsdk:"ai_run_id"`
     AiAgentId types.String `tfsdk:"ai_agent_id"`
@@ -60,109 +57,113 @@ func (d *AiAgentTaskPullRequestDataSource) Metadata(ctx context.Context, req dat
 
 func (d *AiAgentTaskPullRequestDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Pull requests created by AI agents during task execution. Look up an existing ai_agent_task_pull_request by `id` or by `name`.",
+        MarkdownDescription: "Pull requests created by AI agents during task execution. Look up an existing ai agent task pull request by `id`, or by any of its other arguments (`ai_agent_id`, `ai_run_id`, `base_ref_name`, ...): each one set must match, and exactly one ai agent task pull request may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this pull request belongs to. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "ai_run_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the AIRun (runType CodeFix) this pull request was opened by.",
+                Optional: true,
                 Computed: true,
             },
             "ai_agent_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the AI Agent that created this pull request. Null when it was proposed from an AI chat conversation. The ID of a `oneuptime_ai_agent`.",
+                Optional: true,
                 Computed: true,
             },
             "code_repository_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Code Repository this pull request was created in. The ID of a `oneuptime_code_repository`.",
+                Optional: true,
                 Computed: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of the pull request..",
+                MarkdownDescription: "Title of the pull request.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description/body of the pull request..",
+                MarkdownDescription: "Description/body of the pull request.",
+                Optional: true,
                 Computed: true,
             },
             "pull_request_url": schema.StringAttribute{
-                MarkdownDescription: "URL to the pull request on the hosting platform..",
+                MarkdownDescription: "URL to the pull request on the hosting platform.",
+                Optional: true,
                 Computed: true,
             },
             "pull_request_id": schema.NumberAttribute{
-                MarkdownDescription: "The unique ID of the pull request from the hosting platform..",
+                MarkdownDescription: "The unique ID of the pull request from the hosting platform.",
+                Optional: true,
                 Computed: true,
             },
             "pull_request_number": schema.NumberAttribute{
-                MarkdownDescription: "The pull request number (e.g., #123)..",
+                MarkdownDescription: "The pull request number (e.g., #123).",
+                Optional: true,
                 Computed: true,
             },
             "pull_request_state": schema.StringAttribute{
-                MarkdownDescription: "Current state of the pull request (open, closed, merged)..",
+                MarkdownDescription: "Current state of the pull request (open, closed, merged).",
+                Optional: true,
                 Computed: true,
             },
             "ci_status": schema.StringAttribute{
-                MarkdownDescription: "Rolled-up conclusion of the repository's own CI check runs on this pull request (Pending, Green, Red, ExpectedFailureObserved for should-fail regression-test PRs, NoCiConfigured). Null until the sync job first polls check runs. Written by AIAgent:SyncPullRequestStates — never by users..",
+                MarkdownDescription: "Rolled-up conclusion of the repository's own CI check runs on this pull request (Pending, Green, Red, ExpectedFailureObserved for should-fail regression-test PRs, NoCiConfigured). Null until the sync job first polls check runs. Written by AIAgent:SyncPullRequestStates — never by users.",
+                Optional: true,
                 Computed: true,
             },
             "ci_status_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the CI status last changed.",
                 Computed: true,
             },
             "runner_verification_status": schema.StringAttribute{
-                MarkdownDescription: "Outcome of the Runner-side build/test verification that ran against the fix BEFORE this pull request opened (Passed, Failed, Skipped when the repository has no verification commands configured). Distinct from CI Status, which mirrors the repository's own CI checks after the PR exists. Written by the Runner at record time — never by users..",
+                MarkdownDescription: "Outcome of the Runner-side build/test verification that ran against the fix BEFORE this pull request opened (Passed, Failed, Skipped when the repository has no verification commands configured). Distinct from CI Status, which mirrors the repository's own CI checks after the PR exists. Written by the Runner at record time — never by users.",
+                Optional: true,
                 Computed: true,
             },
             "runner_verification_summary": schema.StringAttribute{
-                MarkdownDescription: "Human-readable summary of the Runner-side verification (which commands ran, what failed, how many repair attempts were used). Written by the Runner at record time..",
+                MarkdownDescription: "Human-readable summary of the Runner-side verification (which commands ran, what failed, how many repair attempts were used). Written by the Runner at record time.",
+                Optional: true,
                 Computed: true,
             },
             "head_ref_name": schema.StringAttribute{
-                MarkdownDescription: "The branch name of the pull request (source branch)..",
+                MarkdownDescription: "The branch name of the pull request (source branch).",
+                Optional: true,
                 Computed: true,
             },
             "base_ref_name": schema.StringAttribute{
-                MarkdownDescription: "The target branch for the pull request..",
+                MarkdownDescription: "The target branch for the pull request.",
+                Optional: true,
                 Computed: true,
             },
             "repo_organization_name": schema.StringAttribute{
-                MarkdownDescription: "Organization or username that owns the repository..",
+                MarkdownDescription: "Organization or username that owns the repository.",
+                Optional: true,
                 Computed: true,
             },
             "repo_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the repository..",
+                MarkdownDescription: "Name of the repository.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -199,22 +200,98 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.AiRunId.IsNull() && !data.AiRunId.IsUnknown() {
+        filters["aiRunId"] = data.AiRunId.ValueString()
+        filterNames = append(filterNames, "ai_run_id = "+fmt.Sprintf("%q", data.AiRunId.ValueString()))
+    }
+    if !data.AiAgentId.IsNull() && !data.AiAgentId.IsUnknown() {
+        filters["aiAgentId"] = data.AiAgentId.ValueString()
+        filterNames = append(filterNames, "ai_agent_id = "+fmt.Sprintf("%q", data.AiAgentId.ValueString()))
+    }
+    if !data.CodeRepositoryId.IsNull() && !data.CodeRepositoryId.IsUnknown() {
+        filters["codeRepositoryId"] = data.CodeRepositoryId.ValueString()
+        filterNames = append(filterNames, "code_repository_id = "+fmt.Sprintf("%q", data.CodeRepositoryId.ValueString()))
+    }
+    if !data.Title.IsNull() && !data.Title.IsUnknown() {
+        filters["title"] = data.Title.ValueString()
+        filterNames = append(filterNames, "title = "+fmt.Sprintf("%q", data.Title.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.PullRequestUrl.IsNull() && !data.PullRequestUrl.IsUnknown() {
+        filters["pullRequestUrl"] = data.PullRequestUrl.ValueString()
+        filterNames = append(filterNames, "pull_request_url = "+fmt.Sprintf("%q", data.PullRequestUrl.ValueString()))
+    }
+    if !data.PullRequestId.IsNull() && !data.PullRequestId.IsUnknown() {
+        filters["pullRequestId"] = lookupNumber(data.PullRequestId)
+        filterNames = append(filterNames, "pull_request_id = "+data.PullRequestId.ValueBigFloat().String())
+    }
+    if !data.PullRequestNumber.IsNull() && !data.PullRequestNumber.IsUnknown() {
+        filters["pullRequestNumber"] = lookupNumber(data.PullRequestNumber)
+        filterNames = append(filterNames, "pull_request_number = "+data.PullRequestNumber.ValueBigFloat().String())
+    }
+    if !data.PullRequestState.IsNull() && !data.PullRequestState.IsUnknown() {
+        filters["pullRequestState"] = data.PullRequestState.ValueString()
+        filterNames = append(filterNames, "pull_request_state = "+fmt.Sprintf("%q", data.PullRequestState.ValueString()))
+    }
+    if !data.CiStatus.IsNull() && !data.CiStatus.IsUnknown() {
+        filters["ciStatus"] = data.CiStatus.ValueString()
+        filterNames = append(filterNames, "ci_status = "+fmt.Sprintf("%q", data.CiStatus.ValueString()))
+    }
+    if !data.RunnerVerificationStatus.IsNull() && !data.RunnerVerificationStatus.IsUnknown() {
+        filters["runnerVerificationStatus"] = data.RunnerVerificationStatus.ValueString()
+        filterNames = append(filterNames, "runner_verification_status = "+fmt.Sprintf("%q", data.RunnerVerificationStatus.ValueString()))
+    }
+    if !data.RunnerVerificationSummary.IsNull() && !data.RunnerVerificationSummary.IsUnknown() {
+        filters["runnerVerificationSummary"] = data.RunnerVerificationSummary.ValueString()
+        filterNames = append(filterNames, "runner_verification_summary = "+fmt.Sprintf("%q", data.RunnerVerificationSummary.ValueString()))
+    }
+    if !data.HeadRefName.IsNull() && !data.HeadRefName.IsUnknown() {
+        filters["headRefName"] = data.HeadRefName.ValueString()
+        filterNames = append(filterNames, "head_ref_name = "+fmt.Sprintf("%q", data.HeadRefName.ValueString()))
+    }
+    if !data.BaseRefName.IsNull() && !data.BaseRefName.IsUnknown() {
+        filters["baseRefName"] = data.BaseRefName.ValueString()
+        filterNames = append(filterNames, "base_ref_name = "+fmt.Sprintf("%q", data.BaseRefName.ValueString()))
+    }
+    if !data.RepoOrganizationName.IsNull() && !data.RepoOrganizationName.IsUnknown() {
+        filters["repoOrganizationName"] = data.RepoOrganizationName.ValueString()
+        filterNames = append(filterNames, "repo_organization_name = "+fmt.Sprintf("%q", data.RepoOrganizationName.ValueString()))
+    }
+    if !data.RepoName.IsNull() && !data.RepoName.IsUnknown() {
+        filters["repoName"] = data.RepoName.ValueString()
+        filterNames = append(filterNames, "repo_name = "+fmt.Sprintf("%q", data.RepoName.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a ai_agent_task_pull_request.",
+            "Look the ai agent task pull request up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the ai agent task pull request up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "aiRunId": true,
         "aiAgentId": true,
@@ -246,7 +323,7 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_agent_task_pull_request found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai agent task pull request found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -259,11 +336,10 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -280,11 +356,11 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_agent_task_pull_request found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai agent task pull request matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai_agent_task_pull_request matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai agent task pull request matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -312,23 +388,6 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -363,34 +422,6 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

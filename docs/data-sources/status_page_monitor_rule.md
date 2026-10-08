@@ -7,41 +7,45 @@ description: |-
 
 # oneuptime_status_page_monitor_rule (Data Source)
 
-Configure rules that automatically add matching monitors to a status page group, instead of picking every monitor by hand Look up by `id` or by `name` (must match exactly one item).
+Configure rules that automatically add matching monitors to a status page group, instead of picking every monitor by hand
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one status page monitor rule may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_status_page_monitor_rule" "by_name" {
-  name = "example-status_page_monitor_rule"
+data "oneuptime_status_page_monitor_rule" "example" {
+  name = "Example status page monitor rule"
 }
 
+# Or by id:
 data "oneuptime_status_page_monitor_rule" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource... Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Description of this status page monitor rule.. Computed.
-- `is_enabled` (Bool) Whether this rule is enabled. A disabled rule removes the monitors it had added... Computed.
-- `monitor_labels` (Set) Only match monitors that carry at least one of these labels. Leave empty to skip the label filter... Computed.
-- `monitor_name_pattern` (String) Regex (case-insensitive) matched against the monitor name. Leave empty to skip the name filter. Use .* to match every monitor... Computed.
-- `monitor_description_pattern` (String) Regex (case-insensitive) matched against the monitor description. Leave empty to skip the description filter... Computed.
-- `status_page_group_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `show_current_status` (Bool) Show current status like offline, operational or degraded on the resources this rule adds... Computed.
-- `show_uptime_percent` (Bool) Show uptime percent on the resources this rule adds to the status page... Computed.
-- `uptime_percent_precision` (String) Precision of the uptime percent shown on the resources this rule adds.. Computed.
-- `show_status_history_chart` (Bool) Show a 90 day uptime history on the resources this rule adds to the status page... Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `description` (String) Description of this status page monitor rule.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_enabled` (Boolean) Whether this rule is enabled. A disabled rule removes the monitors it had added.
+- `monitor_description_pattern` (String) Regex (case-insensitive) matched against the monitor description. Leave empty to skip the description filter.
+- `monitor_name_pattern` (String) Regex (case-insensitive) matched against the monitor name. Leave empty to skip the name filter. Use .* to match every monitor.
+- `name` (String) Name of this status page monitor rule.
+- `show_current_status` (Boolean) Show current status like offline, operational or degraded on the resources this rule adds.
+- `show_status_history_chart` (Boolean) Show a 90 day uptime history on the resources this rule adds to the status page.
+- `show_uptime_percent` (Boolean) Show uptime percent on the resources this rule adds to the status page.
+- `status_page_group_id` (String) ID of the group that matched monitors are added to. Empty means ungrouped. The ID of a `oneuptime_status_page_group`.
+- `status_page_id` (String) ID of the status page this rule adds matching monitors to. The ID of a `oneuptime_status_page`.
+- `uptime_percent_precision` (String) Precision of the uptime percent shown on the resources this rule adds.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `monitor_labels` (Set of String) Only match monitors that carry at least one of these labels. Leave empty to skip the label filter. IDs of `oneuptime_label` resources.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

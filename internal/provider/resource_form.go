@@ -53,8 +53,6 @@ type FormResourceModel struct {
     FaviconFileId types.String `tfsdk:"favicon_file_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ShareKey types.String `tfsdk:"share_key"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -64,30 +62,34 @@ func (r *FormResource) Metadata(ctx context.Context, req resource.MetadataReques
 }
 
 func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *FormResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a scheduled maintenance event in this project.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "The form's name, shown as the heading of its public page. Unique within the project..",
+                MarkdownDescription: "The form's name, shown as the heading of its public page. Unique within the project.",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Shown at the top of the form's public page, above the questions: what the form is for and what happens after it is sent. Markdown..",
+                MarkdownDescription: "Shown at the top of the form's public page, above the questions: what the form is for and what happens after it is sent. Markdown.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -95,7 +97,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether the form's link works. While it is off, the public page shows a not-available message and nothing can be submitted..",
+                MarkdownDescription: "Whether the form's link works. While it is off, the public page shows a not-available message and nothing can be submitted.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -104,7 +106,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "target_type": schema.StringAttribute{
-                MarkdownDescription: "What each submission creates: Incident, or ScheduledMaintenance (a scheduled maintenance event)..",
+                MarkdownDescription: "What each submission creates: Incident, or ScheduledMaintenance (a scheduled maintenance event).",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Incident"),
@@ -113,7 +115,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "fields": schema.StringAttribute{
-                MarkdownDescription: "The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text, isRequired and isHidden (not shown on the public form, and answered only from the template a submission started from; never required, and never a field the target cannot be created without). A new form starts with a title, a description and the submitter's name and email..",
+                MarkdownDescription: "The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text, isRequired and isHidden (not shown on the public form, and answered only from the template a submission started from; never required, and never a field the target cannot be created without). A new form starts with a title, a description and the submitter's name and email. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -125,7 +127,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "templates": schema.StringAttribute{
-                MarkdownDescription: "Named sets of answers a submission can start from, in the order the form lists them. Each has an id, a name (unique within the form), isDefault (the form opens with it; at most one template) and answers: an object keyed by question id, each answer as a submission sends it - text, a number, true or false, an option's value, or a list of values for a multi-select. The public form lists the templates above its questions and fills in a template's answers when one is chosen, or when its link names one (?template=<id>). Hidden questions are answered only from the template a submission started from..",
+                MarkdownDescription: "Named sets of answers a submission can start from, in the order the form lists them. Each has an id, a name (unique within the form), isDefault (the form opens with it; at most one template) and answers: an object keyed by question id, each answer as a submission sends it - text, a number, true or false, an option's value, or a list of values for a multi-select. The public form lists the templates above its questions and fills in a template's answers when one is chosen, or when its link names one (?template=<id>). Hidden questions are answered only from the template a submission started from. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -137,7 +139,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "target_settings": schema.StringAttribute{
-                MarkdownDescription: "What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For scheduled maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers..",
+                MarkdownDescription: "What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For scheduled maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -149,7 +151,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "success_message": schema.StringAttribute{
-                MarkdownDescription: "Shown after the form is submitted, together with the number of what the submission created. Markdown..",
+                MarkdownDescription: "Shown after the form is submitted, together with the number of what the submission created. Markdown.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -157,7 +159,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "ip_whitelist": schema.StringAttribute{
-                MarkdownDescription: "The networks the form can be opened and submitted from: one IPv4 or IPv6 address, or one IPv4 range in CIDR notation (such as 10.0.0.0/8), per line. IPv6 ranges are not supported. Leave it empty to allow any network..",
+                MarkdownDescription: "The networks the form can be opened and submitted from: one IPv4 or IPv6 address, or one IPv4 range in CIDR notation (such as 10.0.0.0/8), per line. IPv6 ranges are not supported. Leave it empty to allow any network.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -165,7 +167,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "logo_file_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the file the form's public page shows as its logo: upload the image to /api/file first. Leave it empty to show the OneUptime logo. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -173,7 +175,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "logo_alt_text": schema.StringAttribute{
-                MarkdownDescription: "What the logo says, read out by screen readers: usually your organization's name. Leave it empty and screen readers skip the logo..",
+                MarkdownDescription: "What the logo says, read out by screen readers: usually your organization's name. Leave it empty and screen readers skip the logo.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -181,7 +183,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "favicon_file_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the file the form's public page shows as the browser tab's icon: upload the image to /api/file first. Leave it empty to show the OneUptime favicon. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -189,31 +191,28 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "share_key": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The key in the form's public link, /accounts/form/<shareKey>. Generated when the form is created. Resetting the link in the dashboard replaces it, and the old link stops working.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -249,6 +248,14 @@ func (r *FormResource) Create(ctx context.Context, req resource.CreateRequest, r
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config FormResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -356,8 +363,6 @@ func (r *FormResource) Create(ctx context.Context, req resource.CreateRequest, r
         "faviconFileId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "shareKey": true,
         "createdByUserId": true,
         "_id": true,
@@ -835,34 +840,6 @@ func (r *FormResource) Create(ctx context.Context, req resource.CreateRequest, r
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["shareKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -945,6 +922,9 @@ func (r *FormResource) Create(ctx context.Context, req resource.CreateRequest, r
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -979,8 +959,6 @@ func (r *FormResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "faviconFileId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "shareKey": true,
         "createdByUserId": true,
         "_id": true,
@@ -1459,34 +1437,6 @@ func (r *FormResource) Read(ctx context.Context, req resource.ReadRequest, resp 
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["shareKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1590,6 +1540,14 @@ func (r *FormResource) Update(ctx context.Context, req resource.UpdateRequest, r
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config FormResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     formRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -1685,8 +1643,6 @@ func (r *FormResource) Update(ctx context.Context, req resource.UpdateRequest, r
         "faviconFileId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "shareKey": true,
         "createdByUserId": true,
         "_id": true,
@@ -2159,34 +2115,6 @@ func (r *FormResource) Update(ctx context.Context, req resource.UpdateRequest, r
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["shareKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2268,6 +2196,9 @@ func (r *FormResource) Update(ctx context.Context, req resource.UpdateRequest, r
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2304,6 +2235,50 @@ func (r *FormResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 
 func (r *FormResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *FormResource) keepPlannedValues(data *FormResourceModel, plan *FormResourceModel, config *FormResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.TargetType.IsNull() && !plan.TargetType.IsUnknown() {
+        data.TargetType = plan.TargetType
+    }
+    if config.Fields.IsNull() && !plan.Fields.IsUnknown() {
+        data.Fields = plan.Fields
+    }
+    if config.Templates.IsNull() && !plan.Templates.IsUnknown() {
+        data.Templates = plan.Templates
+    }
+    if config.TargetSettings.IsNull() && !plan.TargetSettings.IsUnknown() {
+        data.TargetSettings = plan.TargetSettings
+    }
+    if config.SuccessMessage.IsNull() && !plan.SuccessMessage.IsUnknown() {
+        data.SuccessMessage = plan.SuccessMessage
+    }
+    if config.IpWhitelist.IsNull() && !plan.IpWhitelist.IsUnknown() {
+        data.IpWhitelist = plan.IpWhitelist
+    }
+    if config.LogoFileId.IsNull() && !plan.LogoFileId.IsUnknown() {
+        data.LogoFileId = plan.LogoFileId
+    }
+    if config.LogoAltText.IsNull() && !plan.LogoAltText.IsUnknown() {
+        data.LogoAltText = plan.LogoAltText
+    }
+    if config.FaviconFileId.IsNull() && !plan.FaviconFileId.IsUnknown() {
+        data.FaviconFileId = plan.FaviconFileId
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

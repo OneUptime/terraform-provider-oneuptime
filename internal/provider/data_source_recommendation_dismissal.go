@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,11 +27,8 @@ type RecommendationDismissalDataSource struct {
 // RecommendationDismissalDataSourceModel describes the data source data model.
 type RecommendationDismissalDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     RecommendationType types.String `tfsdk:"recommendation_type"`
     RecommendationId types.String `tfsdk:"recommendation_id"`
@@ -40,7 +36,6 @@ type RecommendationDismissalDataSourceModel struct {
     ResourceId types.String `tfsdk:"resource_id"`
     DismissalReason types.String `tfsdk:"dismissal_reason"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *RecommendationDismissalDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -49,65 +44,54 @@ func (d *RecommendationDismissalDataSource) Metadata(ctx context.Context, req da
 
 func (d *RecommendationDismissalDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Recommendations your team has dismissed. Dismissing hides a recommendation for everyone on the project until it is restored; it never deletes anything that was already created from it. Look up an existing recommendation_dismissal by `id` or by `name`.",
+        MarkdownDescription: "Recommendations your team has dismissed. Dismissing hides a recommendation for everyone on the project until it is restored; it never deletes anything that was already created from it. Look up an existing recommendation dismissal by `id`, or by any of its other arguments (`created_by_user_id`, `dismissal_reason`, `recommendation_id`, ...): each one set must match, and exactly one recommendation dismissal may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "recommendation_type": schema.StringAttribute{
-                MarkdownDescription: "Which family of recommendation this dismissal belongs to. See the RecommendationType enum..",
+                MarkdownDescription: "Which family of recommendation this dismissal belongs to. See the RecommendationType enum.",
+                Optional: true,
                 Computed: true,
             },
             "recommendation_id": schema.StringAttribute{
-                MarkdownDescription: "The catalog-wide id of the dismissed recommendation, for example Kubernetes:k8s-hpa-at-max-replicas..",
+                MarkdownDescription: "The catalog-wide id of the dismissed recommendation, for example Kubernetes:k8s-hpa-at-max-replicas.",
+                Optional: true,
                 Computed: true,
             },
             "resource_type": schema.StringAttribute{
-                MarkdownDescription: "The kind of resource this recommendation was shown on, for example Kubernetes or Docker. Empty for recommendations that are not scoped to a resource..",
+                MarkdownDescription: "The kind of resource this recommendation was shown on, for example Kubernetes or Docker. Empty for recommendations that are not scoped to a resource.",
+                Optional: true,
                 Computed: true,
             },
             "resource_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the resource this recommendation was shown on. Polymorphic — it points at whichever table Resource Type names — so it carries no foreign key.",
+                Optional: true,
                 Computed: true,
             },
             "dismissal_reason": schema.StringAttribute{
-                MarkdownDescription: "Optional note explaining why this recommendation was dismissed, shown to whoever finds it in the dismissed list later..",
+                MarkdownDescription: "Optional note explaining why this recommendation was dismissed, shown to whoever finds it in the dismissed list later.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -144,22 +128,54 @@ func (d *RecommendationDismissalDataSource) Read(ctx context.Context, req dataso
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.RecommendationType.IsNull() && !data.RecommendationType.IsUnknown() {
+        filters["recommendationType"] = data.RecommendationType.ValueString()
+        filterNames = append(filterNames, "recommendation_type = "+fmt.Sprintf("%q", data.RecommendationType.ValueString()))
+    }
+    if !data.RecommendationId.IsNull() && !data.RecommendationId.IsUnknown() {
+        filters["recommendationId"] = data.RecommendationId.ValueString()
+        filterNames = append(filterNames, "recommendation_id = "+fmt.Sprintf("%q", data.RecommendationId.ValueString()))
+    }
+    if !data.ResourceType.IsNull() && !data.ResourceType.IsUnknown() {
+        filters["resourceType"] = data.ResourceType.ValueString()
+        filterNames = append(filterNames, "resource_type = "+fmt.Sprintf("%q", data.ResourceType.ValueString()))
+    }
+    if !data.ResourceId.IsNull() && !data.ResourceId.IsUnknown() {
+        filters["resourceId"] = data.ResourceId.ValueString()
+        filterNames = append(filterNames, "resource_id = "+fmt.Sprintf("%q", data.ResourceId.ValueString()))
+    }
+    if !data.DismissalReason.IsNull() && !data.DismissalReason.IsUnknown() {
+        filters["dismissalReason"] = data.DismissalReason.ValueString()
+        filterNames = append(filterNames, "dismissal_reason = "+fmt.Sprintf("%q", data.DismissalReason.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a recommendation_dismissal.",
+            "Look the recommendation dismissal up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the recommendation dismissal up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "recommendationType": true,
         "recommendationId": true,
@@ -167,7 +183,6 @@ func (d *RecommendationDismissalDataSource) Read(ctx context.Context, req dataso
         "resourceId": true,
         "dismissalReason": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -180,7 +195,7 @@ func (d *RecommendationDismissalDataSource) Read(ctx context.Context, req dataso
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No recommendation_dismissal found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No recommendation dismissal found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -193,11 +208,10 @@ func (d *RecommendationDismissalDataSource) Read(ctx context.Context, req dataso
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -214,11 +228,11 @@ func (d *RecommendationDismissalDataSource) Read(ctx context.Context, req dataso
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No recommendation_dismissal found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No recommendation dismissal matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one recommendation_dismissal matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one recommendation dismissal matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -246,23 +260,6 @@ func (d *RecommendationDismissalDataSource) Read(ctx context.Context, req dataso
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -297,34 +294,6 @@ func (d *RecommendationDismissalDataSource) Read(ctx context.Context, req dataso
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -444,23 +413,6 @@ func (d *RecommendationDismissalDataSource) Read(ctx context.Context, req dataso
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

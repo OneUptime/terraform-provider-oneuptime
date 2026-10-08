@@ -13,8 +13,8 @@ Change state of the incidents (Created to Acknowledged for example)
 
 ```terraform
 resource "oneuptime_incident_state_timeline" "example" {
-  incident_id = "123e4567-e89b-12d3-a456-426614174000"
-  incident_state_id = "123e4567-e89b-12d3-a456-426614174000"
+  incident_id       = oneuptime_incident.example.id
+  incident_state_id = oneuptime_incident_state.example.id
 }
 ```
 
@@ -22,33 +22,40 @@ resource "oneuptime_incident_state_timeline" "example" {
 
 ### Required
 
-- `incident_id` (String) A unique identifier for an object, represented as a UUID..
-- `incident_state_id` (String) A unique identifier for an object, represented as a UUID..
+- `incident_id` (String) Relation to Incident ID in which this resource belongs. The ID of a `oneuptime_incident`.
+- `incident_state_id` (String) Incident State ID Relation. Which incident state does this incident change to? The ID of a `oneuptime_incident_state`.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about this state change?..
-- `root_cause` (String) What is the root cause of this status change?..
-- `ends_at` (String) A date time object..
-- `starts_at` (String) A date time object..
+- `ends_at` (String) When did this status change end?
+- `root_cause` (String) What is the root cause of this status change?
+- `should_status_page_subscribers_be_notified` (Boolean) Should subscribers be notified about this state change? Defaults to `true`.
+- `starts_at` (String) When did this status change? Correct this when the recorded time is wrong - every measurement derived from this timeline is recomputed from the corrected value.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `subscriber_notification_status` (String) Status of notification sent to subscribers about this incident state change..
-- `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons..
-- `is_owner_notified` (Bool) Are owners notified of state change?..
-- `state_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident State Timeline], Update: [No access - you don't have permission for this operation].
+- `is_owner_notified` (Boolean) Are owners notified of state change?
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `state_change_log` (String) A JSON value: write it with `jsonencode()`.
+- `subscriber_notification_status` (String) Status of notification sent to subscribers about this incident state change.
+- `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing incident state timeline by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_incident_state_timeline.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_incident_state_timeline.example <id>

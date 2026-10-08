@@ -61,8 +61,6 @@ type ServiceLevelObjectiveResourceModel struct {
     AtRiskThresholdPercentage types.Number `tfsdk:"at_risk_threshold_percentage"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
@@ -86,19 +84,23 @@ func (r *ServiceLevelObjectiveResource) Metadata(ctx context.Context, req resour
 }
 
 func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Define Service Level Objectives (SLOs) with targets, compliance windows and error budgets, and track how much error budget remains.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -117,7 +119,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -126,7 +128,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this Service Level Objective is enabled. Disabled SLOs are not evaluated..",
+                MarkdownDescription: "Whether this Service Level Objective is enabled. Disabled SLOs are not evaluated.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -135,7 +137,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Archived SLOs are hidden from lists and are not evaluated..",
+                MarkdownDescription: "Archived SLOs are hidden from lists and are not evaluated.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -153,7 +155,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "multi_monitor_mode": schema.StringAttribute{
-                MarkdownDescription: "How downtime is counted when multiple monitors are attached. 'Any Monitor Down' counts time when any monitor is down. 'Monitor Seconds Average' averages downtime across monitors..",
+                MarkdownDescription: "How downtime is counted when multiple monitors are attached. 'Any Monitor Down' counts time when any monitor is down. 'Monitor Seconds Average' averages downtime across monitors.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Any Monitor Down"),
@@ -162,7 +164,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Monitors whose uptime is measured by this Service Level Objective (for Monitor Uptime SLIs)..",
+                MarkdownDescription: "Monitors whose uptime is measured by this Service Level Objective (for Monitor Uptime SLIs). IDs of `oneuptime_monitor` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -171,7 +173,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named \"Auto-add monitors with labels\". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead..",
+                MarkdownDescription: "Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named \"Auto-add monitors with labels\". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -180,7 +182,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "metric_query_config": schema.StringAttribute{
-                MarkdownDescription: "Query configuration for Metric SLIs: metric name, good-event predicate and optional attribute filters..",
+                MarkdownDescription: "Query configuration for Metric SLIs: metric name, good-event predicate and optional attribute filters. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -192,7 +194,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "target_percentage": schema.NumberAttribute{
-                MarkdownDescription: "Target of this Service Level Objective as a percentage (e.g. 99.9). Must be less than 100..",
+                MarkdownDescription: "Target of this Service Level Objective as a percentage (e.g. 99.9). Must be less than 100.",
                 Required: true,
             },
             "window_type": schema.StringAttribute{
@@ -205,7 +207,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "window_days": schema.NumberAttribute{
-                MarkdownDescription: "Length of the rolling compliance window in days (e.g. 7, 28, 30 or 90). Ignored for Calendar Month windows..",
+                MarkdownDescription: "Length of the rolling compliance window in days (e.g. 7, 28, 30 or 90). Ignored for Calendar Month windows.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(30)),
@@ -214,7 +216,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "timezone": schema.StringAttribute{
-                MarkdownDescription: "IANA timezone (e.g. America/New_York) used for Calendar Month window boundaries. Defaults to UTC when not set..",
+                MarkdownDescription: "IANA timezone (e.g. America/New_York) used for Calendar Month window boundaries. Defaults to UTC when not set.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -222,7 +224,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "at_risk_threshold_percentage": schema.NumberAttribute{
-                MarkdownDescription: "Percentage of remaining error budget at which the SLO status changes to At Risk. For example, 20 means the status becomes At Risk when less than 20% of the error budget remains..",
+                MarkdownDescription: "Percentage of remaining error budget at which the SLO status changes to At Risk. For example, 20 means the status becomes At Risk when less than 20% of the error budget remains.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(20)),
@@ -231,22 +233,16 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -254,71 +250,74 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 Computed: true,
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this Service Level Objective was archived.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
             "auto_added_monitors": schema.SetAttribute{
-                MarkdownDescription: "Monitors that were attached to this SLO by its monitor rules rather than by hand. Maintained by the server..",
+                MarkdownDescription: "Monitors that were attached to this SLO by its monitor rules rather than by hand. Maintained by the server. IDs of `oneuptime_monitor` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "downtime_monitor_statuses": schema.SetAttribute{
-                MarkdownDescription: "List of monitor statuses that are considered as \"down\" for this Service Level Objective..",
+                MarkdownDescription: "List of monitor statuses that are considered as \"down\" for this Service Level Objective. IDs of `oneuptime_monitor_status` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "current_sli_percentage": schema.NumberAttribute{
-                MarkdownDescription: "Current Service Level Indicator over the compliance window, as a percentage. Computed by the worker..",
+                MarkdownDescription: "Current Service Level Indicator over the compliance window, as a percentage. Computed by the worker.",
                 Computed: true,
             },
             "error_budget_remaining_percentage": schema.NumberAttribute{
-                MarkdownDescription: "Percentage of the error budget that remains. Can be negative when the budget is exhausted. Computed by the worker..",
+                MarkdownDescription: "Percentage of the error budget that remains. Can be negative when the budget is exhausted. Computed by the worker.",
                 Computed: true,
             },
             "error_budget_remaining_seconds": schema.NumberAttribute{
-                MarkdownDescription: "Seconds of error budget that remain. Can be negative when the budget is exhausted. Computed by the worker..",
+                MarkdownDescription: "Seconds of error budget that remain. Can be negative when the budget is exhausted. Computed by the worker.",
                 Computed: true,
             },
             "error_budget_total_seconds": schema.NumberAttribute{
-                MarkdownDescription: "Total seconds of error budget for the compliance window. Computed by the worker..",
+                MarkdownDescription: "Total seconds of error budget for the compliance window. Computed by the worker.",
                 Computed: true,
             },
             "current_burn_rate": schema.NumberAttribute{
-                MarkdownDescription: "Rate at which the error budget is currently being consumed. A burn rate of 1 exhausts the budget exactly at the end of the window. Computed by the worker..",
+                MarkdownDescription: "Rate at which the error budget is currently being consumed. A burn rate of 1 exhausts the budget exactly at the end of the window. Computed by the worker.",
                 Computed: true,
             },
             "slo_status": schema.StringAttribute{
-                MarkdownDescription: "Current status of this Service Level Objective (Healthy, At Risk, Budget Exhausted, Misconfigured, Paused). Computed by the worker..",
+                MarkdownDescription: "Current status of this Service Level Objective (Healthy, At Risk, Budget Exhausted, Misconfigured, Paused). Computed by the worker.",
                 Computed: true,
             },
             "status_change_notification_sent_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "The last time a status-change notification was sent to owners. Computed by the worker.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "last_evaluated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "The last time this Service Level Objective was evaluated. Computed by the worker.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "next_evaluation_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this Service Level Objective is next due for evaluation. Computed by the worker.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "last_accumulated_bucket_end_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Accumulation cursor for Metric SLIs: end of the last bucket whose good/total counts were persisted. Computed by the worker.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -354,6 +353,14 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ServiceLevelObjectiveResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -473,8 +480,6 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         "atRiskThresholdPercentage": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -968,34 +973,6 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1356,6 +1333,9 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1393,8 +1373,6 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         "atRiskThresholdPercentage": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -1889,34 +1867,6 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2298,6 +2248,14 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ServiceLevelObjectiveResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     serviceLevelObjectiveRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -2395,8 +2353,6 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         "atRiskThresholdPercentage": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -2885,34 +2841,6 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3272,6 +3200,9 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3308,6 +3239,56 @@ func (r *ServiceLevelObjectiveResource) Delete(ctx context.Context, req resource
 
 func (r *ServiceLevelObjectiveResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *ServiceLevelObjectiveResource) keepPlannedValues(data *ServiceLevelObjectiveResourceModel, plan *ServiceLevelObjectiveResourceModel, config *ServiceLevelObjectiveResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
+    }
+    if config.SliType.IsNull() && !plan.SliType.IsUnknown() {
+        data.SliType = plan.SliType
+    }
+    if config.MultiMonitorMode.IsNull() && !plan.MultiMonitorMode.IsUnknown() {
+        data.MultiMonitorMode = plan.MultiMonitorMode
+    }
+    if config.Monitors.IsNull() && !plan.Monitors.IsUnknown() {
+        data.Monitors = plan.Monitors
+    }
+    if config.MonitorLabels.IsNull() && !plan.MonitorLabels.IsUnknown() {
+        data.MonitorLabels = plan.MonitorLabels
+    }
+    if config.MetricQueryConfig.IsNull() && !plan.MetricQueryConfig.IsUnknown() {
+        data.MetricQueryConfig = plan.MetricQueryConfig
+    }
+    if config.WindowType.IsNull() && !plan.WindowType.IsUnknown() {
+        data.WindowType = plan.WindowType
+    }
+    if config.WindowDays.IsNull() && !plan.WindowDays.IsUnknown() {
+        data.WindowDays = plan.WindowDays
+    }
+    if config.Timezone.IsNull() && !plan.Timezone.IsUnknown() {
+        data.Timezone = plan.Timezone
+    }
+    if config.AtRiskThresholdPercentage.IsNull() && !plan.AtRiskThresholdPercentage.IsUnknown() {
+        data.AtRiskThresholdPercentage = plan.AtRiskThresholdPercentage
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

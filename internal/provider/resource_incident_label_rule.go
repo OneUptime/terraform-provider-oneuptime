@@ -62,8 +62,6 @@ type IncidentLabelRuleResourceModel struct {
     InheritLabelsFromServices types.Bool `tfsdk:"inherit_labels_from_services"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -72,19 +70,23 @@ func (r *IncidentLabelRuleResource) Metadata(ctx context.Context, req resource.M
 }
 
 func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *IncidentLabelRuleResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Configure rules for automatically attaching labels to incidents — including labels inherited from the incident's monitors and hosts — when matching incidents are created",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -96,7 +98,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -124,7 +126,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents from these monitors. Leave empty to match incidents from any monitor..",
+                MarkdownDescription: "Only trigger for incidents from these monitors. Leave empty to match incidents from any monitor. IDs of `oneuptime_monitor` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -133,7 +135,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents with these severities. Leave empty to match incidents of any severity..",
+                MarkdownDescription: "Only trigger for incidents with these severities. Leave empty to match incidents of any severity. IDs of `oneuptime_incident_severity` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -142,7 +144,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents that already have at least one of these labels. Leave empty to match regardless of incident labels..",
+                MarkdownDescription: "Only trigger for incidents that already have at least one of these labels. Leave empty to match regardless of incident labels. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -151,7 +153,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents from monitors that have at least one of these labels. Leave empty to match regardless of monitor labels..",
+                MarkdownDescription: "Only trigger for incidents from monitors that have at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -160,7 +162,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the incident title. Leave empty to match any title..",
+                MarkdownDescription: "Regex (case-insensitive) matched against the incident title. Leave empty to match any title.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -168,7 +170,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the incident description. Leave empty to match any description..",
+                MarkdownDescription: "Regex (case-insensitive) matched against the incident description. Leave empty to match any description.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -176,7 +178,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor names. Leave empty to match any monitor..",
+                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor names. Leave empty to match any monitor.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -184,7 +186,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor descriptions. Leave empty to match any description..",
+                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor descriptions. Leave empty to match any description.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -192,7 +194,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the incident when this rule matches. Already-attached labels are not duplicated..",
+                MarkdownDescription: "Labels to attach to the incident when this rule matches. Already-attached labels are not duplicated. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -201,7 +203,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "inherit_labels_from_monitors": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the incident's monitors onto the incident..",
+                MarkdownDescription: "When this rule matches, also copy every label of the incident's monitors onto the incident.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -210,7 +212,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "inherit_labels_from_hosts": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected hosts onto the incident..",
+                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected hosts onto the incident.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -219,7 +221,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "inherit_labels_from_kubernetes_clusters": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected Kubernetes clusters onto the incident..",
+                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected Kubernetes clusters onto the incident.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -228,7 +230,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "inherit_labels_from_docker_hosts": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected Docker hosts onto the incident..",
+                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected Docker hosts onto the incident.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -237,7 +239,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "inherit_labels_from_podman_hosts": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected Podman hosts onto the incident..",
+                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected Podman hosts onto the incident.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -246,7 +248,7 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "inherit_labels_from_services": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected services onto the incident..",
+                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected services onto the incident.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -255,27 +257,24 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -311,6 +310,14 @@ func (r *IncidentLabelRuleResource) Create(ctx context.Context, req resource.Cre
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentLabelRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -446,8 +453,6 @@ func (r *IncidentLabelRuleResource) Create(ctx context.Context, req resource.Cre
         "inheritLabelsFromServices": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -954,34 +959,6 @@ func (r *IncidentLabelRuleResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1027,6 +1004,9 @@ func (r *IncidentLabelRuleResource) Create(ctx context.Context, req resource.Cre
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1068,8 +1048,6 @@ func (r *IncidentLabelRuleResource) Read(ctx context.Context, req resource.ReadR
         "inheritLabelsFromServices": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1577,34 +1555,6 @@ func (r *IncidentLabelRuleResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1670,6 +1620,14 @@ func (r *IncidentLabelRuleResource) Update(ctx context.Context, req resource.Upd
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentLabelRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     incidentLabelRuleRequest := map[string]interface{}{
@@ -1784,8 +1742,6 @@ func (r *IncidentLabelRuleResource) Update(ctx context.Context, req resource.Upd
         "inheritLabelsFromServices": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -2287,34 +2243,6 @@ func (r *IncidentLabelRuleResource) Update(ctx context.Context, req resource.Upd
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2359,6 +2287,9 @@ func (r *IncidentLabelRuleResource) Update(ctx context.Context, req resource.Upd
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2395,6 +2326,71 @@ func (r *IncidentLabelRuleResource) Delete(ctx context.Context, req resource.Del
 
 func (r *IncidentLabelRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *IncidentLabelRuleResource) keepPlannedValues(data *IncidentLabelRuleResourceModel, plan *IncidentLabelRuleResourceModel, config *IncidentLabelRuleResourceModel) {
+    if config.Criteria.IsNull() && !plan.Criteria.IsUnknown() {
+        data.Criteria = plan.Criteria
+    }
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.Monitors.IsNull() && !plan.Monitors.IsUnknown() {
+        data.Monitors = plan.Monitors
+    }
+    if config.IncidentSeverities.IsNull() && !plan.IncidentSeverities.IsUnknown() {
+        data.IncidentSeverities = plan.IncidentSeverities
+    }
+    if config.IncidentLabels.IsNull() && !plan.IncidentLabels.IsUnknown() {
+        data.IncidentLabels = plan.IncidentLabels
+    }
+    if config.MonitorLabels.IsNull() && !plan.MonitorLabels.IsUnknown() {
+        data.MonitorLabels = plan.MonitorLabels
+    }
+    if config.IncidentTitlePattern.IsNull() && !plan.IncidentTitlePattern.IsUnknown() {
+        data.IncidentTitlePattern = plan.IncidentTitlePattern
+    }
+    if config.IncidentDescriptionPattern.IsNull() && !plan.IncidentDescriptionPattern.IsUnknown() {
+        data.IncidentDescriptionPattern = plan.IncidentDescriptionPattern
+    }
+    if config.MonitorNamePattern.IsNull() && !plan.MonitorNamePattern.IsUnknown() {
+        data.MonitorNamePattern = plan.MonitorNamePattern
+    }
+    if config.MonitorDescriptionPattern.IsNull() && !plan.MonitorDescriptionPattern.IsUnknown() {
+        data.MonitorDescriptionPattern = plan.MonitorDescriptionPattern
+    }
+    if config.LabelsToAdd.IsNull() && !plan.LabelsToAdd.IsUnknown() {
+        data.LabelsToAdd = plan.LabelsToAdd
+    }
+    if config.InheritLabelsFromMonitors.IsNull() && !plan.InheritLabelsFromMonitors.IsUnknown() {
+        data.InheritLabelsFromMonitors = plan.InheritLabelsFromMonitors
+    }
+    if config.InheritLabelsFromHosts.IsNull() && !plan.InheritLabelsFromHosts.IsUnknown() {
+        data.InheritLabelsFromHosts = plan.InheritLabelsFromHosts
+    }
+    if config.InheritLabelsFromKubernetesClusters.IsNull() && !plan.InheritLabelsFromKubernetesClusters.IsUnknown() {
+        data.InheritLabelsFromKubernetesClusters = plan.InheritLabelsFromKubernetesClusters
+    }
+    if config.InheritLabelsFromDockerHosts.IsNull() && !plan.InheritLabelsFromDockerHosts.IsUnknown() {
+        data.InheritLabelsFromDockerHosts = plan.InheritLabelsFromDockerHosts
+    }
+    if config.InheritLabelsFromPodmanHosts.IsNull() && !plan.InheritLabelsFromPodmanHosts.IsUnknown() {
+        data.InheritLabelsFromPodmanHosts = plan.InheritLabelsFromPodmanHosts
+    }
+    if config.InheritLabelsFromServices.IsNull() && !plan.InheritLabelsFromServices.IsUnknown() {
+        data.InheritLabelsFromServices = plan.InheritLabelsFromServices
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

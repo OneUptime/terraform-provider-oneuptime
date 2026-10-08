@@ -7,40 +7,43 @@ description: |-
 
 # oneuptime_incident_sla (Data Source)
 
-Track SLA status and deadlines for incidents Look up by `id` or by `name` (must match exactly one item).
+Track SLA status and deadlines for incidents
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one incident sla may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_incident_sla" "by_name" {
-  name = "example-incident_sla"
+data "oneuptime_incident_sla" "example" {
+  incident_id = oneuptime_incident.example.id
 }
 
+# Or by id:
 data "oneuptime_incident_sla" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `incident_sla_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `response_deadline` (String) A date time object.. Computed.
-- `resolution_deadline` (String) A date time object.. Computed.
-- `status` (String) Current SLA status (On Track, At Risk, Breached, Met).. Computed.
-- `responded_at` (String) A date time object.. Computed.
-- `resolved_at` (String) A date time object.. Computed.
-- `last_internal_note_reminder_sent_at` (String) A date time object.. Computed.
-- `last_public_note_reminder_sent_at` (String) A date time object.. Computed.
-- `breach_notification_sent_at` (String) A date time object.. Computed.
-- `sla_started_at` (String) A date time object.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `incident_id` (String) ID of the incident this SLA record is tracking. The ID of a `oneuptime_incident`.
+- `incident_sla_rule_id` (String) ID of the SLA rule that was applied to this incident. The ID of a `oneuptime_incident_sla_rule`.
+- `status` (String) Current SLA status (On Track, At Risk, Breached, Met).
+
+### Read-Only
+
+- `breach_notification_sent_at` (String) The time when breach notification was sent to incident owners.
+- `created_at` (String) Date and Time when the object was created.
+- `last_internal_note_reminder_sent_at` (String) The last time an internal note reminder was sent.
+- `last_public_note_reminder_sent_at` (String) The last time a public note reminder was sent.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `resolution_deadline` (String) The deadline by which the incident must be resolved to meet the SLA.
+- `resolved_at` (String) The actual time when the incident was resolved.
+- `responded_at` (String) The actual time when the incident was acknowledged.
+- `response_deadline` (String) The deadline by which the incident must be acknowledged to meet the SLA.
+- `sla_started_at` (String) The time when SLA tracking started (usually the incident declaredAt time).
+- `updated_at` (String) Date and Time when the object was updated.

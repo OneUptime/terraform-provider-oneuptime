@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,19 +27,16 @@ type StatusPageScimDataSource struct {
 // StatusPageScimDataSourceModel describes the data source data model.
 type StatusPageScimDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     BearerToken types.String `tfsdk:"bearer_token"`
     AutoProvisionUsers types.Bool `tfsdk:"auto_provision_users"`
     AutoDeprovisionUsers types.Bool `tfsdk:"auto_deprovision_users"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *StatusPageScimDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -49,65 +45,59 @@ func (d *StatusPageScimDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *StatusPageScimDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage SCIM auto-provisioning for your status page Look up an existing status_page_scim by `id` or by `name`.",
+        MarkdownDescription: "Manage SCIM auto-provisioning for your status page Look up an existing status page scim by `id`, or by any of its other arguments (`name`, `auto_deprovision_users`, `auto_provision_users`, ...): each one set must match, and exactly one status page scim may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
+                Optional: true,
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Any friendly name for this SCIM configuration.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description to help you remember.",
+                Optional: true,
                 Computed: true,
             },
             "bearer_token": schema.StringAttribute{
-                MarkdownDescription: "Bearer token for SCIM authentication. Keep this secure..",
+                MarkdownDescription: "Bearer token for SCIM authentication. Keep this secure.",
+                Optional: true,
                 Computed: true,
             },
             "auto_provision_users": schema.BoolAttribute{
                 MarkdownDescription: "Automatically create status page users when they are added via SCIM.",
+                Optional: true,
                 Computed: true,
             },
             "auto_deprovision_users": schema.BoolAttribute{
                 MarkdownDescription: "Automatically remove status page users when they are removed via SCIM.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -144,30 +134,66 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.StatusPageId.IsNull() && !data.StatusPageId.IsUnknown() {
+        filters["statusPageId"] = data.StatusPageId.ValueString()
+        filterNames = append(filterNames, "status_page_id = "+fmt.Sprintf("%q", data.StatusPageId.ValueString()))
+    }
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.BearerToken.IsNull() && !data.BearerToken.IsUnknown() {
+        filters["bearerToken"] = data.BearerToken.ValueString()
+        filterNames = append(filterNames, "bearer_token = "+fmt.Sprintf("%q", data.BearerToken.ValueString()))
+    }
+    if !data.AutoProvisionUsers.IsNull() && !data.AutoProvisionUsers.IsUnknown() {
+        filters["autoProvisionUsers"] = data.AutoProvisionUsers.ValueBool()
+        filterNames = append(filterNames, "auto_provision_users = "+fmt.Sprintf("%t", data.AutoProvisionUsers.ValueBool()))
+    }
+    if !data.AutoDeprovisionUsers.IsNull() && !data.AutoDeprovisionUsers.IsUnknown() {
+        filters["autoDeprovisionUsers"] = data.AutoDeprovisionUsers.ValueBool()
+        filterNames = append(filterNames, "auto_deprovision_users = "+fmt.Sprintf("%t", data.AutoDeprovisionUsers.ValueBool()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a status_page_scim.",
+            "Look the status page scim up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the status page scim up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "statusPageId": true,
+        "name": true,
         "description": true,
         "bearerToken": true,
         "autoProvisionUsers": true,
         "autoDeprovisionUsers": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -180,7 +206,7 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status_page_scim found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status page scim found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -193,11 +219,10 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -214,11 +239,11 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status_page_scim found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status page scim matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one status_page_scim matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one status page scim matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -246,23 +271,6 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -298,34 +306,6 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -359,6 +339,23 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
         data.StatusPageId = types.StringValue(val)
     } else {
         data.StatusPageId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -420,23 +417,6 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

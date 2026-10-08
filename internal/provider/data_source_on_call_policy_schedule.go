@@ -30,12 +30,10 @@ type OnCallPolicyScheduleDataSource struct {
 // OnCallPolicyScheduleDataSourceModel describes the data source data model.
 type OnCallPolicyScheduleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Labels types.Set `tfsdk:"labels"`
     Description types.String `tfsdk:"description"`
     Timezone types.String `tfsdk:"timezone"`
@@ -56,86 +54,85 @@ func (d *OnCallPolicyScheduleDataSource) Metadata(ctx context.Context, req datas
 
 func (d *OnCallPolicyScheduleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage schedules and rotations for your on-call duty policy. Look up an existing on_call_policy_schedule by `id` or by `name`.",
+        MarkdownDescription: "Manage schedules and rotations for your on-call duty policy. Look up an existing on call policy schedule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `current_user_id_on_roster`, ...): each one set must match, and exactly one on call policy schedule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Any friendly name of this object.",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember.",
+                Optional: true,
                 Computed: true,
             },
             "timezone": schema.StringAttribute{
-                MarkdownDescription: "IANA timezone this schedule's restriction and hand-off wall-clock times are interpreted in. When empty, times are interpreted in the server's local timezone (legacy behavior)..",
+                MarkdownDescription: "IANA timezone this schedule's restriction and hand-off wall-clock times are interpreted in. When empty, times are interpreted in the server's local timezone (legacy behavior).",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "current_user_id_on_roster": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who is currently on roster. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "next_user_id_on_roster": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Next ID who is currently on roster. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "roster_handoff_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When does the roster handoff occur for this schedule for the current user?",
                 Computed: true,
             },
             "roster_next_handoff_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When does the next roster handoff occur for this schedule for the next user?",
                 Computed: true,
             },
             "roster_next_start_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When does the next event start for this schedule for the next user?",
                 Computed: true,
             },
             "roster_start_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When does the current event start for this schedule for the current user?",
                 Computed: true,
             },
             "shift_config_version": schema.NumberAttribute{
-                MarkdownDescription: "Incremented whenever the schedule's layers, members, overrides or policy attachments change. Used as the calendar feed SEQUENCE..",
+                MarkdownDescription: "Incremented whenever the schedule's layers, members, overrides or policy attachments change. Used as the calendar feed SEQUENCE.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -172,23 +169,64 @@ func (d *OnCallPolicyScheduleDataSource) Read(ctx context.Context, req datasourc
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.Timezone.IsNull() && !data.Timezone.IsUnknown() {
+        filters["timezone"] = data.Timezone.ValueString()
+        filterNames = append(filterNames, "timezone = "+fmt.Sprintf("%q", data.Timezone.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.CurrentUserIdOnRoster.IsNull() && !data.CurrentUserIdOnRoster.IsUnknown() {
+        filters["currentUserIdOnRoster"] = data.CurrentUserIdOnRoster.ValueString()
+        filterNames = append(filterNames, "current_user_id_on_roster = "+fmt.Sprintf("%q", data.CurrentUserIdOnRoster.ValueString()))
+    }
+    if !data.NextUserIdOnRoster.IsNull() && !data.NextUserIdOnRoster.IsUnknown() {
+        filters["nextUserIdOnRoster"] = data.NextUserIdOnRoster.ValueString()
+        filterNames = append(filterNames, "next_user_id_on_roster = "+fmt.Sprintf("%q", data.NextUserIdOnRoster.ValueString()))
+    }
+    if !data.ShiftConfigVersion.IsNull() && !data.ShiftConfigVersion.IsUnknown() {
+        filters["shiftConfigVersion"] = lookupNumber(data.ShiftConfigVersion)
+        filterNames = append(filterNames, "shift_config_version = "+data.ShiftConfigVersion.ValueBigFloat().String())
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a on_call_policy_schedule.",
+            "Look the on call policy schedule up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the on call policy schedule up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "labels": true,
         "description": true,
         "timezone": true,
@@ -213,7 +251,7 @@ func (d *OnCallPolicyScheduleDataSource) Read(ctx context.Context, req datasourc
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No on_call_policy_schedule found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No on call policy schedule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -226,11 +264,10 @@ func (d *OnCallPolicyScheduleDataSource) Read(ctx context.Context, req datasourc
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -247,11 +284,11 @@ func (d *OnCallPolicyScheduleDataSource) Read(ctx context.Context, req datasourc
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No on_call_policy_schedule found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No on call policy schedule matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one on_call_policy_schedule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one on call policy schedule matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -279,23 +316,6 @@ func (d *OnCallPolicyScheduleDataSource) Read(ctx context.Context, req datasourc
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -331,34 +351,6 @@ func (d *OnCallPolicyScheduleDataSource) Read(ctx context.Context, req datasourc
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -375,6 +367,23 @@ func (d *OnCallPolicyScheduleDataSource) Read(ctx context.Context, req datasourc
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value

@@ -26,7 +26,12 @@ type TotpAuthDataSource struct {
 // TotpAuthDataSourceModel describes the data source data model.
 type TotpAuthDataSourceModel struct {
     Id types.String `tfsdk:"id"`
+    CreatedAt types.String `tfsdk:"created_at"`
+    UpdatedAt types.String `tfsdk:"updated_at"`
     Name types.String `tfsdk:"name"`
+    TwoFactorOtpUrl types.String `tfsdk:"two_factor_otp_url"`
+    IsVerified types.Bool `tfsdk:"is_verified"`
+    UserId types.String `tfsdk:"user_id"`
 }
 
 func (d *TotpAuthDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -35,16 +40,39 @@ func (d *TotpAuthDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *TotpAuthDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "TOTP Authentication for users Look up an existing totp_auth by `id` or by `name`.",
+        MarkdownDescription: "TOTP Authentication for users Look up an existing totp auth by `id`, or by any of its other arguments (`name`, `is_verified`, `two_factor_otp_url`, ...): each one set must match, and exactly one totp auth may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
+            "created_at": schema.StringAttribute{
+                MarkdownDescription: "Date and Time when the object was created.",
+                Computed: true,
+            },
+            "updated_at": schema.StringAttribute{
+                MarkdownDescription: "Date and Time when the object was updated.",
+                Computed: true,
+            },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Name of the TOTP authentication.",
+                Optional: true,
+                Computed: true,
+            },
+            "two_factor_otp_url": schema.StringAttribute{
+                MarkdownDescription: "OTP URL of the TOTP authentication.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_verified": schema.BoolAttribute{
+                MarkdownDescription: "Is this TOTP authentication verified and validated (has user entered the token to verify it).",
+                Optional: true,
+                Computed: true,
+            },
+            "user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID who deleted this object (if this object was deleted by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
             },
@@ -82,30 +110,62 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.TwoFactorOtpUrl.IsNull() && !data.TwoFactorOtpUrl.IsUnknown() {
+        filters["twoFactorOtpUrl"] = data.TwoFactorOtpUrl.ValueString()
+        filterNames = append(filterNames, "two_factor_otp_url = "+fmt.Sprintf("%q", data.TwoFactorOtpUrl.ValueString()))
+    }
+    if !data.IsVerified.IsNull() && !data.IsVerified.IsUnknown() {
+        filters["isVerified"] = data.IsVerified.ValueBool()
+        filterNames = append(filterNames, "is_verified = "+fmt.Sprintf("%t", data.IsVerified.ValueBool()))
+    }
+    if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
+        filters["userId"] = data.UserId.ValueString()
+        filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a totp_auth.",
+            "Look the totp auth up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the totp auth up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
+        "createdAt": true,
+        "updatedAt": true,
         "name": true,
+        "twoFactorOtpUrl": true,
+        "isVerified": true,
+        "userId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        resp.Diagnostics.AddError("Lookup Not Supported", "totp_auth cannot be looked up by id: the API exposes no get endpoint. Use the name filter instead.")
-        return
-    } else {
+        // No get endpoint: find it in the list by id.
+        filters["_id"] = data.Id.ValueString()
+        filterNames = append(filterNames, fmt.Sprintf("id = %q", data.Id.ValueString()))
+    }
+    if item == nil {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -122,11 +182,11 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No totp_auth found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No totp auth matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one totp_auth matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one totp auth matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -155,6 +215,40 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
     } else {
         data.Id = types.StringNull()
     }
+    if obj, ok := item["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if val, ok := item["createdAt"].(string); ok {
+        data.CreatedAt = types.StringValue(val)
+    } else {
+        data.CreatedAt = types.StringNull()
+    }
+    if obj, ok := item["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
+    } else if val, ok := item["updatedAt"].(string); ok {
+        data.UpdatedAt = types.StringValue(val)
+    } else {
+        data.UpdatedAt = types.StringNull()
+    }
     if obj, ok := item["name"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Name = types.StringValue(val)
@@ -171,6 +265,45 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
+    }
+    if obj, ok := item["twoFactorOtpUrl"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TwoFactorOtpUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TwoFactorOtpUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TwoFactorOtpUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TwoFactorOtpUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.TwoFactorOtpUrl = types.StringNull()
+        }
+    } else if val, ok := item["twoFactorOtpUrl"].(string); ok {
+        data.TwoFactorOtpUrl = types.StringValue(val)
+    } else {
+        data.TwoFactorOtpUrl = types.StringNull()
+    }
+    if val, ok := item["isVerified"].(bool); ok {
+        data.IsVerified = types.BoolValue(val)
+    } else {
+        data.IsVerified = types.BoolNull()
+    }
+    if obj, ok := item["userId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if val, ok := item["userId"].(string); ok {
+        data.UserId = types.StringValue(val)
+    } else {
+        data.UserId = types.StringNull()
     }
 
     // Write logs using the tflog package

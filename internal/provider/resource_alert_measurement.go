@@ -57,8 +57,6 @@ type AlertMeasurementResourceModel struct {
     Order types.Number `tfsdk:"order"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     MetricName types.String `tfsdk:"metric_name"`
     IsSystemDefined types.Bool `tfsdk:"is_system_defined"`
     BackfillRequestedAt RFC3339Value `tfsdk:"backfill_requested_at"`
@@ -72,30 +70,34 @@ func (r *AlertMeasurementResource) Metadata(ctx context.Context, req resource.Me
 }
 
 func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *AlertMeasurementResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "A named duration between two points in an alert's life, computed automatically for every alert",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Human readable name of this measurement, such as Time to Acknowledge. This is what charts call it..",
+                MarkdownDescription: "Human readable name of this measurement, such as Time to Acknowledge. This is what charts call it.",
                 Required: true,
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Acknowledge becomes time-to-acknowledge, with -2, -3 and so on added when another measurement already has it. It cannot be changed once the measurement is created, because it is used to build the metric name that every recorded point is written under; to rename a measurement, change the Name instead..",
+                MarkdownDescription: "Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Acknowledge becomes time-to-acknowledge, with -2, -3 and so on added when another measurement already has it. It cannot be changed once the measurement is created, because it is used to build the metric name that every recorded point is written under; to rename a measurement, change the Name instead.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -112,15 +114,15 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "start_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered..",
+                MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered.",
                 Required: true,
             },
             "end_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered..",
+                MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered.",
                 Required: true,
             },
             "start_alert_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert state this measurement starts at. Required only when the Start Anchor Type is State Entered. Cleared if that state is deleted, at which point the measurement reports Not Applicable rather than a wrong number. The ID of a `oneuptime_alert_state`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -128,7 +130,7 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "end_alert_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert state this measurement ends at. Required only when the End Anchor Type is State Entered. Cleared if that state is deleted, at which point the measurement reports Not Applicable rather than a wrong number. The ID of a `oneuptime_alert_state`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -136,7 +138,7 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "start_alert_state_role": schema.StringAttribute{
-                MarkdownDescription: "The role of the state this measurement starts at - Created, Acknowledged or Resolved. Used when the Start Anchor Type is State Role Entered. Resolving by role keeps the measurement working when a project renames or replaces the state that plays that part..",
+                MarkdownDescription: "The role of the state this measurement starts at - Created, Acknowledged or Resolved. Used when the Start Anchor Type is State Role Entered. Resolving by role keeps the measurement working when a project renames or replaces the state that plays that part.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -144,7 +146,7 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "end_alert_state_role": schema.StringAttribute{
-                MarkdownDescription: "The role of the state this measurement ends at - Created, Acknowledged or Resolved. Used when the End Anchor Type is State Role Entered..",
+                MarkdownDescription: "The role of the state this measurement ends at - Created, Acknowledged or Resolved. Used when the End Anchor Type is State Role Entered.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -152,7 +154,7 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "start_state_occurrence": schema.StringAttribute{
-                MarkdownDescription: "Which entry to use when the start state is entered more than once - First or Last. First matches the built-in alert metrics; Last follows a reopened alert to its final pass through that state..",
+                MarkdownDescription: "Which entry to use when the start state is entered more than once - First or Last. First matches the built-in alert metrics; Last follows a reopened alert to its final pass through that state.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("First"),
@@ -161,7 +163,7 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "end_state_occurrence": schema.StringAttribute{
-                MarkdownDescription: "Which entry to use when the end state is entered more than once - First or Last. First matches the built-in alert metrics; Last follows a reopened alert to its final pass through that state..",
+                MarkdownDescription: "Which entry to use when the end state is entered more than once - First or Last. First matches the built-in alert metrics; Last follows a reopened alert to its final pass through that state.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("First"),
@@ -170,7 +172,7 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "unit": schema.StringAttribute{
-                MarkdownDescription: "The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the alert; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds..",
+                MarkdownDescription: "The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the alert; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("seconds"),
@@ -179,7 +181,7 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "aggregation_type": schema.StringAttribute{
-                MarkdownDescription: "How this measurement's chart sums up many alerts by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across alerts produces a number with no meaning..",
+                MarkdownDescription: "How this measurement's chart sums up many alerts by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across alerts produces a number with no meaning.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Avg"),
@@ -206,7 +208,7 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
+                MarkdownDescription: "Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -214,26 +216,20 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "metric_name": schema.StringAttribute{
-                MarkdownDescription: "The metric name every recorded point of this measurement is written under. Derived from the key as oneuptime.alert.measurement.<key> and maintained for you..",
+                MarkdownDescription: "The metric name every recorded point of this measurement is written under. Derived from the key as oneuptime.alert.measurement.<key> and maintained for you.",
                 Computed: true,
             },
             "is_system_defined": schema.BoolAttribute{
@@ -241,23 +237,26 @@ func (r *AlertMeasurementResource) Schema(ctx context.Context, req resource.Sche
                 Computed: true,
             },
             "backfill_requested_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a backfill of this measurement over existing alerts was requested.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "backfill_cursor_created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "How far the backfill has walked this project, so a restart resumes instead of starting over.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "backfill_completed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the backfill of this measurement over existing alerts finished.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -293,6 +292,14 @@ func (r *AlertMeasurementResource) Create(ctx context.Context, req resource.Crea
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config AlertMeasurementResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -416,8 +423,6 @@ func (r *AlertMeasurementResource) Create(ctx context.Context, req resource.Crea
         "order": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "metricName": true,
         "isSystemDefined": true,
         "backfillRequestedAt": true,
@@ -993,34 +998,6 @@ func (r *AlertMeasurementResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["metricName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1139,6 +1116,9 @@ func (r *AlertMeasurementResource) Create(ctx context.Context, req resource.Crea
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1177,8 +1157,6 @@ func (r *AlertMeasurementResource) Read(ctx context.Context, req resource.ReadRe
         "order": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "metricName": true,
         "isSystemDefined": true,
         "backfillRequestedAt": true,
@@ -1755,34 +1733,6 @@ func (r *AlertMeasurementResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["metricName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1922,6 +1872,14 @@ func (r *AlertMeasurementResource) Update(ctx context.Context, req resource.Upda
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config AlertMeasurementResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     alertMeasurementRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -2015,8 +1973,6 @@ func (r *AlertMeasurementResource) Update(ctx context.Context, req resource.Upda
         "order": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "metricName": true,
         "isSystemDefined": true,
         "backfillRequestedAt": true,
@@ -2587,34 +2543,6 @@ func (r *AlertMeasurementResource) Update(ctx context.Context, req resource.Upda
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["metricName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2732,6 +2660,9 @@ func (r *AlertMeasurementResource) Update(ctx context.Context, req resource.Upda
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2768,6 +2699,56 @@ func (r *AlertMeasurementResource) Delete(ctx context.Context, req resource.Dele
 
 func (r *AlertMeasurementResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *AlertMeasurementResource) keepPlannedValues(data *AlertMeasurementResourceModel, plan *AlertMeasurementResourceModel, config *AlertMeasurementResourceModel) {
+    if config.Key.IsNull() && !plan.Key.IsUnknown() {
+        data.Key = plan.Key
+    }
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.StartAlertStateId.IsNull() && !plan.StartAlertStateId.IsUnknown() {
+        data.StartAlertStateId = plan.StartAlertStateId
+    }
+    if config.EndAlertStateId.IsNull() && !plan.EndAlertStateId.IsUnknown() {
+        data.EndAlertStateId = plan.EndAlertStateId
+    }
+    if config.StartAlertStateRole.IsNull() && !plan.StartAlertStateRole.IsUnknown() {
+        data.StartAlertStateRole = plan.StartAlertStateRole
+    }
+    if config.EndAlertStateRole.IsNull() && !plan.EndAlertStateRole.IsUnknown() {
+        data.EndAlertStateRole = plan.EndAlertStateRole
+    }
+    if config.StartStateOccurrence.IsNull() && !plan.StartStateOccurrence.IsUnknown() {
+        data.StartStateOccurrence = plan.StartStateOccurrence
+    }
+    if config.EndStateOccurrence.IsNull() && !plan.EndStateOccurrence.IsUnknown() {
+        data.EndStateOccurrence = plan.EndStateOccurrence
+    }
+    if config.Unit.IsNull() && !plan.Unit.IsUnknown() {
+        data.Unit = plan.Unit
+    }
+    if config.AggregationType.IsNull() && !plan.AggregationType.IsUnknown() {
+        data.AggregationType = plan.AggregationType
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.ShowOnAlertView.IsNull() && !plan.ShowOnAlertView.IsUnknown() {
+        data.ShowOnAlertView = plan.ShowOnAlertView
+    }
+    if config.Order.IsNull() && !plan.Order.IsUnknown() {
+        data.Order = plan.Order
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

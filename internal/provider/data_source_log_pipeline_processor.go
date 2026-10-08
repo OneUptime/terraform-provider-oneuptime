@@ -28,13 +28,11 @@ type LogPipelineProcessorDataSource struct {
 // LogPipelineProcessorDataSourceModel describes the data source data model.
 type LogPipelineProcessorDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     LogPipelineId types.String `tfsdk:"log_pipeline_id"`
+    Name types.String `tfsdk:"name"`
     ProcessorType types.String `tfsdk:"processor_type"`
     Configuration types.String `tfsdk:"configuration"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
@@ -48,61 +46,58 @@ func (d *LogPipelineProcessorDataSource) Metadata(ctx context.Context, req datas
 
 func (d *LogPipelineProcessorDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Individual processors within a log pipeline that transform log data during ingestion. Look up an existing log_pipeline_processor by `id` or by `name`.",
+        MarkdownDescription: "Individual processors within a log pipeline that transform log data during ingestion. Look up an existing log pipeline processor by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `is_enabled`, ...): each one set must match, and exactly one log pipeline processor may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this log pipeline processor belongs to. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "log_pipeline_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the log pipeline this processor belongs to. The ID of a `oneuptime_log_pipeline`.",
+                Optional: true,
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Friendly name for this processor.",
+                Optional: true,
                 Computed: true,
             },
             "processor_type": schema.StringAttribute{
-                MarkdownDescription: "The type of processor: GrokParser, KeyValueParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor..",
+                MarkdownDescription: "The type of processor: GrokParser, KeyValueParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor.",
+                Optional: true,
                 Computed: true,
             },
             "configuration": schema.StringAttribute{
-                MarkdownDescription: "Processor-specific configuration as JSON (e.g., grok pattern, source/target fields, mapping rules)..",
+                MarkdownDescription: "Processor-specific configuration as JSON (e.g., grok pattern, source/target fields, mapping rules). A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this processor is active..",
+                MarkdownDescription: "Whether this processor is active.",
+                Optional: true,
                 Computed: true,
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Where this processor runs within its pipeline, lowest number first. A new processor is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
+                MarkdownDescription: "Where this processor runs within its pipeline, lowest number first. A new processor is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user who created this log pipeline processor. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -139,24 +134,57 @@ func (d *LogPipelineProcessorDataSource) Read(ctx context.Context, req datasourc
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.LogPipelineId.IsNull() && !data.LogPipelineId.IsUnknown() {
+        filters["logPipelineId"] = data.LogPipelineId.ValueString()
+        filterNames = append(filterNames, "log_pipeline_id = "+fmt.Sprintf("%q", data.LogPipelineId.ValueString()))
+    }
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.ProcessorType.IsNull() && !data.ProcessorType.IsUnknown() {
+        filters["processorType"] = data.ProcessorType.ValueString()
+        filterNames = append(filterNames, "processor_type = "+fmt.Sprintf("%q", data.ProcessorType.ValueString()))
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        filters["isEnabled"] = data.IsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
+    }
+    if !data.SortOrder.IsNull() && !data.SortOrder.IsUnknown() {
+        filters["sortOrder"] = lookupNumber(data.SortOrder)
+        filterNames = append(filterNames, "sort_order = "+data.SortOrder.ValueBigFloat().String())
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a log_pipeline_processor.",
+            "Look the log pipeline processor up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the log pipeline processor up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "logPipelineId": true,
+        "name": true,
         "processorType": true,
         "configuration": true,
         "isEnabled": true,
@@ -174,7 +202,7 @@ func (d *LogPipelineProcessorDataSource) Read(ctx context.Context, req datasourc
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No log_pipeline_processor found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No log pipeline processor found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -187,11 +215,10 @@ func (d *LogPipelineProcessorDataSource) Read(ctx context.Context, req datasourc
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -208,11 +235,11 @@ func (d *LogPipelineProcessorDataSource) Read(ctx context.Context, req datasourc
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No log_pipeline_processor found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No log pipeline processor matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one log_pipeline_processor matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one log pipeline processor matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -240,23 +267,6 @@ func (d *LogPipelineProcessorDataSource) Read(ctx context.Context, req datasourc
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -292,34 +302,6 @@ func (d *LogPipelineProcessorDataSource) Read(ctx context.Context, req datasourc
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -353,6 +335,23 @@ func (d *LogPipelineProcessorDataSource) Read(ctx context.Context, req datasourc
         data.LogPipelineId = types.StringValue(val)
     } else {
         data.LogPipelineId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["processorType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

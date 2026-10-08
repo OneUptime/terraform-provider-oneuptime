@@ -7,32 +7,35 @@ description: |-
 
 # oneuptime_team_member (Data Source)
 
-This model connects users and teams Look up by `id` or by `name` (must match exactly one item).
+This model connects users and teams
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one team member may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_team_member" "by_name" {
-  name = "example-team_member"
+data "oneuptime_team_member" "example" {
+  team_id = oneuptime_team.example.id
 }
 
+# Or by id:
 data "oneuptime_team_member" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `has_accepted_invitation` (Bool) Has this team member accepted invitation.. Computed.
-- `invitation_accepted_at` (String) A date time object.. Computed.
+### Optional
+
+- `has_accepted_invitation` (Boolean) Has this team member accepted invitation.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `team_id` (String) ID of Team this user belongs to. The ID of a `oneuptime_team`.
+- `user_id` (String) ID of User who belongs to this team. The ID of a `oneuptime_user` (see the data source).
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `invitation_accepted_at` (String) When did this team member accept invitation.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -30,11 +29,8 @@ type ScheduledMaintenanceTemplateDataSource struct {
 // ScheduledMaintenanceTemplateDataSourceModel describes the data source data model.
 type ScheduledMaintenanceTemplateDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     TemplateName types.String `tfsdk:"template_name"`
     TemplateDescription types.String `tfsdk:"template_description"`
@@ -70,149 +66,147 @@ func (d *ScheduledMaintenanceTemplateDataSource) Metadata(ctx context.Context, r
 
 func (d *ScheduledMaintenanceTemplateDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage scheduled maintenance templates for your project Look up an existing scheduled_maintenance_template by `id` or by `name`.",
+        MarkdownDescription: "Manage scheduled maintenance templates for your project Look up an existing scheduled maintenance template by `id`, or by any of its other arguments (`change_monitor_status_to_id`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one scheduled maintenance template may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "template_name": schema.StringAttribute{
                 MarkdownDescription: "Name of the Scheduled Maintenance Template.",
+                Optional: true,
                 Computed: true,
             },
             "template_description": schema.StringAttribute{
                 MarkdownDescription: "Description of the Scheduled Maintenance Template.",
+                Optional: true,
                 Computed: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this scheduled event..",
+                MarkdownDescription: "Title of this scheduled event.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is a markdown field..",
+                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is a markdown field.",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors attached to this event.",
+                MarkdownDescription: "List of monitors attached to this event. IDs of `oneuptime_monitor` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts to pre-populate on scheduled maintenance events created from this template..",
+                MarkdownDescription: "List of hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes clusters to pre-populate on scheduled maintenance events created from this template..",
+                MarkdownDescription: "List of Kubernetes clusters to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Docker hosts to pre-populate on scheduled maintenance events created from this template..",
+                MarkdownDescription: "List of Docker hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_docker_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Podman hosts to pre-populate on scheduled maintenance events created from this template..",
+                MarkdownDescription: "List of Podman hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_podman_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services to pre-populate on scheduled maintenance events created from this template..",
+                MarkdownDescription: "List of services to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_service` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "List of status pages to show this event on.",
+                MarkdownDescription: "List of status pages to show this event on. IDs of `oneuptime_status_page` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "change_monitor_status_to_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the event is ongoing. The ID of a `oneuptime_monitor_status`.",
+                Optional: true,
                 Computed: true,
             },
             "first_event_scheduled_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When would you like to schedule the first event?",
                 Computed: true,
             },
             "first_event_starts_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When does the first event start?",
                 Computed: true,
             },
             "first_event_ends_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When does the first event end?",
                 Computed: true,
             },
             "recurring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often should this event recur?.",
+                MarkdownDescription: "How often should this event recur? A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_recurring_event": schema.BoolAttribute{
-                MarkdownDescription: "Is this a recurring event?.",
+                MarkdownDescription: "Is this a recurring event?",
+                Optional: true,
                 Computed: true,
             },
             "schedule_next_event_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When is the next event scheduled?",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_on_event_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event creation?.",
+                MarkdownDescription: "Should subscribers be notified about this event creation?",
+                Optional: true,
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ongoing": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?.",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?",
+                Optional: true,
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ended": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?.",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?",
+                Optional: true,
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "send_subscriber_notifications_on_before_the_event": schema.StringAttribute{
-                MarkdownDescription: "Should subscribers be notified before the event?.",
+                MarkdownDescription: "Should subscribers be notified before the event? A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
         },
@@ -249,22 +243,74 @@ func (d *ScheduledMaintenanceTemplateDataSource) Read(ctx context.Context, req d
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.TemplateName.IsNull() && !data.TemplateName.IsUnknown() {
+        filters["templateName"] = data.TemplateName.ValueString()
+        filterNames = append(filterNames, "template_name = "+fmt.Sprintf("%q", data.TemplateName.ValueString()))
+    }
+    if !data.TemplateDescription.IsNull() && !data.TemplateDescription.IsUnknown() {
+        filters["templateDescription"] = data.TemplateDescription.ValueString()
+        filterNames = append(filterNames, "template_description = "+fmt.Sprintf("%q", data.TemplateDescription.ValueString()))
+    }
+    if !data.Title.IsNull() && !data.Title.IsUnknown() {
+        filters["title"] = data.Title.ValueString()
+        filterNames = append(filterNames, "title = "+fmt.Sprintf("%q", data.Title.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.ChangeMonitorStatusToId.IsNull() && !data.ChangeMonitorStatusToId.IsUnknown() {
+        filters["changeMonitorStatusToId"] = data.ChangeMonitorStatusToId.ValueString()
+        filterNames = append(filterNames, "change_monitor_status_to_id = "+fmt.Sprintf("%q", data.ChangeMonitorStatusToId.ValueString()))
+    }
+    if !data.IsRecurringEvent.IsNull() && !data.IsRecurringEvent.IsUnknown() {
+        filters["isRecurringEvent"] = data.IsRecurringEvent.ValueBool()
+        filterNames = append(filterNames, "is_recurring_event = "+fmt.Sprintf("%t", data.IsRecurringEvent.ValueBool()))
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.IsUnknown() {
+        filters["shouldStatusPageSubscribersBeNotifiedOnEventCreated"] = data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.ValueBool()
+        filterNames = append(filterNames, "should_status_page_subscribers_be_notified_on_event_created = "+fmt.Sprintf("%t", data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.ValueBool()))
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.IsUnknown() {
+        filters["shouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing"] = data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.ValueBool()
+        filterNames = append(filterNames, "should_status_page_subscribers_be_notified_when_event_changed_to_ongoing = "+fmt.Sprintf("%t", data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.ValueBool()))
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.IsUnknown() {
+        filters["shouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded"] = data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.ValueBool()
+        filterNames = append(filterNames, "should_status_page_subscribers_be_notified_when_event_changed_to_ended = "+fmt.Sprintf("%t", data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.ValueBool()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a scheduled_maintenance_template.",
+            "Look the scheduled maintenance template up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the scheduled maintenance template up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "templateName": true,
         "templateDescription": true,
@@ -304,7 +350,7 @@ func (d *ScheduledMaintenanceTemplateDataSource) Read(ctx context.Context, req d
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scheduled_maintenance_template found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scheduled maintenance template found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -317,11 +363,10 @@ func (d *ScheduledMaintenanceTemplateDataSource) Read(ctx context.Context, req d
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -338,11 +383,11 @@ func (d *ScheduledMaintenanceTemplateDataSource) Read(ctx context.Context, req d
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scheduled_maintenance_template found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scheduled maintenance template matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one scheduled_maintenance_template matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one scheduled maintenance template matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -370,23 +415,6 @@ func (d *ScheduledMaintenanceTemplateDataSource) Read(ctx context.Context, req d
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -421,34 +449,6 @@ func (d *ScheduledMaintenanceTemplateDataSource) Read(ctx context.Context, req d
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

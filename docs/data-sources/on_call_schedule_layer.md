@@ -7,37 +7,40 @@ description: |-
 
 # oneuptime_on_call_schedule_layer (Data Source)
 
-On-Call Schedule Layers Look up by `id` or by `name` (must match exactly one item).
+On-Call Schedule Layers
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one on call schedule layer may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_on_call_schedule_layer" "by_name" {
-  name = "example-on_call_schedule_layer"
+data "oneuptime_on_call_schedule_layer" "example" {
+  name = "Example on call schedule layer"
 }
 
+# Or by id:
 data "oneuptime_on_call_schedule_layer" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Description for this layer. This is optional and can be left blank... Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority... Computed.
-- `starts_at` (String) A date time object.. Computed.
-- `rotation` (String) How often would you like to hand off the duty to the next user in this layer?.. Computed.
-- `hand_off_time` (String) A date time object.. Computed.
-- `restriction_times` (String) Restrict this layer to these times.. Computed.
+### Optional
+
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `description` (String) Description for this layer. This is optional and can be left blank.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `name` (String) Friendly name for this layer.
+- `on_call_duty_policy_schedule_id` (String) ID of your On-Call Policy Schedule where this escalation rule belongs. The ID of a `oneuptime_on_call_policy_schedule`.
+- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `hand_off_time` (String) Hand off time. When would you like to hand off the duty to the next user in this layer?
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `restriction_times` (String) Restrict this layer to these times. A JSON value: write it with `jsonencode()`.
+- `rotation` (String) How often would you like to hand off the duty to the next user in this layer? A JSON value: write it with `jsonencode()`.
+- `starts_at` (String) Start date and time of this layer.
+- `updated_at` (String) Date and Time when the object was updated.

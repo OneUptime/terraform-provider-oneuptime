@@ -30,12 +30,10 @@ type MonitorDataSource struct {
 // MonitorDataSourceModel describes the data source data model.
 type MonitorDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -93,248 +91,262 @@ func (d *MonitorDataSource) Metadata(ctx context.Context, req datasource.Metadat
 
 func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Monitor is anything that monitors your API, Websites, IP, Network or more. You can also create static monitor that does not monitor anything. Look up an existing monitor by `id` or by `name`.",
+        MarkdownDescription: "Monitor is anything that monitors your API, Websites, IP, Network or more. You can also create static monitor that does not monitor anything. Look up an existing monitor by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `auto_provisioned_network_device_id`, ...): each one set must match, and exactly one monitor may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Any friendly name for this monitor.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember.",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring..",
+                MarkdownDescription: "Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring.",
+                Optional: true,
                 Computed: true,
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this monitor was archived. Empty while it is not archived.",
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "depends_on_monitors": schema.SetAttribute{
-                MarkdownDescription: "Parent monitors this monitor depends on. When a parent is offline (or in one of the configured suppression statuses), alerts and incidents from this monitor are suppressed at creation time — the monitor keeps evaluating and its status timeline still updates..",
+                MarkdownDescription: "Parent monitors this monitor depends on. When a parent is offline (or in one of the configured suppression statuses), alerts and incidents from this monitor are suppressed at creation time — the monitor keeps evaluating and its status timeline still updates. IDs of `oneuptime_monitor` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "suppress_alerts_when_parent_monitor_statuses": schema.SetAttribute{
-                MarkdownDescription: "Parent monitor statuses that suppress this monitor's alerts and incidents. When empty, statuses flagged as offline suppress (the default). Only used when Depends On Monitors is set..",
+                MarkdownDescription: "Parent monitor statuses that suppress this monitor's alerts and incidents. When empty, statuses flagged as offline suppress (the default). Only used when Depends On Monitors is set. IDs of `oneuptime_monitor_status` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "Hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "Docker hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Docker hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_docker_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "Podman hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Podman hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_podman_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "proxmox_clusters": schema.SetAttribute{
-                MarkdownDescription: "Proxmox clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Proxmox clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_proxmox_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "vmware_v_centers": schema.SetAttribute{
-                MarkdownDescription: "VMware vCenters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "VMware vCenters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_vcenter` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "ceph_clusters": schema.SetAttribute{
-                MarkdownDescription: "Ceph clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Ceph clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_ceph_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "storage_arrays": schema.SetAttribute{
-                MarkdownDescription: "Storage arrays this monitor watches. Incidents and alerts it creates are linked to them..",
+                MarkdownDescription: "Storage arrays this monitor watches. Incidents and alerts it creates are linked to them. IDs of `oneuptime_storage_array` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_swarm_clusters": schema.SetAttribute{
-                MarkdownDescription: "Docker Swarm clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Docker Swarm clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_docker_swarm_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "iot_fleets": schema.SetAttribute{
-                MarkdownDescription: "IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_iot_fleet` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "database_servers": schema.SetAttribute{
-                MarkdownDescription: "Databases this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Databases this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_database` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "Services this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Services this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_service` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_template_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Monitor Template this monitor was created from. Null for monitors not created from a template. The ID of a `oneuptime_monitor_template`.",
+                Optional: true,
                 Computed: true,
             },
             "auto_provisioned_network_device_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Device that caused this monitor to be provisioned automatically. The ID of a `oneuptime_network_device`.",
+                Optional: true,
                 Computed: true,
             },
             "network_alert_policy_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Alert Policy that provisioned this monitor, when one did. The ID of a `oneuptime_network_alert_policy`.",
+                Optional: true,
                 Computed: true,
             },
             "monitor_type": schema.StringAttribute{
-                MarkdownDescription: "What is the type of this monitor? Website? API? etc..",
+                MarkdownDescription: "What is the type of this monitor? Website? API? etc.",
+                Optional: true,
                 Computed: true,
             },
             "current_monitor_status_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Whats the current status ID of this monitor? The ID of a `oneuptime_monitor_status`.",
+                Optional: true,
                 Computed: true,
             },
             "monitor_steps": schema.StringAttribute{
-                MarkdownDescription: "MonitorSteps object",
+                MarkdownDescription: "What would you like to monitor and what is the criteria?",
                 Computed: true,
             },
             "monitoring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: \"*/5 * * * *\" is every five minutes..",
+                MarkdownDescription: "How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: \"*/5 * * * *\" is every five minutes.",
+                Optional: true,
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?.",
+                MarkdownDescription: "Are owners notified of when this resource is created?",
+                Optional: true,
                 Computed: true,
             },
             "disable_active_monitoring": schema.BoolAttribute{
-                MarkdownDescription: "Disable active monitoring for this resource?.",
+                MarkdownDescription: "Disable active monitoring for this resource?",
+                Optional: true,
                 Computed: true,
             },
             "incoming_request_monitor_heartbeat_checked_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Incoming Request monitor only. When was the last time we checked the heartbeat?",
                 Computed: true,
             },
             "telemetry_monitor_next_monitor_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Telemetry Monitor only. When is the next time we should monitor?",
                 Computed: true,
             },
             "telemetry_monitor_last_monitor_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Telemetry Monitor only. When was the last time we monitored?",
                 Computed: true,
             },
             "disable_active_monitoring_because_of_scheduled_maintenance_event": schema.BoolAttribute{
                 MarkdownDescription: "Disable Monitoring because of Ongoing Scheduled Maintenance Event.",
+                Optional: true,
                 Computed: true,
             },
             "disable_active_monitoring_because_of_manual_incident": schema.BoolAttribute{
-                MarkdownDescription: "Disable Monitoring because of Incident which is creeated manually by user..",
+                MarkdownDescription: "Disable Monitoring because of Incident which is creeated manually by user.",
+                Optional: true,
                 Computed: true,
             },
             "server_monitor_request_received_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Server Monitor only. When was the last time we received a request?",
                 Computed: true,
             },
             "server_monitor_secret_key": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "This field is for Server Monitor only. Secret Key to authenticate the request.",
+                Optional: true,
                 Computed: true,
             },
             "incoming_request_secret_key": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "This field is for Incoming Request Monitor only. Secret Key to authenticate the request.",
+                Optional: true,
                 Computed: true,
             },
             "incoming_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "Incoming Monitor Request for Incoming Request Monitor.",
+                MarkdownDescription: "Incoming Monitor Request for Incoming Request Monitor. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "incoming_email_secret_key": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.",
+                Optional: true,
                 Computed: true,
             },
             "incoming_email_custom_local_part": schema.StringAttribute{
-                MarkdownDescription: "This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address..",
+                MarkdownDescription: "This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address.",
+                Optional: true,
                 Computed: true,
             },
             "incoming_email_monitor_last_email_received_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Incoming Email Monitor only. When was the last email received?",
                 Computed: true,
             },
             "incoming_email_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "This field is for Incoming Email Monitor only. Last email data received..",
+                MarkdownDescription: "This field is for Incoming Email Monitor only. Last email data received. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "incoming_email_monitor_heartbeat_checked_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Incoming Email monitor only. When was the last time we checked the heartbeat?",
                 Computed: true,
             },
             "server_monitor_response": schema.StringAttribute{
-                MarkdownDescription: "Server Monitor Response for Server Monitor.",
+                MarkdownDescription: "Server Monitor Response for Server Monitor. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_all_probes_disconnected_from_this_monitor": schema.BoolAttribute{
-                MarkdownDescription: "All Probes Disconnected From This Monitor. Is this monitor not being monitored?.",
+                MarkdownDescription: "All Probes Disconnected From This Monitor. Is this monitor not being monitored?",
+                Optional: true,
                 Computed: true,
             },
             "is_no_probe_enabled_on_this_monitor": schema.BoolAttribute{
-                MarkdownDescription: "No Probe Enabled On This Monitor. Is this monitor not being monitored?.",
+                MarkdownDescription: "No Probe Enabled On This Monitor. Is this monitor not being monitored?",
+                Optional: true,
                 Computed: true,
             },
             "minimum_probe_agreement": schema.NumberAttribute{
-                MarkdownDescription: "Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree..",
+                MarkdownDescription: "Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -371,23 +383,124 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
+    if !data.MonitorTemplateId.IsNull() && !data.MonitorTemplateId.IsUnknown() {
+        filters["monitorTemplateId"] = data.MonitorTemplateId.ValueString()
+        filterNames = append(filterNames, "monitor_template_id = "+fmt.Sprintf("%q", data.MonitorTemplateId.ValueString()))
+    }
+    if !data.AutoProvisionedNetworkDeviceId.IsNull() && !data.AutoProvisionedNetworkDeviceId.IsUnknown() {
+        filters["autoProvisionedNetworkDeviceId"] = data.AutoProvisionedNetworkDeviceId.ValueString()
+        filterNames = append(filterNames, "auto_provisioned_network_device_id = "+fmt.Sprintf("%q", data.AutoProvisionedNetworkDeviceId.ValueString()))
+    }
+    if !data.NetworkAlertPolicyId.IsNull() && !data.NetworkAlertPolicyId.IsUnknown() {
+        filters["networkAlertPolicyId"] = data.NetworkAlertPolicyId.ValueString()
+        filterNames = append(filterNames, "network_alert_policy_id = "+fmt.Sprintf("%q", data.NetworkAlertPolicyId.ValueString()))
+    }
+    if !data.MonitorType.IsNull() && !data.MonitorType.IsUnknown() {
+        filters["monitorType"] = data.MonitorType.ValueString()
+        filterNames = append(filterNames, "monitor_type = "+fmt.Sprintf("%q", data.MonitorType.ValueString()))
+    }
+    if !data.CurrentMonitorStatusId.IsNull() && !data.CurrentMonitorStatusId.IsUnknown() {
+        filters["currentMonitorStatusId"] = data.CurrentMonitorStatusId.ValueString()
+        filterNames = append(filterNames, "current_monitor_status_id = "+fmt.Sprintf("%q", data.CurrentMonitorStatusId.ValueString()))
+    }
+    if !data.MonitoringInterval.IsNull() && !data.MonitoringInterval.IsUnknown() {
+        filters["monitoringInterval"] = data.MonitoringInterval.ValueString()
+        filterNames = append(filterNames, "monitoring_interval = "+fmt.Sprintf("%q", data.MonitoringInterval.ValueString()))
+    }
+    if !data.IsOwnerNotifiedOfResourceCreation.IsNull() && !data.IsOwnerNotifiedOfResourceCreation.IsUnknown() {
+        filters["isOwnerNotifiedOfResourceCreation"] = data.IsOwnerNotifiedOfResourceCreation.ValueBool()
+        filterNames = append(filterNames, "is_owner_notified_of_resource_creation = "+fmt.Sprintf("%t", data.IsOwnerNotifiedOfResourceCreation.ValueBool()))
+    }
+    if !data.DisableActiveMonitoring.IsNull() && !data.DisableActiveMonitoring.IsUnknown() {
+        filters["disableActiveMonitoring"] = data.DisableActiveMonitoring.ValueBool()
+        filterNames = append(filterNames, "disable_active_monitoring = "+fmt.Sprintf("%t", data.DisableActiveMonitoring.ValueBool()))
+    }
+    if !data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent.IsNull() && !data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent.IsUnknown() {
+        filters["disableActiveMonitoringBecauseOfScheduledMaintenanceEvent"] = data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent.ValueBool()
+        filterNames = append(filterNames, "disable_active_monitoring_because_of_scheduled_maintenance_event = "+fmt.Sprintf("%t", data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent.ValueBool()))
+    }
+    if !data.DisableActiveMonitoringBecauseOfManualIncident.IsNull() && !data.DisableActiveMonitoringBecauseOfManualIncident.IsUnknown() {
+        filters["disableActiveMonitoringBecauseOfManualIncident"] = data.DisableActiveMonitoringBecauseOfManualIncident.ValueBool()
+        filterNames = append(filterNames, "disable_active_monitoring_because_of_manual_incident = "+fmt.Sprintf("%t", data.DisableActiveMonitoringBecauseOfManualIncident.ValueBool()))
+    }
+    if !data.ServerMonitorSecretKey.IsNull() && !data.ServerMonitorSecretKey.IsUnknown() {
+        filters["serverMonitorSecretKey"] = data.ServerMonitorSecretKey.ValueString()
+        filterNames = append(filterNames, "server_monitor_secret_key = "+fmt.Sprintf("%q", data.ServerMonitorSecretKey.ValueString()))
+    }
+    if !data.IncomingRequestSecretKey.IsNull() && !data.IncomingRequestSecretKey.IsUnknown() {
+        filters["incomingRequestSecretKey"] = data.IncomingRequestSecretKey.ValueString()
+        filterNames = append(filterNames, "incoming_request_secret_key = "+fmt.Sprintf("%q", data.IncomingRequestSecretKey.ValueString()))
+    }
+    if !data.IncomingEmailSecretKey.IsNull() && !data.IncomingEmailSecretKey.IsUnknown() {
+        filters["incomingEmailSecretKey"] = data.IncomingEmailSecretKey.ValueString()
+        filterNames = append(filterNames, "incoming_email_secret_key = "+fmt.Sprintf("%q", data.IncomingEmailSecretKey.ValueString()))
+    }
+    if !data.IncomingEmailCustomLocalPart.IsNull() && !data.IncomingEmailCustomLocalPart.IsUnknown() {
+        filters["incomingEmailCustomLocalPart"] = data.IncomingEmailCustomLocalPart.ValueString()
+        filterNames = append(filterNames, "incoming_email_custom_local_part = "+fmt.Sprintf("%q", data.IncomingEmailCustomLocalPart.ValueString()))
+    }
+    if !data.IsAllProbesDisconnectedFromThisMonitor.IsNull() && !data.IsAllProbesDisconnectedFromThisMonitor.IsUnknown() {
+        filters["isAllProbesDisconnectedFromThisMonitor"] = data.IsAllProbesDisconnectedFromThisMonitor.ValueBool()
+        filterNames = append(filterNames, "is_all_probes_disconnected_from_this_monitor = "+fmt.Sprintf("%t", data.IsAllProbesDisconnectedFromThisMonitor.ValueBool()))
+    }
+    if !data.IsNoProbeEnabledOnThisMonitor.IsNull() && !data.IsNoProbeEnabledOnThisMonitor.IsUnknown() {
+        filters["isNoProbeEnabledOnThisMonitor"] = data.IsNoProbeEnabledOnThisMonitor.ValueBool()
+        filterNames = append(filterNames, "is_no_probe_enabled_on_this_monitor = "+fmt.Sprintf("%t", data.IsNoProbeEnabledOnThisMonitor.ValueBool()))
+    }
+    if !data.MinimumProbeAgreement.IsNull() && !data.MinimumProbeAgreement.IsUnknown() {
+        filters["minimumProbeAgreement"] = lookupNumber(data.MinimumProbeAgreement)
+        filterNames = append(filterNames, "minimum_probe_agreement = "+data.MinimumProbeAgreement.ValueBigFloat().String())
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a monitor.",
+            "Look the monitor up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the monitor up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "description": true,
         "slug": true,
         "createdByUserId": true,
@@ -462,11 +575,10 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -483,11 +595,11 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No monitor found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No monitor matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one monitor matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one monitor matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -515,23 +627,6 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -567,34 +662,6 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -611,6 +678,23 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

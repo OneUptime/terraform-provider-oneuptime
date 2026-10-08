@@ -28,12 +28,10 @@ type LogScrubRuleDataSource struct {
 // LogScrubRuleDataSourceModel describes the data source data model.
 type LogScrubRuleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     PatternType types.String `tfsdk:"pattern_type"`
     CustomRegex types.String `tfsdk:"custom_regex"`
@@ -42,7 +40,6 @@ type LogScrubRuleDataSourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     SortOrder types.Number `tfsdk:"sort_order"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *LogScrubRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -51,73 +48,69 @@ func (d *LogScrubRuleDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *LogScrubRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure rules to automatically detect and scrub sensitive data (PII) from logs at ingest time. Look up an existing log_scrub_rule by `id` or by `name`.",
+        MarkdownDescription: "Configure rules to automatically detect and scrub sensitive data (PII) from logs at ingest time. Look up an existing log scrub rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `custom_regex`, ...): each one set must match, and exactly one log scrub rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this log scrub rule belongs to. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Friendly name for this scrub rule.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of what this scrub rule does..",
+                MarkdownDescription: "Description of what this scrub rule does.",
+                Optional: true,
                 Computed: true,
             },
             "pattern_type": schema.StringAttribute{
-                MarkdownDescription: "The type of sensitive data to detect: email, creditCard, ssn, phoneNumber, ipAddress, sensitiveKeys (the whole value of every attribute whose key looks sensitive, such as password or token), or custom (the regular expression in customRegex). Any other value is refused: it would scrub nothing..",
+                MarkdownDescription: "The type of sensitive data to detect: email, creditCard, ssn, phoneNumber, ipAddress, sensitiveKeys (the whole value of every attribute whose key looks sensitive, such as password or token), or custom (the regular expression in customRegex). Any other value is refused: it would scrub nothing.",
+                Optional: true,
                 Computed: true,
             },
             "custom_regex": schema.StringAttribute{
-                MarkdownDescription: "The regular expression a 'custom' rule scrubs, written without slashes or flags and matched case-sensitively. Required when patternType is 'custom': a pattern that is empty, does not compile, or matches empty text is refused. Ignored for the other pattern types..",
+                MarkdownDescription: "The regular expression a 'custom' rule scrubs, written without slashes or flags and matched case-sensitively. Required when patternType is 'custom': a pattern that is empty, does not compile, or matches empty text is refused. Ignored for the other pattern types.",
+                Optional: true,
                 Computed: true,
             },
             "scrub_action": schema.StringAttribute{
-                MarkdownDescription: "How to scrub matched data: 'redact' replaces it with [REDACTED] (the default), 'mask' partially hides it, 'hash' replaces it with a short hash of the value..",
+                MarkdownDescription: "How to scrub matched data: 'redact' replaces it with [REDACTED] (the default), 'mask' partially hides it, 'hash' replaces it with a short hash of the value.",
+                Optional: true,
                 Computed: true,
             },
             "fields_to_scrub": schema.StringAttribute{
-                MarkdownDescription: "Which log fields to scrub: 'body' (the log message), 'attributes' (attribute values), or 'both', the default. A sensitiveKeys rule always scrubs attribute values, whatever this says..",
+                MarkdownDescription: "Which log fields to scrub: 'body' (the log message), 'attributes' (attribute values), or 'both', the default. A sensitiveKeys rule always scrubs attribute values, whatever this says.",
+                Optional: true,
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this scrub rule is active..",
+                MarkdownDescription: "Whether this scrub rule is active.",
+                Optional: true,
                 Computed: true,
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Where this rule is applied among the project's log scrub rules, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
+                MarkdownDescription: "Where this rule is applied among the project's log scrub rules, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user who created this log scrub rule. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -154,23 +147,68 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.PatternType.IsNull() && !data.PatternType.IsUnknown() {
+        filters["patternType"] = data.PatternType.ValueString()
+        filterNames = append(filterNames, "pattern_type = "+fmt.Sprintf("%q", data.PatternType.ValueString()))
+    }
+    if !data.CustomRegex.IsNull() && !data.CustomRegex.IsUnknown() {
+        filters["customRegex"] = data.CustomRegex.ValueString()
+        filterNames = append(filterNames, "custom_regex = "+fmt.Sprintf("%q", data.CustomRegex.ValueString()))
+    }
+    if !data.ScrubAction.IsNull() && !data.ScrubAction.IsUnknown() {
+        filters["scrubAction"] = data.ScrubAction.ValueString()
+        filterNames = append(filterNames, "scrub_action = "+fmt.Sprintf("%q", data.ScrubAction.ValueString()))
+    }
+    if !data.FieldsToScrub.IsNull() && !data.FieldsToScrub.IsUnknown() {
+        filters["fieldsToScrub"] = data.FieldsToScrub.ValueString()
+        filterNames = append(filterNames, "fields_to_scrub = "+fmt.Sprintf("%q", data.FieldsToScrub.ValueString()))
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        filters["isEnabled"] = data.IsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
+    }
+    if !data.SortOrder.IsNull() && !data.SortOrder.IsUnknown() {
+        filters["sortOrder"] = lookupNumber(data.SortOrder)
+        filterNames = append(filterNames, "sort_order = "+data.SortOrder.ValueBigFloat().String())
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a log_scrub_rule.",
+            "Look the log scrub rule up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the log scrub rule up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "description": true,
         "patternType": true,
         "customRegex": true,
@@ -179,7 +217,6 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         "isEnabled": true,
         "sortOrder": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -192,7 +229,7 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No log_scrub_rule found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No log scrub rule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -205,11 +242,10 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -226,11 +262,11 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No log_scrub_rule found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No log scrub rule matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one log_scrub_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one log scrub rule matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -258,23 +294,6 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -310,34 +329,6 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -354,6 +345,23 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -472,23 +480,6 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

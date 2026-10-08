@@ -30,11 +30,8 @@ type AlertEpisodeDataSource struct {
 // AlertEpisodeDataSourceModel describes the data source data model.
 type AlertEpisodeDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
@@ -70,143 +67,150 @@ func (d *AlertEpisodeDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *AlertEpisodeDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage alert episodes (groups of related alerts) for your project Look up an existing alert_episode by `id` or by `name`.",
+        MarkdownDescription: "Manage alert episodes (groups of related alerts) for your project Look up an existing alert episode by `id`, or by any of its other arguments (`alert_count`, `alert_grouping_rule_id`, `alert_severity_id`, ...): each one set must match, and exactly one alert episode may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "Title of this alert episode.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert episode. This is in markdown format..",
+                MarkdownDescription: "Description of this alert episode. This is in markdown format.",
+                Optional: true,
                 Computed: true,
             },
             "episode_number": schema.NumberAttribute{
                 MarkdownDescription: "Auto-incrementing episode number per project.",
+                Optional: true,
                 Computed: true,
             },
             "episode_number_with_prefix": schema.StringAttribute{
                 MarkdownDescription: "Episode number with prefix (e.g., 'AE-42' or '#42').",
+                Optional: true,
                 Computed: true,
             },
             "current_alert_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Current Alert State ID. The ID of a `oneuptime_alert_state`.",
+                Optional: true,
                 Computed: true,
             },
             "alert_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Alert Severity ID. The ID of a `oneuptime_alert_severity`.",
+                Optional: true,
                 Computed: true,
             },
             "root_cause": schema.StringAttribute{
                 MarkdownDescription: "User-documented root cause of this episode.",
+                Optional: true,
                 Computed: true,
             },
             "last_alert_added_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the last alert was added to this episode.",
                 Computed: true,
             },
             "resolved_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this episode was resolved.",
                 Computed: true,
             },
             "all_alerts_resolved_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When all alerts in this episode were first detected as resolved. Used for resolve delay calculation.",
                 Computed: true,
             },
             "assigned_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "assigned_to_team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Team ID that is assigned to this episode. The ID of a `oneuptime_team`.",
+                Optional: true,
                 Computed: true,
             },
             "alert_grouping_rule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Alert Grouping Rule ID that created this episode. The ID of a `oneuptime_alert_grouping_rule`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for this episode..",
+                MarkdownDescription: "List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "is_on_call_policy_executed": schema.BoolAttribute{
                 MarkdownDescription: "Whether the on-call policy has been executed for this episode.",
+                Optional: true,
                 Computed: true,
             },
             "alert_count": schema.NumberAttribute{
                 MarkdownDescription: "Denormalized count of alerts in this episode.",
+                Optional: true,
                 Computed: true,
             },
             "title_template": schema.StringAttribute{
-                MarkdownDescription: "Template used to generate the episode title. Stored for dynamic variable updates..",
+                MarkdownDescription: "Template used to generate the episode title. Stored for dynamic variable updates.",
+                Optional: true,
                 Computed: true,
             },
             "description_template": schema.StringAttribute{
-                MarkdownDescription: "Template used to generate the episode description. Stored for dynamic variable updates..",
+                MarkdownDescription: "Template used to generate the episode description. Stored for dynamic variable updates.",
+                Optional: true,
                 Computed: true,
             },
             "is_manually_created": schema.BoolAttribute{
                 MarkdownDescription: "Whether this episode was manually created vs auto-created by a rule.",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_owner_notified_of_episode_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified when this episode is created?.",
+                MarkdownDescription: "Are owners notified when this episode is created?",
+                Optional: true,
                 Computed: true,
             },
             "grouping_key": schema.StringAttribute{
-                MarkdownDescription: "Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule. When a private alert opened the episode, its title is in the key only as a keyed hash..",
+                MarkdownDescription: "Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule. When a private alert opened the episode, its title is in the key only as a keyed hash.",
+                Optional: true,
                 Computed: true,
             },
             "remediation_notes": schema.StringAttribute{
                 MarkdownDescription: "User-documented remediation steps and notes for this episode.",
+                Optional: true,
                 Computed: true,
             },
             "post_updates_to_workspace_channels": schema.StringAttribute{
-                MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams).",
+                MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners..",
+                MarkdownDescription: "If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -243,22 +247,110 @@ func (d *AlertEpisodeDataSource) Read(ctx context.Context, req datasource.ReadRe
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Title.IsNull() && !data.Title.IsUnknown() {
+        filters["title"] = data.Title.ValueString()
+        filterNames = append(filterNames, "title = "+fmt.Sprintf("%q", data.Title.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.EpisodeNumber.IsNull() && !data.EpisodeNumber.IsUnknown() {
+        filters["episodeNumber"] = lookupNumber(data.EpisodeNumber)
+        filterNames = append(filterNames, "episode_number = "+data.EpisodeNumber.ValueBigFloat().String())
+    }
+    if !data.EpisodeNumberWithPrefix.IsNull() && !data.EpisodeNumberWithPrefix.IsUnknown() {
+        filters["episodeNumberWithPrefix"] = data.EpisodeNumberWithPrefix.ValueString()
+        filterNames = append(filterNames, "episode_number_with_prefix = "+fmt.Sprintf("%q", data.EpisodeNumberWithPrefix.ValueString()))
+    }
+    if !data.CurrentAlertStateId.IsNull() && !data.CurrentAlertStateId.IsUnknown() {
+        filters["currentAlertStateId"] = data.CurrentAlertStateId.ValueString()
+        filterNames = append(filterNames, "current_alert_state_id = "+fmt.Sprintf("%q", data.CurrentAlertStateId.ValueString()))
+    }
+    if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
+        filters["alertSeverityId"] = data.AlertSeverityId.ValueString()
+        filterNames = append(filterNames, "alert_severity_id = "+fmt.Sprintf("%q", data.AlertSeverityId.ValueString()))
+    }
+    if !data.RootCause.IsNull() && !data.RootCause.IsUnknown() {
+        filters["rootCause"] = data.RootCause.ValueString()
+        filterNames = append(filterNames, "root_cause = "+fmt.Sprintf("%q", data.RootCause.ValueString()))
+    }
+    if !data.AssignedToUserId.IsNull() && !data.AssignedToUserId.IsUnknown() {
+        filters["assignedToUserId"] = data.AssignedToUserId.ValueString()
+        filterNames = append(filterNames, "assigned_to_user_id = "+fmt.Sprintf("%q", data.AssignedToUserId.ValueString()))
+    }
+    if !data.AssignedToTeamId.IsNull() && !data.AssignedToTeamId.IsUnknown() {
+        filters["assignedToTeamId"] = data.AssignedToTeamId.ValueString()
+        filterNames = append(filterNames, "assigned_to_team_id = "+fmt.Sprintf("%q", data.AssignedToTeamId.ValueString()))
+    }
+    if !data.AlertGroupingRuleId.IsNull() && !data.AlertGroupingRuleId.IsUnknown() {
+        filters["alertGroupingRuleId"] = data.AlertGroupingRuleId.ValueString()
+        filterNames = append(filterNames, "alert_grouping_rule_id = "+fmt.Sprintf("%q", data.AlertGroupingRuleId.ValueString()))
+    }
+    if !data.IsOnCallPolicyExecuted.IsNull() && !data.IsOnCallPolicyExecuted.IsUnknown() {
+        filters["isOnCallPolicyExecuted"] = data.IsOnCallPolicyExecuted.ValueBool()
+        filterNames = append(filterNames, "is_on_call_policy_executed = "+fmt.Sprintf("%t", data.IsOnCallPolicyExecuted.ValueBool()))
+    }
+    if !data.AlertCount.IsNull() && !data.AlertCount.IsUnknown() {
+        filters["alertCount"] = lookupNumber(data.AlertCount)
+        filterNames = append(filterNames, "alert_count = "+data.AlertCount.ValueBigFloat().String())
+    }
+    if !data.TitleTemplate.IsNull() && !data.TitleTemplate.IsUnknown() {
+        filters["titleTemplate"] = data.TitleTemplate.ValueString()
+        filterNames = append(filterNames, "title_template = "+fmt.Sprintf("%q", data.TitleTemplate.ValueString()))
+    }
+    if !data.DescriptionTemplate.IsNull() && !data.DescriptionTemplate.IsUnknown() {
+        filters["descriptionTemplate"] = data.DescriptionTemplate.ValueString()
+        filterNames = append(filterNames, "description_template = "+fmt.Sprintf("%q", data.DescriptionTemplate.ValueString()))
+    }
+    if !data.IsManuallyCreated.IsNull() && !data.IsManuallyCreated.IsUnknown() {
+        filters["isManuallyCreated"] = data.IsManuallyCreated.ValueBool()
+        filterNames = append(filterNames, "is_manually_created = "+fmt.Sprintf("%t", data.IsManuallyCreated.ValueBool()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsOwnerNotifiedOfEpisodeCreation.IsNull() && !data.IsOwnerNotifiedOfEpisodeCreation.IsUnknown() {
+        filters["isOwnerNotifiedOfEpisodeCreation"] = data.IsOwnerNotifiedOfEpisodeCreation.ValueBool()
+        filterNames = append(filterNames, "is_owner_notified_of_episode_creation = "+fmt.Sprintf("%t", data.IsOwnerNotifiedOfEpisodeCreation.ValueBool()))
+    }
+    if !data.GroupingKey.IsNull() && !data.GroupingKey.IsUnknown() {
+        filters["groupingKey"] = data.GroupingKey.ValueString()
+        filterNames = append(filterNames, "grouping_key = "+fmt.Sprintf("%q", data.GroupingKey.ValueString()))
+    }
+    if !data.RemediationNotes.IsNull() && !data.RemediationNotes.IsUnknown() {
+        filters["remediationNotes"] = data.RemediationNotes.ValueString()
+        filterNames = append(filterNames, "remediation_notes = "+fmt.Sprintf("%q", data.RemediationNotes.ValueString()))
+    }
+    if !data.IsPrivate.IsNull() && !data.IsPrivate.IsUnknown() {
+        filters["isPrivate"] = data.IsPrivate.ValueBool()
+        filterNames = append(filterNames, "is_private = "+fmt.Sprintf("%t", data.IsPrivate.ValueBool()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a alert_episode.",
+            "Look the alert episode up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the alert episode up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "title": true,
         "description": true,
@@ -298,7 +390,7 @@ func (d *AlertEpisodeDataSource) Read(ctx context.Context, req datasource.ReadRe
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert_episode found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert episode found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -311,11 +403,10 @@ func (d *AlertEpisodeDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -332,11 +423,11 @@ func (d *AlertEpisodeDataSource) Read(ctx context.Context, req datasource.ReadRe
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert_episode found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert episode matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert_episode matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert episode matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -364,23 +455,6 @@ func (d *AlertEpisodeDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -415,34 +489,6 @@ func (d *AlertEpisodeDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

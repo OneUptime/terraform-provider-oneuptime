@@ -57,8 +57,6 @@ type ThreatIntelFeedResourceModel struct {
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     LastPolledAt RFC3339Value `tfsdk:"last_polled_at"`
     Cursor types.String `tfsdk:"cursor"`
     NextPageToken types.String `tfsdk:"next_page_token"`
@@ -68,7 +66,6 @@ type ThreatIntelFeedResourceModel struct {
     LastMatchAt RFC3339Value `tfsdk:"last_match_at"`
     LastMatchError types.String `tfsdk:"last_match_error"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (r *ThreatIntelFeedResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -76,26 +73,30 @@ func (r *ThreatIntelFeedResource) Metadata(ctx context.Context, req resource.Met
 }
 
 func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "STIX/TAXII 2.1 threat-intelligence feeds. Indicators are polled on an interval and matched against incoming security events.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this feed belongs to. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name object",
+                MarkdownDescription: "Friendly name for this feed, e.g. 'Corporate MISP'.",
                 CustomType: JSONSubsetType{},
                 Required: true,
                 Validators: []validator.String{
@@ -103,7 +104,7 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "What this feed carries and why it is subscribed..",
+                MarkdownDescription: "What this feed carries and why it is subscribed.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -111,19 +112,19 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "api_root_url": schema.StringAttribute{
-                MarkdownDescription: "The TAXII 2.1 API root, e.g. https://taxii.example.com/api1/. Collections are addressed beneath it..",
+                MarkdownDescription: "The TAXII 2.1 API root, e.g. https://taxii.example.com/api1/. Collections are addressed beneath it.",
                 Required: true,
             },
             "collection_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the TAXII collection to poll for indicator objects..",
+                MarkdownDescription: "ID of the TAXII collection to poll for indicator objects.",
                 Required: true,
             },
             "api_token": schema.StringAttribute{
-                MarkdownDescription: "Bearer token for token-authenticated collections. Encrypted at rest and never returned by the API. Leave empty for anonymous or basic-auth collections..",
+                MarkdownDescription: "Bearer token for token-authenticated collections. Encrypted at rest and never returned by the API. Leave empty for anonymous or basic-auth collections.",
                 Optional: true,
             },
             "basic_auth_username": schema.StringAttribute{
-                MarkdownDescription: "Username for basic-auth collections. Leave empty for anonymous or token-authenticated collections..",
+                MarkdownDescription: "Username for basic-auth collections. Leave empty for anonymous or token-authenticated collections.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -131,11 +132,11 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "basic_auth_password": schema.StringAttribute{
-                MarkdownDescription: "Password for basic-auth collections. Encrypted at rest and never returned by the API..",
+                MarkdownDescription: "Password for basic-auth collections. Encrypted at rest and never returned by the API.",
                 Optional: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this feed is polled and matched..",
+                MarkdownDescription: "Whether this feed is polled and matched.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -144,7 +145,7 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "poll_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often the collection is polled for new indicators..",
+                MarkdownDescription: "How often the collection is polled for new indicators.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
@@ -153,7 +154,7 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "minimum_confidence": schema.NumberAttribute{
-                MarkdownDescription: "Skip indicators whose STIX confidence is below this (0-100). 0 ingests everything; indicators that carry no confidence always pass..",
+                MarkdownDescription: "Skip indicators whose STIX confidence is below this (0-100). 0 ingests everything; indicators that carry no confidence always pass.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
@@ -162,7 +163,7 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "should_create_alert": schema.BoolAttribute{
-                MarkdownDescription: "Whether indicator matches open OneUptime alerts..",
+                MarkdownDescription: "Whether indicator matches open OneUptime alerts.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -171,7 +172,7 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "should_write_detection_finding": schema.BoolAttribute{
-                MarkdownDescription: "Whether matches also write a Detection Finding security event back into the events table..",
+                MarkdownDescription: "Whether matches also write a Detection Finding security event back into the events table.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -180,7 +181,7 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "should_create_incident": schema.BoolAttribute{
-                MarkdownDescription: "Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per feed..",
+                MarkdownDescription: "Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per feed.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -189,7 +190,7 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert severity for alerts opened by this feed. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -197,7 +198,7 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the incident severity for incidents opened by this feed. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -205,66 +206,59 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "last_polled_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this feed was last polled. Null means it has never run.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "cursor": schema.StringAttribute{
-                MarkdownDescription: "Poll cursor: the TAXII added_after timestamp already ingested, as an ISO string..",
+                MarkdownDescription: "Poll cursor: the TAXII added_after timestamp already ingested, as an ISO string.",
                 Computed: true,
             },
             "next_page_token": schema.StringAttribute{
-                MarkdownDescription: "Resume token for a poll that ended mid-pagination on a server that sends no X-TAXII-Date-Added-Last header. Cleared once the collection drains or the cursor advances..",
+                MarkdownDescription: "Resume token for a poll that ended mid-pagination on a server that sends no X-TAXII-Date-Added-Last header. Cleared once the collection drains or the cursor advances.",
                 Computed: true,
             },
             "last_poll_summary": schema.StringAttribute{
-                MarkdownDescription: "What the most recent successful poll did: objects fetched, indicators ingested, unsupported patterns skipped..",
+                MarkdownDescription: "What the most recent successful poll did: objects fetched, indicators ingested, unsupported patterns skipped.",
                 Computed: true,
             },
             "last_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent poll error, if any. Cleared on the next successful poll..",
+                MarkdownDescription: "The most recent poll error, if any. Cleared on the next successful poll.",
                 Computed: true,
             },
             "last_evaluated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the matcher last evaluated security events against this feed's indicators. Null means it has never run.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "last_match_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this feed's indicators most recently matched security events. Null means they never have.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "last_match_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent matcher error, if any. Cleared on the next successful evaluation..",
+                MarkdownDescription: "The most recent matcher error, if any. Cleared on the next successful evaluation.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user who created this feed. The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -300,6 +294,14 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ThreatIntelFeedResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -417,8 +419,6 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
         "incidentSeverityId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "lastPolledAt": true,
         "cursor": true,
         "nextPageToken": true,
@@ -428,7 +428,6 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
         "lastMatchAt": true,
         "lastMatchError": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -799,34 +798,6 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["lastPolledAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastPolledAt = NewRFC3339Value(val)
@@ -1082,43 +1053,6 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1126,6 +1060,9 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
     }
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -1162,8 +1099,6 @@ func (r *ThreatIntelFeedResource) Read(ctx context.Context, req resource.ReadReq
         "incidentSeverityId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "lastPolledAt": true,
         "cursor": true,
         "nextPageToken": true,
@@ -1173,7 +1108,6 @@ func (r *ThreatIntelFeedResource) Read(ctx context.Context, req resource.ReadReq
         "lastMatchAt": true,
         "lastMatchError": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -1545,34 +1479,6 @@ func (r *ThreatIntelFeedResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["lastPolledAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastPolledAt = NewRFC3339Value(val)
@@ -1828,43 +1734,6 @@ func (r *ThreatIntelFeedResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1893,6 +1762,14 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ThreatIntelFeedResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     threatIntelFeedRequest := map[string]interface{}{
@@ -1989,8 +1866,6 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
         "incidentSeverityId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "lastPolledAt": true,
         "cursor": true,
         "nextPageToken": true,
@@ -2000,7 +1875,6 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
         "lastMatchAt": true,
         "lastMatchError": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -2366,34 +2240,6 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["lastPolledAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastPolledAt = NewRFC3339Value(val)
@@ -2649,49 +2495,15 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
     data.Id = state.Id
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2729,6 +2541,47 @@ func (r *ThreatIntelFeedResource) Delete(ctx context.Context, req resource.Delet
 
 func (r *ThreatIntelFeedResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *ThreatIntelFeedResource) keepPlannedValues(data *ThreatIntelFeedResourceModel, plan *ThreatIntelFeedResourceModel, config *ThreatIntelFeedResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.BasicAuthUsername.IsNull() && !plan.BasicAuthUsername.IsUnknown() {
+        data.BasicAuthUsername = plan.BasicAuthUsername
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.PollIntervalInMinutes.IsNull() && !plan.PollIntervalInMinutes.IsUnknown() {
+        data.PollIntervalInMinutes = plan.PollIntervalInMinutes
+    }
+    if config.MinimumConfidence.IsNull() && !plan.MinimumConfidence.IsUnknown() {
+        data.MinimumConfidence = plan.MinimumConfidence
+    }
+    if config.ShouldCreateAlert.IsNull() && !plan.ShouldCreateAlert.IsUnknown() {
+        data.ShouldCreateAlert = plan.ShouldCreateAlert
+    }
+    if config.ShouldWriteDetectionFinding.IsNull() && !plan.ShouldWriteDetectionFinding.IsUnknown() {
+        data.ShouldWriteDetectionFinding = plan.ShouldWriteDetectionFinding
+    }
+    if config.ShouldCreateIncident.IsNull() && !plan.ShouldCreateIncident.IsUnknown() {
+        data.ShouldCreateIncident = plan.ShouldCreateIncident
+    }
+    if config.AlertSeverityId.IsNull() && !plan.AlertSeverityId.IsUnknown() {
+        data.AlertSeverityId = plan.AlertSeverityId
+    }
+    if config.IncidentSeverityId.IsNull() && !plan.IncidentSeverityId.IsUnknown() {
+        data.IncidentSeverityId = plan.IncidentSeverityId
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

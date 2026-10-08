@@ -7,41 +7,46 @@ description: |-
 
 # oneuptime_audit_log (Data Source)
 
-API endpoints for Audit Log Look up by `id` or by `name` (must match exactly one item).
+API endpoints for Audit Log
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one audit log may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_audit_log" "by_name" {
-  name = "example-audit_log"
+data "oneuptime_audit_log" "example" {
+  resource_type = "example-resource-type"
 }
 
+# Or by id:
 data "oneuptime_audit_log" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `project_id` (String) Project ID. Computed.
-- `resource_type` (String) Resource Type. Computed.
-- `resource_id` (String) Resource ID. Computed.
-- `resource_name` (String) Resource Name. Computed.
-- `root_resource_type` (String) Root Resource Type. Computed.
-- `root_resource_id` (String) Root Resource ID. Computed.
-- `action` (String) Action. Computed.
-- `user_id` (String) User ID. Computed.
-- `user_name` (String) User Name. Computed.
-- `user_email` (String) User Email. Computed.
-- `user_type` (String) User Type. Computed.
-- `api_key_id` (String) API Key ID. Computed.
-- `api_key_name` (String) API Key Name. Computed.
-- `mcp_o_auth_grant_id` (String) MCP Client Authorization ID. Computed.
-- `mcp_client_name` (String) MCP Client Name. Computed.
-- `workflow_id` (String) Workflow ID. Computed.
-- `workflow_name` (String) Workflow Name. Computed.
-- `changes` (Set) Changes. Computed.
+### Optional
+
+- `action` (String) Action.
+- `api_key_id` (String) API Key ID.
+- `api_key_name` (String) API Key Name.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `mcp_client_name` (String) MCP Client Name.
+- `mcp_o_auth_grant_id` (String) MCP Client Authorization ID.
+- `resource_id` (String) Resource ID.
+- `resource_name` (String) Resource Name.
+- `resource_type` (String) Resource Type.
+- `root_resource_id` (String) Root Resource ID.
+- `root_resource_type` (String) Root Resource Type.
+- `user_email` (String) User Email.
+- `user_id` (String) User ID.
+- `user_name` (String) User Name.
+- `user_type` (String) User Type.
+- `workflow_id` (String) Workflow ID.
+- `workflow_name` (String) Workflow Name.
+
+### Read-Only
+
+- `changes` (Set of String) Changes.
+- `project_id` (String) Project ID.

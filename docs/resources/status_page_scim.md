@@ -13,10 +13,10 @@ Manage SCIM auto-provisioning for your status page
 
 ```terraform
 resource "oneuptime_status_page_scim" "example" {
-  status_page_id = "123e4567-e89b-12d3-a456-426614174000"
-  name = "Example short text"
-  bearer_token = "This is an example of longer text content that might be stored in this field."
-  description = "This is an example of longer text content that might be stored in this field."
+  status_page_id = oneuptime_status_page.example.id
+  name           = "Example status page scim"
+  bearer_token   = "This is an example of longer text content that might be stored in this field."
+  description    = "Managed by Terraform"
 }
 ```
 
@@ -24,30 +24,36 @@ resource "oneuptime_status_page_scim" "example" {
 
 ### Required
 
-- `status_page_id` (String) A unique identifier for an object, represented as a UUID..
-- `name` (String) Any friendly name for this SCIM configuration..
-- `bearer_token` (String) Bearer token for SCIM authentication. Keep this secure...
+- `bearer_token` (String) Bearer token for SCIM authentication. Keep this secure.
+- `name` (String) Any friendly name for this SCIM configuration.
+- `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Friendly description to help you remember..
-- `auto_provision_users` (Bool) Automatically create status page users when they are added via SCIM..
-- `auto_deprovision_users` (Bool) Automatically remove status page users when they are removed via SCIM..
+- `auto_deprovision_users` (Boolean) Automatically remove status page users when they are removed via SCIM. Defaults to `true`.
+- `auto_provision_users` (Boolean) Automatically create status page users when they are added via SCIM. Defaults to `true`.
+- `description` (String) Friendly description to help you remember.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing status page scim by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_status_page_scim.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_status_page_scim.example <id>

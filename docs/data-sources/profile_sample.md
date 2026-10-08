@@ -7,44 +7,49 @@ description: |-
 
 # oneuptime_profile_sample (Data Source)
 
-API endpoints for ProfileSample Look up by `id` or by `name` (must match exactly one item).
+API endpoints for ProfileSample
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one profile sample may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_profile_sample" "by_name" {
-  name = "example-profile_sample"
+data "oneuptime_profile_sample" "example" {
+  primary_entity_id = "example-primary-entity-id"
 }
 
+# Or by id:
 data "oneuptime_profile_sample" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `project_id` (String) Project ID. Computed.
-- `primary_entity_id` (String) Service ID. Computed.
-- `primary_entity_type` (String) Service Type. Computed.
-- `profile_id` (String) Profile ID. Computed.
-- `trace_id` (String) Trace ID. Computed.
-- `span_id` (String) Span ID. Computed.
-- `time` (String) Time. Computed.
-- `time_unix_nano` (String) Time (in Unix Nano). Computed.
-- `stacktrace` (Set) Stacktrace. Computed.
-- `stacktrace_hash` (String) Stacktrace Hash. Computed.
-- `frame_types` (Set) Frame Types. Computed.
-- `value` (String) Value. Computed.
-- `profile_type` (String) Profile Type. Computed.
-- `labels` (String) Labels. Computed.
-- `entity_keys` (Set) Entity Keys. Computed.
-- `service_entity_key` (String) Service Entity Key. Computed.
-- `host_entity_key` (String) Host Entity Key. Computed.
-- `k8s_pod_entity_key` (String) Kubernetes Pod Entity Key. Computed.
-- `k8s_node_entity_key` (String) Kubernetes Node Entity Key. Computed.
-- `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key. Computed.
-- `container_entity_key` (String) Container Entity Key. Computed.
+### Optional
+
+- `container_entity_key` (String) Container Entity Key.
+- `host_entity_key` (String) Host Entity Key.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key.
+- `k8s_node_entity_key` (String) Kubernetes Node Entity Key.
+- `k8s_pod_entity_key` (String) Kubernetes Pod Entity Key.
+- `labels` (String) Labels.
+- `primary_entity_id` (String) Service ID.
+- `primary_entity_type` (String) Service Type.
+- `profile_id` (String) Profile ID.
+- `profile_type` (String) Profile Type.
+- `service_entity_key` (String) Service Entity Key.
+- `span_id` (String) Span ID.
+- `stacktrace_hash` (String) Stacktrace Hash.
+- `time` (String) Time.
+- `time_unix_nano` (String) Time (in Unix Nano).
+- `trace_id` (String) Trace ID.
+- `value` (String) Value.
+
+### Read-Only
+
+- `entity_keys` (Set of String) Entity Keys.
+- `frame_types` (Set of String) Frame Types.
+- `project_id` (String) Project ID.
+- `stacktrace` (Set of String) Stacktrace.

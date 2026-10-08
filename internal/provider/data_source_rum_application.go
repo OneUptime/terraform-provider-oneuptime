@@ -30,12 +30,10 @@ type RumApplicationDataSource struct {
 // RumApplicationDataSourceModel describes the data source data model.
 type RumApplicationDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
     AppIdentifier types.String `tfsdk:"app_identifier"`
@@ -72,7 +70,6 @@ type RumApplicationDataSourceModel struct {
     IsArchived types.Bool `tfsdk:"is_archived"`
     ArchivedAt types.String `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *RumApplicationDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -81,186 +78,199 @@ func (d *RumApplicationDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Browser & mobile applications auto-discovered from OpenTelemetry RUM telemetry (browser.* / device.* resource attributes). One row per application, aggregating all end-user clients. Look up an existing rum_application by `id` or by `name`.",
+        MarkdownDescription: "Browser & mobile applications auto-discovered from OpenTelemetry RUM telemetry (browser.* / device.* resource attributes). One row per application, aggregating all end-user clients. Look up an existing rum application by `id`, or by any of its other arguments (`name`, `agent_version`, `app_identifier`, ...): each one set must match, and exactly one rum application may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Friendly name for this application.",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember.",
+                Optional: true,
                 Computed: true,
             },
             "app_identifier": schema.StringAttribute{
-                MarkdownDescription: "Stable identifier for this application from the service.name OpenTelemetry resource attribute. Identity key for this RUM application..",
+                MarkdownDescription: "Stable identifier for this application from the service.name OpenTelemetry resource attribute. Identity key for this RUM application.",
+                Optional: true,
                 Computed: true,
             },
             "client_type": schema.StringAttribute{
-                MarkdownDescription: "Whether this application's clients are browsers or mobile devices (browser / mobile), derived from browser.* / device.* attributes..",
+                MarkdownDescription: "Whether this application's clients are browsers or mobile devices (browser / mobile), derived from browser.* / device.* attributes.",
+                Optional: true,
                 Computed: true,
             },
             "sdk_language": schema.StringAttribute{
-                MarkdownDescription: "Last-seen telemetry.sdk.language resource attribute (e.g. webjs, swift, android). Used to scope this application's client telemetry apart from a same-named backend service..",
+                MarkdownDescription: "Last-seen telemetry.sdk.language resource attribute (e.g. webjs, swift, android). Used to scope this application's client telemetry apart from a same-named backend service.",
+                Optional: true,
                 Computed: true,
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Whether telemetry is currently being received (connected) or has gone stale (disconnected)..",
+                MarkdownDescription: "Whether telemetry is currently being received (connected) or has gone stale (disconnected).",
+                Optional: true,
                 Computed: true,
             },
             "agent_version": schema.StringAttribute{
-                MarkdownDescription: "Version of the OpenTelemetry SDK reporting this application..",
+                MarkdownDescription: "Version of the OpenTelemetry SDK reporting this application.",
+                Optional: true,
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When telemetry was last received for this application.",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry data for this application. Leave blank to use the project-wide default..",
+                MarkdownDescription: "Number of days to retain telemetry data for this application. Leave blank to use the project-wide default.",
+                Optional: true,
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this application. Unset fields fall back to the application default, then the project's retention settings..",
+                MarkdownDescription: "Per-pillar retention overrides for this application. Unset fields fall back to the application default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_session_replay_enabled": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the browser recorder may record and upload session replays for this application. On by default; Project.isSessionReplayAllowed must also be on. Turn it off here to stop recording for one application without affecting the rest of the project..",
+                MarkdownDescription: "When enabled, the browser recorder may record and upload session replays for this application. On by default; Project.isSessionReplayAllowed must also be on. Turn it off here to stop recording for one application without affecting the rest of the project.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_masking_mode": schema.StringAttribute{
-                MarkdownDescription: "How aggressively the recorder masks page content before it leaves the end user's device. MaskSensitiveInputsOnly (default) masks passwords and card / one-time-code fields and records everything else verbatim. MaskInputsOnly additionally masks every other input value. MaskAllText masks static page text too, producing a wireframe..",
+                MarkdownDescription: "How aggressively the recorder masks page content before it leaves the end user's device. MaskSensitiveInputsOnly (default) masks passwords and card / one-time-code fields and records everything else verbatim. MaskInputsOnly additionally masks every other input value. MaskAllText masks static page text too, producing a wireframe.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_mask_selectors": schema.StringAttribute{
-                MarkdownDescription: "CSS selectors whose text content the recorder masks, in addition to whatever the masking mode already covers..",
+                MarkdownDescription: "CSS selectors whose text content the recorder masks, in addition to whatever the masking mode already covers. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "session_replay_block_selectors": schema.StringAttribute{
-                MarkdownDescription: "CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked..",
+                MarkdownDescription: "CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "session_replay_ignore_error_patterns": schema.StringAttribute{
-                MarkdownDescription: "Regex patterns matched against an uncaught error's message and source URL. Matching errors are still recorded in the session but no longer trigger an upload — the remedy for a chronically-throwing third-party tag that would otherwise convert error-triggered capture into always-on recording..",
+                MarkdownDescription: "Regex patterns matched against an uncaught error's message and source URL. Matching errors are still recorded in the session but no longer trigger an upload — the remedy for a chronically-throwing third-party tag that would otherwise convert error-triggered capture into always-on recording. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "session_replay_trace_propagation_origins": schema.StringAttribute{
-                MarkdownDescription: "APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id..",
+                MarkdownDescription: "APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "session_replay_same_origin_trace_propagation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the recorder adds a W3C traceparent and a tracestate member carrying the replay session id (oneuptime=sid:<session id>) to the fetch and XHR requests the page makes to its own origin while a session is uploading, so the backend spans, logs and exceptions those requests cause link to the recording automatically, with no code in your frontend or backend. Nothing is added before consent, after consent is revoked, or before an on-error trigger fires, and a request that already carries a traceparent or tracestate keeps its own. A traceparent the recorder generates is marked sampled, so ParentBased samplers in your backend keep every browser-originated trace (to keep ratio sampling, set a remoteParentSampled ratio delegate only on the service(s) your pages call directly, never on the services they call: ratio decisions differ between language SDKs; for one rate across services, use tail sampling in an OpenTelemetry Collector). Your backend's OpenTelemetry forwards the tracestate, and with it the session id, to every service it calls, third parties included; the visitor id is never sent. On by default. Narrower create/update ACL than the other replay settings: it links recordings to backend telemetry that may name the user..",
+                MarkdownDescription: "When enabled, the recorder adds a W3C traceparent and a tracestate member carrying the replay session id (oneuptime=sid:<session id>) to the fetch and XHR requests the page makes to its own origin while a session is uploading, so the backend spans, logs and exceptions those requests cause link to the recording automatically, with no code in your frontend or backend. Nothing is added before consent, after consent is revoked, or before an on-error trigger fires, and a request that already carries a traceparent or tracestate keeps its own. A traceparent the recorder generates is marked sampled, so ParentBased samplers in your backend keep every browser-originated trace (to keep ratio sampling, set a remoteParentSampled ratio delegate only on the service(s) your pages call directly, never on the services they call: ratio decisions differ between language SDKs; for one rate across services, use tail sampling in an OpenTelemetry Collector). Your backend's OpenTelemetry forwards the tracestate, and with it the session id, to every service it calls, third parties included; the visitor id is never sent. On by default. Narrower create/update ACL than the other replay settings: it links recordings to backend telemetry that may name the user.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_lcp_budget_ms": schema.NumberAttribute{
-                MarkdownDescription: "Largest Contentful Paint budget in milliseconds. A session whose LCP exceeds it uploads with the Performance trigger. 0 disables the trigger..",
+                MarkdownDescription: "Largest Contentful Paint budget in milliseconds. A session whose LCP exceeds it uploads with the Performance trigger. 0 disables the trigger.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_long_task_budget_ms": schema.NumberAttribute{
-                MarkdownDescription: "Main-thread long-task budget in milliseconds. A single task blocking longer than this uploads the session with the Performance trigger. 0 disables the trigger..",
+                MarkdownDescription: "Main-thread long-task budget in milliseconds. A single task blocking longer than this uploads the session with the Performance trigger. 0 disables the trigger.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_slow_request_budget_ms": schema.NumberAttribute{
-                MarkdownDescription: "Request duration budget in milliseconds. An instrumented request slower than this uploads the session with the Performance trigger. 0 disables the trigger..",
+                MarkdownDescription: "Request duration budget in milliseconds. An instrumented request slower than this uploads the session with the Performance trigger. 0 disables the trigger.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_allowed_origins": schema.StringAttribute{
-                MarkdownDescription: "Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity..",
+                MarkdownDescription: "Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "session_replay_consent_mode": schema.StringAttribute{
-                MarkdownDescription: "NotRequired (default) uploads immediately, asserting a lawful basis that does not need a per-session grant. RequireExplicit buffers in memory and uploads nothing until the host page calls grantConsent(); set it if you need a per-session consent handshake, which most EU deployments will..",
+                MarkdownDescription: "NotRequired (default) uploads immediately, asserting a lawful basis that does not need a per-session grant. RequireExplicit buffers in memory and uploads nothing until the host page calls grantConsent(); set it if you need a per-session consent handshake, which most EU deployments will.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_capture_trigger": schema.StringAttribute{
-                MarkdownDescription: "Always (default) uploads every sampled session from its first event, so an ordinary session is just as watchable as a broken one. OnErrorOrFrustration keeps a rolling in-memory buffer and uploads only when something actually went wrong, which costs roughly 15x less and stores far less end-user data..",
+                MarkdownDescription: "Always (default) uploads every sampled session from its first event, so an ordinary session is just as watchable as a broken one. OnErrorOrFrustration keeps a rolling in-memory buffer and uploads only when something actually went wrong, which costs roughly 15x less and stores far less end-user data.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_sample_percentage": schema.NumberAttribute{
-                MarkdownDescription: "Percentage of sessions (0 to 100) eligible for recording. 100 by default, so with the default Always trigger every session is recorded. Lower it to cut storage and end-user data at rest; the decision is made once per session from a hash of the session id, so a session is never half-recorded..",
+                MarkdownDescription: "Percentage of sessions (0 to 100) eligible for recording. 100 by default, so with the default Always trigger every session is recorded. Lower it to cut storage and end-user data at rest; the decision is made once per session from a hash of the session id, so a session is never half-recorded.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_capture_user_identity": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the end-user reference supplied by the host page is stored alongside the recording - as a one-way per-project HMAC for lookup and erasure, plus the raw reference behind its own narrower column ACL - so a support engineer can find the session a named customer is complaining about. When off, the reference is never attached to a recording and neither column is stored. (It is still sent once on the policy request, which is how targeted capture matches a named user; it is not persisted.) The reference must be supplied at load time - identify() called later reaches the server only on the session's final chunk, which the header is not rebuilt from. On by default. Narrower create/update ACL than the other replay settings: this is the switch that turns a pseudonymous recording into an identified one..",
+                MarkdownDescription: "When enabled, the end-user reference supplied by the host page is stored alongside the recording - as a one-way per-project HMAC for lookup and erasure, plus the raw reference behind its own narrower column ACL - so a support engineer can find the session a named customer is complaining about. When off, the reference is never attached to a recording and neither column is stored. (It is still sent once on the policy request, which is how targeted capture matches a named user; it is not persisted.) The reference must be supplied at load time - identify() called later reaches the server only on the session's final chunk, which the header is not rebuilt from. On by default. Narrower create/update ACL than the other replay settings: this is the switch that turns a pseudonymous recording into an identified one.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_capture_geo": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, a country code is derived from the request and stored on the session. On by default. The end user's IP address is never stored either way - the country is the only geographic fact this keeps..",
+                MarkdownDescription: "When enabled, a country code is derived from the request and stored on the session. On by default. The end user's IP address is never stored either way - the country is the only geographic fact this keeps.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_record_canvas": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, canvas contents are recorded. Off by default because canvas capture is expensive on the end user's device and canvases routinely render content the text masking cannot reach..",
+                MarkdownDescription: "When enabled, canvas contents are recorded. Off by default because canvas capture is expensive on the end user's device and canvases routinely render content the text masking cannot reach.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_retention_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How long session recordings are kept for this application. Clamped to 1, 7, 14, 30 or 90 days. Defaults to 7 rather than the 15 the other telemetry pillars use, because a short retention is itself a privacy control..",
+                MarkdownDescription: "How long session recordings are kept for this application. Clamped to 1, 7, 14, 30 or 90 days. Defaults to 7 rather than the 15 the other telemetry pillars use, because a short retention is itself a privacy control.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_monthly_budget_in_gb": schema.NumberAttribute{
-                MarkdownDescription: "Optional ceiling on replay bytes ingested per calendar month for this application. Once exceeded, live recorders are told to stop. Leave blank for no application-level ceiling..",
+                MarkdownDescription: "Optional ceiling on replay bytes ingested per calendar month for this application. Once exceeded, live recorders are told to stop. Leave blank for no application-level ceiling.",
+                Optional: true,
                 Computed: true,
             },
             "session_replay_last_chunk_received_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a session replay chunk was last accepted for this application.",
                 Computed: true,
             },
             "session_replay_budget_exceeded_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the session replay byte budget was last hit for this application. Non-null means recorders are currently being told to stop.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry..",
+                MarkdownDescription: "Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry.",
+                Optional: true,
                 Computed: true,
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this RUM application archived?",
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -297,23 +307,136 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.AppIdentifier.IsNull() && !data.AppIdentifier.IsUnknown() {
+        filters["appIdentifier"] = data.AppIdentifier.ValueString()
+        filterNames = append(filterNames, "app_identifier = "+fmt.Sprintf("%q", data.AppIdentifier.ValueString()))
+    }
+    if !data.ClientType.IsNull() && !data.ClientType.IsUnknown() {
+        filters["clientType"] = data.ClientType.ValueString()
+        filterNames = append(filterNames, "client_type = "+fmt.Sprintf("%q", data.ClientType.ValueString()))
+    }
+    if !data.SdkLanguage.IsNull() && !data.SdkLanguage.IsUnknown() {
+        filters["sdkLanguage"] = data.SdkLanguage.ValueString()
+        filterNames = append(filterNames, "sdk_language = "+fmt.Sprintf("%q", data.SdkLanguage.ValueString()))
+    }
+    if !data.OtelCollectorStatus.IsNull() && !data.OtelCollectorStatus.IsUnknown() {
+        filters["otelCollectorStatus"] = data.OtelCollectorStatus.ValueString()
+        filterNames = append(filterNames, "otel_collector_status = "+fmt.Sprintf("%q", data.OtelCollectorStatus.ValueString()))
+    }
+    if !data.AgentVersion.IsNull() && !data.AgentVersion.IsUnknown() {
+        filters["agentVersion"] = data.AgentVersion.ValueString()
+        filterNames = append(filterNames, "agent_version = "+fmt.Sprintf("%q", data.AgentVersion.ValueString()))
+    }
+    if !data.RetainTelemetryDataForDays.IsNull() && !data.RetainTelemetryDataForDays.IsUnknown() {
+        filters["retainTelemetryDataForDays"] = lookupNumber(data.RetainTelemetryDataForDays)
+        filterNames = append(filterNames, "retain_telemetry_data_for_days = "+data.RetainTelemetryDataForDays.ValueBigFloat().String())
+    }
+    if !data.IsSessionReplayEnabled.IsNull() && !data.IsSessionReplayEnabled.IsUnknown() {
+        filters["isSessionReplayEnabled"] = data.IsSessionReplayEnabled.ValueBool()
+        filterNames = append(filterNames, "is_session_replay_enabled = "+fmt.Sprintf("%t", data.IsSessionReplayEnabled.ValueBool()))
+    }
+    if !data.SessionReplayMaskingMode.IsNull() && !data.SessionReplayMaskingMode.IsUnknown() {
+        filters["sessionReplayMaskingMode"] = data.SessionReplayMaskingMode.ValueString()
+        filterNames = append(filterNames, "session_replay_masking_mode = "+fmt.Sprintf("%q", data.SessionReplayMaskingMode.ValueString()))
+    }
+    if !data.SessionReplaySameOriginTracePropagation.IsNull() && !data.SessionReplaySameOriginTracePropagation.IsUnknown() {
+        filters["sessionReplaySameOriginTracePropagation"] = data.SessionReplaySameOriginTracePropagation.ValueBool()
+        filterNames = append(filterNames, "session_replay_same_origin_trace_propagation = "+fmt.Sprintf("%t", data.SessionReplaySameOriginTracePropagation.ValueBool()))
+    }
+    if !data.SessionReplayLcpBudgetMs.IsNull() && !data.SessionReplayLcpBudgetMs.IsUnknown() {
+        filters["sessionReplayLcpBudgetMs"] = lookupNumber(data.SessionReplayLcpBudgetMs)
+        filterNames = append(filterNames, "session_replay_lcp_budget_ms = "+data.SessionReplayLcpBudgetMs.ValueBigFloat().String())
+    }
+    if !data.SessionReplayLongTaskBudgetMs.IsNull() && !data.SessionReplayLongTaskBudgetMs.IsUnknown() {
+        filters["sessionReplayLongTaskBudgetMs"] = lookupNumber(data.SessionReplayLongTaskBudgetMs)
+        filterNames = append(filterNames, "session_replay_long_task_budget_ms = "+data.SessionReplayLongTaskBudgetMs.ValueBigFloat().String())
+    }
+    if !data.SessionReplaySlowRequestBudgetMs.IsNull() && !data.SessionReplaySlowRequestBudgetMs.IsUnknown() {
+        filters["sessionReplaySlowRequestBudgetMs"] = lookupNumber(data.SessionReplaySlowRequestBudgetMs)
+        filterNames = append(filterNames, "session_replay_slow_request_budget_ms = "+data.SessionReplaySlowRequestBudgetMs.ValueBigFloat().String())
+    }
+    if !data.SessionReplayConsentMode.IsNull() && !data.SessionReplayConsentMode.IsUnknown() {
+        filters["sessionReplayConsentMode"] = data.SessionReplayConsentMode.ValueString()
+        filterNames = append(filterNames, "session_replay_consent_mode = "+fmt.Sprintf("%q", data.SessionReplayConsentMode.ValueString()))
+    }
+    if !data.SessionReplayCaptureTrigger.IsNull() && !data.SessionReplayCaptureTrigger.IsUnknown() {
+        filters["sessionReplayCaptureTrigger"] = data.SessionReplayCaptureTrigger.ValueString()
+        filterNames = append(filterNames, "session_replay_capture_trigger = "+fmt.Sprintf("%q", data.SessionReplayCaptureTrigger.ValueString()))
+    }
+    if !data.SessionReplaySamplePercentage.IsNull() && !data.SessionReplaySamplePercentage.IsUnknown() {
+        filters["sessionReplaySamplePercentage"] = lookupNumber(data.SessionReplaySamplePercentage)
+        filterNames = append(filterNames, "session_replay_sample_percentage = "+data.SessionReplaySamplePercentage.ValueBigFloat().String())
+    }
+    if !data.SessionReplayCaptureUserIdentity.IsNull() && !data.SessionReplayCaptureUserIdentity.IsUnknown() {
+        filters["sessionReplayCaptureUserIdentity"] = data.SessionReplayCaptureUserIdentity.ValueBool()
+        filterNames = append(filterNames, "session_replay_capture_user_identity = "+fmt.Sprintf("%t", data.SessionReplayCaptureUserIdentity.ValueBool()))
+    }
+    if !data.SessionReplayCaptureGeo.IsNull() && !data.SessionReplayCaptureGeo.IsUnknown() {
+        filters["sessionReplayCaptureGeo"] = data.SessionReplayCaptureGeo.ValueBool()
+        filterNames = append(filterNames, "session_replay_capture_geo = "+fmt.Sprintf("%t", data.SessionReplayCaptureGeo.ValueBool()))
+    }
+    if !data.SessionReplayRecordCanvas.IsNull() && !data.SessionReplayRecordCanvas.IsUnknown() {
+        filters["sessionReplayRecordCanvas"] = data.SessionReplayRecordCanvas.ValueBool()
+        filterNames = append(filterNames, "session_replay_record_canvas = "+fmt.Sprintf("%t", data.SessionReplayRecordCanvas.ValueBool()))
+    }
+    if !data.SessionReplayRetentionInDays.IsNull() && !data.SessionReplayRetentionInDays.IsUnknown() {
+        filters["sessionReplayRetentionInDays"] = lookupNumber(data.SessionReplayRetentionInDays)
+        filterNames = append(filterNames, "session_replay_retention_in_days = "+data.SessionReplayRetentionInDays.ValueBigFloat().String())
+    }
+    if !data.SessionReplayMonthlyBudgetInGb.IsNull() && !data.SessionReplayMonthlyBudgetInGb.IsUnknown() {
+        filters["sessionReplayMonthlyBudgetInGB"] = lookupNumber(data.SessionReplayMonthlyBudgetInGb)
+        filterNames = append(filterNames, "session_replay_monthly_budget_in_gb = "+data.SessionReplayMonthlyBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a rum_application.",
+            "Look the rum application up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the rum application up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "slug": true,
         "description": true,
         "appIdentifier": true,
@@ -350,7 +473,6 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         "isArchived": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -363,7 +485,7 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No rum_application found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No rum application found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -376,11 +498,10 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -397,11 +518,11 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No rum_application found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No rum application matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one rum_application matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one rum application matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -429,23 +550,6 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -481,34 +585,6 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -525,6 +601,23 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["slug"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1030,23 +1123,6 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

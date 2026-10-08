@@ -13,8 +13,8 @@ Endpoints (host:port) a database is reached at. Telemetry that names one of thes
 
 ```terraform
 resource "oneuptime_database_endpoint" "example" {
-  database_server_id = "123e4567-e89b-12d3-a456-426614174000"
-  endpoint = "This is an example of longer text content that might be stored in this field."
+  database_server_id = oneuptime_database.example.id
+  endpoint           = "This is an example of longer text content that might be stored in this field."
 }
 ```
 
@@ -22,29 +22,35 @@ resource "oneuptime_database_endpoint" "example" {
 
 ### Required
 
-- `database_server_id` (String) A unique identifier for an object, represented as a UUID..
-- `endpoint` (String) Canonical endpoint of the database: host:port, with an @cluster qualifier for Kubernetes-internal names and private IPs (e.g. orders-db.data.svc.cluster.local:5432@prod-cluster). What you type is canonicalized; the default port of the engine is filled in...
+- `database_server_id` (String) ID of the database this endpoint belongs to. The ID of a `oneuptime_database`.
+- `endpoint` (String) Canonical endpoint of the database: host:port, with an @cluster qualifier for Kubernetes-internal names and private IPs (e.g. orders-db.data.svc.cluster.local:5432@prod-cluster). What you type is canonicalized; the default port of the engine is filled in.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `is_primary` (Bool) Is this the endpoint the database was created from? The primary endpoint cannot be removed...
-- `source` (String) Who added this endpoint: auto (found in telemetry), workload (a Service name of the Kubernetes workload the database runs as) or user (added as an alias by a person)...
+- `is_primary` (Boolean) Is this the endpoint the database was created from? The primary endpoint cannot be removed. Defaults to `false`.
+- `source` (String) Who added this endpoint: auto (found in telemetry), workload (a Service name of the Kubernetes workload the database runs as) or user (added as an alias by a person).
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `last_matched_at` (String) A date time object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `last_matched_at` (String) When telemetry or discovery last matched this endpoint to its database, refreshed at most once an hour. For a workload endpoint, when the workload last produced it.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing database endpoint by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_database_endpoint.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_database_endpoint.example <id>

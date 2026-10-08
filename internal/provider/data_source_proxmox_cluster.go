@@ -30,12 +30,10 @@ type ProxmoxClusterDataSource struct {
 // ProxmoxClusterDataSourceModel describes the data source data model.
 type ProxmoxClusterDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
@@ -52,7 +50,6 @@ type ProxmoxClusterDataSourceModel struct {
     IsArchived types.Bool `tfsdk:"is_archived"`
     ArchivedAt types.String `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
@@ -70,142 +67,148 @@ func (d *ProxmoxClusterDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *ProxmoxClusterDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Proxmox VE clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime Proxmox Agent sends metrics, or can be manually registered. Look up an existing proxmox_cluster by `id` or by `name`.",
+        MarkdownDescription: "Proxmox VE clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime Proxmox Agent sends metrics, or can be manually registered. Look up an existing proxmox cluster by `id`, or by any of its other arguments (`name`, `agent_version`, `ai_access_last_error`, ...): each one set must match, and exactly one proxmox cluster may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Name of this Proxmox cluster. This is the join key — it must match the proxmox.cluster.name OTel resource attribute stamped by the OneUptime Proxmox Agent.",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description for this Proxmox cluster.",
+                Optional: true,
                 Computed: true,
             },
             "otel_collector_status": schema.StringAttribute{
                 MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected).",
+                Optional: true,
                 Computed: true,
             },
             "agent_version": schema.StringAttribute{
                 MarkdownDescription: "Version of the OneUptime Proxmox agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute.",
+                Optional: true,
                 Computed: true,
             },
             "pve_version": schema.StringAttribute{
                 MarkdownDescription: "Proxmox VE version reported by this cluster.",
+                Optional: true,
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When metrics were last received from this cluster.",
                 Computed: true,
             },
             "node_count": schema.NumberAttribute{
                 MarkdownDescription: "Cached count of nodes in this cluster.",
+                Optional: true,
                 Computed: true,
             },
             "online_node_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of nodes currently online (pve_up == 1) in this cluster. Rendered as 'Nodes X/Y online' next to nodeCount..",
+                MarkdownDescription: "Cached count of nodes currently online (pve_up == 1) in this cluster. Rendered as 'Nodes X/Y online' next to nodeCount.",
+                Optional: true,
                 Computed: true,
             },
             "guest_count": schema.NumberAttribute{
                 MarkdownDescription: "Cached count of guests (VMs and containers) in this cluster.",
+                Optional: true,
                 Computed: true,
             },
             "storage_count": schema.NumberAttribute{
                 MarkdownDescription: "Cached count of storage pools in this cluster.",
+                Optional: true,
                 Computed: true,
             },
             "guests_without_backup_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of guests not covered by ANY backup job (pve_not_backed_up_total). NULL until the exporter's cluster-level backup-info collector reports. Coverage by a job is NOT the same as recent/successful backups — freshness needs the PVE task log or PBS API..",
+                MarkdownDescription: "Cached count of guests not covered by ANY backup job (pve_not_backed_up_total). NULL until the exporter's cluster-level backup-info collector reports. Coverage by a job is NOT the same as recent/successful backups — freshness needs the PVE task log or PBS API.",
+                Optional: true,
                 Computed: true,
             },
             "ceph_cluster_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Optional FK to the CephCluster providing storage for this hyperconverged Proxmox cluster (manually linked). The ID of a `oneuptime_ceph_cluster`.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this Proxmox cluster archived? Archived Proxmox clusters are hidden from lists but keep collecting telemetry..",
+                MarkdownDescription: "Is this Proxmox cluster archived? Archived Proxmox clusters are hidden from lists but keep collecting telemetry.",
+                Optional: true,
                 Computed: true,
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this Proxmox cluster archived?",
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry data for this Proxmox cluster. Leave blank to use the project-wide default..",
+                MarkdownDescription: "Number of days to retain telemetry data for this Proxmox cluster. Leave blank to use the project-wide default.",
+                Optional: true,
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this Proxmox cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Proxmox cluster default, then the project's retention settings..",
+                MarkdownDescription: "Per-pillar retention overrides for this Proxmox cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Proxmox cluster default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
-                MarkdownDescription: "When on, OneUptime AI runs read-only commands (pvesh get on cluster, node, VM and container status) on this Proxmox cluster, through its Proxmox AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the Proxmox cluster can turn it on or off..",
+                MarkdownDescription: "When on, OneUptime AI runs read-only commands (pvesh get on cluster, node, VM and container status) on this Proxmox cluster, through its Proxmox AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the Proxmox cluster can turn it on or off.",
+                Optional: true,
                 Computed: true,
             },
             "ai_remediation_mode": schema.StringAttribute{
-                MarkdownDescription: "Disabled: AI never proposes or runs a change on this Proxmox cluster. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the Proxmox cluster's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the Proxmox cluster can lower the mode; raising it needs Project Owner, Project Admin or Edit Auto Remediation Rule..",
+                MarkdownDescription: "Disabled: AI never proposes or runs a change on this Proxmox cluster. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the Proxmox cluster's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the Proxmox cluster can lower the mode; raising it needs Project Owner, Project Admin or Edit Auto Remediation Rule.",
+                Optional: true,
                 Computed: true,
             },
             "ai_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this Proxmox cluster without approval even though they are riskier changes. Each pattern is one command line for this Proxmox cluster's agent (pvesh) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this Proxmox cluster is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the Proxmox cluster can remove patterns or clear the list..",
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this Proxmox cluster without approval even though they are riskier changes. Each pattern is one command line for this Proxmox cluster's agent (pvesh) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this Proxmox cluster is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the Proxmox cluster can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a command from OneUptime AI last succeeded on this Proxmox cluster through its Proxmox AI agent. Set by the server.",
                 Computed: true,
             },
             "ai_access_last_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent failure OneUptime AI hit while running a command on this Proxmox cluster, kept until the next successful command. Set by the server..",
+                MarkdownDescription: "The most recent failure OneUptime AI hit while running a command on this Proxmox cluster, kept until the next successful command. Set by the server.",
+                Optional: true,
                 Computed: true,
             },
             "ai_access_configured_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When OneUptime AI access to this Proxmox cluster was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Proxmox AI agent that registers later never overwrites a setting an operator chose.",
                 Computed: true,
             },
         },
@@ -242,23 +245,108 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.OtelCollectorStatus.IsNull() && !data.OtelCollectorStatus.IsUnknown() {
+        filters["otelCollectorStatus"] = data.OtelCollectorStatus.ValueString()
+        filterNames = append(filterNames, "otel_collector_status = "+fmt.Sprintf("%q", data.OtelCollectorStatus.ValueString()))
+    }
+    if !data.AgentVersion.IsNull() && !data.AgentVersion.IsUnknown() {
+        filters["agentVersion"] = data.AgentVersion.ValueString()
+        filterNames = append(filterNames, "agent_version = "+fmt.Sprintf("%q", data.AgentVersion.ValueString()))
+    }
+    if !data.PveVersion.IsNull() && !data.PveVersion.IsUnknown() {
+        filters["pveVersion"] = data.PveVersion.ValueString()
+        filterNames = append(filterNames, "pve_version = "+fmt.Sprintf("%q", data.PveVersion.ValueString()))
+    }
+    if !data.NodeCount.IsNull() && !data.NodeCount.IsUnknown() {
+        filters["nodeCount"] = lookupNumber(data.NodeCount)
+        filterNames = append(filterNames, "node_count = "+data.NodeCount.ValueBigFloat().String())
+    }
+    if !data.OnlineNodeCount.IsNull() && !data.OnlineNodeCount.IsUnknown() {
+        filters["onlineNodeCount"] = lookupNumber(data.OnlineNodeCount)
+        filterNames = append(filterNames, "online_node_count = "+data.OnlineNodeCount.ValueBigFloat().String())
+    }
+    if !data.GuestCount.IsNull() && !data.GuestCount.IsUnknown() {
+        filters["guestCount"] = lookupNumber(data.GuestCount)
+        filterNames = append(filterNames, "guest_count = "+data.GuestCount.ValueBigFloat().String())
+    }
+    if !data.StorageCount.IsNull() && !data.StorageCount.IsUnknown() {
+        filters["storageCount"] = lookupNumber(data.StorageCount)
+        filterNames = append(filterNames, "storage_count = "+data.StorageCount.ValueBigFloat().String())
+    }
+    if !data.GuestsWithoutBackupCount.IsNull() && !data.GuestsWithoutBackupCount.IsUnknown() {
+        filters["guestsWithoutBackupCount"] = lookupNumber(data.GuestsWithoutBackupCount)
+        filterNames = append(filterNames, "guests_without_backup_count = "+data.GuestsWithoutBackupCount.ValueBigFloat().String())
+    }
+    if !data.CephClusterId.IsNull() && !data.CephClusterId.IsUnknown() {
+        filters["cephClusterId"] = data.CephClusterId.ValueString()
+        filterNames = append(filterNames, "ceph_cluster_id = "+fmt.Sprintf("%q", data.CephClusterId.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
+    if !data.RetainTelemetryDataForDays.IsNull() && !data.RetainTelemetryDataForDays.IsUnknown() {
+        filters["retainTelemetryDataForDays"] = lookupNumber(data.RetainTelemetryDataForDays)
+        filterNames = append(filterNames, "retain_telemetry_data_for_days = "+data.RetainTelemetryDataForDays.ValueBigFloat().String())
+    }
+    if !data.IsAiInvestigationEnabled.IsNull() && !data.IsAiInvestigationEnabled.IsUnknown() {
+        filters["isAiInvestigationEnabled"] = data.IsAiInvestigationEnabled.ValueBool()
+        filterNames = append(filterNames, "is_ai_investigation_enabled = "+fmt.Sprintf("%t", data.IsAiInvestigationEnabled.ValueBool()))
+    }
+    if !data.AiRemediationMode.IsNull() && !data.AiRemediationMode.IsUnknown() {
+        filters["aiRemediationMode"] = data.AiRemediationMode.ValueString()
+        filterNames = append(filterNames, "ai_remediation_mode = "+fmt.Sprintf("%q", data.AiRemediationMode.ValueString()))
+    }
+    if !data.AiAccessLastError.IsNull() && !data.AiAccessLastError.IsUnknown() {
+        filters["aiAccessLastError"] = data.AiAccessLastError.ValueString()
+        filterNames = append(filterNames, "ai_access_last_error = "+fmt.Sprintf("%q", data.AiAccessLastError.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a proxmox_cluster.",
+            "Look the proxmox cluster up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the proxmox cluster up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "slug": true,
         "description": true,
         "otelCollectorStatus": true,
@@ -275,7 +363,6 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         "isArchived": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -297,7 +384,7 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No proxmox_cluster found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No proxmox cluster found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -310,11 +397,10 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -331,11 +417,11 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No proxmox_cluster found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No proxmox cluster matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one proxmox_cluster matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one proxmox cluster matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -363,23 +449,6 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -415,34 +484,6 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -459,6 +500,23 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["slug"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -689,23 +747,6 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value

@@ -13,8 +13,8 @@ List of all the metrics ingested with OpenTelemetry
 
 ```terraform
 resource "oneuptime_metric_type" "example" {
-  name = "Example short text"
-  description = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
+  name        = "Example metric type"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -22,30 +22,36 @@ resource "oneuptime_metric_type" "example" {
 
 ### Required
 
-- `name` (String) Any friendly name of this object..
+- `name` (String) Any friendly name of this object.
 
 ### Optional
 
-- `services` (Set) List of services this metric is related to..
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Metric description..
-- `unit` (String) Metric description..
-- `is_monotonic` (Bool) Whether this metric is a monotonic counter (only ever increases), as reported by OpenTelemetry at ingest. Null when the instrument type does not carry monotonicity (e.g. gauges)...
-- `aggregation_temporality` (String) OpenTelemetry aggregation temporality of this metric (Delta or Cumulative), as reported at ingest. Null when unknown...
+- `aggregation_temporality` (String) OpenTelemetry aggregation temporality of this metric (Delta or Cumulative), as reported at ingest. Null when unknown.
+- `description` (String) Metric description.
+- `is_monotonic` (Boolean) Whether this metric is a monotonic counter (only ever increases), as reported by OpenTelemetry at ingest. Null when the instrument type does not carry monotonicity (e.g. gauges).
+- `services` (Set of String) List of services this metric is related to. IDs of `oneuptime_service` resources.
+- `unit` (String) Metric description.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing metric type by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_metric_type.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_metric_type.example <id>

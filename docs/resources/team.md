@@ -13,8 +13,8 @@ Teams lets your organize users of your project into groups and lets you assign d
 
 ```terraform
 resource "oneuptime_team" "example" {
-  name = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example team"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -22,31 +22,38 @@ resource "oneuptime_team" "example" {
 
 ### Required
 
-- `name` (String) Any friendly name of this object..
+- `name` (String) Any friendly name of this object.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Friendly description that will help you remember..
-- `custom_fields` (String) Custom Fields on this resource...
+- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `description` (String) Friendly description that will help you remember.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `slug` (String) Friendly globally unique name for your object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `is_permissions_editable` (Bool) Can you edit team permissions? Teams auto-created for you are uneditable but you should be able to edit permissions on the team you create..
-- `is_team_deleteable` (Bool) Can you delete this team? Teams auto-created for you are not deleteable but you should be able to delete permissions on the team you create..
-- `should_have_at_least_one_member` (Bool) Can this team have no members? Owner team should have at least 1 member, other teams can have no members..
-- `is_team_editable` (Bool) Can you edit team? Teams auto-created for you are uneditable but you should be able to edit on the team you create..
+- `is_permissions_editable` (Boolean) Can you edit team permissions? Teams auto-created for you are uneditable but you should be able to edit permissions on the team you create.
+- `is_team_deleteable` (Boolean) Can you delete this team? Teams auto-created for you are not deleteable but you should be able to delete permissions on the team you create.
+- `is_team_editable` (Boolean) Can you edit team? Teams auto-created for you are uneditable but you should be able to edit on the team you create.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `should_have_at_least_one_member` (Boolean) Can this team have no members? Owner team should have at least 1 member, other teams can have no members.
+- `slug` (String) Friendly globally unique name for your object.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing team by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_team.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_team.example <id>

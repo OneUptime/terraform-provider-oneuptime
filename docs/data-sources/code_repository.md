@@ -7,46 +7,49 @@ description: |-
 
 # oneuptime_code_repository (Data Source)
 
-Connect and manage code repositories from GitHub, GitLab, and other providers Look up by `id` or by `name` (must match exactly one item).
+Connect and manage code repositories from GitHub, GitLab, and other providers
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one code repository may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_code_repository" "by_name" {
-  name = "example-code_repository"
+data "oneuptime_code_repository" "example" {
+  name = "Example code repository"
 }
 
+# Or by id:
 data "oneuptime_code_repository" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `slug` (String) Friendly globally unique name for your object.. Computed.
-- `description` (String) A description of this code repository.. Computed.
-- `repository_hosted_at` (String) Where is this repository hosted (GitHub, GitLab, etc.).. Computed.
-- `organization_name` (String) GitHub organization or username that owns this repository.. Computed.
-- `repository_name` (String) The name of the repository.. Computed.
-- `main_branch_name` (String) The name of the main/default branch.. Computed.
-- `setup_command` (String) Command the AI fix Runner executes at the repository root to install dependencies before verifying an AI-authored fix (e.g. 'npm ci'). Runs on your Runner, in the cloned workspace, before the build and test commands. Leave empty to skip... Computed.
-- `build_command` (String) Command the AI fix Runner executes at the repository root to verify an AI-authored fix compiles/builds (e.g. 'npm run build'). A failure is fed back to the code agent for bounded repair attempts before the pull request opens. Leave empty to skip the build check... Computed.
-- `test_command` (String) Command the AI fix Runner executes at the repository root to run the test suite against an AI-authored fix (e.g. 'npm test'). A failure is fed back to the code agent for bounded repair attempts before the pull request opens. Leave empty to skip the test check... Computed.
-- `max_open_fix_pull_requests` (Number) Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means no cap; 0 blocks AI fix pull requests for this repository entirely... Computed.
-- `is_git_hub_commands_enabled` (Bool) Whether the OneUptime GitHub App acts on mentions, assignments and trigger labels in this repository. Only people with write access to the repository can command it, and it never merges anything. Unset means enabled... Computed.
-- `git_hub_trigger_label` (String) The issue label that hands an issue to the OneUptime GitHub App. Adding this label to an issue starts the same work an '@mention implement this' would, which is how you assign work to the app from the GitHub UI. Unset means 'oneuptime'... Computed.
-- `repository_url` (String) The HTTPS URL to the repository.. Computed.
-- `git_hub_app_installation_id` (String) The GitHub App installation ID used to authenticate with this repository.. Computed.
-- `git_lab_project_id` (String) The GitLab project ID for this repository.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
+### Optional
+
+- `build_command` (String) Command the AI fix Runner executes at the repository root to verify an AI-authored fix compiles/builds (e.g. 'npm run build'). A failure is fed back to the code agent for bounded repair attempts before the pull request opens. Leave empty to skip the build check.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `description` (String) A description of this code repository.
+- `git_hub_app_installation_id` (String) The GitHub App installation ID used to authenticate with this repository.
+- `git_hub_trigger_label` (String) The issue label that hands an issue to the OneUptime GitHub App. Adding this label to an issue starts the same work an '@mention implement this' would, which is how you assign work to the app from the GitHub UI. Unset means 'oneuptime'.
+- `git_lab_project_id` (String) The GitLab project ID for this repository.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_git_hub_commands_enabled` (Boolean) Whether the OneUptime GitHub App acts on mentions, assignments and trigger labels in this repository. Only people with write access to the repository can command it, and it never merges anything. Unset means enabled.
+- `main_branch_name` (String) The name of the main/default branch.
+- `max_open_fix_pull_requests` (Number) Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means no cap; 0 blocks AI fix pull requests for this repository entirely.
+- `name` (String) A friendly name for this code repository.
+- `organization_name` (String) GitHub organization or username that owns this repository.
+- `repository_hosted_at` (String) Where is this repository hosted (GitHub, GitLab, etc.).
+- `repository_name` (String) The name of the repository.
+- `repository_url` (String) The HTTPS URL to the repository.
+- `setup_command` (String) Command the AI fix Runner executes at the repository root to install dependencies before verifying an AI-authored fix (e.g. 'npm ci'). Runs on your Runner, in the cloned workspace, before the build and test commands. Leave empty to skip.
+- `slug` (String) Friendly globally unique name for your object.
+- `test_command` (String) Command the AI fix Runner executes at the repository root to run the test suite against an AI-authored fix (e.g. 'npm test'). A failure is fed back to the code agent for bounded repair attempts before the pull request opens. Leave empty to skip the test check.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

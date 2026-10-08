@@ -7,45 +7,48 @@ description: |-
 
 # oneuptime_push_notification_log (Data Source)
 
-Logs of all the Push Notifications sent out to all users and subscribers for this project. Look up by `id` or by `name` (must match exactly one item).
+Logs of all the Push Notifications sent out to all users and subscribers for this project.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one push notification log may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_push_notification_log" "by_name" {
-  name = "example-push_notification_log"
+data "oneuptime_push_notification_log" "example" {
+  title = "example-title"
 }
 
+# Or by id:
 data "oneuptime_push_notification_log" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `title` (String) Title of the push notification.. Computed.
-- `body` (String) Body of the push notification.. Computed.
-- `device_type` (String) Type of device this was sent to (e.g., web).. Computed.
-- `device_name` (String) Name of the device this was sent to.. Computed.
-- `status_message` (String) Status Message (if any).. Computed.
-- `status` (String) Status of the push notification.. Computed.
-- `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `scheduled_maintenance_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `status_page_announcement_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `alert_id` (String) ID of Alert associated with this Push (if any). The ID of a `oneuptime_alert`.
+- `body` (String) Body of the push notification.
+- `device_name` (String) Name of the device this was sent to.
+- `device_type` (String) Type of device this was sent to (e.g., web).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `incident_id` (String) ID of Incident associated with this Push (if any). The ID of a `oneuptime_incident`.
+- `monitor_id` (String) ID of Monitor associated with this Push (if any). The ID of a `oneuptime_monitor`.
+- `on_call_duty_policy_escalation_rule_id` (String) ID of On-Call Duty Policy Escalation Rule associated with this Push Notification (if any). The ID of a `oneuptime_escalation_rule`.
+- `on_call_duty_policy_id` (String) ID of On-Call Duty Policy associated with this Push Notification (if any). The ID of a `oneuptime_on_call_policy`.
+- `on_call_duty_policy_schedule_id` (String) ID of On-Call Duty Policy Schedule associated with this Push Notification (if any). The ID of a `oneuptime_on_call_policy_schedule`.
+- `scheduled_maintenance_id` (String) ID of Scheduled Maintenance associated with this Push (if any). The ID of a `oneuptime_scheduled_maintenance_event`.
+- `status` (String) Status of the push notification.
+- `status_message` (String) Status Message (if any).
+- `status_page_announcement_id` (String) ID of Status Page Announcement associated with this Push (if any). The ID of a `oneuptime_status_page_announcement`.
+- `status_page_id` (String) ID of Status Page associated with this Push (if any). The ID of a `oneuptime_status_page`.
+- `team_id` (String) ID of Team associated with this Push Notification (if any). The ID of a `oneuptime_team`.
+- `title` (String) Title of the push notification.
+- `user_id` (String) ID of User who initiated this Push notification (if any). The ID of a `oneuptime_user` (see the data source).
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

@@ -13,7 +13,7 @@ Permissions for your API Keys
 
 ```terraform
 resource "oneuptime_api_key_permission" "example" {
-  api_key_id = "123e4567-e89b-12d3-a456-426614174000"
+  api_key_id = oneuptime_api_key.example.id
 }
 ```
 
@@ -21,27 +21,34 @@ resource "oneuptime_api_key_permission" "example" {
 
 ### Required
 
-- `api_key_id` (String) A unique identifier for an object, represented as a UUID..
+- `api_key_id` (String) ID of API Key resource in which this object belongs. The ID of a `oneuptime_api_key`.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `permission` (String) Permission. You can find list of permissions on the Permissions page...
-- `labels` (Set) Relation to Labels Array where this permission is scoped at...
-- `is_block_permission` (Bool) Api key permission is_block_permission.
+- `is_block_permission` (Boolean) Defaults to `false`.
+- `labels` (Set of String) Relation to Labels Array where this permission is scoped at. IDs of `oneuptime_label` resources.
+- `permission` (String) Permission. You can find list of permissions on the Permissions page. A JSON value: write it with `jsonencode()`.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing api key permission by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_api_key_permission.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_api_key_permission.example <id>

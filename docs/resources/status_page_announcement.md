@@ -13,11 +13,9 @@ Manage announcements on your status page
 
 ```terraform
 resource "oneuptime_status_page_announcement" "example" {
-  title = "Example short text"
+  title                = "Example short text"
   show_announcement_at = "2030-01-01T00:00:00Z"
-  description = "# Heading
-
-This is **markdown** content"
+  description          = "Managed by Terraform"
 }
 ```
 
@@ -25,36 +23,43 @@ This is **markdown** content"
 
 ### Required
 
-- `title` (String) Title of this resource..
-- `show_announcement_at` (String) A date time object..
-- `description` (String) Text of the announcement. This can be in Markdown format...
+- `description` (String) Text of the announcement. This can be in Markdown format.
+- `show_announcement_at` (String) When should this announcement be shown?
+- `title` (String) Title of this resource.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `status_pages` (Set) Status Pages to show show this announcement on...
-- `monitors` (Set) List of monitors affected by this announcement. If none are selected, all subscribers will be notified...
-- `end_announcement_at` (String) A date time object..
-- `attachments` (Set) Files attached to this announcement..
-- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about this announcement?..
+- `attachments` (Set of String) Files attached to this announcement. IDs of `oneuptime_file` resources.
+- `end_announcement_at` (String) When should this announcement hidden?
+- `monitors` (Set of String) List of monitors affected by this announcement. If none are selected, all subscribers will be notified. IDs of `oneuptime_monitor` resources.
+- `should_status_page_subscribers_be_notified` (Boolean) Should subscribers be notified about this announcement? Defaults to `true`.
+- `status_pages` (Set of String) Status Pages to show show this announcement on. IDs of `oneuptime_status_page` resources.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `subscriber_notification_status` (String) Status page announcement subscriber_notification_status.
-- `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons..
-- `subscriber_notification_status_on_announcement_updated` (String) Status of the notification sent to subscribers when this announcement was last updated. Empty until an update notification is requested...
-- `subscriber_notification_status_message_on_announcement_updated` (String) Status message for the notification sent to subscribers when this announcement was last updated - includes success messages, failure reasons, or skip reasons..
-- `is_owner_notified` (Bool) Are owners notified of this announcement?..
+- `is_owner_notified` (Boolean) Are owners notified of this announcement?
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `subscriber_notification_status` (String)
+- `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.
+- `subscriber_notification_status_message_on_announcement_updated` (String) Status message for the notification sent to subscribers when this announcement was last updated - includes success messages, failure reasons, or skip reasons.
+- `subscriber_notification_status_on_announcement_updated` (String) Status of the notification sent to subscribers when this announcement was last updated. Empty until an update notification is requested.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing status page announcement by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_status_page_announcement.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_status_page_announcement.example <id>

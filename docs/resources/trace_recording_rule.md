@@ -13,11 +13,8 @@ Derived metrics computed on a schedule from aggregations over spans. Results are
 
 ```terraform
 resource "oneuptime_trace_recording_rule" "example" {
-  name = jsonencode({
-    "_type": "Name",
-    "value": "John Doe"
-  })
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example trace recording rule"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -25,30 +22,36 @@ resource "oneuptime_trace_recording_rule" "example" {
 
 ### Required
 
-- `name` (String) Name object.
+- `name` (String) Friendly name for this rule.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) What this recording rule computes and why...
-- `output_metric_name` (String) Name of the new metric this rule writes (e.g. http.error_rate). Leave it out and it is made from the rule's name - HTTP error rate becomes http_error_rate, with _2, _3 and so on added when another recording rule of the project already writes it. Keep it unique per project...
-- `definition` (String) Sources (aliased span aggregations), arithmetic expression, and optional group-by attribute...
-- `is_enabled` (Bool) Whether this rule is evaluated by the recording rule cron...
-- `sort_order` (Number) Not read when rules are evaluated: every enabled rule is evaluated each minute, on its own, whatever this holds. The dashboard lists rules by name...
+- `definition` (String) Sources (aliased span aggregations), arithmetic expression, and optional group-by attribute. A JSON value: write it with `jsonencode()`.
+- `description` (String) What this recording rule computes and why.
+- `is_enabled` (Boolean) Whether this rule is evaluated by the recording rule cron. Defaults to `true`.
+- `output_metric_name` (String) Name of the new metric this rule writes (e.g. http.error_rate). Leave it out and it is made from the rule's name - HTTP error rate becomes http_error_rate, with _2, _3 and so on added when another recording rule of the project already writes it. Keep it unique per project.
+- `sort_order` (Number) Not read when rules are evaluated: every enabled rule is evaluated each minute, on its own, whatever this holds. The dashboard lists rules by name. Defaults to `0`.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) ID of the user who created this rule. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of the project this recording rule belongs to. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing trace recording rule by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_trace_recording_rule.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_trace_recording_rule.example <id>

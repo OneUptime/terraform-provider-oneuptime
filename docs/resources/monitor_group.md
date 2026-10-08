@@ -13,8 +13,8 @@ Monitor Groups are a way to organize your monitors into groups. You can create a
 
 ```terraform
 resource "oneuptime_monitor_group" "example" {
-  name = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example monitor group"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -22,27 +22,34 @@ resource "oneuptime_monitor_group" "example" {
 
 ### Required
 
-- `name` (String) Any friendly name for this monitor group..
+- `name` (String) Any friendly name for this monitor group.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Friendly description that will help you remember..
-- `labels` (Set) Relation to Labels Array where this object is categorized in...
+- `description` (String) Friendly description that will help you remember.
+- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `slug` (String) Friendly globally unique name for your object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `slug` (String) Friendly globally unique name for your object.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing monitor group by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_monitor_group.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_monitor_group.example <id>

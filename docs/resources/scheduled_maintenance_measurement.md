@@ -13,10 +13,10 @@ A named duration between two points in a scheduled maintenance event's life, com
 
 ```terraform
 resource "oneuptime_scheduled_maintenance_measurement" "example" {
-  name = "Example short text"
+  name              = "Example scheduled maintenance measurement"
   start_anchor_type = "Example short text"
-  end_anchor_type = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  end_anchor_type   = "Example short text"
+  description       = "Managed by Terraform"
 }
 ```
 
@@ -24,44 +24,51 @@ resource "oneuptime_scheduled_maintenance_measurement" "example" {
 
 ### Required
 
-- `name` (String) Human readable name of this measurement, such as Start Delay. This is what charts call it...
-- `start_anchor_type` (String) Where the measurement starts - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role...
-- `end_anchor_type` (String) Where the measurement ends - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role...
+- `end_anchor_type` (String) Where the measurement ends - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role.
+- `name` (String) Human readable name of this measurement, such as Start Delay. This is what charts call it.
+- `start_anchor_type` (String) Where the measurement starts - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `key` (String) Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Start becomes time-to-start, with -2, -3 and so on added when another measurement already has it. It is part of the metric name, so it cannot be changed once the measurement is created; to rename a measurement, change the Name instead...
-- `description` (String) Description of what this measurement means to your team..
-- `start_scheduled_maintenance_state_id` (String) A unique identifier for an object, represented as a UUID..
-- `end_scheduled_maintenance_state_id` (String) A unique identifier for an object, represented as a UUID..
-- `start_scheduled_maintenance_state_role` (String) The role of the state that starts this measurement (Scheduled, Ongoing, Ended or Resolved), when the start anchor is a state role. Resolving by role keeps working when a project renames or replaces the state...
-- `end_scheduled_maintenance_state_role` (String) The role of the state that ends this measurement (Scheduled, Ongoing, Ended or Resolved), when the end anchor is a state role. Resolving by role keeps working when a project renames or replaces the state...
-- `start_state_occurrence` (String) Which entry to use when the start state is entered more than once - the first time it was entered, or the last...
-- `end_state_occurrence` (String) Which entry to use when the end state is entered more than once - the first time it was entered, or the last...
-- `unit` (String) The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the scheduled maintenance event; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds...
-- `aggregation_type` (String) How this measurement's chart sums up many scheduled maintenance events by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across scheduled maintenance events produces a number with no meaning...
-- `is_enabled` (Bool) Whether this measurement is computed for scheduled maintenance events..
-- `show_on_scheduled_maintenance_view` (Bool) Whether this measurement is shown on the scheduled maintenance event page..
-- `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them...
+- `aggregation_type` (String) How this measurement's chart sums up many scheduled maintenance events by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across scheduled maintenance events produces a number with no meaning. Defaults to `Avg`.
+- `description` (String) Description of what this measurement means to your team.
+- `end_scheduled_maintenance_state_id` (String) ID of the state whose entry ends this measurement, when the end anchor is a specific state. The ID of a `oneuptime_scheduled_maintenance_state`.
+- `end_scheduled_maintenance_state_role` (String) The role of the state that ends this measurement (Scheduled, Ongoing, Ended or Resolved), when the end anchor is a state role. Resolving by role keeps working when a project renames or replaces the state.
+- `end_state_occurrence` (String) Which entry to use when the end state is entered more than once - the first time it was entered, or the last. Defaults to `First`.
+- `is_enabled` (Boolean) Whether this measurement is computed for scheduled maintenance events. Defaults to `true`.
+- `key` (String) Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Start becomes time-to-start, with -2, -3 and so on added when another measurement already has it. It is part of the metric name, so it cannot be changed once the measurement is created; to rename a measurement, change the Name instead.
+- `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `show_on_scheduled_maintenance_view` (Boolean) Whether this measurement is shown on the scheduled maintenance event page. Defaults to `true`.
+- `start_scheduled_maintenance_state_id` (String) ID of the state whose entry starts this measurement, when the start anchor is a specific state. The ID of a `oneuptime_scheduled_maintenance_state`.
+- `start_scheduled_maintenance_state_role` (String) The role of the state that starts this measurement (Scheduled, Ongoing, Ended or Resolved), when the start anchor is a state role. Resolving by role keeps working when a project renames or replaces the state.
+- `start_state_occurrence` (String) Which entry to use when the start state is entered more than once - the first time it was entered, or the last. Defaults to `First`.
+- `unit` (String) The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the scheduled maintenance event; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds. Defaults to `seconds`.
 
 ### Read-Only
 
+- `backfill_completed_at` (String) When the backfill of this measurement over existing scheduled maintenance events finished.
+- `backfill_cursor_created_at` (String) How far the backfill has walked this project, so a restart resumes instead of starting over.
+- `backfill_requested_at` (String) When a backfill of this measurement over existing scheduled maintenance events was requested.
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `metric_name` (String) Name of the metric this measurement writes to, derived from the key as oneuptime.scheduled-maintenance.measurement.<key>..
-- `is_system_defined` (Bool) Whether this measurement was created by OneUptime rather than by your team..
-- `backfill_requested_at` (String) A date time object..
-- `backfill_cursor_created_at` (String) A date time object..
-- `backfill_completed_at` (String) A date time object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `is_system_defined` (Boolean) Whether this measurement was created by OneUptime rather than by your team.
+- `metric_name` (String) Name of the metric this measurement writes to, derived from the key as oneuptime.scheduled-maintenance.measurement.<key>.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing scheduled maintenance measurement by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_scheduled_maintenance_measurement.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_scheduled_maintenance_measurement.example <id>

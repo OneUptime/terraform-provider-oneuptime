@@ -55,8 +55,6 @@ type InvestigationRuleResourceModel struct {
     DescriptionPattern types.String `tfsdk:"description_pattern"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -65,19 +63,23 @@ func (r *InvestigationRuleResource) Metadata(ctx context.Context, req resource.M
 }
 
 func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *InvestigationRuleResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Choose which new incidents or alerts OneUptime AI investigates on its own. With no rule, every one is investigated; with rules, only those that match one.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -89,18 +91,18 @@ func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this investigation rule..",
+                MarkdownDescription: "Name of this investigation rule.",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this investigation rule..",
+                MarkdownDescription: "Description of this investigation rule.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -108,7 +110,7 @@ func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled..",
+                MarkdownDescription: "Whether this rule is enabled.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -117,14 +119,14 @@ func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "trigger_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Which kind of new signal this rule decides about: Incident or Alert..",
+                MarkdownDescription: "Which kind of new signal this rule decides about: Incident or Alert.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Match only incidents/alerts from these monitors. Leave empty to match any monitor..",
+                MarkdownDescription: "Match only incidents/alerts from these monitors. Leave empty to match any monitor. IDs of `oneuptime_monitor` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -133,7 +135,7 @@ func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Match only incidents with these severities (incident rules only). Leave empty to match any severity..",
+                MarkdownDescription: "Match only incidents with these severities (incident rules only). Leave empty to match any severity. IDs of `oneuptime_incident_severity` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -142,7 +144,7 @@ func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Match only alerts with these severities (alert rules only). Leave empty to match any severity..",
+                MarkdownDescription: "Match only alerts with these severities (alert rules only). Leave empty to match any severity. IDs of `oneuptime_alert_severity` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -151,7 +153,7 @@ func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Match only incidents/alerts that carry at least one of these labels. Leave empty to match any label..",
+                MarkdownDescription: "Match only incidents/alerts that carry at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -160,7 +162,7 @@ func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Match only when the incident/alert's monitor carries at least one of these labels — the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label..",
+                MarkdownDescription: "Match only when the incident/alert's monitor carries at least one of these labels — the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -169,7 +171,7 @@ func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Case-insensitive regex matched against the entity's title. Leave empty to match any title..",
+                MarkdownDescription: "Case-insensitive regex matched against the entity's title. Leave empty to match any title.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -177,7 +179,7 @@ func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Case-insensitive regex matched against the entity's description. Leave empty to match any description..",
+                MarkdownDescription: "Case-insensitive regex matched against the entity's description. Leave empty to match any description.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -185,27 +187,24 @@ func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object. The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -241,6 +240,14 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config InvestigationRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -348,8 +355,6 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
         "descriptionPattern": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -801,34 +806,6 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -874,6 +851,9 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -908,8 +888,6 @@ func (r *InvestigationRuleResource) Read(ctx context.Context, req resource.ReadR
         "descriptionPattern": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1362,34 +1340,6 @@ func (r *InvestigationRuleResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1455,6 +1405,14 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config InvestigationRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     investigationRuleRequest := map[string]interface{}{
@@ -1538,8 +1496,6 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
         "descriptionPattern": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1986,34 +1942,6 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2058,6 +1986,9 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2094,6 +2025,47 @@ func (r *InvestigationRuleResource) Delete(ctx context.Context, req resource.Del
 
 func (r *InvestigationRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *InvestigationRuleResource) keepPlannedValues(data *InvestigationRuleResourceModel, plan *InvestigationRuleResourceModel, config *InvestigationRuleResourceModel) {
+    if config.Criteria.IsNull() && !plan.Criteria.IsUnknown() {
+        data.Criteria = plan.Criteria
+    }
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.Monitors.IsNull() && !plan.Monitors.IsUnknown() {
+        data.Monitors = plan.Monitors
+    }
+    if config.IncidentSeverities.IsNull() && !plan.IncidentSeverities.IsUnknown() {
+        data.IncidentSeverities = plan.IncidentSeverities
+    }
+    if config.AlertSeverities.IsNull() && !plan.AlertSeverities.IsUnknown() {
+        data.AlertSeverities = plan.AlertSeverities
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.MonitorLabels.IsNull() && !plan.MonitorLabels.IsUnknown() {
+        data.MonitorLabels = plan.MonitorLabels
+    }
+    if config.TitlePattern.IsNull() && !plan.TitlePattern.IsUnknown() {
+        data.TitlePattern = plan.TitlePattern
+    }
+    if config.DescriptionPattern.IsNull() && !plan.DescriptionPattern.IsUnknown() {
+        data.DescriptionPattern = plan.DescriptionPattern
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

@@ -78,8 +78,6 @@ type MonitorResourceModel struct {
     IncomingEmailCustomLocalPart types.String `tfsdk:"incoming_email_custom_local_part"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
@@ -104,19 +102,23 @@ func (r *MonitorResource) Metadata(ctx context.Context, req resource.MetadataReq
 }
 
 func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *MonitorResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Monitor is anything that monitors your API, Websites, IP, Network or more. You can also create static monitor that does not monitor anything.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -135,7 +137,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring..",
+                MarkdownDescription: "Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -144,7 +146,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -153,7 +155,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "depends_on_monitors": schema.SetAttribute{
-                MarkdownDescription: "Parent monitors this monitor depends on. When a parent is offline (or in one of the configured suppression statuses), alerts and incidents from this monitor are suppressed at creation time — the monitor keeps evaluating and its status timeline still updates..",
+                MarkdownDescription: "Parent monitors this monitor depends on. When a parent is offline (or in one of the configured suppression statuses), alerts and incidents from this monitor are suppressed at creation time — the monitor keeps evaluating and its status timeline still updates. IDs of `oneuptime_monitor` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -162,7 +164,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "suppress_alerts_when_parent_monitor_statuses": schema.SetAttribute{
-                MarkdownDescription: "Parent monitor statuses that suppress this monitor's alerts and incidents. When empty, statuses flagged as offline suppress (the default). Only used when Depends On Monitors is set..",
+                MarkdownDescription: "Parent monitor statuses that suppress this monitor's alerts and incidents. When empty, statuses flagged as offline suppress (the default). Only used when Depends On Monitors is set. IDs of `oneuptime_monitor_status` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -171,7 +173,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "Hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -180,7 +182,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -189,7 +191,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "Docker hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Docker hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_docker_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -198,7 +200,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "Podman hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Podman hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_podman_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -207,7 +209,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "proxmox_clusters": schema.SetAttribute{
-                MarkdownDescription: "Proxmox clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Proxmox clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_proxmox_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -216,7 +218,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "vmware_v_centers": schema.SetAttribute{
-                MarkdownDescription: "VMware vCenters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "VMware vCenters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_vcenter` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -225,7 +227,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ceph_clusters": schema.SetAttribute{
-                MarkdownDescription: "Ceph clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Ceph clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_ceph_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -234,7 +236,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "storage_arrays": schema.SetAttribute{
-                MarkdownDescription: "Storage arrays this monitor watches. Incidents and alerts it creates are linked to them..",
+                MarkdownDescription: "Storage arrays this monitor watches. Incidents and alerts it creates are linked to them. IDs of `oneuptime_storage_array` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -243,7 +245,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "docker_swarm_clusters": schema.SetAttribute{
-                MarkdownDescription: "Docker Swarm clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Docker Swarm clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_docker_swarm_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -252,7 +254,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "iot_fleets": schema.SetAttribute{
-                MarkdownDescription: "IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_iot_fleet` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -261,7 +263,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "database_servers": schema.SetAttribute{
-                MarkdownDescription: "Databases this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Databases this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_database` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -270,7 +272,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "Services this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                MarkdownDescription: "Services this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_service` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -279,7 +281,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "monitor_template_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Monitor Template this monitor was created from. Null for monitors not created from a template. The ID of a `oneuptime_monitor_template`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -287,7 +289,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "monitor_type": schema.StringAttribute{
-                MarkdownDescription: "What is the type of this monitor? Website? API? etc..",
+                MarkdownDescription: "What is the type of this monitor? Website? API? etc.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -297,16 +299,16 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "current_monitor_status_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Whats the current status ID of this monitor? The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "monitor_steps": MonitorStepsSchemaAttribute("MonitorSteps object"),
+            "monitor_steps": MonitorStepsSchemaAttribute("What would you like to monitor and what is the criteria?"),
             "monitoring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: \"*/5 * * * *\" is every five minutes..",
+                MarkdownDescription: "How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: \"*/5 * * * *\" is every five minutes.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -314,7 +316,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -326,7 +328,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "disable_active_monitoring": schema.BoolAttribute{
-                MarkdownDescription: "Disable active monitoring for this resource?.",
+                MarkdownDescription: "Disable active monitoring for this resource?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -335,7 +337,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incoming_request_monitor_heartbeat_checked_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Incoming Request monitor only. When was the last time we checked the heartbeat?",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -345,7 +347,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "telemetry_monitor_next_monitor_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Telemetry Monitor only. When is the next time we should monitor?",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -355,7 +357,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "telemetry_monitor_last_monitor_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Telemetry Monitor only. When was the last time we monitored?",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -365,7 +367,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "server_monitor_request_received_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Server Monitor only. When was the last time we received a request?",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -375,7 +377,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incoming_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "Incoming Monitor Request for Incoming Request Monitor.",
+                MarkdownDescription: "Incoming Monitor Request for Incoming Request Monitor. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -388,7 +390,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "server_monitor_response": schema.StringAttribute{
-                MarkdownDescription: "Server Monitor Response for Server Monitor.",
+                MarkdownDescription: "Server Monitor Response for Server Monitor. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -401,7 +403,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "minimum_probe_agreement": schema.NumberAttribute{
-                MarkdownDescription: "Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree..",
+                MarkdownDescription: "Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -409,7 +411,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incoming_email_custom_local_part": schema.StringAttribute{
-                MarkdownDescription: "This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address..",
+                MarkdownDescription: "This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -417,22 +419,16 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -440,28 +436,31 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this monitor was archived. Empty while it is not archived.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
             "auto_provisioned_network_device_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Device that caused this monitor to be provisioned automatically. The ID of a `oneuptime_network_device`.",
                 Computed: true,
             },
             "network_alert_policy_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Alert Policy that provisioned this monitor, when one did. The ID of a `oneuptime_network_alert_policy`.",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?.",
+                MarkdownDescription: "Are owners notified of when this resource is created?",
                 Computed: true,
             },
             "disable_active_monitoring_because_of_scheduled_maintenance_event": schema.BoolAttribute{
@@ -469,42 +468,42 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "disable_active_monitoring_because_of_manual_incident": schema.BoolAttribute{
-                MarkdownDescription: "Disable Monitoring because of Incident which is creeated manually by user..",
+                MarkdownDescription: "Disable Monitoring because of Incident which is creeated manually by user.",
                 Computed: true,
             },
             "server_monitor_secret_key": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "This field is for Server Monitor only. Secret Key to authenticate the request.",
                 Computed: true,
             },
             "incoming_request_secret_key": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "This field is for Incoming Request Monitor only. Secret Key to authenticate the request.",
                 Computed: true,
             },
             "incoming_email_secret_key": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.",
                 Computed: true,
             },
             "incoming_email_monitor_last_email_received_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Incoming Email Monitor only. When was the last email received?",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "incoming_email_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "This field is for Incoming Email Monitor only. Last email data received..",
+                MarkdownDescription: "This field is for Incoming Email Monitor only. Last email data received. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "incoming_email_monitor_heartbeat_checked_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "This field is for Incoming Email monitor only. When was the last time we checked the heartbeat?",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "is_all_probes_disconnected_from_this_monitor": schema.BoolAttribute{
-                MarkdownDescription: "All Probes Disconnected From This Monitor. Is this monitor not being monitored?.",
+                MarkdownDescription: "All Probes Disconnected From This Monitor. Is this monitor not being monitored?",
                 Computed: true,
             },
             "is_no_probe_enabled_on_this_monitor": schema.BoolAttribute{
-                MarkdownDescription: "No Probe Enabled On This Monitor. Is this monitor not being monitored?.",
+                MarkdownDescription: "No Probe Enabled On This Monitor. Is this monitor not being monitored?",
                 Computed: true,
             },
         },
@@ -541,6 +540,14 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config MonitorResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -734,8 +741,6 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         "incomingEmailCustomLocalPart": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
@@ -1740,34 +1745,6 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2157,6 +2134,9 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -2212,8 +2192,6 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         "incomingEmailCustomLocalPart": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
@@ -3219,34 +3197,6 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3657,6 +3607,14 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config MonitorResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     monitorRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -3810,8 +3768,6 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         "incomingEmailCustomLocalPart": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
@@ -4811,34 +4767,6 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5227,6 +5155,9 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -5263,6 +5194,110 @@ func (r *MonitorResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 func (r *MonitorResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *MonitorResource) keepPlannedValues(data *MonitorResourceModel, plan *MonitorResourceModel, config *MonitorResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.DependsOnMonitors.IsNull() && !plan.DependsOnMonitors.IsUnknown() {
+        data.DependsOnMonitors = plan.DependsOnMonitors
+    }
+    if config.SuppressAlertsWhenParentMonitorStatuses.IsNull() && !plan.SuppressAlertsWhenParentMonitorStatuses.IsUnknown() {
+        data.SuppressAlertsWhenParentMonitorStatuses = plan.SuppressAlertsWhenParentMonitorStatuses
+    }
+    if config.Hosts.IsNull() && !plan.Hosts.IsUnknown() {
+        data.Hosts = plan.Hosts
+    }
+    if config.KubernetesClusters.IsNull() && !plan.KubernetesClusters.IsUnknown() {
+        data.KubernetesClusters = plan.KubernetesClusters
+    }
+    if config.DockerHosts.IsNull() && !plan.DockerHosts.IsUnknown() {
+        data.DockerHosts = plan.DockerHosts
+    }
+    if config.PodmanHosts.IsNull() && !plan.PodmanHosts.IsUnknown() {
+        data.PodmanHosts = plan.PodmanHosts
+    }
+    if config.ProxmoxClusters.IsNull() && !plan.ProxmoxClusters.IsUnknown() {
+        data.ProxmoxClusters = plan.ProxmoxClusters
+    }
+    if config.VmwareVCenters.IsNull() && !plan.VmwareVCenters.IsUnknown() {
+        data.VmwareVCenters = plan.VmwareVCenters
+    }
+    if config.CephClusters.IsNull() && !plan.CephClusters.IsUnknown() {
+        data.CephClusters = plan.CephClusters
+    }
+    if config.StorageArrays.IsNull() && !plan.StorageArrays.IsUnknown() {
+        data.StorageArrays = plan.StorageArrays
+    }
+    if config.DockerSwarmClusters.IsNull() && !plan.DockerSwarmClusters.IsUnknown() {
+        data.DockerSwarmClusters = plan.DockerSwarmClusters
+    }
+    if config.IotFleets.IsNull() && !plan.IotFleets.IsUnknown() {
+        data.IotFleets = plan.IotFleets
+    }
+    if config.DatabaseServers.IsNull() && !plan.DatabaseServers.IsUnknown() {
+        data.DatabaseServers = plan.DatabaseServers
+    }
+    if config.Services.IsNull() && !plan.Services.IsUnknown() {
+        data.Services = plan.Services
+    }
+    if config.MonitorTemplateId.IsNull() && !plan.MonitorTemplateId.IsUnknown() {
+        data.MonitorTemplateId = plan.MonitorTemplateId
+    }
+    if config.CurrentMonitorStatusId.IsNull() && !plan.CurrentMonitorStatusId.IsUnknown() {
+        data.CurrentMonitorStatusId = plan.CurrentMonitorStatusId
+    }
+    if config.MonitorSteps.IsNull() && !plan.MonitorSteps.IsUnknown() {
+        data.MonitorSteps = plan.MonitorSteps
+    }
+    if config.MonitoringInterval.IsNull() && !plan.MonitoringInterval.IsUnknown() {
+        data.MonitoringInterval = plan.MonitoringInterval
+    }
+    if config.CustomFields.IsNull() && !plan.CustomFields.IsUnknown() {
+        data.CustomFields = plan.CustomFields
+    }
+    if config.DisableActiveMonitoring.IsNull() && !plan.DisableActiveMonitoring.IsUnknown() {
+        data.DisableActiveMonitoring = plan.DisableActiveMonitoring
+    }
+    if config.IncomingRequestMonitorHeartbeatCheckedAt.IsNull() && !plan.IncomingRequestMonitorHeartbeatCheckedAt.IsUnknown() {
+        data.IncomingRequestMonitorHeartbeatCheckedAt = plan.IncomingRequestMonitorHeartbeatCheckedAt
+    }
+    if config.TelemetryMonitorNextMonitorAt.IsNull() && !plan.TelemetryMonitorNextMonitorAt.IsUnknown() {
+        data.TelemetryMonitorNextMonitorAt = plan.TelemetryMonitorNextMonitorAt
+    }
+    if config.TelemetryMonitorLastMonitorAt.IsNull() && !plan.TelemetryMonitorLastMonitorAt.IsUnknown() {
+        data.TelemetryMonitorLastMonitorAt = plan.TelemetryMonitorLastMonitorAt
+    }
+    if config.ServerMonitorRequestReceivedAt.IsNull() && !plan.ServerMonitorRequestReceivedAt.IsUnknown() {
+        data.ServerMonitorRequestReceivedAt = plan.ServerMonitorRequestReceivedAt
+    }
+    if config.IncomingMonitorRequest.IsNull() && !plan.IncomingMonitorRequest.IsUnknown() {
+        data.IncomingMonitorRequest = plan.IncomingMonitorRequest
+    }
+    if config.ServerMonitorResponse.IsNull() && !plan.ServerMonitorResponse.IsUnknown() {
+        data.ServerMonitorResponse = plan.ServerMonitorResponse
+    }
+    if config.MinimumProbeAgreement.IsNull() && !plan.MinimumProbeAgreement.IsUnknown() {
+        data.MinimumProbeAgreement = plan.MinimumProbeAgreement
+    }
+    if config.IncomingEmailCustomLocalPart.IsNull() && !plan.IncomingEmailCustomLocalPart.IsUnknown() {
+        data.IncomingEmailCustomLocalPart = plan.IncomingEmailCustomLocalPart
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

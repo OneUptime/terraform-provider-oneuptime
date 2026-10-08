@@ -48,8 +48,6 @@ type LlmProviderResourceModel struct {
     IsDefault types.Bool `tfsdk:"is_default"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CostPerMillionTokensInUsdCents types.Number `tfsdk:"cost_per_million_tokens_in_usd_cents"`
@@ -60,19 +58,23 @@ func (r *LlmProviderResource) Metadata(ctx context.Context, req resource.Metadat
 }
 
 func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *LlmProviderResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Manage LLM Provider configurations. Connect to OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAI-compatible servers (e.g. vLLM, LocalAI), or other LLM providers to enable AI features.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name object",
+                MarkdownDescription: "A friendly name for this LLM configuration.",
                 CustomType: JSONSubsetType{},
                 Required: true,
                 Validators: []validator.String{
@@ -80,7 +82,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this LLM configuration..",
+                MarkdownDescription: "Description of this LLM configuration.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -92,7 +94,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 Required: true,
             },
             "api_key": schema.StringAttribute{
-                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI, Azure OpenAI, Anthropic, Groq, and Mistral..",
+                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI, Azure OpenAI, Anthropic, Groq, and Mistral.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -100,7 +102,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "model_name": schema.StringAttribute{
-                MarkdownDescription: "The name of the model to use (e.g., gpt-4, claude-3-opus, llama2)..",
+                MarkdownDescription: "The name of the model to use (e.g., gpt-4, claude-3-opus, llama2).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -108,7 +110,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "base_url": schema.StringAttribute{
-                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others..",
+                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -116,7 +118,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "additional_params": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults..",
+                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -128,14 +130,14 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this LLM belongs to. If null, it is a global LLM.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "is_default": schema.BoolAttribute{
-                MarkdownDescription: "Is this the default LLM provider for the project? When set, the global LLM provider will not be used..",
+                MarkdownDescription: "Is this the default LLM provider for the project? When set, the global LLM provider will not be used.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -144,22 +146,16 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -167,11 +163,14 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "cost_per_million_tokens_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Cost per million tokens in USD cents. Used for billing when using global LLM providers..",
+                MarkdownDescription: "Cost per million tokens in USD cents. Used for billing when using global LLM providers.",
                 Computed: true,
             },
         },
@@ -208,6 +207,14 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config LlmProviderResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -299,8 +306,6 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
         "isDefault": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "costPerMillionTokensInUSDCents": true,
@@ -631,34 +636,6 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -758,6 +735,9 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -788,8 +768,6 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
         "isDefault": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "costPerMillionTokensInUSDCents": true,
@@ -1121,34 +1099,6 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1269,6 +1219,14 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config LlmProviderResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     llmProviderRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -1343,8 +1301,6 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
         "isDefault": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "costPerMillionTokensInUSDCents": true,
@@ -1670,34 +1626,6 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1796,6 +1724,9 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1832,6 +1763,35 @@ func (r *LlmProviderResource) Delete(ctx context.Context, req resource.DeleteReq
 
 func (r *LlmProviderResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *LlmProviderResource) keepPlannedValues(data *LlmProviderResourceModel, plan *LlmProviderResourceModel, config *LlmProviderResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.ApiKey.IsNull() && !plan.ApiKey.IsUnknown() {
+        data.ApiKey = plan.ApiKey
+    }
+    if config.ModelName.IsNull() && !plan.ModelName.IsUnknown() {
+        data.ModelName = plan.ModelName
+    }
+    if config.BaseUrl.IsNull() && !plan.BaseUrl.IsUnknown() {
+        data.BaseUrl = plan.BaseUrl
+    }
+    if config.AdditionalParams.IsNull() && !plan.AdditionalParams.IsUnknown() {
+        data.AdditionalParams = plan.AdditionalParams
+    }
+    if config.IsDefault.IsNull() && !plan.IsDefault.IsUnknown() {
+        data.IsDefault = plan.IsDefault
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

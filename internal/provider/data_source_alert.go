@@ -30,11 +30,8 @@ type AlertDataSource struct {
 // AlertDataSourceModel describes the data source data model.
 type AlertDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
@@ -90,239 +87,247 @@ func (d *AlertDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 
 func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage alerts for your project Look up an existing alert by `id` or by `name`.",
+        MarkdownDescription: "Manage alerts for your project Look up an existing alert by `id`, or by any of its other arguments (`alert_episode_id`, `alert_number`, `alert_number_with_prefix`, ...): each one set must match, and exactly one alert may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "Title of this alert.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Short description of this alert. This will be visible on the status page. This is in markdown..",
+                MarkdownDescription: "Short description of this alert. This will be visible on the status page. This is in markdown.",
+                Optional: true,
                 Computed: true,
             },
             "impact_started_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When customer impact actually began. Left blank until someone records it - never inferred, because a guessed value is worse than no value.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "monitor_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the monitor this alert belongs to. The ID of a `oneuptime_monitor`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies affected by this alert..",
+                MarkdownDescription: "List of on-call duty policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts affected by this alert..",
+                MarkdownDescription: "List of hosts affected by this alert. IDs of `oneuptime_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes clusters affected by this alert..",
+                MarkdownDescription: "List of Kubernetes clusters affected by this alert. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_resources": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this alert..",
+                MarkdownDescription: "List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this alert.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_containers": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes containers affected by this alert..",
+                MarkdownDescription: "List of Kubernetes containers affected by this alert.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Docker hosts affected by this alert..",
+                MarkdownDescription: "List of Docker hosts affected by this alert. IDs of `oneuptime_docker_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Podman hosts affected by this alert..",
+                MarkdownDescription: "List of Podman hosts affected by this alert. IDs of `oneuptime_podman_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "proxmox_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Proxmox clusters affected by this alert..",
+                MarkdownDescription: "List of Proxmox clusters affected by this alert. IDs of `oneuptime_proxmox_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "vmware_v_centers": schema.SetAttribute{
-                MarkdownDescription: "List of vCenters affected by this alert..",
+                MarkdownDescription: "List of vCenters affected by this alert. IDs of `oneuptime_vcenter` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "iot_fleets": schema.SetAttribute{
-                MarkdownDescription: "List of IoT fleets affected by this alert..",
+                MarkdownDescription: "List of IoT fleets affected by this alert. IDs of `oneuptime_iot_fleet` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_swarm_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Docker Swarm clusters affected by this alert..",
+                MarkdownDescription: "List of Docker Swarm clusters affected by this alert. IDs of `oneuptime_docker_swarm_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "ceph_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Ceph clusters affected by this alert..",
+                MarkdownDescription: "List of Ceph clusters affected by this alert. IDs of `oneuptime_ceph_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "storage_arrays": schema.SetAttribute{
-                MarkdownDescription: "List of storage arrays affected by this alert..",
+                MarkdownDescription: "List of storage arrays affected by this alert. IDs of `oneuptime_storage_array` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "database_servers": schema.SetAttribute{
-                MarkdownDescription: "List of databases affected by this alert..",
+                MarkdownDescription: "List of databases affected by this alert. IDs of `oneuptime_database` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_resources": schema.SetAttribute{
-                MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this alert..",
+                MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this alert.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "podman_resources": schema.SetAttribute{
-                MarkdownDescription: "List of Podman resources (containers, images, networks, volumes) affected by this alert..",
+                MarkdownDescription: "List of Podman resources (containers, images, networks, volumes) affected by this alert.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services affected by this alert..",
+                MarkdownDescription: "List of services affected by this alert. IDs of `oneuptime_service` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "service_level_objectives": schema.SetAttribute{
-                MarkdownDescription: "List of Service Level Objectives (SLOs) affected by this alert..",
+                MarkdownDescription: "List of Service Level Objectives (SLOs) affected by this alert. IDs of `oneuptime_service_level_objective` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "current_alert_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Current Alert State ID. The ID of a `oneuptime_alert_state`.",
+                Optional: true,
                 Computed: true,
             },
             "alert_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Alert Severity ID. The ID of a `oneuptime_alert_severity`.",
+                Optional: true,
                 Computed: true,
             },
             "monitor_status_when_this_alert_was_created_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Monitor Status ID when this alert was created. The ID of a `oneuptime_monitor_status`.",
+                Optional: true,
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_owner_notified_of_alert_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this alert is created?.",
+                MarkdownDescription: "Are owners notified of when this alert is created?",
+                Optional: true,
                 Computed: true,
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "What is the root cause of this alert?.",
+                MarkdownDescription: "What is the root cause of this alert?",
+                Optional: true,
                 Computed: true,
             },
             "created_state_log": schema.StringAttribute{
+                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "created_criteria_id": schema.StringAttribute{
-                MarkdownDescription: "If this alert was created by a Probe, this is the ID of the criteria that created it..",
+                MarkdownDescription: "If this alert was created by a Probe, this is the ID of the criteria that created it.",
+                Optional: true,
                 Computed: true,
             },
             "series_fingerprint": schema.StringAttribute{
-                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one alert is created per affected series..",
+                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one alert is created per affected series.",
+                Optional: true,
                 Computed: true,
             },
             "series_labels": schema.StringAttribute{
-                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach..",
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "monitor_summary": schema.StringAttribute{
-                MarkdownDescription: "The monitor summary captured at the moment this alert was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out..",
+                MarkdownDescription: "The monitor summary captured at the moment this alert was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "created_by_probe_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "If this alert was created by a Probe, this is the ID of the probe that created it. The ID of a `oneuptime_probe`.",
+                Optional: true,
                 Computed: true,
             },
             "is_created_automatically": schema.BoolAttribute{
-                MarkdownDescription: "Is this alert created by OneUptime Probe or Workers automatically (and not created manually by a user)?.",
+                MarkdownDescription: "Is this alert created by OneUptime Probe or Workers automatically (and not created manually by a user)?",
+                Optional: true,
                 Computed: true,
             },
             "remediation_notes": schema.StringAttribute{
-                MarkdownDescription: "Notes on how to remediate this alert. This is in markdown..",
+                MarkdownDescription: "Notes on how to remediate this alert. This is in markdown.",
+                Optional: true,
                 Computed: true,
             },
             "telemetry_query": schema.StringAttribute{
-                MarkdownDescription: "Telemetry query for this alert.",
+                MarkdownDescription: "Telemetry query for this alert. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "alert_number": schema.NumberAttribute{
                 MarkdownDescription: "Alert Number.",
+                Optional: true,
                 Computed: true,
             },
             "alert_number_with_prefix": schema.StringAttribute{
                 MarkdownDescription: "Alert number with prefix (e.g., 'ALT-42' or '#42').",
+                Optional: true,
                 Computed: true,
             },
             "alert_episode_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The ID of the latest episode this alert is a member of, if any. Read-only: set by OneUptime when the alert is added to or removed from an episode's members (Alert Episode Member). The ID of a `oneuptime_alert_episode`.",
+                Optional: true,
                 Computed: true,
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners..",
+                MarkdownDescription: "If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.",
+                Optional: true,
                 Computed: true,
             },
             "enable_reminders": schema.BoolAttribute{
-                MarkdownDescription: "Should reminder notifications be sent to owners while this alert is still open? Reminders are sent based on the reminder rules configured for this project..",
+                MarkdownDescription: "Should reminder notifications be sent to owners while this alert is still open? Reminders are sent based on the reminder rules configured for this project.",
+                Optional: true,
                 Computed: true,
             },
             "next_reminder_notification_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When will the next reminder notification be sent to owners of this alert? This is set automatically based on the reminder rules configured for this project.",
                 Computed: true,
             },
             "reminder_notification_sent_count": schema.NumberAttribute{
-                MarkdownDescription: "How many reminder notifications have been sent to owners of this alert so far..",
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this alert so far.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -359,22 +364,110 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Title.IsNull() && !data.Title.IsUnknown() {
+        filters["title"] = data.Title.ValueString()
+        filterNames = append(filterNames, "title = "+fmt.Sprintf("%q", data.Title.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.MonitorId.IsNull() && !data.MonitorId.IsUnknown() {
+        filters["monitorId"] = data.MonitorId.ValueString()
+        filterNames = append(filterNames, "monitor_id = "+fmt.Sprintf("%q", data.MonitorId.ValueString()))
+    }
+    if !data.CurrentAlertStateId.IsNull() && !data.CurrentAlertStateId.IsUnknown() {
+        filters["currentAlertStateId"] = data.CurrentAlertStateId.ValueString()
+        filterNames = append(filterNames, "current_alert_state_id = "+fmt.Sprintf("%q", data.CurrentAlertStateId.ValueString()))
+    }
+    if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
+        filters["alertSeverityId"] = data.AlertSeverityId.ValueString()
+        filterNames = append(filterNames, "alert_severity_id = "+fmt.Sprintf("%q", data.AlertSeverityId.ValueString()))
+    }
+    if !data.MonitorStatusWhenThisAlertWasCreatedId.IsNull() && !data.MonitorStatusWhenThisAlertWasCreatedId.IsUnknown() {
+        filters["monitorStatusWhenThisAlertWasCreatedId"] = data.MonitorStatusWhenThisAlertWasCreatedId.ValueString()
+        filterNames = append(filterNames, "monitor_status_when_this_alert_was_created_id = "+fmt.Sprintf("%q", data.MonitorStatusWhenThisAlertWasCreatedId.ValueString()))
+    }
+    if !data.IsOwnerNotifiedOfAlertCreation.IsNull() && !data.IsOwnerNotifiedOfAlertCreation.IsUnknown() {
+        filters["isOwnerNotifiedOfAlertCreation"] = data.IsOwnerNotifiedOfAlertCreation.ValueBool()
+        filterNames = append(filterNames, "is_owner_notified_of_alert_creation = "+fmt.Sprintf("%t", data.IsOwnerNotifiedOfAlertCreation.ValueBool()))
+    }
+    if !data.RootCause.IsNull() && !data.RootCause.IsUnknown() {
+        filters["rootCause"] = data.RootCause.ValueString()
+        filterNames = append(filterNames, "root_cause = "+fmt.Sprintf("%q", data.RootCause.ValueString()))
+    }
+    if !data.CreatedCriteriaId.IsNull() && !data.CreatedCriteriaId.IsUnknown() {
+        filters["createdCriteriaId"] = data.CreatedCriteriaId.ValueString()
+        filterNames = append(filterNames, "created_criteria_id = "+fmt.Sprintf("%q", data.CreatedCriteriaId.ValueString()))
+    }
+    if !data.SeriesFingerprint.IsNull() && !data.SeriesFingerprint.IsUnknown() {
+        filters["seriesFingerprint"] = data.SeriesFingerprint.ValueString()
+        filterNames = append(filterNames, "series_fingerprint = "+fmt.Sprintf("%q", data.SeriesFingerprint.ValueString()))
+    }
+    if !data.CreatedByProbeId.IsNull() && !data.CreatedByProbeId.IsUnknown() {
+        filters["createdByProbeId"] = data.CreatedByProbeId.ValueString()
+        filterNames = append(filterNames, "created_by_probe_id = "+fmt.Sprintf("%q", data.CreatedByProbeId.ValueString()))
+    }
+    if !data.IsCreatedAutomatically.IsNull() && !data.IsCreatedAutomatically.IsUnknown() {
+        filters["isCreatedAutomatically"] = data.IsCreatedAutomatically.ValueBool()
+        filterNames = append(filterNames, "is_created_automatically = "+fmt.Sprintf("%t", data.IsCreatedAutomatically.ValueBool()))
+    }
+    if !data.RemediationNotes.IsNull() && !data.RemediationNotes.IsUnknown() {
+        filters["remediationNotes"] = data.RemediationNotes.ValueString()
+        filterNames = append(filterNames, "remediation_notes = "+fmt.Sprintf("%q", data.RemediationNotes.ValueString()))
+    }
+    if !data.AlertNumber.IsNull() && !data.AlertNumber.IsUnknown() {
+        filters["alertNumber"] = lookupNumber(data.AlertNumber)
+        filterNames = append(filterNames, "alert_number = "+data.AlertNumber.ValueBigFloat().String())
+    }
+    if !data.AlertNumberWithPrefix.IsNull() && !data.AlertNumberWithPrefix.IsUnknown() {
+        filters["alertNumberWithPrefix"] = data.AlertNumberWithPrefix.ValueString()
+        filterNames = append(filterNames, "alert_number_with_prefix = "+fmt.Sprintf("%q", data.AlertNumberWithPrefix.ValueString()))
+    }
+    if !data.AlertEpisodeId.IsNull() && !data.AlertEpisodeId.IsUnknown() {
+        filters["alertEpisodeId"] = data.AlertEpisodeId.ValueString()
+        filterNames = append(filterNames, "alert_episode_id = "+fmt.Sprintf("%q", data.AlertEpisodeId.ValueString()))
+    }
+    if !data.IsPrivate.IsNull() && !data.IsPrivate.IsUnknown() {
+        filters["isPrivate"] = data.IsPrivate.ValueBool()
+        filterNames = append(filterNames, "is_private = "+fmt.Sprintf("%t", data.IsPrivate.ValueBool()))
+    }
+    if !data.EnableReminders.IsNull() && !data.EnableReminders.IsUnknown() {
+        filters["enableReminders"] = data.EnableReminders.ValueBool()
+        filterNames = append(filterNames, "enable_reminders = "+fmt.Sprintf("%t", data.EnableReminders.ValueBool()))
+    }
+    if !data.ReminderNotificationSentCount.IsNull() && !data.ReminderNotificationSentCount.IsUnknown() {
+        filters["reminderNotificationSentCount"] = lookupNumber(data.ReminderNotificationSentCount)
+        filterNames = append(filterNames, "reminder_notification_sent_count = "+data.ReminderNotificationSentCount.ValueBigFloat().String())
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a alert.",
+            "Look the alert up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the alert up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "title": true,
         "description": true,
@@ -447,11 +540,10 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -468,11 +560,11 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -500,23 +592,6 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -551,34 +626,6 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

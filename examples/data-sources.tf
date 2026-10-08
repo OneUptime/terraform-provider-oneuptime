@@ -1,10 +1,9 @@
-# Example usage of oneuptime_user data source
-data "oneuptime_user" "example" {
-  name = "example-user"
+# Look up an existing monitor status by name.
+data "oneuptime_monitor_status" "example" {
+  name = "Offline"
 }
 
-# Output the data source result
-output "user_result" {
-  description = "Result of the user data source"
-  value       = data.oneuptime_user.example
+output "monitor_status_id" {
+  description = "ID of the monitor status"
+  value       = data.oneuptime_monitor_status.example.id
 }

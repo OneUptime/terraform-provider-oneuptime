@@ -13,10 +13,7 @@ Save and reuse metrics explorer views, including the current search, filters, ti
 
 ```terraform
 resource "oneuptime_metric_saved_view" "example" {
-  name = jsonencode({
-    "_type": "Name",
-    "value": "John Doe"
-  })
+  name = "Example metric saved view"
 }
 ```
 
@@ -24,28 +21,34 @@ resource "oneuptime_metric_saved_view" "example" {
 
 ### Required
 
-- `name` (String) Name object.
+- `name` (String) Friendly name for this saved metric view.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `query` (String) Serialized metrics explorer view state (search, filters, time range, page size) for this saved view...
-- `is_default` (Bool) Whether this saved metric view should be applied by default...
-- `view_type` (String) Which surface this saved view belongs to ('list' or 'explorer'). Null means 'list' — rows created before this column existed all came from the metric list page...
+- `is_default` (Boolean) Whether this saved metric view should be applied by default. Defaults to `false`.
+- `query` (String) Serialized metrics explorer view state (search, filters, time range, page size) for this saved view. A JSON value: write it with `jsonencode()`.
+- `view_type` (String) Which surface this saved view belongs to ('list' or 'explorer'). Null means 'list' — rows created before this column existed all came from the metric list page.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) ID of the user who created this saved metric view. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of the project this saved metric view belongs to. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing metric saved view by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_metric_saved_view.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_metric_saved_view.example <id>

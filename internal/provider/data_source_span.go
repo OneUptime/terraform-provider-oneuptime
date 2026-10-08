@@ -30,7 +30,6 @@ type SpanDataSource struct {
 // SpanDataSourceModel describes the data source data model.
 type SpanDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
     PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
@@ -57,6 +56,7 @@ type SpanDataSourceModel struct {
     Links types.String `tfsdk:"links"`
     StatusCode types.Number `tfsdk:"status_code"`
     StatusMessage types.String `tfsdk:"status_message"`
+    Name types.String `tfsdk:"name"`
     Kind types.String `tfsdk:"kind"`
     HasException types.Bool `tfsdk:"has_exception"`
     IsRootSpan types.Bool `tfsdk:"is_root_span"`
@@ -83,196 +83,235 @@ func (d *SpanDataSource) Metadata(ctx context.Context, req datasource.MetadataRe
 
 func (d *SpanDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "API endpoints for Span Look up an existing span by `id` or by `name`.",
+        MarkdownDescription: "API endpoints for Span Look up an existing span by `id`, or by any of its other arguments (`name`, `attributes`, `container_entity_key`, ...): each one set must match, and exactly one span may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Project ID",
+                MarkdownDescription: "Project ID.",
                 Computed: true,
             },
             "primary_entity_id": schema.StringAttribute{
-                MarkdownDescription: "Service ID",
+                MarkdownDescription: "Service ID.",
+                Optional: true,
                 Computed: true,
             },
             "primary_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Service Type",
+                MarkdownDescription: "Service Type.",
+                Optional: true,
                 Computed: true,
             },
             "start_time": schema.StringAttribute{
-                MarkdownDescription: "Start Time",
+                MarkdownDescription: "Start Time.",
+                Optional: true,
                 Computed: true,
             },
             "end_time": schema.StringAttribute{
-                MarkdownDescription: "End Time",
+                MarkdownDescription: "End Time.",
+                Optional: true,
                 Computed: true,
             },
             "start_time_unix_nano": schema.StringAttribute{
-                MarkdownDescription: "Start Time in Unix Nano",
+                MarkdownDescription: "Start Time in Unix Nano.",
+                Optional: true,
                 Computed: true,
             },
             "duration_unix_nano": schema.NumberAttribute{
-                MarkdownDescription: "Duration in Unix Nano",
+                MarkdownDescription: "Duration in Unix Nano.",
+                Optional: true,
                 Computed: true,
             },
             "end_time_unix_nano": schema.StringAttribute{
-                MarkdownDescription: "End Time",
+                MarkdownDescription: "End Time.",
+                Optional: true,
                 Computed: true,
             },
             "trace_id": schema.StringAttribute{
-                MarkdownDescription: "Trace ID",
+                MarkdownDescription: "Trace ID.",
+                Optional: true,
                 Computed: true,
             },
             "span_id": schema.StringAttribute{
-                MarkdownDescription: "Span ID",
+                MarkdownDescription: "Span ID.",
+                Optional: true,
                 Computed: true,
             },
             "session_id": schema.StringAttribute{
-                MarkdownDescription: "Session ID",
+                MarkdownDescription: "Session ID.",
+                Optional: true,
                 Computed: true,
             },
             "parent_span_id": schema.StringAttribute{
-                MarkdownDescription: "Parent Span ID",
+                MarkdownDescription: "Parent Span ID.",
+                Optional: true,
                 Computed: true,
             },
             "trace_state": schema.StringAttribute{
-                MarkdownDescription: "Trace State",
+                MarkdownDescription: "Trace State.",
+                Optional: true,
                 Computed: true,
             },
             "attributes": schema.StringAttribute{
-                MarkdownDescription: "Attributes",
+                MarkdownDescription: "Attributes.",
+                Optional: true,
                 Computed: true,
             },
             "attribute_keys": schema.SetAttribute{
-                MarkdownDescription: "Attribute Keys",
+                MarkdownDescription: "Attribute Keys.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "entity_keys": schema.SetAttribute{
-                MarkdownDescription: "Entity Keys",
+                MarkdownDescription: "Entity Keys.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "service_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Service Entity Key",
+                MarkdownDescription: "Service Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "host_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Host Entity Key",
+                MarkdownDescription: "Host Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "k8s_pod_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Kubernetes Pod Entity Key",
+                MarkdownDescription: "Kubernetes Pod Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "k8s_node_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Kubernetes Node Entity Key",
+                MarkdownDescription: "Kubernetes Node Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "k8s_cluster_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Kubernetes Cluster Entity Key",
+                MarkdownDescription: "Kubernetes Cluster Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "container_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Container Entity Key",
+                MarkdownDescription: "Container Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "events": schema.SetAttribute{
-                MarkdownDescription: "Events",
+                MarkdownDescription: "Events.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "links": schema.StringAttribute{
-                MarkdownDescription: "Links",
+                MarkdownDescription: "Links. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "status_code": schema.NumberAttribute{
-                MarkdownDescription: "Status Code",
+                MarkdownDescription: "Status Code.",
+                Optional: true,
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status Message",
+                MarkdownDescription: "Status Message.",
+                Optional: true,
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Name.",
+                Optional: true,
                 Computed: true,
             },
             "kind": schema.StringAttribute{
-                MarkdownDescription: "Kind",
+                MarkdownDescription: "Kind.",
+                Optional: true,
                 Computed: true,
             },
             "has_exception": schema.BoolAttribute{
-                MarkdownDescription: "Has Exception",
+                MarkdownDescription: "Has Exception.",
+                Optional: true,
                 Computed: true,
             },
             "is_root_span": schema.BoolAttribute{
-                MarkdownDescription: "Is Root Span",
+                MarkdownDescription: "Is Root Span.",
+                Optional: true,
                 Computed: true,
             },
             "is_llm_span": schema.BoolAttribute{
-                MarkdownDescription: "Is LLM Span",
+                MarkdownDescription: "Is LLM Span.",
+                Optional: true,
                 Computed: true,
             },
             "llm_system": schema.StringAttribute{
-                MarkdownDescription: "LLM System",
+                MarkdownDescription: "LLM System.",
+                Optional: true,
                 Computed: true,
             },
             "llm_operation": schema.StringAttribute{
-                MarkdownDescription: "LLM Operation",
+                MarkdownDescription: "LLM Operation.",
+                Optional: true,
                 Computed: true,
             },
             "llm_request_model": schema.StringAttribute{
-                MarkdownDescription: "LLM Request Model",
+                MarkdownDescription: "LLM Request Model.",
+                Optional: true,
                 Computed: true,
             },
             "llm_response_model": schema.StringAttribute{
-                MarkdownDescription: "LLM Response Model",
+                MarkdownDescription: "LLM Response Model.",
+                Optional: true,
                 Computed: true,
             },
             "llm_agent_name": schema.StringAttribute{
-                MarkdownDescription: "LLM Agent Name",
+                MarkdownDescription: "LLM Agent Name.",
+                Optional: true,
                 Computed: true,
             },
             "llm_tool_name": schema.StringAttribute{
-                MarkdownDescription: "LLM Tool Name",
+                MarkdownDescription: "LLM Tool Name.",
+                Optional: true,
                 Computed: true,
             },
             "llm_input_tokens": schema.NumberAttribute{
-                MarkdownDescription: "LLM Input Tokens",
+                MarkdownDescription: "LLM Input Tokens.",
+                Optional: true,
                 Computed: true,
             },
             "llm_output_tokens": schema.NumberAttribute{
-                MarkdownDescription: "LLM Output Tokens",
+                MarkdownDescription: "LLM Output Tokens.",
+                Optional: true,
                 Computed: true,
             },
             "llm_total_tokens": schema.NumberAttribute{
-                MarkdownDescription: "LLM Total Tokens",
+                MarkdownDescription: "LLM Total Tokens.",
+                Optional: true,
                 Computed: true,
             },
             "llm_cost": schema.NumberAttribute{
-                MarkdownDescription: "LLM Cost (USD)",
+                MarkdownDescription: "LLM Cost (USD).",
+                Optional: true,
                 Computed: true,
             },
             "llm_conversation_id": schema.StringAttribute{
-                MarkdownDescription: "LLM Conversation ID",
+                MarkdownDescription: "LLM Conversation ID.",
+                Optional: true,
                 Computed: true,
             },
             "llm_user_id": schema.StringAttribute{
-                MarkdownDescription: "LLM User ID",
+                MarkdownDescription: "LLM User ID.",
+                Optional: true,
                 Computed: true,
             },
             "llm_user_email": schema.StringAttribute{
-                MarkdownDescription: "LLM User Email",
+                MarkdownDescription: "LLM User Email.",
+                Optional: true,
                 Computed: true,
             },
             "llm_team": schema.StringAttribute{
-                MarkdownDescription: "LLM Team",
+                MarkdownDescription: "LLM Team.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -309,18 +348,188 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.PrimaryEntityId.IsNull() && !data.PrimaryEntityId.IsUnknown() {
+        filters["primaryEntityId"] = data.PrimaryEntityId.ValueString()
+        filterNames = append(filterNames, "primary_entity_id = "+fmt.Sprintf("%q", data.PrimaryEntityId.ValueString()))
+    }
+    if !data.PrimaryEntityType.IsNull() && !data.PrimaryEntityType.IsUnknown() {
+        filters["primaryEntityType"] = data.PrimaryEntityType.ValueString()
+        filterNames = append(filterNames, "primary_entity_type = "+fmt.Sprintf("%q", data.PrimaryEntityType.ValueString()))
+    }
+    if !data.StartTime.IsNull() && !data.StartTime.IsUnknown() {
+        filters["startTime"] = data.StartTime.ValueString()
+        filterNames = append(filterNames, "start_time = "+fmt.Sprintf("%q", data.StartTime.ValueString()))
+    }
+    if !data.EndTime.IsNull() && !data.EndTime.IsUnknown() {
+        filters["endTime"] = data.EndTime.ValueString()
+        filterNames = append(filterNames, "end_time = "+fmt.Sprintf("%q", data.EndTime.ValueString()))
+    }
+    if !data.StartTimeUnixNano.IsNull() && !data.StartTimeUnixNano.IsUnknown() {
+        filters["startTimeUnixNano"] = data.StartTimeUnixNano.ValueString()
+        filterNames = append(filterNames, "start_time_unix_nano = "+fmt.Sprintf("%q", data.StartTimeUnixNano.ValueString()))
+    }
+    if !data.DurationUnixNano.IsNull() && !data.DurationUnixNano.IsUnknown() {
+        filters["durationUnixNano"] = lookupNumber(data.DurationUnixNano)
+        filterNames = append(filterNames, "duration_unix_nano = "+data.DurationUnixNano.ValueBigFloat().String())
+    }
+    if !data.EndTimeUnixNano.IsNull() && !data.EndTimeUnixNano.IsUnknown() {
+        filters["endTimeUnixNano"] = data.EndTimeUnixNano.ValueString()
+        filterNames = append(filterNames, "end_time_unix_nano = "+fmt.Sprintf("%q", data.EndTimeUnixNano.ValueString()))
+    }
+    if !data.TraceId.IsNull() && !data.TraceId.IsUnknown() {
+        filters["traceId"] = data.TraceId.ValueString()
+        filterNames = append(filterNames, "trace_id = "+fmt.Sprintf("%q", data.TraceId.ValueString()))
+    }
+    if !data.SpanId.IsNull() && !data.SpanId.IsUnknown() {
+        filters["spanId"] = data.SpanId.ValueString()
+        filterNames = append(filterNames, "span_id = "+fmt.Sprintf("%q", data.SpanId.ValueString()))
+    }
+    if !data.SessionId.IsNull() && !data.SessionId.IsUnknown() {
+        filters["sessionId"] = data.SessionId.ValueString()
+        filterNames = append(filterNames, "session_id = "+fmt.Sprintf("%q", data.SessionId.ValueString()))
+    }
+    if !data.ParentSpanId.IsNull() && !data.ParentSpanId.IsUnknown() {
+        filters["parentSpanId"] = data.ParentSpanId.ValueString()
+        filterNames = append(filterNames, "parent_span_id = "+fmt.Sprintf("%q", data.ParentSpanId.ValueString()))
+    }
+    if !data.TraceState.IsNull() && !data.TraceState.IsUnknown() {
+        filters["traceState"] = data.TraceState.ValueString()
+        filterNames = append(filterNames, "trace_state = "+fmt.Sprintf("%q", data.TraceState.ValueString()))
+    }
+    if !data.Attributes.IsNull() && !data.Attributes.IsUnknown() {
+        filters["attributes"] = data.Attributes.ValueString()
+        filterNames = append(filterNames, "attributes = "+fmt.Sprintf("%q", data.Attributes.ValueString()))
+    }
+    if !data.ServiceEntityKey.IsNull() && !data.ServiceEntityKey.IsUnknown() {
+        filters["serviceEntityKey"] = data.ServiceEntityKey.ValueString()
+        filterNames = append(filterNames, "service_entity_key = "+fmt.Sprintf("%q", data.ServiceEntityKey.ValueString()))
+    }
+    if !data.HostEntityKey.IsNull() && !data.HostEntityKey.IsUnknown() {
+        filters["hostEntityKey"] = data.HostEntityKey.ValueString()
+        filterNames = append(filterNames, "host_entity_key = "+fmt.Sprintf("%q", data.HostEntityKey.ValueString()))
+    }
+    if !data.K8sPodEntityKey.IsNull() && !data.K8sPodEntityKey.IsUnknown() {
+        filters["k8sPodEntityKey"] = data.K8sPodEntityKey.ValueString()
+        filterNames = append(filterNames, "k8s_pod_entity_key = "+fmt.Sprintf("%q", data.K8sPodEntityKey.ValueString()))
+    }
+    if !data.K8sNodeEntityKey.IsNull() && !data.K8sNodeEntityKey.IsUnknown() {
+        filters["k8sNodeEntityKey"] = data.K8sNodeEntityKey.ValueString()
+        filterNames = append(filterNames, "k8s_node_entity_key = "+fmt.Sprintf("%q", data.K8sNodeEntityKey.ValueString()))
+    }
+    if !data.K8sClusterEntityKey.IsNull() && !data.K8sClusterEntityKey.IsUnknown() {
+        filters["k8sClusterEntityKey"] = data.K8sClusterEntityKey.ValueString()
+        filterNames = append(filterNames, "k8s_cluster_entity_key = "+fmt.Sprintf("%q", data.K8sClusterEntityKey.ValueString()))
+    }
+    if !data.ContainerEntityKey.IsNull() && !data.ContainerEntityKey.IsUnknown() {
+        filters["containerEntityKey"] = data.ContainerEntityKey.ValueString()
+        filterNames = append(filterNames, "container_entity_key = "+fmt.Sprintf("%q", data.ContainerEntityKey.ValueString()))
+    }
+    if !data.StatusCode.IsNull() && !data.StatusCode.IsUnknown() {
+        filters["statusCode"] = lookupNumber(data.StatusCode)
+        filterNames = append(filterNames, "status_code = "+data.StatusCode.ValueBigFloat().String())
+    }
+    if !data.StatusMessage.IsNull() && !data.StatusMessage.IsUnknown() {
+        filters["statusMessage"] = data.StatusMessage.ValueString()
+        filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
+    }
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Kind.IsNull() && !data.Kind.IsUnknown() {
+        filters["kind"] = data.Kind.ValueString()
+        filterNames = append(filterNames, "kind = "+fmt.Sprintf("%q", data.Kind.ValueString()))
+    }
+    if !data.HasException.IsNull() && !data.HasException.IsUnknown() {
+        filters["hasException"] = data.HasException.ValueBool()
+        filterNames = append(filterNames, "has_exception = "+fmt.Sprintf("%t", data.HasException.ValueBool()))
+    }
+    if !data.IsRootSpan.IsNull() && !data.IsRootSpan.IsUnknown() {
+        filters["isRootSpan"] = data.IsRootSpan.ValueBool()
+        filterNames = append(filterNames, "is_root_span = "+fmt.Sprintf("%t", data.IsRootSpan.ValueBool()))
+    }
+    if !data.IsLlmSpan.IsNull() && !data.IsLlmSpan.IsUnknown() {
+        filters["isLlmSpan"] = data.IsLlmSpan.ValueBool()
+        filterNames = append(filterNames, "is_llm_span = "+fmt.Sprintf("%t", data.IsLlmSpan.ValueBool()))
+    }
+    if !data.LlmSystem.IsNull() && !data.LlmSystem.IsUnknown() {
+        filters["llmSystem"] = data.LlmSystem.ValueString()
+        filterNames = append(filterNames, "llm_system = "+fmt.Sprintf("%q", data.LlmSystem.ValueString()))
+    }
+    if !data.LlmOperation.IsNull() && !data.LlmOperation.IsUnknown() {
+        filters["llmOperation"] = data.LlmOperation.ValueString()
+        filterNames = append(filterNames, "llm_operation = "+fmt.Sprintf("%q", data.LlmOperation.ValueString()))
+    }
+    if !data.LlmRequestModel.IsNull() && !data.LlmRequestModel.IsUnknown() {
+        filters["llmRequestModel"] = data.LlmRequestModel.ValueString()
+        filterNames = append(filterNames, "llm_request_model = "+fmt.Sprintf("%q", data.LlmRequestModel.ValueString()))
+    }
+    if !data.LlmResponseModel.IsNull() && !data.LlmResponseModel.IsUnknown() {
+        filters["llmResponseModel"] = data.LlmResponseModel.ValueString()
+        filterNames = append(filterNames, "llm_response_model = "+fmt.Sprintf("%q", data.LlmResponseModel.ValueString()))
+    }
+    if !data.LlmAgentName.IsNull() && !data.LlmAgentName.IsUnknown() {
+        filters["llmAgentName"] = data.LlmAgentName.ValueString()
+        filterNames = append(filterNames, "llm_agent_name = "+fmt.Sprintf("%q", data.LlmAgentName.ValueString()))
+    }
+    if !data.LlmToolName.IsNull() && !data.LlmToolName.IsUnknown() {
+        filters["llmToolName"] = data.LlmToolName.ValueString()
+        filterNames = append(filterNames, "llm_tool_name = "+fmt.Sprintf("%q", data.LlmToolName.ValueString()))
+    }
+    if !data.LlmInputTokens.IsNull() && !data.LlmInputTokens.IsUnknown() {
+        filters["llmInputTokens"] = lookupNumber(data.LlmInputTokens)
+        filterNames = append(filterNames, "llm_input_tokens = "+data.LlmInputTokens.ValueBigFloat().String())
+    }
+    if !data.LlmOutputTokens.IsNull() && !data.LlmOutputTokens.IsUnknown() {
+        filters["llmOutputTokens"] = lookupNumber(data.LlmOutputTokens)
+        filterNames = append(filterNames, "llm_output_tokens = "+data.LlmOutputTokens.ValueBigFloat().String())
+    }
+    if !data.LlmTotalTokens.IsNull() && !data.LlmTotalTokens.IsUnknown() {
+        filters["llmTotalTokens"] = lookupNumber(data.LlmTotalTokens)
+        filterNames = append(filterNames, "llm_total_tokens = "+data.LlmTotalTokens.ValueBigFloat().String())
+    }
+    if !data.LlmCost.IsNull() && !data.LlmCost.IsUnknown() {
+        filters["llmCost"] = lookupNumber(data.LlmCost)
+        filterNames = append(filterNames, "llm_cost = "+data.LlmCost.ValueBigFloat().String())
+    }
+    if !data.LlmConversationId.IsNull() && !data.LlmConversationId.IsUnknown() {
+        filters["llmConversationId"] = data.LlmConversationId.ValueString()
+        filterNames = append(filterNames, "llm_conversation_id = "+fmt.Sprintf("%q", data.LlmConversationId.ValueString()))
+    }
+    if !data.LlmUserId.IsNull() && !data.LlmUserId.IsUnknown() {
+        filters["llmUserId"] = data.LlmUserId.ValueString()
+        filterNames = append(filterNames, "llm_user_id = "+fmt.Sprintf("%q", data.LlmUserId.ValueString()))
+    }
+    if !data.LlmUserEmail.IsNull() && !data.LlmUserEmail.IsUnknown() {
+        filters["llmUserEmail"] = data.LlmUserEmail.ValueString()
+        filterNames = append(filterNames, "llm_user_email = "+fmt.Sprintf("%q", data.LlmUserEmail.ValueString()))
+    }
+    if !data.LlmTeam.IsNull() && !data.LlmTeam.IsUnknown() {
+        filters["llmTeam"] = data.LlmTeam.ValueString()
+        filterNames = append(filterNames, "llm_team = "+fmt.Sprintf("%q", data.LlmTeam.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a span.",
+            "Look the span up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the span up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "projectId": true,
         "primaryEntityId": true,
         "primaryEntityType": true,
@@ -347,6 +556,7 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "links": true,
         "statusCode": true,
         "statusMessage": true,
+        "name": true,
         "kind": true,
         "hasException": true,
         "isRootSpan": true,
@@ -390,11 +600,10 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -411,11 +620,11 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No span found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No span matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one span matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one span matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -443,23 +652,6 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -911,6 +1103,23 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.StatusMessage = types.StringValue(val)
     } else {
         data.StatusMessage = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["kind"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

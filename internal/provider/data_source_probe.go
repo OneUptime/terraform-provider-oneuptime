@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -30,12 +29,10 @@ type ProbeDataSource struct {
 // ProbeDataSourceModel describes the data source data model.
 type ProbeDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Key types.String `tfsdk:"key"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     Slug types.String `tfsdk:"slug"`
     ProbeVersion types.String `tfsdk:"probe_version"`
@@ -54,76 +51,75 @@ func (d *ProbeDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 
 func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manages custom probes. Deploy probes anywhere in the world and connect it to your project. Look up an existing probe by `id` or by `name`.",
+        MarkdownDescription: "Manages custom probes. Deploy probes anywhere in the world and connect it to your project. Look up an existing probe by `id`, or by any of its other arguments (`name`, `connection_status`, `created_by_user_id`, ...): each one set must match, and exactly one probe may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "key": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
+                Optional: true,
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Name object",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "probe_version": schema.StringAttribute{
-                MarkdownDescription: "Version object",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
                 Computed: true,
             },
             "last_alive": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "icon_file_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Probe Page Icon File ID. The ID of a `oneuptime_file`.",
+                Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User).",
+                Optional: true,
                 Computed: true,
             },
             "should_auto_enable_probe_on_new_monitors": schema.BoolAttribute{
                 MarkdownDescription: "Auto Enable Probe on New Monitors.",
+                Optional: true,
                 Computed: true,
             },
             "connection_status": schema.StringAttribute{
                 MarkdownDescription: "Connection Status of the Probe.",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -161,23 +157,60 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Key.IsNull() && !data.Key.IsUnknown() {
+        filters["key"] = data.Key.ValueString()
+        filterNames = append(filterNames, "key = "+fmt.Sprintf("%q", data.Key.ValueString()))
+    }
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.IconFileId.IsNull() && !data.IconFileId.IsUnknown() {
+        filters["iconFileId"] = data.IconFileId.ValueString()
+        filterNames = append(filterNames, "icon_file_id = "+fmt.Sprintf("%q", data.IconFileId.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.ShouldAutoEnableProbeOnNewMonitors.IsNull() && !data.ShouldAutoEnableProbeOnNewMonitors.IsUnknown() {
+        filters["shouldAutoEnableProbeOnNewMonitors"] = data.ShouldAutoEnableProbeOnNewMonitors.ValueBool()
+        filterNames = append(filterNames, "should_auto_enable_probe_on_new_monitors = "+fmt.Sprintf("%t", data.ShouldAutoEnableProbeOnNewMonitors.ValueBool()))
+    }
+    if !data.ConnectionStatus.IsNull() && !data.ConnectionStatus.IsUnknown() {
+        filters["connectionStatus"] = data.ConnectionStatus.ValueString()
+        filterNames = append(filterNames, "connection_status = "+fmt.Sprintf("%q", data.ConnectionStatus.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a probe.",
+            "Look the probe up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the probe up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "key": true,
+        "name": true,
         "description": true,
         "slug": true,
         "probeVersion": true,
@@ -213,11 +246,10 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -234,11 +266,11 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No probe found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No probe matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one probe matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one probe matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -266,23 +298,6 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -318,34 +333,6 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["key"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Key = types.StringValue(val)
@@ -362,6 +349,23 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.Key = types.StringValue(val)
     } else {
         data.Key = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

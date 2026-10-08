@@ -64,13 +64,10 @@ type ProxmoxClusterResourceModel struct {
     AiCommandAllowlist JSONSubsetValue `tfsdk:"ai_command_allowlist"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     AiAccessLastVerifiedAt RFC3339Value `tfsdk:"ai_access_last_verified_at"`
     AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
     AiAccessConfiguredAt RFC3339Value `tfsdk:"ai_access_configured_at"`
@@ -81,26 +78,30 @@ func (r *ProxmoxClusterResource) Metadata(ctx context.Context, req resource.Meta
 }
 
 func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *ProxmoxClusterResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Proxmox VE clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime Proxmox Agent sends metrics, or can be manually registered.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this Proxmox cluster. This is the join key — it must match the proxmox.cluster.name OTel resource attribute stamped by the OneUptime Proxmox Agent..",
+                MarkdownDescription: "Name of this Proxmox cluster. This is the join key — it must match the proxmox.cluster.name OTel resource attribute stamped by the OneUptime Proxmox Agent.",
                 Required: true,
             },
             "description": schema.StringAttribute{
@@ -112,7 +113,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "ceph_cluster_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Optional FK to the CephCluster providing storage for this hyperconverged Proxmox cluster (manually linked). The ID of a `oneuptime_ceph_cluster`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -120,7 +121,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this Proxmox cluster archived? Archived Proxmox clusters are hidden from lists but keep collecting telemetry..",
+                MarkdownDescription: "Is this Proxmox cluster archived? Archived Proxmox clusters are hidden from lists but keep collecting telemetry.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -129,7 +130,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -138,7 +139,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry data for this Proxmox cluster. Leave blank to use the project-wide default..",
+                MarkdownDescription: "Number of days to retain telemetry data for this Proxmox cluster. Leave blank to use the project-wide default.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -146,7 +147,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this Proxmox cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Proxmox cluster default, then the project's retention settings..",
+                MarkdownDescription: "Per-pillar retention overrides for this Proxmox cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Proxmox cluster default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -182,7 +183,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When metrics were last received from this cluster.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -199,7 +200,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "online_node_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of nodes currently online (pve_up == 1) in this cluster. Rendered as 'Nodes X/Y online' next to nodeCount..",
+                MarkdownDescription: "Cached count of nodes currently online (pve_up == 1) in this cluster. Rendered as 'Nodes X/Y online' next to nodeCount.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -223,7 +224,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "guests_without_backup_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of guests not covered by ANY backup job (pve_not_backed_up_total). NULL until the exporter's cluster-level backup-info collector reports. Coverage by a job is NOT the same as recent/successful backups — freshness needs the PVE task log or PBS API..",
+                MarkdownDescription: "Cached count of guests not covered by ANY backup job (pve_not_backed_up_total). NULL until the exporter's cluster-level backup-info collector reports. Coverage by a job is NOT the same as recent/successful backups — freshness needs the PVE task log or PBS API.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -231,7 +232,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
-                MarkdownDescription: "When on, OneUptime AI runs read-only commands (pvesh get on cluster, node, VM and container status) on this Proxmox cluster, through its Proxmox AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the Proxmox cluster can turn it on or off..",
+                MarkdownDescription: "When on, OneUptime AI runs read-only commands (pvesh get on cluster, node, VM and container status) on this Proxmox cluster, through its Proxmox AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the Proxmox cluster can turn it on or off.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -240,7 +241,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "ai_remediation_mode": schema.StringAttribute{
-                MarkdownDescription: "Disabled: AI never proposes or runs a change on this Proxmox cluster. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the Proxmox cluster's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the Proxmox cluster can lower the mode; raising it needs Project Owner, Project Admin or Edit Auto Remediation Rule..",
+                MarkdownDescription: "Disabled: AI never proposes or runs a change on this Proxmox cluster. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the Proxmox cluster's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the Proxmox cluster can lower the mode; raising it needs Project Owner, Project Admin or Edit Auto Remediation Rule.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Disabled"),
@@ -249,7 +250,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "ai_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this Proxmox cluster without approval even though they are riskier changes. Each pattern is one command line for this Proxmox cluster's agent (pvesh) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this Proxmox cluster is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the Proxmox cluster can remove patterns or clear the list..",
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this Proxmox cluster without approval even though they are riskier changes. Each pattern is one command line for this Proxmox cluster's agent (pvesh) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this Proxmox cluster is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the Proxmox cluster can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -261,22 +262,16 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -284,33 +279,32 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this Proxmox cluster archived?",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a command from OneUptime AI last succeeded on this Proxmox cluster through its Proxmox AI agent. Set by the server.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "ai_access_last_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent failure OneUptime AI hit while running a command on this Proxmox cluster, kept until the next successful command. Set by the server..",
+                MarkdownDescription: "The most recent failure OneUptime AI hit while running a command on this Proxmox cluster, kept until the next successful command. Set by the server.",
                 Computed: true,
             },
             "ai_access_configured_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When OneUptime AI access to this Proxmox cluster was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Proxmox AI agent that registers later never overwrites a setting an operator chose.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -348,6 +342,14 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ProxmoxClusterResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -447,13 +449,10 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         "aiCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
@@ -1006,34 +1005,6 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1156,43 +1127,6 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
@@ -1260,6 +1194,9 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1301,13 +1238,10 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         "aiCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
@@ -1861,34 +1795,6 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2011,43 +1917,6 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
@@ -2135,6 +2004,14 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ProxmoxClusterResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     proxmoxClusterRequest := map[string]interface{}{
@@ -2254,13 +2131,10 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         "aiCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
@@ -2808,34 +2682,6 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2958,43 +2804,6 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
@@ -3061,6 +2870,9 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3097,6 +2909,71 @@ func (r *ProxmoxClusterResource) Delete(ctx context.Context, req resource.Delete
 
 func (r *ProxmoxClusterResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *ProxmoxClusterResource) keepPlannedValues(data *ProxmoxClusterResourceModel, plan *ProxmoxClusterResourceModel, config *ProxmoxClusterResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.CephClusterId.IsNull() && !plan.CephClusterId.IsUnknown() {
+        data.CephClusterId = plan.CephClusterId
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.RetainTelemetryDataForDays.IsNull() && !plan.RetainTelemetryDataForDays.IsUnknown() {
+        data.RetainTelemetryDataForDays = plan.RetainTelemetryDataForDays
+    }
+    if config.TelemetryRetentionConfig.IsNull() && !plan.TelemetryRetentionConfig.IsUnknown() {
+        data.TelemetryRetentionConfig = plan.TelemetryRetentionConfig
+    }
+    if config.OtelCollectorStatus.IsNull() && !plan.OtelCollectorStatus.IsUnknown() {
+        data.OtelCollectorStatus = plan.OtelCollectorStatus
+    }
+    if config.AgentVersion.IsNull() && !plan.AgentVersion.IsUnknown() {
+        data.AgentVersion = plan.AgentVersion
+    }
+    if config.PveVersion.IsNull() && !plan.PveVersion.IsUnknown() {
+        data.PveVersion = plan.PveVersion
+    }
+    if config.LastSeenAt.IsNull() && !plan.LastSeenAt.IsUnknown() {
+        data.LastSeenAt = plan.LastSeenAt
+    }
+    if config.NodeCount.IsNull() && !plan.NodeCount.IsUnknown() {
+        data.NodeCount = plan.NodeCount
+    }
+    if config.OnlineNodeCount.IsNull() && !plan.OnlineNodeCount.IsUnknown() {
+        data.OnlineNodeCount = plan.OnlineNodeCount
+    }
+    if config.GuestCount.IsNull() && !plan.GuestCount.IsUnknown() {
+        data.GuestCount = plan.GuestCount
+    }
+    if config.StorageCount.IsNull() && !plan.StorageCount.IsUnknown() {
+        data.StorageCount = plan.StorageCount
+    }
+    if config.GuestsWithoutBackupCount.IsNull() && !plan.GuestsWithoutBackupCount.IsUnknown() {
+        data.GuestsWithoutBackupCount = plan.GuestsWithoutBackupCount
+    }
+    if config.IsAiInvestigationEnabled.IsNull() && !plan.IsAiInvestigationEnabled.IsUnknown() {
+        data.IsAiInvestigationEnabled = plan.IsAiInvestigationEnabled
+    }
+    if config.AiRemediationMode.IsNull() && !plan.AiRemediationMode.IsUnknown() {
+        data.AiRemediationMode = plan.AiRemediationMode
+    }
+    if config.AiCommandAllowlist.IsNull() && !plan.AiCommandAllowlist.IsUnknown() {
+        data.AiCommandAllowlist = plan.AiCommandAllowlist
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

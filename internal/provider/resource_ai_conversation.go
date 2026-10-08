@@ -37,8 +37,6 @@ type AiConversationResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Title types.String `tfsdk:"title"`
     LastMessageAt RFC3339Value `tfsdk:"last_message_at"`
     LlmProviderId types.String `tfsdk:"llm_provider_id"`
@@ -54,76 +52,77 @@ func (r *AiConversationResource) Metadata(ctx context.Context, req resource.Meta
 }
 
 func (r *AiConversationResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *AiConversationResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "A conversation with the OneUptime AI about observability data (logs, traces, metrics, exceptions, incidents, monitors and alerts).",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this conversation belongs to. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of the conversation. Generated from the first message..",
+                MarkdownDescription: "Title of the conversation. Generated from the first message.",
                 Computed: true,
             },
             "last_message_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the last message in this conversation was sent.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "llm_provider_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The LLM provider selected for this conversation. If empty, the project default (or global) provider is used.",
                 Computed: true,
             },
             "permission_mode": schema.StringAttribute{
-                MarkdownDescription: "How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly..",
+                MarkdownDescription: "How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly.",
                 Computed: true,
             },
             "page_context": schema.StringAttribute{
-                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context..",
+                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the incident whose investigation box this shared conversation belongs to. The ID of a `oneuptime_incident`.",
                 Computed: true,
             },
             "alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert whose investigation box this shared conversation belongs to. The ID of a `oneuptime_alert`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this conversation.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -217,8 +216,6 @@ func (r *AiConversationResource) Create(ctx context.Context, req resource.Create
         "projectId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "title": true,
         "lastMessageAt": true,
         "llmProviderId": true,
@@ -291,34 +288,6 @@ func (r *AiConversationResource) Create(ctx context.Context, req resource.Create
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["title"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -620,8 +589,6 @@ func (r *AiConversationResource) Read(ctx context.Context, req resource.ReadRequ
         "projectId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "title": true,
         "lastMessageAt": true,
         "llmProviderId": true,
@@ -695,34 +662,6 @@ func (r *AiConversationResource) Read(ctx context.Context, req resource.ReadRequ
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["title"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1055,6 +994,7 @@ func (r *AiConversationResource) Delete(ctx context.Context, req resource.Delete
 func (r *AiConversationResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
+
 
 // Helper method to convert Terraform map to Go interface{}
 func (r *AiConversationResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {

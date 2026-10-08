@@ -13,12 +13,9 @@ Manage LLM Provider configurations. Connect to OpenAI, Azure OpenAI, Anthropic, 
 
 ```terraform
 resource "oneuptime_llm_provider" "example" {
-  name = jsonencode({
-    "_type": "Name",
-    "value": "John Doe"
-  })
-  llm_type = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example llm provider"
+  llm_type    = "Example short text"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -26,33 +23,40 @@ resource "oneuptime_llm_provider" "example" {
 
 ### Required
 
-- `name` (String) Name object.
-- `llm_type` (String) The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAICompatible, etc.)..
+- `llm_type` (String) The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAICompatible, etc.).
+- `name` (String) A friendly name for this LLM configuration.
 
 ### Optional
 
-- `description` (String) Description of this LLM configuration...
-- `api_key` (String) The API key for the LLM provider. Required for OpenAI, Azure OpenAI, Anthropic, Groq, and Mistral...
-- `model_name` (String) The name of the model to use (e.g., gpt-4, claude-3-opus, llama2)...
-- `base_url` (String) The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others...
-- `additional_params` (String) Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults...
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `is_default` (Bool) Is this the default LLM provider for the project? When set, the global LLM provider will not be used...
+- `additional_params` (String) Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. A JSON value: write it with `jsonencode()`.
+- `api_key` (String) The API key for the LLM provider. Required for OpenAI, Azure OpenAI, Anthropic, Groq, and Mistral.
+- `base_url` (String) The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others.
+- `description` (String) Description of this LLM configuration.
+- `is_default` (Boolean) Is this the default LLM provider for the project? When set, the global LLM provider will not be used. Defaults to `false`.
+- `model_name` (String) The name of the model to use (e.g., gpt-4, claude-3-opus, llama2).
 
 ### Read-Only
 
+- `cost_per_million_tokens_in_usd_cents` (Number) Cost per million tokens in USD cents. Used for billing when using global LLM providers.
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `slug` (String) Friendly globally unique name for your object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `cost_per_million_tokens_in_usd_cents` (Number) Cost per million tokens in USD cents. Used for billing when using global LLM providers...
+- `project_id` (String) ID of the project this LLM belongs to. If null, it is a global LLM.
+- `slug` (String) Friendly globally unique name for your object.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing llm provider by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_llm_provider.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_llm_provider.example <id>

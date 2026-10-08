@@ -84,8 +84,6 @@ type IncidentGroupingRuleResourceModel struct {
     ShowEpisodeOnStatusPage types.Bool `tfsdk:"show_episode_on_status_page"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -94,19 +92,23 @@ func (r *IncidentGroupingRuleResource) Metadata(ctx context.Context, req resourc
 }
 
 func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *IncidentGroupingRuleResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Configure rules for automatically grouping related incidents into episodes",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -118,7 +120,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -137,7 +139,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "priority": schema.NumberAttribute{
-                MarkdownDescription: "Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
+                MarkdownDescription: "Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -154,7 +156,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "match_criteria": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the criteria for matching incidents to this rule.",
+                MarkdownDescription: "JSON object defining the criteria for matching incidents to this rule. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -166,7 +168,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents from these monitors. Leave empty to match incidents from any monitor..",
+                MarkdownDescription: "Only group incidents from these monitors. Leave empty to match incidents from any monitor. IDs of `oneuptime_monitor` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -175,7 +177,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents with these severities. Leave empty to match incidents of any severity..",
+                MarkdownDescription: "Only group incidents with these severities. Leave empty to match incidents of any severity. IDs of `oneuptime_incident_severity` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -184,7 +186,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels..",
+                MarkdownDescription: "Only group incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -193,7 +195,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels..",
+                MarkdownDescription: "Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -202,7 +204,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'..",
+                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -210,7 +212,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description..",
+                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -218,7 +220,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'..",
+                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -226,7 +228,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description..",
+                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -234,7 +236,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_monitor": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents from different monitors will be grouped into separate episodes. When disabled, incidents from any monitor can be grouped together..",
+                MarkdownDescription: "When enabled, incidents from different monitors will be grouped into separate episodes. When disabled, incidents from any monitor can be grouped together.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -243,7 +245,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_severity": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents with different severities will be grouped into separate episodes. When disabled, incidents of any severity can be grouped together..",
+                MarkdownDescription: "When enabled, incidents with different severities will be grouped into separate episodes. When disabled, incidents of any severity can be grouped together.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -252,7 +254,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_incident_title": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together..",
+                MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -261,7 +263,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_incident_labels": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents with different sets of labels will be grouped into separate episodes (exact set match). When disabled, incident labels are ignored for grouping..",
+                MarkdownDescription: "When enabled, incidents with different sets of labels will be grouped into separate episodes (exact set match). When disabled, incident labels are ignored for grouping.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -270,7 +272,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_monitor_labels": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents whose monitors have different sets of labels will be grouped into separate episodes (exact set match). When disabled, monitor labels are ignored for grouping..",
+                MarkdownDescription: "When enabled, incidents whose monitors have different sets of labels will be grouped into separate episodes (exact set match). When disabled, monitor labels are ignored for grouping.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -279,7 +281,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_time_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time..",
+                MarkdownDescription: "Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -288,7 +290,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "time_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Rolling time window in minutes. Incidents are grouped if they arrive within this gap from the last incident..",
+                MarkdownDescription: "Rolling time window in minutes. Incidents are grouped if they arrive within this gap from the last incident.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
@@ -297,7 +299,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_fields": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the fields to group incidents by (e.g., monitorId, severity).",
+                MarkdownDescription: "JSON object defining the fields to group incidents by (e.g., monitorId, severity). A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -325,7 +327,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_resolve_delay": schema.BoolAttribute{
-                MarkdownDescription: "Enable grace period before auto-resolving episode after all incidents resolve. Helps prevent rapid state changes during incident flapping..",
+                MarkdownDescription: "Enable grace period before auto-resolving episode after all incidents resolve. Helps prevent rapid state changes during incident flapping.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -343,7 +345,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_reopen_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution..",
+                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -361,7 +363,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_inactivity_timeout": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new incidents arrive..",
+                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new incidents arrive.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -379,7 +381,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule..",
+                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -388,7 +390,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "default_assign_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -396,7 +398,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "default_assign_to_team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of defaultAssignToTeam. Kept for API compatibility: OneUptime does not show it anywhere. To make a team responsible for the episodes this rule opens, use episodeOwnerTeams. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -404,7 +406,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Labels to automatically apply to episodes created by this rule..",
+                MarkdownDescription: "Labels to automatically apply to episodes created by this rule. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -413,7 +415,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project..",
+                MarkdownDescription: "Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project. IDs of `oneuptime_user` records.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -422,7 +424,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams added as owners of every episode this rule opens, and notified like any owner. Each must be a team of the project..",
+                MarkdownDescription: "Teams added as owners of every episode this rule opens, and notified like any owner. Each must be a team of the project. IDs of `oneuptime_team` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -431,7 +433,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_member_roles": schema.SetAttribute{
-                MarkdownDescription: "Incident roles to display in the episode members form. Select the roles that can be assigned to episode members..",
+                MarkdownDescription: "Incident roles to display in the episode members form. Select the roles that can be assigned to episode members. IDs of `oneuptime_incident_role` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -440,7 +442,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_member_role_assignments": schema.StringAttribute{
-                MarkdownDescription: "Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID..",
+                MarkdownDescription: "Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -452,7 +454,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "show_episode_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should episodes created by this rule be shown on the status page?.",
+                MarkdownDescription: "Should episodes created by this rule be shown on the status page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -461,27 +463,24 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -517,6 +516,14 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentGroupingRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -732,8 +739,6 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         "showEpisodeOnStatusPage": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1724,34 +1729,6 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1796,6 +1773,9 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
     }
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -1858,8 +1838,6 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         "showEpisodeOnStatusPage": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -2851,34 +2829,6 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2944,6 +2894,14 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentGroupingRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     incidentGroupingRuleRequest := map[string]interface{}{
@@ -3153,8 +3111,6 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         "showEpisodeOnStatusPage": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -4140,34 +4096,6 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4212,6 +4140,9 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -4248,6 +4179,131 @@ func (r *IncidentGroupingRuleResource) Delete(ctx context.Context, req resource.
 
 func (r *IncidentGroupingRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *IncidentGroupingRuleResource) keepPlannedValues(data *IncidentGroupingRuleResourceModel, plan *IncidentGroupingRuleResourceModel, config *IncidentGroupingRuleResourceModel) {
+    if config.Criteria.IsNull() && !plan.Criteria.IsUnknown() {
+        data.Criteria = plan.Criteria
+    }
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.Priority.IsNull() && !plan.Priority.IsUnknown() {
+        data.Priority = plan.Priority
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.MatchCriteria.IsNull() && !plan.MatchCriteria.IsUnknown() {
+        data.MatchCriteria = plan.MatchCriteria
+    }
+    if config.Monitors.IsNull() && !plan.Monitors.IsUnknown() {
+        data.Monitors = plan.Monitors
+    }
+    if config.IncidentSeverities.IsNull() && !plan.IncidentSeverities.IsUnknown() {
+        data.IncidentSeverities = plan.IncidentSeverities
+    }
+    if config.IncidentLabels.IsNull() && !plan.IncidentLabels.IsUnknown() {
+        data.IncidentLabels = plan.IncidentLabels
+    }
+    if config.MonitorLabels.IsNull() && !plan.MonitorLabels.IsUnknown() {
+        data.MonitorLabels = plan.MonitorLabels
+    }
+    if config.IncidentTitlePattern.IsNull() && !plan.IncidentTitlePattern.IsUnknown() {
+        data.IncidentTitlePattern = plan.IncidentTitlePattern
+    }
+    if config.IncidentDescriptionPattern.IsNull() && !plan.IncidentDescriptionPattern.IsUnknown() {
+        data.IncidentDescriptionPattern = plan.IncidentDescriptionPattern
+    }
+    if config.MonitorNamePattern.IsNull() && !plan.MonitorNamePattern.IsUnknown() {
+        data.MonitorNamePattern = plan.MonitorNamePattern
+    }
+    if config.MonitorDescriptionPattern.IsNull() && !plan.MonitorDescriptionPattern.IsUnknown() {
+        data.MonitorDescriptionPattern = plan.MonitorDescriptionPattern
+    }
+    if config.GroupByMonitor.IsNull() && !plan.GroupByMonitor.IsUnknown() {
+        data.GroupByMonitor = plan.GroupByMonitor
+    }
+    if config.GroupBySeverity.IsNull() && !plan.GroupBySeverity.IsUnknown() {
+        data.GroupBySeverity = plan.GroupBySeverity
+    }
+    if config.GroupByIncidentTitle.IsNull() && !plan.GroupByIncidentTitle.IsUnknown() {
+        data.GroupByIncidentTitle = plan.GroupByIncidentTitle
+    }
+    if config.GroupByIncidentLabels.IsNull() && !plan.GroupByIncidentLabels.IsUnknown() {
+        data.GroupByIncidentLabels = plan.GroupByIncidentLabels
+    }
+    if config.GroupByMonitorLabels.IsNull() && !plan.GroupByMonitorLabels.IsUnknown() {
+        data.GroupByMonitorLabels = plan.GroupByMonitorLabels
+    }
+    if config.EnableTimeWindow.IsNull() && !plan.EnableTimeWindow.IsUnknown() {
+        data.EnableTimeWindow = plan.EnableTimeWindow
+    }
+    if config.TimeWindowMinutes.IsNull() && !plan.TimeWindowMinutes.IsUnknown() {
+        data.TimeWindowMinutes = plan.TimeWindowMinutes
+    }
+    if config.GroupByFields.IsNull() && !plan.GroupByFields.IsUnknown() {
+        data.GroupByFields = plan.GroupByFields
+    }
+    if config.EpisodeTitleTemplate.IsNull() && !plan.EpisodeTitleTemplate.IsUnknown() {
+        data.EpisodeTitleTemplate = plan.EpisodeTitleTemplate
+    }
+    if config.EpisodeDescriptionTemplate.IsNull() && !plan.EpisodeDescriptionTemplate.IsUnknown() {
+        data.EpisodeDescriptionTemplate = plan.EpisodeDescriptionTemplate
+    }
+    if config.EnableResolveDelay.IsNull() && !plan.EnableResolveDelay.IsUnknown() {
+        data.EnableResolveDelay = plan.EnableResolveDelay
+    }
+    if config.ResolveDelayMinutes.IsNull() && !plan.ResolveDelayMinutes.IsUnknown() {
+        data.ResolveDelayMinutes = plan.ResolveDelayMinutes
+    }
+    if config.EnableReopenWindow.IsNull() && !plan.EnableReopenWindow.IsUnknown() {
+        data.EnableReopenWindow = plan.EnableReopenWindow
+    }
+    if config.ReopenWindowMinutes.IsNull() && !plan.ReopenWindowMinutes.IsUnknown() {
+        data.ReopenWindowMinutes = plan.ReopenWindowMinutes
+    }
+    if config.EnableInactivityTimeout.IsNull() && !plan.EnableInactivityTimeout.IsUnknown() {
+        data.EnableInactivityTimeout = plan.EnableInactivityTimeout
+    }
+    if config.InactivityTimeoutMinutes.IsNull() && !plan.InactivityTimeoutMinutes.IsUnknown() {
+        data.InactivityTimeoutMinutes = plan.InactivityTimeoutMinutes
+    }
+    if config.OnCallDutyPolicies.IsNull() && !plan.OnCallDutyPolicies.IsUnknown() {
+        data.OnCallDutyPolicies = plan.OnCallDutyPolicies
+    }
+    if config.DefaultAssignToUserId.IsNull() && !plan.DefaultAssignToUserId.IsUnknown() {
+        data.DefaultAssignToUserId = plan.DefaultAssignToUserId
+    }
+    if config.DefaultAssignToTeamId.IsNull() && !plan.DefaultAssignToTeamId.IsUnknown() {
+        data.DefaultAssignToTeamId = plan.DefaultAssignToTeamId
+    }
+    if config.EpisodeLabels.IsNull() && !plan.EpisodeLabels.IsUnknown() {
+        data.EpisodeLabels = plan.EpisodeLabels
+    }
+    if config.EpisodeOwnerUsers.IsNull() && !plan.EpisodeOwnerUsers.IsUnknown() {
+        data.EpisodeOwnerUsers = plan.EpisodeOwnerUsers
+    }
+    if config.EpisodeOwnerTeams.IsNull() && !plan.EpisodeOwnerTeams.IsUnknown() {
+        data.EpisodeOwnerTeams = plan.EpisodeOwnerTeams
+    }
+    if config.EpisodeMemberRoles.IsNull() && !plan.EpisodeMemberRoles.IsUnknown() {
+        data.EpisodeMemberRoles = plan.EpisodeMemberRoles
+    }
+    if config.EpisodeMemberRoleAssignments.IsNull() && !plan.EpisodeMemberRoleAssignments.IsUnknown() {
+        data.EpisodeMemberRoleAssignments = plan.EpisodeMemberRoleAssignments
+    }
+    if config.ShowEpisodeOnStatusPage.IsNull() && !plan.ShowEpisodeOnStatusPage.IsUnknown() {
+        data.ShowEpisodeOnStatusPage = plan.ShowEpisodeOnStatusPage
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

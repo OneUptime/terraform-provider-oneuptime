@@ -7,37 +7,40 @@ description: |-
 
 # oneuptime_security_event_connection_run (Data Source)
 
-History of connection tests, previews, scheduled polls and historical imports for security event connections. Credentials are never included. Look up by `id` or by `name` (must match exactly one item).
+History of connection tests, previews, scheduled polls and historical imports for security event connections. Credentials are never included.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one security event connection run may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_security_event_connection_run" "by_name" {
-  name = "example-security_event_connection_run"
+data "oneuptime_security_event_connection_run" "example" {
+  security_event_connection_id = oneuptime_security_event_connection.example.id
 }
 
+# Or by id:
 data "oneuptime_security_event_connection_run" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `security_event_connection_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `requested_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `type` (String) Operation of this connection run... Computed.
-- `status` (String) Status of this connection run... Computed.
-- `started_at` (String) A date time object.. Computed.
-- `completed_at` (String) A date time object.. Computed.
-- `request` (String) Validated operation and selected time range. Contains no credentials... Computed.
-- `result` (String) Counts, requested time range, checks and a bounded preview of records... Computed.
-- `error` (String) The run failure with credentials redacted... Computed.
+### Optional
+
+- `error` (String) The run failure with credentials redacted.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `requested_by_user_id` (String) ID of the user who requested this run. The ID of a `oneuptime_user` (see the data source).
+- `security_event_connection_id` (String) ID of the connection for this run. The ID of a `oneuptime_security_event_connection`.
+- `status` (String) Status of this connection run.
+- `type` (String) Operation of this connection run.
+
+### Read-Only
+
+- `completed_at` (String) When this run completed.
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of the project for this run. The ID of a `oneuptime_project`.
+- `request` (String) Validated operation and selected time range. Contains no credentials. A JSON value: write it with `jsonencode()`.
+- `result` (String) Counts, requested time range, checks and a bounded preview of records. A JSON value: write it with `jsonencode()`.
+- `started_at` (String) When this run started.
+- `updated_at` (String) Date and Time when the object was updated.

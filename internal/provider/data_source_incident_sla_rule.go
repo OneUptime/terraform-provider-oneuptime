@@ -30,13 +30,11 @@ type IncidentSlaRuleDataSource struct {
 // IncidentSlaRuleDataSourceModel describes the data source data model.
 type IncidentSlaRuleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Criteria types.String `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     Order types.Number `tfsdk:"order"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
@@ -62,113 +60,118 @@ func (d *IncidentSlaRuleDataSource) Metadata(ctx context.Context, req datasource
 
 func (d *IncidentSlaRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure SLA rules to define response and resolution time targets for incidents Look up an existing incident_sla_rule by `id` or by `name`.",
+        MarkdownDescription: "Configure SLA rules to define response and resolution time targets for incidents Look up an existing incident sla rule by `id`, or by any of its other arguments (`name`, `at_risk_threshold_in_percentage`, `created_by_user_id`, ...): each one set must match, and exactly one incident sla rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Name of this SLA rule.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Description of this SLA rule.",
+                Optional: true,
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
+                MarkdownDescription: "Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
+                Optional: true,
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether this SLA rule is enabled.",
+                Optional: true,
                 Computed: true,
             },
             "response_time_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Target response time in minutes. This is the maximum time allowed before the incident must be acknowledged..",
+                MarkdownDescription: "Target response time in minutes. This is the maximum time allowed before the incident must be acknowledged.",
+                Optional: true,
                 Computed: true,
             },
             "resolution_time_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Target resolution time in minutes. This is the maximum time allowed before the incident must be resolved..",
+                MarkdownDescription: "Target resolution time in minutes. This is the maximum time allowed before the incident must be resolved.",
+                Optional: true,
                 Computed: true,
             },
             "at_risk_threshold_in_percentage": schema.NumberAttribute{
-                MarkdownDescription: "Percentage of the deadline at which the SLA status changes to At Risk. For example, 80 means the status becomes At Risk when 80% of the time has elapsed..",
+                MarkdownDescription: "Percentage of the deadline at which the SLA status changes to At Risk. For example, 80 means the status becomes At Risk when 80% of the time has elapsed.",
+                Optional: true,
                 Computed: true,
             },
             "internal_note_reminder_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often (in minutes) to automatically post internal notes to unresolved incidents. Internal notes are only visible to your team. For example, set to 30 to remind your team every 30 minutes to provide an update. Leave empty to disable..",
+                MarkdownDescription: "How often (in minutes) to automatically post internal notes to unresolved incidents. Internal notes are only visible to your team. For example, set to 30 to remind your team every 30 minutes to provide an update. Leave empty to disable.",
+                Optional: true,
                 Computed: true,
             },
             "public_note_reminder_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often (in minutes) to automatically post public notes to unresolved incidents. Public notes are visible to external stakeholders on your status page. For example, set to 60 to post a status update every hour. Leave empty to disable..",
+                MarkdownDescription: "How often (in minutes) to automatically post public notes to unresolved incidents. Public notes are visible to external stakeholders on your status page. For example, set to 60 to post a status update every hour. Leave empty to disable.",
+                Optional: true,
                 Computed: true,
             },
             "internal_note_reminder_template": schema.StringAttribute{
-                MarkdownDescription: "The content of the automatic internal note posted to your team. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used..",
+                MarkdownDescription: "The content of the automatic internal note posted to your team. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.",
+                Optional: true,
                 Computed: true,
             },
             "public_note_reminder_template": schema.StringAttribute{
-                MarkdownDescription: "The content of the automatic public note shown on your status page. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used..",
+                MarkdownDescription: "The content of the automatic public note shown on your status page. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.",
+                Optional: true,
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents affecting these monitors. Leave empty to match incidents from any monitor..",
+                MarkdownDescription: "Only apply this SLA rule to incidents affecting these monitors. Leave empty to match incidents from any monitor. IDs of `oneuptime_monitor` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents with these severities. Leave empty to match incidents of any severity..",
+                MarkdownDescription: "Only apply this SLA rule to incidents with these severities. Leave empty to match incidents of any severity. IDs of `oneuptime_incident_severity` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents that have at least one of these labels. Leave empty to match incidents regardless of labels..",
+                MarkdownDescription: "Only apply this SLA rule to incidents that have at least one of these labels. Leave empty to match incidents regardless of labels. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels..",
+                MarkdownDescription: "Only apply this SLA rule to incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'..",
+                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.",
+                Optional: true,
                 Computed: true,
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description..",
+                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -205,24 +208,89 @@ func (d *IncidentSlaRuleDataSource) Read(ctx context.Context, req datasource.Rea
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.Order.IsNull() && !data.Order.IsUnknown() {
+        filters["order"] = lookupNumber(data.Order)
+        filterNames = append(filterNames, "order = "+data.Order.ValueBigFloat().String())
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        filters["isEnabled"] = data.IsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
+    }
+    if !data.ResponseTimeInMinutes.IsNull() && !data.ResponseTimeInMinutes.IsUnknown() {
+        filters["responseTimeInMinutes"] = lookupNumber(data.ResponseTimeInMinutes)
+        filterNames = append(filterNames, "response_time_in_minutes = "+data.ResponseTimeInMinutes.ValueBigFloat().String())
+    }
+    if !data.ResolutionTimeInMinutes.IsNull() && !data.ResolutionTimeInMinutes.IsUnknown() {
+        filters["resolutionTimeInMinutes"] = lookupNumber(data.ResolutionTimeInMinutes)
+        filterNames = append(filterNames, "resolution_time_in_minutes = "+data.ResolutionTimeInMinutes.ValueBigFloat().String())
+    }
+    if !data.AtRiskThresholdInPercentage.IsNull() && !data.AtRiskThresholdInPercentage.IsUnknown() {
+        filters["atRiskThresholdInPercentage"] = lookupNumber(data.AtRiskThresholdInPercentage)
+        filterNames = append(filterNames, "at_risk_threshold_in_percentage = "+data.AtRiskThresholdInPercentage.ValueBigFloat().String())
+    }
+    if !data.InternalNoteReminderIntervalInMinutes.IsNull() && !data.InternalNoteReminderIntervalInMinutes.IsUnknown() {
+        filters["internalNoteReminderIntervalInMinutes"] = lookupNumber(data.InternalNoteReminderIntervalInMinutes)
+        filterNames = append(filterNames, "internal_note_reminder_interval_in_minutes = "+data.InternalNoteReminderIntervalInMinutes.ValueBigFloat().String())
+    }
+    if !data.PublicNoteReminderIntervalInMinutes.IsNull() && !data.PublicNoteReminderIntervalInMinutes.IsUnknown() {
+        filters["publicNoteReminderIntervalInMinutes"] = lookupNumber(data.PublicNoteReminderIntervalInMinutes)
+        filterNames = append(filterNames, "public_note_reminder_interval_in_minutes = "+data.PublicNoteReminderIntervalInMinutes.ValueBigFloat().String())
+    }
+    if !data.InternalNoteReminderTemplate.IsNull() && !data.InternalNoteReminderTemplate.IsUnknown() {
+        filters["internalNoteReminderTemplate"] = data.InternalNoteReminderTemplate.ValueString()
+        filterNames = append(filterNames, "internal_note_reminder_template = "+fmt.Sprintf("%q", data.InternalNoteReminderTemplate.ValueString()))
+    }
+    if !data.PublicNoteReminderTemplate.IsNull() && !data.PublicNoteReminderTemplate.IsUnknown() {
+        filters["publicNoteReminderTemplate"] = data.PublicNoteReminderTemplate.ValueString()
+        filterNames = append(filterNames, "public_note_reminder_template = "+fmt.Sprintf("%q", data.PublicNoteReminderTemplate.ValueString()))
+    }
+    if !data.IncidentTitlePattern.IsNull() && !data.IncidentTitlePattern.IsUnknown() {
+        filters["incidentTitlePattern"] = data.IncidentTitlePattern.ValueString()
+        filterNames = append(filterNames, "incident_title_pattern = "+fmt.Sprintf("%q", data.IncidentTitlePattern.ValueString()))
+    }
+    if !data.IncidentDescriptionPattern.IsNull() && !data.IncidentDescriptionPattern.IsUnknown() {
+        filters["incidentDescriptionPattern"] = data.IncidentDescriptionPattern.ValueString()
+        filterNames = append(filterNames, "incident_description_pattern = "+fmt.Sprintf("%q", data.IncidentDescriptionPattern.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a incident_sla_rule.",
+            "Look the incident sla rule up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the incident sla rule up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "criteria": true,
         "projectId": true,
+        "name": true,
         "description": true,
         "order": true,
         "isEnabled": true,
@@ -252,7 +320,7 @@ func (d *IncidentSlaRuleDataSource) Read(ctx context.Context, req datasource.Rea
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident_sla_rule found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident sla rule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -265,11 +333,10 @@ func (d *IncidentSlaRuleDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -286,11 +353,11 @@ func (d *IncidentSlaRuleDataSource) Read(ctx context.Context, req datasource.Rea
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident_sla_rule found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident sla rule matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incident_sla_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incident sla rule matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -318,23 +385,6 @@ func (d *IncidentSlaRuleDataSource) Read(ctx context.Context, req datasource.Rea
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -370,34 +420,6 @@ func (d *IncidentSlaRuleDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["criteria"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Criteria = types.StringValue(val)
@@ -431,6 +453,23 @@ func (d *IncidentSlaRuleDataSource) Read(ctx context.Context, req datasource.Rea
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

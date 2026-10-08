@@ -28,12 +28,10 @@ type SecurityEventConnectionDataSource struct {
 // SecurityEventConnectionDataSourceModel describes the data source data model.
 type SecurityEventConnectionDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     ProviderValue types.String `tfsdk:"provider_value"`
     Config types.String `tfsdk:"config"`
@@ -47,7 +45,6 @@ type SecurityEventConnectionDataSourceModel struct {
     Cursor types.String `tfsdk:"cursor"`
     LastError types.String `tfsdk:"last_error"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *SecurityEventConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -56,93 +53,89 @@ func (d *SecurityEventConnectionDataSource) Metadata(ctx context.Context, req da
 
 func (d *SecurityEventConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Managed connections to SIEM, EDR, cloud security and identity products. Records are polled on an interval and ingested as security events. Look up an existing security_event_connection by `id` or by `name`.",
+        MarkdownDescription: "Managed connections to SIEM, EDR, cloud security and identity products. Records are polled on an interval and ingested as security events. Look up an existing security event connection by `id`, or by any of its other arguments (`name`, `alerting_only`, `created_by_user_id`, ...): each one set must match, and exactly one security event connection may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this connection belongs to. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Friendly name for this connection.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "What this connection imports and why..",
+                MarkdownDescription: "What this connection imports and why.",
+                Optional: true,
                 Computed: true,
             },
             "provider_value": schema.StringAttribute{
-                MarkdownDescription: "Which security product this connection polls, e.g. 'microsoft-sentinel' or 'crowdstrike-falcon'. Fixed once created..",
+                MarkdownDescription: "Which security product this connection polls, e.g. 'microsoft-sentinel' or 'crowdstrike-falcon'. Fixed once created.",
+                Optional: true,
                 Computed: true,
             },
             "config": schema.StringAttribute{
-                MarkdownDescription: "Provider-specific, non-secret settings such as tenant, workspace, region or base URL. Keys are defined by the provider catalog..",
+                MarkdownDescription: "Provider-specific, non-secret settings such as tenant, workspace, region or base URL. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this connection is polled on its schedule..",
+                MarkdownDescription: "Whether this connection is polled on its schedule.",
+                Optional: true,
                 Computed: true,
             },
             "poll_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often new records are polled, in minutes..",
+                MarkdownDescription: "How often new records are polled, in minutes.",
+                Optional: true,
                 Computed: true,
             },
             "alerting_only": schema.BoolAttribute{
-                MarkdownDescription: "For providers that distinguish alerting from non-alerting records: import only the alerting ones..",
+                MarkdownDescription: "For providers that distinguish alerting from non-alerting records: import only the alerting ones.",
+                Optional: true,
                 Computed: true,
             },
             "last_successful_poll_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a complete poll last finished successfully, including an empty result.",
                 Computed: true,
             },
             "last_event_ingested_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a new security event was last imported from this connection.",
                 Computed: true,
             },
             "last_poll_result": schema.StringAttribute{
-                MarkdownDescription: "The latest scheduled or on-demand poll result with counts and warnings..",
+                MarkdownDescription: "The latest scheduled or on-demand poll result with counts and warnings. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "last_polled_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this connection was last polled. Null means it has never run.",
                 Computed: true,
             },
             "cursor": schema.StringAttribute{
-                MarkdownDescription: "Poll cursor: the end of the last completely processed creation-time window, as an ISO string..",
+                MarkdownDescription: "Poll cursor: the end of the last completely processed creation-time window, as an ISO string.",
+                Optional: true,
                 Computed: true,
             },
             "last_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent poll error with credentials redacted, if any. Cleared on the next successful poll..",
+                MarkdownDescription: "The most recent poll error with credentials redacted, if any. Cleared on the next successful poll.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user who created this connection. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -179,23 +172,68 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.ProviderValue.IsNull() && !data.ProviderValue.IsUnknown() {
+        filters["provider"] = data.ProviderValue.ValueString()
+        filterNames = append(filterNames, "provider_value = "+fmt.Sprintf("%q", data.ProviderValue.ValueString()))
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        filters["isEnabled"] = data.IsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
+    }
+    if !data.PollIntervalInMinutes.IsNull() && !data.PollIntervalInMinutes.IsUnknown() {
+        filters["pollIntervalInMinutes"] = lookupNumber(data.PollIntervalInMinutes)
+        filterNames = append(filterNames, "poll_interval_in_minutes = "+data.PollIntervalInMinutes.ValueBigFloat().String())
+    }
+    if !data.AlertingOnly.IsNull() && !data.AlertingOnly.IsUnknown() {
+        filters["alertingOnly"] = data.AlertingOnly.ValueBool()
+        filterNames = append(filterNames, "alerting_only = "+fmt.Sprintf("%t", data.AlertingOnly.ValueBool()))
+    }
+    if !data.Cursor.IsNull() && !data.Cursor.IsUnknown() {
+        filters["cursor"] = data.Cursor.ValueString()
+        filterNames = append(filterNames, "cursor = "+fmt.Sprintf("%q", data.Cursor.ValueString()))
+    }
+    if !data.LastError.IsNull() && !data.LastError.IsUnknown() {
+        filters["lastError"] = data.LastError.ValueString()
+        filterNames = append(filterNames, "last_error = "+fmt.Sprintf("%q", data.LastError.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a security_event_connection.",
+            "Look the security event connection up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the security event connection up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "description": true,
         "provider": true,
         "config": true,
@@ -209,7 +247,6 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
         "cursor": true,
         "lastError": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -222,7 +259,7 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security_event_connection found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security event connection found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -235,11 +272,10 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -256,11 +292,11 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security_event_connection found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security event connection matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one security_event_connection matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one security event connection matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -288,23 +324,6 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -340,34 +359,6 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -384,6 +375,23 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -575,23 +583,6 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

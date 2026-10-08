@@ -7,41 +7,43 @@ description: |-
 
 # oneuptime_network_endpoint (Data Source)
 
-LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices. Rows are upserted by the server; users can classify them. Look up by `id` or by `name` (must match exactly one item).
+LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices. Rows are upserted by the server; users can classify them.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one network endpoint may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_network_endpoint" "by_name" {
-  name = "example-network_endpoint"
+data "oneuptime_network_endpoint" "example" {
+  mac_address = "example-mac-address"
 }
 
+# Or by id:
 data "oneuptime_network_endpoint" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `mac_address` (String) MAC address of this endpoint, colon-separated hex. One row per MAC per project... Computed.
-- `ip_address` (String) Last IP address seen for this endpoint in ARP tables. Managed by the server... Computed.
-- `vendor` (String) Hardware vendor derived from the MAC OUI prefix. Managed by the server... Computed.
-- `classification` (String) User-editable classification of this endpoint (POS, Kiosk, Camera, Printer, ...).. Computed.
-- `attached_network_device_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `attached_interface_index` (Number) SNMP ifIndex of the switch port this endpoint was last seen on. Managed by the server... Computed.
-- `attached_port_name` (String) Name of the switch port this endpoint was last seen on. Managed by the server... Computed.
-- `vlan_id` (Number) VLAN this endpoint was last seen on, from the FDB walk. Managed by the server... Computed.
-- `site_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `first_seen_at` (String) A date time object.. Computed.
-- `last_seen_at` (String) A date time object.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `attached_interface_index` (Number) SNMP ifIndex of the switch port this endpoint was last seen on. Managed by the server.
+- `attached_network_device_id` (String) ID of the Network Device this endpoint was last seen attached to. The ID of a `oneuptime_network_device`.
+- `attached_port_name` (String) Name of the switch port this endpoint was last seen on. Managed by the server.
+- `classification` (String) User-editable classification of this endpoint (POS, Kiosk, Camera, Printer, ...).
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `ip_address` (String) Last IP address seen for this endpoint in ARP tables. Managed by the server.
+- `mac_address` (String) MAC address of this endpoint, colon-separated hex. One row per MAC per project.
+- `site_id` (String) ID of the Network Site this endpoint belongs to. The ID of a `oneuptime_network_site`.
+- `vendor` (String) Hardware vendor derived from the MAC OUI prefix. Managed by the server.
+- `vlan_id` (Number) VLAN this endpoint was last seen on, from the FDB walk. Managed by the server.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `first_seen_at` (String) When this endpoint was first discovered on the network.
+- `last_seen_at` (String) When this endpoint was last seen in an ARP or FDB walk.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

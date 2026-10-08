@@ -13,10 +13,7 @@ Manage Custom Domains for your project
 
 ```terraform
 resource "oneuptime_domain" "example" {
-  domain = jsonencode({
-    "_type": "Domain",
-    "value": "example.com"
-  })
+  domain = "example.com"
 }
 ```
 
@@ -24,28 +21,34 @@ resource "oneuptime_domain" "example" {
 
 ### Required
 
-- `domain` (String) Domain object.
+- `domain` (String) Domain - acmeinc.com for example.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `is_verified` (Bool) Is this domain verified?..
-- `domain_verification_text` (String) Verification text that you need to add to your domains TXT record to veify the domain...
+- `domain_verification_text` (String) Verification text that you need to add to your domains TXT record to veify the domain.
+- `is_verified` (Boolean) Is this domain verified? Defaults to `false`.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `slug` (String) Friendly globally unique name for your object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `slug` (String) Friendly globally unique name for your object.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing domain by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_domain.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_domain.example <id>

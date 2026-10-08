@@ -28,7 +28,6 @@ type NetworkFlowDataSource struct {
 // NetworkFlowDataSourceModel describes the data source data model.
 type NetworkFlowDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     NetworkDeviceId types.String `tfsdk:"network_device_id"`
     ExporterIp types.String `tfsdk:"exporter_ip"`
@@ -52,77 +51,86 @@ func (d *NetworkFlowDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *NetworkFlowDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "API endpoints for Network Flow Look up an existing network_flow by `id` or by `name`.",
+        MarkdownDescription: "API endpoints for Network Flow Look up an existing network flow by `id`, or by any of its other arguments (`dst_ip`, `dst_port`, `exporter_ip`, ...): each one set must match, and exactly one network flow may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Project ID",
+                MarkdownDescription: "Project ID.",
                 Computed: true,
             },
             "network_device_id": schema.StringAttribute{
-                MarkdownDescription: "Network Device ID",
+                MarkdownDescription: "Network Device ID.",
+                Optional: true,
                 Computed: true,
             },
             "exporter_ip": schema.StringAttribute{
-                MarkdownDescription: "Exporter IP",
+                MarkdownDescription: "Exporter IP.",
+                Optional: true,
                 Computed: true,
             },
             "src_ip": schema.StringAttribute{
-                MarkdownDescription: "Source IP",
+                MarkdownDescription: "Source IP.",
+                Optional: true,
                 Computed: true,
             },
             "dst_ip": schema.StringAttribute{
-                MarkdownDescription: "Destination IP",
+                MarkdownDescription: "Destination IP.",
+                Optional: true,
                 Computed: true,
             },
             "src_port": schema.NumberAttribute{
-                MarkdownDescription: "Source Port",
+                MarkdownDescription: "Source Port.",
+                Optional: true,
                 Computed: true,
             },
             "dst_port": schema.NumberAttribute{
-                MarkdownDescription: "Destination Port",
+                MarkdownDescription: "Destination Port.",
+                Optional: true,
                 Computed: true,
             },
             "protocol": schema.NumberAttribute{
-                MarkdownDescription: "Protocol",
+                MarkdownDescription: "Protocol.",
+                Optional: true,
                 Computed: true,
             },
             "input_interface_index": schema.NumberAttribute{
-                MarkdownDescription: "Input Interface Index",
+                MarkdownDescription: "Input Interface Index.",
+                Optional: true,
                 Computed: true,
             },
             "output_interface_index": schema.NumberAttribute{
-                MarkdownDescription: "Output Interface Index",
+                MarkdownDescription: "Output Interface Index.",
+                Optional: true,
                 Computed: true,
             },
             "octets": schema.StringAttribute{
-                MarkdownDescription: "Octets",
+                MarkdownDescription: "Octets.",
+                Optional: true,
                 Computed: true,
             },
             "packets": schema.StringAttribute{
-                MarkdownDescription: "Packets",
+                MarkdownDescription: "Packets.",
+                Optional: true,
                 Computed: true,
             },
             "flow_start_at": schema.StringAttribute{
-                MarkdownDescription: "Flow Start",
+                MarkdownDescription: "Flow Start.",
+                Optional: true,
                 Computed: true,
             },
             "flow_end_at": schema.StringAttribute{
-                MarkdownDescription: "Flow End",
+                MarkdownDescription: "Flow End.",
+                Optional: true,
                 Computed: true,
             },
             "ingested_at": schema.StringAttribute{
-                MarkdownDescription: "Ingested At",
+                MarkdownDescription: "Ingested At.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -159,18 +167,84 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.NetworkDeviceId.IsNull() && !data.NetworkDeviceId.IsUnknown() {
+        filters["networkDeviceId"] = data.NetworkDeviceId.ValueString()
+        filterNames = append(filterNames, "network_device_id = "+fmt.Sprintf("%q", data.NetworkDeviceId.ValueString()))
+    }
+    if !data.ExporterIp.IsNull() && !data.ExporterIp.IsUnknown() {
+        filters["exporterIp"] = data.ExporterIp.ValueString()
+        filterNames = append(filterNames, "exporter_ip = "+fmt.Sprintf("%q", data.ExporterIp.ValueString()))
+    }
+    if !data.SrcIp.IsNull() && !data.SrcIp.IsUnknown() {
+        filters["srcIp"] = data.SrcIp.ValueString()
+        filterNames = append(filterNames, "src_ip = "+fmt.Sprintf("%q", data.SrcIp.ValueString()))
+    }
+    if !data.DstIp.IsNull() && !data.DstIp.IsUnknown() {
+        filters["dstIp"] = data.DstIp.ValueString()
+        filterNames = append(filterNames, "dst_ip = "+fmt.Sprintf("%q", data.DstIp.ValueString()))
+    }
+    if !data.SrcPort.IsNull() && !data.SrcPort.IsUnknown() {
+        filters["srcPort"] = lookupNumber(data.SrcPort)
+        filterNames = append(filterNames, "src_port = "+data.SrcPort.ValueBigFloat().String())
+    }
+    if !data.DstPort.IsNull() && !data.DstPort.IsUnknown() {
+        filters["dstPort"] = lookupNumber(data.DstPort)
+        filterNames = append(filterNames, "dst_port = "+data.DstPort.ValueBigFloat().String())
+    }
+    if !data.Protocol.IsNull() && !data.Protocol.IsUnknown() {
+        filters["protocol"] = lookupNumber(data.Protocol)
+        filterNames = append(filterNames, "protocol = "+data.Protocol.ValueBigFloat().String())
+    }
+    if !data.InputInterfaceIndex.IsNull() && !data.InputInterfaceIndex.IsUnknown() {
+        filters["inputInterfaceIndex"] = lookupNumber(data.InputInterfaceIndex)
+        filterNames = append(filterNames, "input_interface_index = "+data.InputInterfaceIndex.ValueBigFloat().String())
+    }
+    if !data.OutputInterfaceIndex.IsNull() && !data.OutputInterfaceIndex.IsUnknown() {
+        filters["outputInterfaceIndex"] = lookupNumber(data.OutputInterfaceIndex)
+        filterNames = append(filterNames, "output_interface_index = "+data.OutputInterfaceIndex.ValueBigFloat().String())
+    }
+    if !data.Octets.IsNull() && !data.Octets.IsUnknown() {
+        filters["octets"] = data.Octets.ValueString()
+        filterNames = append(filterNames, "octets = "+fmt.Sprintf("%q", data.Octets.ValueString()))
+    }
+    if !data.Packets.IsNull() && !data.Packets.IsUnknown() {
+        filters["packets"] = data.Packets.ValueString()
+        filterNames = append(filterNames, "packets = "+fmt.Sprintf("%q", data.Packets.ValueString()))
+    }
+    if !data.FlowStartAt.IsNull() && !data.FlowStartAt.IsUnknown() {
+        filters["flowStartAt"] = data.FlowStartAt.ValueString()
+        filterNames = append(filterNames, "flow_start_at = "+fmt.Sprintf("%q", data.FlowStartAt.ValueString()))
+    }
+    if !data.FlowEndAt.IsNull() && !data.FlowEndAt.IsUnknown() {
+        filters["flowEndAt"] = data.FlowEndAt.ValueString()
+        filterNames = append(filterNames, "flow_end_at = "+fmt.Sprintf("%q", data.FlowEndAt.ValueString()))
+    }
+    if !data.IngestedAt.IsNull() && !data.IngestedAt.IsUnknown() {
+        filters["ingestedAt"] = data.IngestedAt.ValueString()
+        filterNames = append(filterNames, "ingested_at = "+fmt.Sprintf("%q", data.IngestedAt.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a network_flow.",
+            "Look the network flow up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the network flow up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "projectId": true,
         "networkDeviceId": true,
         "exporterIp": true,
@@ -198,7 +272,7 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_flow found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network flow found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -211,11 +285,10 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -232,11 +305,11 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_flow found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network flow matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_flow matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network flow matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -264,23 +337,6 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

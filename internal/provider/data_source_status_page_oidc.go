@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,13 +27,11 @@ type StatusPageOidcDataSource struct {
 // StatusPageOidcDataSourceModel describes the data source data model.
 type StatusPageOidcDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     DiscoveryUrl types.String `tfsdk:"discovery_url"`
     IssuerUrl types.String `tfsdk:"issuer_url"`
@@ -44,7 +41,6 @@ type StatusPageOidcDataSourceModel struct {
     EmailClaimName types.String `tfsdk:"email_claim_name"`
     NameClaimName types.String `tfsdk:"name_claim_name"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     IsTested types.Bool `tfsdk:"is_tested"`
 }
@@ -55,86 +51,89 @@ func (d *StatusPageOidcDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *StatusPageOidcDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage OpenID Connect (OIDC) authentication for your status page Look up an existing status_page_oidc by `id` or by `name`.",
+        MarkdownDescription: "Manage OpenID Connect (OIDC) authentication for your status page Look up an existing status page oidc by `id`, or by any of its other arguments (`name`, `client_id`, `client_secret`, ...): each one set must match, and exactly one status page oidc may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
+                Optional: true,
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Any friendly name of this object.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page OIDC], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page OIDC], Update: [Project Owner, Project Admin, Edit Status Page OIDC]",
+                Optional: true,
                 Computed: true,
             },
             "discovery_url": schema.StringAttribute{
-                MarkdownDescription: "OIDC discovery URL (typically ends in /.well-known/openid-configuration). Used to discover authorization, token, JWKS and userinfo endpoints..",
+                MarkdownDescription: "OIDC discovery URL (typically ends in /.well-known/openid-configuration). Used to discover authorization, token, JWKS and userinfo endpoints.",
+                Optional: true,
                 Computed: true,
             },
             "issuer_url": schema.StringAttribute{
-                MarkdownDescription: "Expected OIDC issuer URL. Must match the 'iss' claim in the ID token returned by the identity provider..",
+                MarkdownDescription: "Expected OIDC issuer URL. Must match the 'iss' claim in the ID token returned by the identity provider.",
+                Optional: true,
                 Computed: true,
             },
             "client_id": schema.StringAttribute{
-                MarkdownDescription: "OIDC client ID issued by the identity provider..",
+                MarkdownDescription: "OIDC client ID issued by the identity provider.",
+                Optional: true,
                 Computed: true,
             },
             "client_secret": schema.StringAttribute{
-                MarkdownDescription: "OIDC client secret issued by the identity provider. Stored encrypted at rest..",
+                MarkdownDescription: "OIDC client secret issued by the identity provider. Stored encrypted at rest.",
+                Optional: true,
                 Computed: true,
             },
             "scopes": schema.StringAttribute{
-                MarkdownDescription: "Space-separated list of OIDC scopes to request. Must include 'openid'..",
+                MarkdownDescription: "Space-separated list of OIDC scopes to request. Must include 'openid'.",
+                Optional: true,
                 Computed: true,
             },
             "email_claim_name": schema.StringAttribute{
-                MarkdownDescription: "Claim name in the ID token (or userinfo response) that contains the user's email address..",
+                MarkdownDescription: "Claim name in the ID token (or userinfo response) that contains the user's email address.",
+                Optional: true,
                 Computed: true,
             },
             "name_claim_name": schema.StringAttribute{
-                MarkdownDescription: "Claim name in the ID token (or userinfo response) that contains the user's display name..",
+                MarkdownDescription: "Claim name in the ID token (or userinfo response) that contains the user's display name.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page OIDC], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page OIDC], Update: [Project Owner, Project Admin, Edit Status Page OIDC]",
+                Optional: true,
                 Computed: true,
             },
             "is_tested": schema.BoolAttribute{
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page OIDC], Read: [Project Owner, Project Admin, Read Status Page OIDC], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -171,24 +170,85 @@ func (d *StatusPageOidcDataSource) Read(ctx context.Context, req datasource.Read
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.StatusPageId.IsNull() && !data.StatusPageId.IsUnknown() {
+        filters["statusPageId"] = data.StatusPageId.ValueString()
+        filterNames = append(filterNames, "status_page_id = "+fmt.Sprintf("%q", data.StatusPageId.ValueString()))
+    }
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.DiscoveryUrl.IsNull() && !data.DiscoveryUrl.IsUnknown() {
+        filters["discoveryURL"] = data.DiscoveryUrl.ValueString()
+        filterNames = append(filterNames, "discovery_url = "+fmt.Sprintf("%q", data.DiscoveryUrl.ValueString()))
+    }
+    if !data.IssuerUrl.IsNull() && !data.IssuerUrl.IsUnknown() {
+        filters["issuerURL"] = data.IssuerUrl.ValueString()
+        filterNames = append(filterNames, "issuer_url = "+fmt.Sprintf("%q", data.IssuerUrl.ValueString()))
+    }
+    if !data.ClientId.IsNull() && !data.ClientId.IsUnknown() {
+        filters["clientId"] = data.ClientId.ValueString()
+        filterNames = append(filterNames, "client_id = "+fmt.Sprintf("%q", data.ClientId.ValueString()))
+    }
+    if !data.ClientSecret.IsNull() && !data.ClientSecret.IsUnknown() {
+        filters["clientSecret"] = data.ClientSecret.ValueString()
+        filterNames = append(filterNames, "client_secret = "+fmt.Sprintf("%q", data.ClientSecret.ValueString()))
+    }
+    if !data.Scopes.IsNull() && !data.Scopes.IsUnknown() {
+        filters["scopes"] = data.Scopes.ValueString()
+        filterNames = append(filterNames, "scopes = "+fmt.Sprintf("%q", data.Scopes.ValueString()))
+    }
+    if !data.EmailClaimName.IsNull() && !data.EmailClaimName.IsUnknown() {
+        filters["emailClaimName"] = data.EmailClaimName.ValueString()
+        filterNames = append(filterNames, "email_claim_name = "+fmt.Sprintf("%q", data.EmailClaimName.ValueString()))
+    }
+    if !data.NameClaimName.IsNull() && !data.NameClaimName.IsUnknown() {
+        filters["nameClaimName"] = data.NameClaimName.ValueString()
+        filterNames = append(filterNames, "name_claim_name = "+fmt.Sprintf("%q", data.NameClaimName.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        filters["isEnabled"] = data.IsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
+    }
+    if !data.IsTested.IsNull() && !data.IsTested.IsUnknown() {
+        filters["isTested"] = data.IsTested.ValueBool()
+        filterNames = append(filterNames, "is_tested = "+fmt.Sprintf("%t", data.IsTested.ValueBool()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a status_page_oidc.",
+            "Look the status page oidc up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the status page oidc up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "statusPageId": true,
+        "name": true,
         "description": true,
         "discoveryURL": true,
         "issuerURL": true,
@@ -198,7 +258,6 @@ func (d *StatusPageOidcDataSource) Read(ctx context.Context, req datasource.Read
         "emailClaimName": true,
         "nameClaimName": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "isEnabled": true,
         "isTested": true,
         "_id": true,
@@ -213,7 +272,7 @@ func (d *StatusPageOidcDataSource) Read(ctx context.Context, req datasource.Read
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status_page_oidc found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status page oidc found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -226,11 +285,10 @@ func (d *StatusPageOidcDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -247,11 +305,11 @@ func (d *StatusPageOidcDataSource) Read(ctx context.Context, req datasource.Read
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status_page_oidc found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status page oidc matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one status_page_oidc matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one status page oidc matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -279,23 +337,6 @@ func (d *StatusPageOidcDataSource) Read(ctx context.Context, req datasource.Read
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -331,34 +372,6 @@ func (d *StatusPageOidcDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -392,6 +405,23 @@ func (d *StatusPageOidcDataSource) Read(ctx context.Context, req datasource.Read
         data.StatusPageId = types.StringValue(val)
     } else {
         data.StatusPageId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -545,23 +575,6 @@ func (d *StatusPageOidcDataSource) Read(ctx context.Context, req datasource.Read
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if val, ok := item["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)

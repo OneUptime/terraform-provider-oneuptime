@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,11 +27,8 @@ type IncidentEpisodeMemberDataSource struct {
 // IncidentEpisodeMemberDataSourceModel describes the data source data model.
 type IncidentEpisodeMemberDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
     IncidentId types.String `tfsdk:"incident_id"`
@@ -42,7 +38,6 @@ type IncidentEpisodeMemberDataSourceModel struct {
     MatchedRuleId types.String `tfsdk:"matched_rule_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsOwnerNotifiedOfIncidentAdded types.Bool `tfsdk:"is_owner_notified_of_incident_added"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *IncidentEpisodeMemberDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -51,73 +46,63 @@ func (d *IncidentEpisodeMemberDataSource) Metadata(ctx context.Context, req data
 
 func (d *IncidentEpisodeMemberDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Link between incidents and episodes Look up an existing incident_episode_member by `id` or by `name`.",
+        MarkdownDescription: "Link between incidents and episodes Look up an existing incident episode member by `id`, or by any of its other arguments (`added_by`, `added_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one incident episode member may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "incident_episode_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Incident Episode that this incident belongs to. The ID of a `oneuptime_incident_episode`.",
+                Optional: true,
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Incident that is a member of this episode. The ID of a `oneuptime_incident`.",
+                Optional: true,
                 Computed: true,
             },
             "added_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this incident was added to the episode.",
                 Computed: true,
             },
             "added_by": schema.StringAttribute{
                 MarkdownDescription: "How this incident was added to the episode (rule, manual, or api).",
+                Optional: true,
                 Computed: true,
             },
             "added_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who manually added this incident to the episode. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "matched_rule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the grouping rule that matched this incident. The ID of a `oneuptime_incident_grouping_rule`.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_owner_notified_of_incident_added": schema.BoolAttribute{
-                MarkdownDescription: "Has the owner been notified that this incident was added to the episode?.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Has the owner been notified that this incident was added to the episode?",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -154,22 +139,58 @@ func (d *IncidentEpisodeMemberDataSource) Read(ctx context.Context, req datasour
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.IncidentEpisodeId.IsNull() && !data.IncidentEpisodeId.IsUnknown() {
+        filters["incidentEpisodeId"] = data.IncidentEpisodeId.ValueString()
+        filterNames = append(filterNames, "incident_episode_id = "+fmt.Sprintf("%q", data.IncidentEpisodeId.ValueString()))
+    }
+    if !data.IncidentId.IsNull() && !data.IncidentId.IsUnknown() {
+        filters["incidentId"] = data.IncidentId.ValueString()
+        filterNames = append(filterNames, "incident_id = "+fmt.Sprintf("%q", data.IncidentId.ValueString()))
+    }
+    if !data.AddedBy.IsNull() && !data.AddedBy.IsUnknown() {
+        filters["addedBy"] = data.AddedBy.ValueString()
+        filterNames = append(filterNames, "added_by = "+fmt.Sprintf("%q", data.AddedBy.ValueString()))
+    }
+    if !data.AddedByUserId.IsNull() && !data.AddedByUserId.IsUnknown() {
+        filters["addedByUserId"] = data.AddedByUserId.ValueString()
+        filterNames = append(filterNames, "added_by_user_id = "+fmt.Sprintf("%q", data.AddedByUserId.ValueString()))
+    }
+    if !data.MatchedRuleId.IsNull() && !data.MatchedRuleId.IsUnknown() {
+        filters["matchedRuleId"] = data.MatchedRuleId.ValueString()
+        filterNames = append(filterNames, "matched_rule_id = "+fmt.Sprintf("%q", data.MatchedRuleId.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsOwnerNotifiedOfIncidentAdded.IsNull() && !data.IsOwnerNotifiedOfIncidentAdded.IsUnknown() {
+        filters["isOwnerNotifiedOfIncidentAdded"] = data.IsOwnerNotifiedOfIncidentAdded.ValueBool()
+        filterNames = append(filterNames, "is_owner_notified_of_incident_added = "+fmt.Sprintf("%t", data.IsOwnerNotifiedOfIncidentAdded.ValueBool()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a incident_episode_member.",
+            "Look the incident episode member up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the incident episode member up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "incidentEpisodeId": true,
         "incidentId": true,
@@ -179,7 +200,6 @@ func (d *IncidentEpisodeMemberDataSource) Read(ctx context.Context, req datasour
         "matchedRuleId": true,
         "createdByUserId": true,
         "isOwnerNotifiedOfIncidentAdded": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -192,7 +212,7 @@ func (d *IncidentEpisodeMemberDataSource) Read(ctx context.Context, req datasour
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident_episode_member found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident episode member found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -205,11 +225,10 @@ func (d *IncidentEpisodeMemberDataSource) Read(ctx context.Context, req datasour
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -226,11 +245,11 @@ func (d *IncidentEpisodeMemberDataSource) Read(ctx context.Context, req datasour
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident_episode_member found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident episode member matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incident_episode_member matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incident episode member matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -258,23 +277,6 @@ func (d *IncidentEpisodeMemberDataSource) Read(ctx context.Context, req datasour
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -309,34 +311,6 @@ func (d *IncidentEpisodeMemberDataSource) Read(ctx context.Context, req datasour
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -478,23 +452,6 @@ func (d *IncidentEpisodeMemberDataSource) Read(ctx context.Context, req datasour
         data.IsOwnerNotifiedOfIncidentAdded = types.BoolValue(val)
     } else {
         data.IsOwnerNotifiedOfIncidentAdded = types.BoolNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

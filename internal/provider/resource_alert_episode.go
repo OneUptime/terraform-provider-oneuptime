@@ -64,8 +64,6 @@ type AlertEpisodeResourceModel struct {
     IsPrivate types.Bool `tfsdk:"is_private"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     EpisodeNumberWithPrefix types.String `tfsdk:"episode_number_with_prefix"`
     AllAlertsResolvedAt RFC3339Value `tfsdk:"all_alerts_resolved_at"`
     IsOnCallPolicyExecuted types.Bool `tfsdk:"is_on_call_policy_executed"`
@@ -79,19 +77,23 @@ func (r *AlertEpisodeResource) Metadata(ctx context.Context, req resource.Metada
 }
 
 func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Manage alert episodes (groups of related alerts) for your project",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -102,7 +104,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert episode. This is in markdown format..",
+                MarkdownDescription: "Description of this alert episode. This is in markdown format.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -119,7 +121,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "current_alert_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Current Alert State ID. The ID of a `oneuptime_alert_state`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -127,7 +129,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "alert_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Alert Severity ID. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -143,7 +145,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "last_alert_added_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the last alert was added to this episode.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -152,7 +154,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "resolved_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this episode was resolved.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -161,7 +163,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "assigned_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -169,7 +171,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "assigned_to_team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Team ID that is assigned to this episode. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -177,7 +179,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "alert_grouping_rule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Alert Grouping Rule ID that created this episode. The ID of a `oneuptime_alert_grouping_rule`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -185,7 +187,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for this episode..",
+                MarkdownDescription: "List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -194,7 +196,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "title_template": schema.StringAttribute{
-                MarkdownDescription: "Template used to generate the episode title. Stored for dynamic variable updates..",
+                MarkdownDescription: "Template used to generate the episode title. Stored for dynamic variable updates.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -203,7 +205,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "description_template": schema.StringAttribute{
-                MarkdownDescription: "Template used to generate the episode description. Stored for dynamic variable updates..",
+                MarkdownDescription: "Template used to generate the episode description. Stored for dynamic variable updates.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -222,7 +224,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -231,7 +233,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "grouping_key": schema.StringAttribute{
-                MarkdownDescription: "Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule. When a private alert opened the episode, its title is in the key only as a keyed hash..",
+                MarkdownDescription: "Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule. When a private alert opened the episode, its title is in the key only as a keyed hash.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -248,7 +250,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "post_updates_to_workspace_channels": schema.StringAttribute{
-                MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams).",
+                MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -260,7 +262,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners..",
+                MarkdownDescription: "If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -269,22 +271,16 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "episode_number_with_prefix": schema.StringAttribute{
@@ -292,7 +288,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "all_alerts_resolved_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When all alerts in this episode were first detected as resolved. Used for resolve delay calculation.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -305,11 +301,14 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "is_owner_notified_of_episode_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified when this episode is created?.",
+                MarkdownDescription: "Are owners notified when this episode is created?",
                 Computed: true,
             },
         },
@@ -346,6 +345,14 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config AlertEpisodeResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -485,8 +492,6 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
         "isPrivate": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "episodeNumberWithPrefix": true,
         "allAlertsResolvedAt": true,
         "isOnCallPolicyExecuted": true,
@@ -1148,34 +1153,6 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["episodeNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1292,6 +1269,9 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1334,8 +1314,6 @@ func (r *AlertEpisodeResource) Read(ctx context.Context, req resource.ReadReques
         "isPrivate": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "episodeNumberWithPrefix": true,
         "allAlertsResolvedAt": true,
         "isOnCallPolicyExecuted": true,
@@ -1998,34 +1976,6 @@ func (r *AlertEpisodeResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["episodeNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2163,6 +2113,14 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config AlertEpisodeResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     alertEpisodeRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -2265,8 +2223,6 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
         "isPrivate": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "episodeNumberWithPrefix": true,
         "allAlertsResolvedAt": true,
         "isOnCallPolicyExecuted": true,
@@ -2923,34 +2879,6 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["episodeNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3066,6 +2994,9 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3102,6 +3033,74 @@ func (r *AlertEpisodeResource) Delete(ctx context.Context, req resource.DeleteRe
 
 func (r *AlertEpisodeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *AlertEpisodeResource) keepPlannedValues(data *AlertEpisodeResourceModel, plan *AlertEpisodeResourceModel, config *AlertEpisodeResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.EpisodeNumber.IsNull() && !plan.EpisodeNumber.IsUnknown() {
+        data.EpisodeNumber = plan.EpisodeNumber
+    }
+    if config.CurrentAlertStateId.IsNull() && !plan.CurrentAlertStateId.IsUnknown() {
+        data.CurrentAlertStateId = plan.CurrentAlertStateId
+    }
+    if config.AlertSeverityId.IsNull() && !plan.AlertSeverityId.IsUnknown() {
+        data.AlertSeverityId = plan.AlertSeverityId
+    }
+    if config.RootCause.IsNull() && !plan.RootCause.IsUnknown() {
+        data.RootCause = plan.RootCause
+    }
+    if config.LastAlertAddedAt.IsNull() && !plan.LastAlertAddedAt.IsUnknown() {
+        data.LastAlertAddedAt = plan.LastAlertAddedAt
+    }
+    if config.ResolvedAt.IsNull() && !plan.ResolvedAt.IsUnknown() {
+        data.ResolvedAt = plan.ResolvedAt
+    }
+    if config.AssignedToUserId.IsNull() && !plan.AssignedToUserId.IsUnknown() {
+        data.AssignedToUserId = plan.AssignedToUserId
+    }
+    if config.AssignedToTeamId.IsNull() && !plan.AssignedToTeamId.IsUnknown() {
+        data.AssignedToTeamId = plan.AssignedToTeamId
+    }
+    if config.AlertGroupingRuleId.IsNull() && !plan.AlertGroupingRuleId.IsUnknown() {
+        data.AlertGroupingRuleId = plan.AlertGroupingRuleId
+    }
+    if config.OnCallDutyPolicies.IsNull() && !plan.OnCallDutyPolicies.IsUnknown() {
+        data.OnCallDutyPolicies = plan.OnCallDutyPolicies
+    }
+    if config.TitleTemplate.IsNull() && !plan.TitleTemplate.IsUnknown() {
+        data.TitleTemplate = plan.TitleTemplate
+    }
+    if config.DescriptionTemplate.IsNull() && !plan.DescriptionTemplate.IsUnknown() {
+        data.DescriptionTemplate = plan.DescriptionTemplate
+    }
+    if config.IsManuallyCreated.IsNull() && !plan.IsManuallyCreated.IsUnknown() {
+        data.IsManuallyCreated = plan.IsManuallyCreated
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.GroupingKey.IsNull() && !plan.GroupingKey.IsUnknown() {
+        data.GroupingKey = plan.GroupingKey
+    }
+    if config.RemediationNotes.IsNull() && !plan.RemediationNotes.IsUnknown() {
+        data.RemediationNotes = plan.RemediationNotes
+    }
+    if config.PostUpdatesToWorkspaceChannels.IsNull() && !plan.PostUpdatesToWorkspaceChannels.IsUnknown() {
+        data.PostUpdatesToWorkspaceChannels = plan.PostUpdatesToWorkspaceChannels
+    }
+    if config.IsPrivate.IsNull() && !plan.IsPrivate.IsUnknown() {
+        data.IsPrivate = plan.IsPrivate
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

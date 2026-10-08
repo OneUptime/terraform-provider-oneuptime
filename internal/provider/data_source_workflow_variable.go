@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,13 +27,11 @@ type WorkflowVariableDataSource struct {
 // WorkflowVariableDataSourceModel describes the data source data model.
 type WorkflowVariableDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     WorkflowId types.String `tfsdk:"workflow_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     IsSecret types.Bool `tfsdk:"is_secret"`
     VariableType types.String `tfsdk:"variable_type"`
@@ -49,7 +46,6 @@ type WorkflowVariableDataSourceModel struct {
     OauthLastRefreshError types.String `tfsdk:"oauth_last_refresh_error"`
     OauthLastRefreshErrorAt types.String `tfsdk:"oauth_last_refresh_error_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *WorkflowVariableDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -58,101 +54,100 @@ func (d *WorkflowVariableDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *WorkflowVariableDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Store environment variables or secrets for your workflows. Look up an existing workflow_variable by `id` or by `name`.",
+        MarkdownDescription: "Store environment variables or secrets for your workflows. Look up an existing workflow variable by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one workflow variable may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "workflow_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Workflow this variable belong to. If this is null then this variable will be a global variable. The ID of a `oneuptime_workflow`.",
+                Optional: true,
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Variable Name.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember.",
+                Optional: true,
                 Computed: true,
             },
             "is_secret": schema.BoolAttribute{
                 MarkdownDescription: "Is this variable a secret. If true, then it'll not be in the logs.",
+                Optional: true,
                 Computed: true,
             },
             "variable_type": schema.StringAttribute{
-                MarkdownDescription: "Static: the content you save is used as is. OAuth 2.0: OneUptime fetches an access token from your identity provider and refreshes it automatically when a workflow uses it after it has expired..",
+                MarkdownDescription: "Static: the content you save is used as is. OAuth 2.0: OneUptime fetches an access token from your identity provider and refreshes it automatically when a workflow uses it after it has expired.",
+                Optional: true,
                 Computed: true,
             },
             "oauth_grant_type": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. Client Credentials for machine-to-machine access, or Refresh Token to keep delegated access alive with a refresh token you obtained once..",
+                MarkdownDescription: "OAuth 2.0 variables only. Client Credentials for machine-to-machine access, or Refresh Token to keep delegated access alive with a refresh token you obtained once.",
+                Optional: true,
                 Computed: true,
             },
             "oauth_token_url": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. The token endpoint of your identity provider..",
+                MarkdownDescription: "OAuth 2.0 variables only. The token endpoint of your identity provider.",
+                Optional: true,
                 Computed: true,
             },
             "oauth_client_id": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. The client ID of the application registered with your identity provider..",
+                MarkdownDescription: "OAuth 2.0 variables only. The client ID of the application registered with your identity provider.",
+                Optional: true,
                 Computed: true,
             },
             "oauth_scope": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. Space-separated scopes to request. Leave empty to use the scopes your identity provider grants by default..",
+                MarkdownDescription: "OAuth 2.0 variables only. Space-separated scopes to request. Leave empty to use the scopes your identity provider grants by default.",
+                Optional: true,
                 Computed: true,
             },
             "oauth_additional_parameters": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here..",
+                MarkdownDescription: "OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "oauth_client_authentication_method": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. How the client ID and secret are sent: in an HTTP Basic header (client_secret_basic, the default) or in the request body (client_secret_post)..",
+                MarkdownDescription: "OAuth 2.0 variables only. How the client ID and secret are sent: in an HTTP Basic header (client_secret_basic, the default) or in the request body (client_secret_post).",
+                Optional: true,
                 Computed: true,
             },
             "oauth_access_token_expires_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the cached access token expires, as reported by the identity provider (expires_in) or by the token itself (the JWT exp claim). Empty when neither says.",
                 Computed: true,
             },
             "oauth_last_refreshed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When OneUptime last fetched an access token for this variable. Cleared when the OAuth settings change.",
                 Computed: true,
             },
             "oauth_last_refresh_error": schema.StringAttribute{
-                MarkdownDescription: "Why the last attempt to fetch an access token failed. Cleared by the next successful refresh..",
+                MarkdownDescription: "Why the last attempt to fetch an access token failed. Cleared by the next successful refresh.",
+                Optional: true,
                 Computed: true,
             },
             "oauth_last_refresh_error_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the last failed attempt to fetch an access token happened.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -189,24 +184,81 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.WorkflowId.IsNull() && !data.WorkflowId.IsUnknown() {
+        filters["workflowId"] = data.WorkflowId.ValueString()
+        filterNames = append(filterNames, "workflow_id = "+fmt.Sprintf("%q", data.WorkflowId.ValueString()))
+    }
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.IsSecret.IsNull() && !data.IsSecret.IsUnknown() {
+        filters["isSecret"] = data.IsSecret.ValueBool()
+        filterNames = append(filterNames, "is_secret = "+fmt.Sprintf("%t", data.IsSecret.ValueBool()))
+    }
+    if !data.VariableType.IsNull() && !data.VariableType.IsUnknown() {
+        filters["variableType"] = data.VariableType.ValueString()
+        filterNames = append(filterNames, "variable_type = "+fmt.Sprintf("%q", data.VariableType.ValueString()))
+    }
+    if !data.OauthGrantType.IsNull() && !data.OauthGrantType.IsUnknown() {
+        filters["oauthGrantType"] = data.OauthGrantType.ValueString()
+        filterNames = append(filterNames, "oauth_grant_type = "+fmt.Sprintf("%q", data.OauthGrantType.ValueString()))
+    }
+    if !data.OauthTokenUrl.IsNull() && !data.OauthTokenUrl.IsUnknown() {
+        filters["oauthTokenUrl"] = data.OauthTokenUrl.ValueString()
+        filterNames = append(filterNames, "oauth_token_url = "+fmt.Sprintf("%q", data.OauthTokenUrl.ValueString()))
+    }
+    if !data.OauthClientId.IsNull() && !data.OauthClientId.IsUnknown() {
+        filters["oauthClientId"] = data.OauthClientId.ValueString()
+        filterNames = append(filterNames, "oauth_client_id = "+fmt.Sprintf("%q", data.OauthClientId.ValueString()))
+    }
+    if !data.OauthScope.IsNull() && !data.OauthScope.IsUnknown() {
+        filters["oauthScope"] = data.OauthScope.ValueString()
+        filterNames = append(filterNames, "oauth_scope = "+fmt.Sprintf("%q", data.OauthScope.ValueString()))
+    }
+    if !data.OauthClientAuthenticationMethod.IsNull() && !data.OauthClientAuthenticationMethod.IsUnknown() {
+        filters["oauthClientAuthenticationMethod"] = data.OauthClientAuthenticationMethod.ValueString()
+        filterNames = append(filterNames, "oauth_client_authentication_method = "+fmt.Sprintf("%q", data.OauthClientAuthenticationMethod.ValueString()))
+    }
+    if !data.OauthLastRefreshError.IsNull() && !data.OauthLastRefreshError.IsUnknown() {
+        filters["oauthLastRefreshError"] = data.OauthLastRefreshError.ValueString()
+        filterNames = append(filterNames, "oauth_last_refresh_error = "+fmt.Sprintf("%q", data.OauthLastRefreshError.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a workflow_variable.",
+            "Look the workflow variable up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the workflow variable up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "workflowId": true,
+        "name": true,
         "description": true,
         "isSecret": true,
         "variableType": true,
@@ -221,7 +273,6 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
         "oauthLastRefreshError": true,
         "oauthLastRefreshErrorAt": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -234,7 +285,7 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No workflow_variable found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No workflow variable found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -247,11 +298,10 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -268,11 +318,11 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No workflow_variable found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No workflow variable matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one workflow_variable matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one workflow variable matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -300,23 +350,6 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -352,34 +385,6 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -413,6 +418,23 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
         data.WorkflowId = types.StringValue(val)
     } else {
         data.WorkflowId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -639,23 +661,6 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

@@ -28,11 +28,8 @@ type ScimLogDataSource struct {
 // ScimLogDataSourceModel describes the data source data model.
 type ScimLogDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     ProjectScimId types.String `tfsdk:"project_scim_id"`
     OperationType types.String `tfsdk:"operation_type"`
@@ -52,77 +49,73 @@ func (d *ScimLogDataSource) Metadata(ctx context.Context, req datasource.Metadat
 
 func (d *ScimLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Logs of all SCIM provisioning operations for this project. Look up an existing scim_log by `id` or by `name`.",
+        MarkdownDescription: "Logs of all SCIM provisioning operations for this project. Look up an existing scim log by `id`, or by any of its other arguments (`affected_group_name`, `http_method`, `http_status_code`, ...): each one set must match, and exactly one scim log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "project_scim_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your Project SCIM configuration.",
+                Optional: true,
                 Computed: true,
             },
             "operation_type": schema.StringAttribute{
                 MarkdownDescription: "Type of SCIM operation (e.g., CreateUser, UpdateUser, DeleteUser, ListUsers, GetUser, CreateGroup, UpdateGroup, DeleteGroup, ListGroups, GetGroup, BulkOperation).",
+                Optional: true,
                 Computed: true,
             },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Status of the SCIM operation.",
+                Optional: true,
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Short error or status description.",
+                Optional: true,
                 Computed: true,
             },
             "log_body": schema.StringAttribute{
                 MarkdownDescription: "Detailed JSON with request/response data.",
+                Optional: true,
                 Computed: true,
             },
             "http_method": schema.StringAttribute{
                 MarkdownDescription: "HTTP method used (GET, POST, PUT, PATCH, DELETE).",
+                Optional: true,
                 Computed: true,
             },
             "request_path": schema.StringAttribute{
                 MarkdownDescription: "The SCIM endpoint path.",
+                Optional: true,
                 Computed: true,
             },
             "http_status_code": schema.NumberAttribute{
                 MarkdownDescription: "Response HTTP status code.",
+                Optional: true,
                 Computed: true,
             },
             "affected_user_email": schema.StringAttribute{
-                MarkdownDescription: "Email object",
+                MarkdownDescription: "Email of the user affected by this operation.",
                 Computed: true,
             },
             "affected_group_name": schema.StringAttribute{
                 MarkdownDescription: "Name of the group/team affected by this operation.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -159,22 +152,66 @@ func (d *ScimLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.ProjectScimId.IsNull() && !data.ProjectScimId.IsUnknown() {
+        filters["projectScimId"] = data.ProjectScimId.ValueString()
+        filterNames = append(filterNames, "project_scim_id = "+fmt.Sprintf("%q", data.ProjectScimId.ValueString()))
+    }
+    if !data.OperationType.IsNull() && !data.OperationType.IsUnknown() {
+        filters["operationType"] = data.OperationType.ValueString()
+        filterNames = append(filterNames, "operation_type = "+fmt.Sprintf("%q", data.OperationType.ValueString()))
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.StatusMessage.IsNull() && !data.StatusMessage.IsUnknown() {
+        filters["statusMessage"] = data.StatusMessage.ValueString()
+        filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
+    }
+    if !data.LogBody.IsNull() && !data.LogBody.IsUnknown() {
+        filters["logBody"] = data.LogBody.ValueString()
+        filterNames = append(filterNames, "log_body = "+fmt.Sprintf("%q", data.LogBody.ValueString()))
+    }
+    if !data.HttpMethod.IsNull() && !data.HttpMethod.IsUnknown() {
+        filters["httpMethod"] = data.HttpMethod.ValueString()
+        filterNames = append(filterNames, "http_method = "+fmt.Sprintf("%q", data.HttpMethod.ValueString()))
+    }
+    if !data.RequestPath.IsNull() && !data.RequestPath.IsUnknown() {
+        filters["requestPath"] = data.RequestPath.ValueString()
+        filterNames = append(filterNames, "request_path = "+fmt.Sprintf("%q", data.RequestPath.ValueString()))
+    }
+    if !data.HttpStatusCode.IsNull() && !data.HttpStatusCode.IsUnknown() {
+        filters["httpStatusCode"] = lookupNumber(data.HttpStatusCode)
+        filterNames = append(filterNames, "http_status_code = "+data.HttpStatusCode.ValueBigFloat().String())
+    }
+    if !data.AffectedGroupName.IsNull() && !data.AffectedGroupName.IsUnknown() {
+        filters["affectedGroupName"] = data.AffectedGroupName.ValueString()
+        filterNames = append(filterNames, "affected_group_name = "+fmt.Sprintf("%q", data.AffectedGroupName.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a scim_log.",
+            "Look the scim log up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the scim log up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "projectScimId": true,
         "operationType": true,
@@ -198,7 +235,7 @@ func (d *ScimLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scim_log found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scim log found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -211,11 +248,10 @@ func (d *ScimLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -232,11 +268,11 @@ func (d *ScimLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scim_log found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scim log matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one scim_log matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one scim log matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -264,23 +300,6 @@ func (d *ScimLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -315,34 +334,6 @@ func (d *ScimLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

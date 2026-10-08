@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,11 +27,8 @@ type AiConversationMessageDataSource struct {
 // AiConversationMessageDataSourceModel describes the data source data model.
 type AiConversationMessageDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     ConversationId types.String `tfsdk:"conversation_id"`
     UserId types.String `tfsdk:"user_id"`
@@ -53,81 +49,76 @@ func (d *AiConversationMessageDataSource) Metadata(ctx context.Context, req data
 
 func (d *AiConversationMessageDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A message in an AI conversation. Assistant messages carry citations, tool events and cost. Look up an existing ai_conversation_message by `id` or by `name`.",
+        MarkdownDescription: "A message in an AI conversation. Assistant messages carry citations, tool events and cost. Look up an existing ai conversation message by `id`, or by any of its other arguments (`ai_run_id`, `content_in_markdown`, `conversation_id`, ...): each one set must match, and exactly one ai conversation message may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this message belongs to. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "conversation_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the conversation this message belongs to. The ID of a `oneuptime_ai_conversation`.",
+                Optional: true,
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user who owns the conversation. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "role": schema.StringAttribute{
-                MarkdownDescription: "Who authored this message: User or Assistant..",
+                MarkdownDescription: "Who authored this message: User or Assistant.",
+                Optional: true,
                 Computed: true,
             },
             "content_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "Message content in markdown..",
+                MarkdownDescription: "Message content in markdown.",
+                Optional: true,
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Current status of this message..",
+                MarkdownDescription: "Current status of this message.",
+                Optional: true,
                 Computed: true,
             },
             "ai_run_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the AI run that produced this assistant message.",
+                Optional: true,
                 Computed: true,
             },
             "citations": schema.StringAttribute{
-                MarkdownDescription: "Server-minted citations for this assistant message. Each citation records the tool, the exact validated query arguments and the row count..",
+                MarkdownDescription: "Server-minted citations for this assistant message. Each citation records the tool, the exact validated query arguments and the row count. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "widgets": schema.StringAttribute{
-                MarkdownDescription: "Inline widgets (charts, tables, trace waterfalls, resource cards) built from this assistant message's tool results and rendered inline in the chat..",
+                MarkdownDescription: "Inline widgets (charts, tables, trace waterfalls, resource cards) built from this assistant message's tool results and rendered inline in the chat. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "tool_actions": schema.StringAttribute{
-                MarkdownDescription: "Mutating actions the agent proposed or performed in this turn, with their approval status (pending, approved, denied, executed)..",
+                MarkdownDescription: "Mutating actions the agent proposed or performed in this turn, with their approval status (pending, approved, denied, executed). A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "error_message": schema.StringAttribute{
-                MarkdownDescription: "Error message if this message failed to generate..",
+                MarkdownDescription: "Error message if this message failed to generate.",
+                Optional: true,
                 Computed: true,
             },
             "user_feedback": schema.StringAttribute{
-                MarkdownDescription: "Thumbs feedback the user left on this assistant message: Up or Down..",
+                MarkdownDescription: "Thumbs feedback the user left on this assistant message: Up or Down.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -164,22 +155,62 @@ func (d *AiConversationMessageDataSource) Read(ctx context.Context, req datasour
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.ConversationId.IsNull() && !data.ConversationId.IsUnknown() {
+        filters["conversationId"] = data.ConversationId.ValueString()
+        filterNames = append(filterNames, "conversation_id = "+fmt.Sprintf("%q", data.ConversationId.ValueString()))
+    }
+    if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
+        filters["userId"] = data.UserId.ValueString()
+        filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
+    if !data.Role.IsNull() && !data.Role.IsUnknown() {
+        filters["role"] = data.Role.ValueString()
+        filterNames = append(filterNames, "role = "+fmt.Sprintf("%q", data.Role.ValueString()))
+    }
+    if !data.ContentInMarkdown.IsNull() && !data.ContentInMarkdown.IsUnknown() {
+        filters["contentInMarkdown"] = data.ContentInMarkdown.ValueString()
+        filterNames = append(filterNames, "content_in_markdown = "+fmt.Sprintf("%q", data.ContentInMarkdown.ValueString()))
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.AiRunId.IsNull() && !data.AiRunId.IsUnknown() {
+        filters["aiRunId"] = data.AiRunId.ValueString()
+        filterNames = append(filterNames, "ai_run_id = "+fmt.Sprintf("%q", data.AiRunId.ValueString()))
+    }
+    if !data.ErrorMessage.IsNull() && !data.ErrorMessage.IsUnknown() {
+        filters["errorMessage"] = data.ErrorMessage.ValueString()
+        filterNames = append(filterNames, "error_message = "+fmt.Sprintf("%q", data.ErrorMessage.ValueString()))
+    }
+    if !data.UserFeedback.IsNull() && !data.UserFeedback.IsUnknown() {
+        filters["userFeedback"] = data.UserFeedback.ValueString()
+        filterNames = append(filterNames, "user_feedback = "+fmt.Sprintf("%q", data.UserFeedback.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a ai_conversation_message.",
+            "Look the ai conversation message up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the ai conversation message up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "conversationId": true,
         "userId": true,
@@ -204,7 +235,7 @@ func (d *AiConversationMessageDataSource) Read(ctx context.Context, req datasour
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation_message found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai conversation message found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -217,11 +248,10 @@ func (d *AiConversationMessageDataSource) Read(ctx context.Context, req datasour
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -238,11 +268,11 @@ func (d *AiConversationMessageDataSource) Read(ctx context.Context, req datasour
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation_message found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai conversation message matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai_conversation_message matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai conversation message matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -270,23 +300,6 @@ func (d *AiConversationMessageDataSource) Read(ctx context.Context, req datasour
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -321,34 +334,6 @@ func (d *AiConversationMessageDataSource) Read(ctx context.Context, req datasour
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

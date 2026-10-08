@@ -13,7 +13,7 @@ This model connects users and teams
 
 ```terraform
 resource "oneuptime_team_member" "example" {
-  user_id = "123e4567-e89b-12d3-a456-426614174000"
+  user_id = data.oneuptime_user.example.id
 }
 ```
 
@@ -21,26 +21,33 @@ resource "oneuptime_team_member" "example" {
 
 ### Required
 
-- `user_id` (String) A unique identifier for an object, represented as a UUID..
+- `user_id` (String) ID of User who belongs to this team. The ID of a `oneuptime_user` (see the data source).
 
 ### Optional
 
-- `team_id` (String) A unique identifier for an object, represented as a UUID..
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `has_accepted_invitation` (Bool) Has this team member accepted invitation..
-- `invitation_accepted_at` (String) A date time object..
+- `has_accepted_invitation` (Boolean) Has this team member accepted invitation. Defaults to `false`.
+- `invitation_accepted_at` (String) When did this team member accept invitation.
+- `team_id` (String) ID of Team this user belongs to. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing team member by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_team_member.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_team_member.example <id>

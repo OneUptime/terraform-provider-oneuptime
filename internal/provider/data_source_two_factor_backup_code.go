@@ -26,7 +26,10 @@ type TwoFactorBackupCodeDataSource struct {
 // TwoFactorBackupCodeDataSourceModel describes the data source data model.
 type TwoFactorBackupCodeDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
+    CreatedAt types.String `tfsdk:"created_at"`
+    UpdatedAt types.String `tfsdk:"updated_at"`
+    UsedAt types.String `tfsdk:"used_at"`
+    UserId types.String `tfsdk:"user_id"`
 }
 
 func (d *TwoFactorBackupCodeDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -35,16 +38,28 @@ func (d *TwoFactorBackupCodeDataSource) Metadata(ctx context.Context, req dataso
 
 func (d *TwoFactorBackupCodeDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Single-use backup codes that let a user sign in when their two factor authentication device is unavailable Look up an existing two_factor_backup_code by `id` or by `name`.",
+        MarkdownDescription: "Single-use backup codes that let a user sign in when their two factor authentication device is unavailable Look up an existing two factor backup code by `id`, or by any of its other arguments (`user_id`): each one set must match, and exactly one two factor backup code may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+            "created_at": schema.StringAttribute{
+                MarkdownDescription: "Date and Time when the object was created.",
+                Computed: true,
+            },
+            "updated_at": schema.StringAttribute{
+                MarkdownDescription: "Date and Time when the object was updated.",
+                Computed: true,
+            },
+            "used_at": schema.StringAttribute{
+                MarkdownDescription: "When this backup code was used to sign in. Null while the code is still unused.",
+                Computed: true,
+            },
+            "user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID who owns this backup code. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
             },
@@ -82,30 +97,48 @@ func (d *TwoFactorBackupCodeDataSource) Read(ctx context.Context, req datasource
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
+        filters["userId"] = data.UserId.ValueString()
+        filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a two_factor_backup_code.",
+            "Look the two factor backup code up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the two factor backup code up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "usedAt": true,
+        "userId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        resp.Diagnostics.AddError("Lookup Not Supported", "two_factor_backup_code cannot be looked up by id: the API exposes no get endpoint. Use the name filter instead.")
-        return
-    } else {
+        // No get endpoint: find it in the list by id.
+        filters["_id"] = data.Id.ValueString()
+        filterNames = append(filterNames, fmt.Sprintf("id = %q", data.Id.ValueString()))
+    }
+    if item == nil {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -122,11 +155,11 @@ func (d *TwoFactorBackupCodeDataSource) Read(ctx context.Context, req datasource
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No two_factor_backup_code found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No two factor backup code matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one two_factor_backup_code matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one two factor backup code matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -155,22 +188,73 @@ func (d *TwoFactorBackupCodeDataSource) Read(ctx context.Context, req datasource
     } else {
         data.Id = types.StringNull()
     }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
+    if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
+            data.CreatedAt = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
+            data.CreatedAt = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+            data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
+            data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
-            data.Name = types.StringNull()
+            data.CreatedAt = types.StringNull()
         }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
+    } else if val, ok := item["createdAt"].(string); ok {
+        data.CreatedAt = types.StringValue(val)
     } else {
-        data.Name = types.StringNull()
+        data.CreatedAt = types.StringNull()
+    }
+    if obj, ok := item["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
+    } else if val, ok := item["updatedAt"].(string); ok {
+        data.UpdatedAt = types.StringValue(val)
+    } else {
+        data.UpdatedAt = types.StringNull()
+    }
+    if obj, ok := item["usedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UsedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UsedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UsedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UsedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UsedAt = types.StringNull()
+        }
+    } else if val, ok := item["usedAt"].(string); ok {
+        data.UsedAt = types.StringValue(val)
+    } else {
+        data.UsedAt = types.StringNull()
+    }
+    if obj, ok := item["userId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if val, ok := item["userId"].(string); ok {
+        data.UserId = types.StringValue(val)
+    } else {
+        data.UserId = types.StringNull()
     }
 
     // Write logs using the tflog package

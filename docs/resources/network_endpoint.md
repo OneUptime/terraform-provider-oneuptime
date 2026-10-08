@@ -21,35 +21,41 @@ resource "oneuptime_network_endpoint" "example" {
 
 ### Required
 
-- `mac_address` (String) MAC address of this endpoint, colon-separated hex. One row per MAC per project...
+- `mac_address` (String) MAC address of this endpoint, colon-separated hex. One row per MAC per project.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `classification` (String) User-editable classification of this endpoint (POS, Kiosk, Camera, Printer, ...)..
-- `site_id` (String) A unique identifier for an object, represented as a UUID..
-- `ip_address` (String) Last IP address seen for this endpoint in ARP tables. Managed by the server...
-- `vendor` (String) Hardware vendor derived from the MAC OUI prefix. Managed by the server...
+- `classification` (String) User-editable classification of this endpoint (POS, Kiosk, Camera, Printer, ...).
+- `ip_address` (String) Last IP address seen for this endpoint in ARP tables. Managed by the server.
+- `site_id` (String) ID of the Network Site this endpoint belongs to. The ID of a `oneuptime_network_site`.
+- `vendor` (String) Hardware vendor derived from the MAC OUI prefix. Managed by the server.
 
 ### Read-Only
 
+- `attached_interface_index` (Number) SNMP ifIndex of the switch port this endpoint was last seen on. Managed by the server.
+- `attached_network_device_id` (String) ID of the Network Device this endpoint was last seen attached to. The ID of a `oneuptime_network_device`.
+- `attached_port_name` (String) Name of the switch port this endpoint was last seen on. Managed by the server.
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `first_seen_at` (String) When this endpoint was first discovered on the network.
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `attached_network_device_id` (String) A unique identifier for an object, represented as a UUID..
-- `attached_interface_index` (Number) SNMP ifIndex of the switch port this endpoint was last seen on. Managed by the server...
-- `attached_port_name` (String) Name of the switch port this endpoint was last seen on. Managed by the server...
-- `vlan_id` (Number) VLAN this endpoint was last seen on, from the FDB walk. Managed by the server...
-- `first_seen_at` (String) A date time object..
-- `last_seen_at` (String) A date time object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `last_seen_at` (String) When this endpoint was last seen in an ARP or FDB walk.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
+- `vlan_id` (Number) VLAN this endpoint was last seen on, from the FDB walk. Managed by the server.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing network endpoint by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_network_endpoint.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_network_endpoint.example <id>

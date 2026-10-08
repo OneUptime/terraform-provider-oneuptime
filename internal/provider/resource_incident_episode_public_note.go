@@ -47,8 +47,6 @@ type IncidentEpisodePublicNoteResourceModel struct {
     PostedFromSlackMessageId types.String `tfsdk:"posted_from_slack_message_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     SubscriberNotificationStatusOnNoteCreated types.String `tfsdk:"subscriber_notification_status_on_note_created"`
     SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
@@ -62,26 +60,30 @@ func (r *IncidentEpisodePublicNoteResource) Metadata(ctx context.Context, req re
 }
 
 func (r *IncidentEpisodePublicNoteResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *IncidentEpisodePublicNoteResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Manage public notes for your incident episode",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "incident_episode_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Incident Episode ID in which this resource belongs. The ID of a `oneuptime_incident_episode`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -96,7 +98,7 @@ func (r *IncidentEpisodePublicNoteResource) Schema(ctx context.Context, req reso
                 },
             },
             "attachments": schema.SetAttribute{
-                MarkdownDescription: "Files attached to this note.",
+                MarkdownDescription: "Files attached to this note. IDs of `oneuptime_file` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -105,7 +107,7 @@ func (r *IncidentEpisodePublicNoteResource) Schema(ctx context.Context, req reso
                 },
             },
             "should_status_page_subscribers_be_notified_on_note_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this note? If left out, this follows the episode: true when subscribers were notified that the episode was created, false when it was created without notifying them..",
+                MarkdownDescription: "Should subscribers be notified about this note? If left out, this follows the episode: true when subscribers were notified that the episode was created, false when it was created without notifying them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -114,7 +116,7 @@ func (r *IncidentEpisodePublicNoteResource) Schema(ctx context.Context, req reso
                 },
             },
             "posted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and time when the note was posted.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -123,7 +125,7 @@ func (r *IncidentEpisodePublicNoteResource) Schema(ctx context.Context, req reso
                 },
             },
             "posted_from_slack_message_id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message..",
+                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -132,27 +134,24 @@ func (r *IncidentEpisodePublicNoteResource) Schema(ctx context.Context, req reso
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "subscriber_notification_status_on_note_created": schema.StringAttribute{
                 MarkdownDescription: "Status of notification sent to subscribers about this note.",
@@ -163,7 +162,7 @@ func (r *IncidentEpisodePublicNoteResource) Schema(ctx context.Context, req reso
                 Computed: true,
             },
             "subscriber_notification_status_on_note_updated": schema.StringAttribute{
-                MarkdownDescription: "Status of the notification sent to subscribers when this note was last updated. Empty until an update notification is requested..",
+                MarkdownDescription: "Status of the notification sent to subscribers when this note was last updated. Empty until an update notification is requested.",
                 Computed: true,
             },
             "subscriber_notification_status_message_on_note_updated": schema.StringAttribute{
@@ -171,7 +170,7 @@ func (r *IncidentEpisodePublicNoteResource) Schema(ctx context.Context, req reso
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?.",
+                MarkdownDescription: "Are owners notified of this resource ownership?",
                 Computed: true,
             },
         },
@@ -208,6 +207,14 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentEpisodePublicNoteResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -291,8 +298,6 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
         "postedFromSlackMessageId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnNoteCreated": true,
         "subscriberNotificationStatusMessage": true,
@@ -523,34 +528,6 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -747,6 +724,9 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -775,8 +755,6 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
         "postedFromSlackMessageId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnNoteCreated": true,
         "subscriberNotificationStatusMessage": true,
@@ -1008,34 +986,6 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1253,6 +1203,14 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentEpisodePublicNoteResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     incidentEpisodePublicNoteRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -1300,8 +1258,6 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
         "postedFromSlackMessageId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnNoteCreated": true,
         "subscriberNotificationStatusMessage": true,
@@ -1527,34 +1483,6 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1750,6 +1678,9 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1786,6 +1717,32 @@ func (r *IncidentEpisodePublicNoteResource) Delete(ctx context.Context, req reso
 
 func (r *IncidentEpisodePublicNoteResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *IncidentEpisodePublicNoteResource) keepPlannedValues(data *IncidentEpisodePublicNoteResourceModel, plan *IncidentEpisodePublicNoteResourceModel, config *IncidentEpisodePublicNoteResourceModel) {
+    if config.Note.IsNull() && !plan.Note.IsUnknown() {
+        data.Note = plan.Note
+    }
+    if config.Attachments.IsNull() && !plan.Attachments.IsUnknown() {
+        data.Attachments = plan.Attachments
+    }
+    if config.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated.IsNull() && !plan.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated.IsUnknown() {
+        data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated = plan.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated
+    }
+    if config.PostedAt.IsNull() && !plan.PostedAt.IsUnknown() {
+        data.PostedAt = plan.PostedAt
+    }
+    if config.PostedFromSlackMessageId.IsNull() && !plan.PostedFromSlackMessageId.IsUnknown() {
+        data.PostedFromSlackMessageId = plan.PostedFromSlackMessageId
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

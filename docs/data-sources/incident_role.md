@@ -7,37 +7,40 @@ description: |-
 
 # oneuptime_incident_role (Data Source)
 
-Manage incident roles for your project (Incident Commander, Responder, etc.). Add, edit, or remove roles. Look up by `id` or by `name` (must match exactly one item).
+Manage incident roles for your project (Incident Commander, Responder, etc.). Add, edit, or remove roles.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one incident role may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_incident_role" "by_name" {
-  name = "example-incident_role"
+data "oneuptime_incident_role" "example" {
+  name = "Example incident role"
 }
 
+# Or by id:
 data "oneuptime_incident_role" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `slug` (String) Friendly globally unique name for your object.. Computed.
-- `description` (String) Friendly description that will help you remember.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `color` (String) Color object. Computed.
-- `role_icon` (String) Icon for this incident role (e.g., User, Shield, etc.).. Computed.
-- `is_primary_role` (Bool) Is this the primary incident role? Primary roles like Incident Commander have special significance... Computed.
-- `is_deleteable` (Bool) Can this role be deleted? Primary roles cannot be deleted... Computed.
-- `can_assign_multiple_users` (Bool) Can multiple users be assigned to this role? If false, only one user can be assigned... Computed.
+### Optional
+
+- `can_assign_multiple_users` (Boolean) Can multiple users be assigned to this role? If false, only one user can be assigned.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `description` (String) Friendly description that will help you remember.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_deleteable` (Boolean) Can this role be deleted? Primary roles cannot be deleted.
+- `is_primary_role` (Boolean) Is this the primary incident role? Primary roles like Incident Commander have special significance.
+- `name` (String) Any friendly name of this object.
+- `role_icon` (String) Icon for this incident role (e.g., User, Shield, etc.).
+- `slug` (String) Friendly globally unique name for your object.
+
+### Read-Only
+
+- `color` (String) Color of this resource in Hex (#32a852 for example).
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

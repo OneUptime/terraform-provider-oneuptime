@@ -29,7 +29,6 @@ type ProfileSampleDataSource struct {
 // ProfileSampleDataSourceModel describes the data source data model.
 type ProfileSampleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
     PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
@@ -59,104 +58,116 @@ func (d *ProfileSampleDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *ProfileSampleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "API endpoints for ProfileSample Look up an existing profile_sample by `id` or by `name`.",
+        MarkdownDescription: "API endpoints for ProfileSample Look up an existing profile sample by `id`, or by any of its other arguments (`container_entity_key`, `host_entity_key`, `k8s_cluster_entity_key`, ...): each one set must match, and exactly one profile sample may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Project ID",
+                MarkdownDescription: "Project ID.",
                 Computed: true,
             },
             "primary_entity_id": schema.StringAttribute{
-                MarkdownDescription: "Service ID",
+                MarkdownDescription: "Service ID.",
+                Optional: true,
                 Computed: true,
             },
             "primary_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Service Type",
+                MarkdownDescription: "Service Type.",
+                Optional: true,
                 Computed: true,
             },
             "profile_id": schema.StringAttribute{
-                MarkdownDescription: "Profile ID",
+                MarkdownDescription: "Profile ID.",
+                Optional: true,
                 Computed: true,
             },
             "trace_id": schema.StringAttribute{
-                MarkdownDescription: "Trace ID",
+                MarkdownDescription: "Trace ID.",
+                Optional: true,
                 Computed: true,
             },
             "span_id": schema.StringAttribute{
-                MarkdownDescription: "Span ID",
+                MarkdownDescription: "Span ID.",
+                Optional: true,
                 Computed: true,
             },
             "time": schema.StringAttribute{
-                MarkdownDescription: "Time",
+                MarkdownDescription: "Time.",
+                Optional: true,
                 Computed: true,
             },
             "time_unix_nano": schema.StringAttribute{
-                MarkdownDescription: "Time (in Unix Nano)",
+                MarkdownDescription: "Time (in Unix Nano).",
+                Optional: true,
                 Computed: true,
             },
             "stacktrace": schema.SetAttribute{
-                MarkdownDescription: "Stacktrace",
+                MarkdownDescription: "Stacktrace.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "stacktrace_hash": schema.StringAttribute{
-                MarkdownDescription: "Stacktrace Hash",
+                MarkdownDescription: "Stacktrace Hash.",
+                Optional: true,
                 Computed: true,
             },
             "frame_types": schema.SetAttribute{
-                MarkdownDescription: "Frame Types",
+                MarkdownDescription: "Frame Types.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "value": schema.StringAttribute{
-                MarkdownDescription: "Value",
+                MarkdownDescription: "Value.",
+                Optional: true,
                 Computed: true,
             },
             "profile_type": schema.StringAttribute{
-                MarkdownDescription: "Profile Type",
+                MarkdownDescription: "Profile Type.",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.StringAttribute{
-                MarkdownDescription: "Labels",
+                MarkdownDescription: "Labels.",
+                Optional: true,
                 Computed: true,
             },
             "entity_keys": schema.SetAttribute{
-                MarkdownDescription: "Entity Keys",
+                MarkdownDescription: "Entity Keys.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "service_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Service Entity Key",
+                MarkdownDescription: "Service Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "host_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Host Entity Key",
+                MarkdownDescription: "Host Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "k8s_pod_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Kubernetes Pod Entity Key",
+                MarkdownDescription: "Kubernetes Pod Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "k8s_node_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Kubernetes Node Entity Key",
+                MarkdownDescription: "Kubernetes Node Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "k8s_cluster_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Kubernetes Cluster Entity Key",
+                MarkdownDescription: "Kubernetes Cluster Entity Key.",
+                Optional: true,
                 Computed: true,
             },
             "container_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Container Entity Key",
+                MarkdownDescription: "Container Entity Key.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -193,18 +204,96 @@ func (d *ProfileSampleDataSource) Read(ctx context.Context, req datasource.ReadR
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.PrimaryEntityId.IsNull() && !data.PrimaryEntityId.IsUnknown() {
+        filters["primaryEntityId"] = data.PrimaryEntityId.ValueString()
+        filterNames = append(filterNames, "primary_entity_id = "+fmt.Sprintf("%q", data.PrimaryEntityId.ValueString()))
+    }
+    if !data.PrimaryEntityType.IsNull() && !data.PrimaryEntityType.IsUnknown() {
+        filters["primaryEntityType"] = data.PrimaryEntityType.ValueString()
+        filterNames = append(filterNames, "primary_entity_type = "+fmt.Sprintf("%q", data.PrimaryEntityType.ValueString()))
+    }
+    if !data.ProfileId.IsNull() && !data.ProfileId.IsUnknown() {
+        filters["profileId"] = data.ProfileId.ValueString()
+        filterNames = append(filterNames, "profile_id = "+fmt.Sprintf("%q", data.ProfileId.ValueString()))
+    }
+    if !data.TraceId.IsNull() && !data.TraceId.IsUnknown() {
+        filters["traceId"] = data.TraceId.ValueString()
+        filterNames = append(filterNames, "trace_id = "+fmt.Sprintf("%q", data.TraceId.ValueString()))
+    }
+    if !data.SpanId.IsNull() && !data.SpanId.IsUnknown() {
+        filters["spanId"] = data.SpanId.ValueString()
+        filterNames = append(filterNames, "span_id = "+fmt.Sprintf("%q", data.SpanId.ValueString()))
+    }
+    if !data.Time.IsNull() && !data.Time.IsUnknown() {
+        filters["time"] = data.Time.ValueString()
+        filterNames = append(filterNames, "time = "+fmt.Sprintf("%q", data.Time.ValueString()))
+    }
+    if !data.TimeUnixNano.IsNull() && !data.TimeUnixNano.IsUnknown() {
+        filters["timeUnixNano"] = data.TimeUnixNano.ValueString()
+        filterNames = append(filterNames, "time_unix_nano = "+fmt.Sprintf("%q", data.TimeUnixNano.ValueString()))
+    }
+    if !data.StacktraceHash.IsNull() && !data.StacktraceHash.IsUnknown() {
+        filters["stacktraceHash"] = data.StacktraceHash.ValueString()
+        filterNames = append(filterNames, "stacktrace_hash = "+fmt.Sprintf("%q", data.StacktraceHash.ValueString()))
+    }
+    if !data.Value.IsNull() && !data.Value.IsUnknown() {
+        filters["value"] = data.Value.ValueString()
+        filterNames = append(filterNames, "value = "+fmt.Sprintf("%q", data.Value.ValueString()))
+    }
+    if !data.ProfileType.IsNull() && !data.ProfileType.IsUnknown() {
+        filters["profileType"] = data.ProfileType.ValueString()
+        filterNames = append(filterNames, "profile_type = "+fmt.Sprintf("%q", data.ProfileType.ValueString()))
+    }
+    if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+        filters["labels"] = data.Labels.ValueString()
+        filterNames = append(filterNames, "labels = "+fmt.Sprintf("%q", data.Labels.ValueString()))
+    }
+    if !data.ServiceEntityKey.IsNull() && !data.ServiceEntityKey.IsUnknown() {
+        filters["serviceEntityKey"] = data.ServiceEntityKey.ValueString()
+        filterNames = append(filterNames, "service_entity_key = "+fmt.Sprintf("%q", data.ServiceEntityKey.ValueString()))
+    }
+    if !data.HostEntityKey.IsNull() && !data.HostEntityKey.IsUnknown() {
+        filters["hostEntityKey"] = data.HostEntityKey.ValueString()
+        filterNames = append(filterNames, "host_entity_key = "+fmt.Sprintf("%q", data.HostEntityKey.ValueString()))
+    }
+    if !data.K8sPodEntityKey.IsNull() && !data.K8sPodEntityKey.IsUnknown() {
+        filters["k8sPodEntityKey"] = data.K8sPodEntityKey.ValueString()
+        filterNames = append(filterNames, "k8s_pod_entity_key = "+fmt.Sprintf("%q", data.K8sPodEntityKey.ValueString()))
+    }
+    if !data.K8sNodeEntityKey.IsNull() && !data.K8sNodeEntityKey.IsUnknown() {
+        filters["k8sNodeEntityKey"] = data.K8sNodeEntityKey.ValueString()
+        filterNames = append(filterNames, "k8s_node_entity_key = "+fmt.Sprintf("%q", data.K8sNodeEntityKey.ValueString()))
+    }
+    if !data.K8sClusterEntityKey.IsNull() && !data.K8sClusterEntityKey.IsUnknown() {
+        filters["k8sClusterEntityKey"] = data.K8sClusterEntityKey.ValueString()
+        filterNames = append(filterNames, "k8s_cluster_entity_key = "+fmt.Sprintf("%q", data.K8sClusterEntityKey.ValueString()))
+    }
+    if !data.ContainerEntityKey.IsNull() && !data.ContainerEntityKey.IsUnknown() {
+        filters["containerEntityKey"] = data.ContainerEntityKey.ValueString()
+        filterNames = append(filterNames, "container_entity_key = "+fmt.Sprintf("%q", data.ContainerEntityKey.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a profile_sample.",
+            "Look the profile sample up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the profile sample up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "projectId": true,
         "primaryEntityId": true,
         "primaryEntityType": true,
@@ -238,7 +327,7 @@ func (d *ProfileSampleDataSource) Read(ctx context.Context, req datasource.ReadR
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No profile_sample found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No profile sample found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -251,11 +340,10 @@ func (d *ProfileSampleDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -272,11 +360,11 @@ func (d *ProfileSampleDataSource) Read(ctx context.Context, req datasource.ReadR
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No profile_sample found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No profile sample matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one profile_sample matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one profile sample matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -304,23 +392,6 @@ func (d *ProfileSampleDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

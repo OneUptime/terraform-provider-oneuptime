@@ -57,8 +57,6 @@ type ScheduledMaintenanceMeasurementResourceModel struct {
     Order types.Number `tfsdk:"order"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     MetricName types.String `tfsdk:"metric_name"`
     IsSystemDefined types.Bool `tfsdk:"is_system_defined"`
     BackfillRequestedAt RFC3339Value `tfsdk:"backfill_requested_at"`
@@ -72,30 +70,34 @@ func (r *ScheduledMaintenanceMeasurementResource) Metadata(ctx context.Context, 
 }
 
 func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "A named duration between two points in a scheduled maintenance event's life, computed automatically for every event",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Human readable name of this measurement, such as Start Delay. This is what charts call it..",
+                MarkdownDescription: "Human readable name of this measurement, such as Start Delay. This is what charts call it.",
                 Required: true,
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Start becomes time-to-start, with -2, -3 and so on added when another measurement already has it. It is part of the metric name, so it cannot be changed once the measurement is created; to rename a measurement, change the Name instead..",
+                MarkdownDescription: "Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Start becomes time-to-start, with -2, -3 and so on added when another measurement already has it. It is part of the metric name, so it cannot be changed once the measurement is created; to rename a measurement, change the Name instead.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -112,15 +114,15 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 },
             },
             "start_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where the measurement starts - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role..",
+                MarkdownDescription: "Where the measurement starts - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role.",
                 Required: true,
             },
             "end_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where the measurement ends - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role..",
+                MarkdownDescription: "Where the measurement ends - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role.",
                 Required: true,
             },
             "start_scheduled_maintenance_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the state whose entry starts this measurement, when the start anchor is a specific state. The ID of a `oneuptime_scheduled_maintenance_state`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -128,7 +130,7 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 },
             },
             "end_scheduled_maintenance_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the state whose entry ends this measurement, when the end anchor is a specific state. The ID of a `oneuptime_scheduled_maintenance_state`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -136,7 +138,7 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 },
             },
             "start_scheduled_maintenance_state_role": schema.StringAttribute{
-                MarkdownDescription: "The role of the state that starts this measurement (Scheduled, Ongoing, Ended or Resolved), when the start anchor is a state role. Resolving by role keeps working when a project renames or replaces the state..",
+                MarkdownDescription: "The role of the state that starts this measurement (Scheduled, Ongoing, Ended or Resolved), when the start anchor is a state role. Resolving by role keeps working when a project renames or replaces the state.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -144,7 +146,7 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 },
             },
             "end_scheduled_maintenance_state_role": schema.StringAttribute{
-                MarkdownDescription: "The role of the state that ends this measurement (Scheduled, Ongoing, Ended or Resolved), when the end anchor is a state role. Resolving by role keeps working when a project renames or replaces the state..",
+                MarkdownDescription: "The role of the state that ends this measurement (Scheduled, Ongoing, Ended or Resolved), when the end anchor is a state role. Resolving by role keeps working when a project renames or replaces the state.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -152,7 +154,7 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 },
             },
             "start_state_occurrence": schema.StringAttribute{
-                MarkdownDescription: "Which entry to use when the start state is entered more than once - the first time it was entered, or the last..",
+                MarkdownDescription: "Which entry to use when the start state is entered more than once - the first time it was entered, or the last.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("First"),
@@ -161,7 +163,7 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 },
             },
             "end_state_occurrence": schema.StringAttribute{
-                MarkdownDescription: "Which entry to use when the end state is entered more than once - the first time it was entered, or the last..",
+                MarkdownDescription: "Which entry to use when the end state is entered more than once - the first time it was entered, or the last.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("First"),
@@ -170,7 +172,7 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 },
             },
             "unit": schema.StringAttribute{
-                MarkdownDescription: "The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the scheduled maintenance event; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds..",
+                MarkdownDescription: "The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the scheduled maintenance event; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("seconds"),
@@ -179,7 +181,7 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 },
             },
             "aggregation_type": schema.StringAttribute{
-                MarkdownDescription: "How this measurement's chart sums up many scheduled maintenance events by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across scheduled maintenance events produces a number with no meaning..",
+                MarkdownDescription: "How this measurement's chart sums up many scheduled maintenance events by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across scheduled maintenance events produces a number with no meaning.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Avg"),
@@ -206,7 +208,7 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
+                MarkdownDescription: "Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -214,22 +216,16 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "metric_name": schema.StringAttribute{
@@ -241,23 +237,26 @@ func (r *ScheduledMaintenanceMeasurementResource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "backfill_requested_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a backfill of this measurement over existing scheduled maintenance events was requested.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "backfill_cursor_created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "How far the backfill has walked this project, so a restart resumes instead of starting over.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "backfill_completed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the backfill of this measurement over existing scheduled maintenance events finished.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -293,6 +292,14 @@ func (r *ScheduledMaintenanceMeasurementResource) Create(ctx context.Context, re
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ScheduledMaintenanceMeasurementResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -416,8 +423,6 @@ func (r *ScheduledMaintenanceMeasurementResource) Create(ctx context.Context, re
         "order": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "metricName": true,
         "isSystemDefined": true,
         "backfillRequestedAt": true,
@@ -993,34 +998,6 @@ func (r *ScheduledMaintenanceMeasurementResource) Create(ctx context.Context, re
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["metricName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1139,6 +1116,9 @@ func (r *ScheduledMaintenanceMeasurementResource) Create(ctx context.Context, re
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1177,8 +1157,6 @@ func (r *ScheduledMaintenanceMeasurementResource) Read(ctx context.Context, req 
         "order": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "metricName": true,
         "isSystemDefined": true,
         "backfillRequestedAt": true,
@@ -1755,34 +1733,6 @@ func (r *ScheduledMaintenanceMeasurementResource) Read(ctx context.Context, req 
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["metricName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1922,6 +1872,14 @@ func (r *ScheduledMaintenanceMeasurementResource) Update(ctx context.Context, re
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ScheduledMaintenanceMeasurementResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     scheduledMaintenanceMeasurementRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -2015,8 +1973,6 @@ func (r *ScheduledMaintenanceMeasurementResource) Update(ctx context.Context, re
         "order": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "metricName": true,
         "isSystemDefined": true,
         "backfillRequestedAt": true,
@@ -2587,34 +2543,6 @@ func (r *ScheduledMaintenanceMeasurementResource) Update(ctx context.Context, re
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["metricName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2732,6 +2660,9 @@ func (r *ScheduledMaintenanceMeasurementResource) Update(ctx context.Context, re
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2768,6 +2699,56 @@ func (r *ScheduledMaintenanceMeasurementResource) Delete(ctx context.Context, re
 
 func (r *ScheduledMaintenanceMeasurementResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *ScheduledMaintenanceMeasurementResource) keepPlannedValues(data *ScheduledMaintenanceMeasurementResourceModel, plan *ScheduledMaintenanceMeasurementResourceModel, config *ScheduledMaintenanceMeasurementResourceModel) {
+    if config.Key.IsNull() && !plan.Key.IsUnknown() {
+        data.Key = plan.Key
+    }
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.StartScheduledMaintenanceStateId.IsNull() && !plan.StartScheduledMaintenanceStateId.IsUnknown() {
+        data.StartScheduledMaintenanceStateId = plan.StartScheduledMaintenanceStateId
+    }
+    if config.EndScheduledMaintenanceStateId.IsNull() && !plan.EndScheduledMaintenanceStateId.IsUnknown() {
+        data.EndScheduledMaintenanceStateId = plan.EndScheduledMaintenanceStateId
+    }
+    if config.StartScheduledMaintenanceStateRole.IsNull() && !plan.StartScheduledMaintenanceStateRole.IsUnknown() {
+        data.StartScheduledMaintenanceStateRole = plan.StartScheduledMaintenanceStateRole
+    }
+    if config.EndScheduledMaintenanceStateRole.IsNull() && !plan.EndScheduledMaintenanceStateRole.IsUnknown() {
+        data.EndScheduledMaintenanceStateRole = plan.EndScheduledMaintenanceStateRole
+    }
+    if config.StartStateOccurrence.IsNull() && !plan.StartStateOccurrence.IsUnknown() {
+        data.StartStateOccurrence = plan.StartStateOccurrence
+    }
+    if config.EndStateOccurrence.IsNull() && !plan.EndStateOccurrence.IsUnknown() {
+        data.EndStateOccurrence = plan.EndStateOccurrence
+    }
+    if config.Unit.IsNull() && !plan.Unit.IsUnknown() {
+        data.Unit = plan.Unit
+    }
+    if config.AggregationType.IsNull() && !plan.AggregationType.IsUnknown() {
+        data.AggregationType = plan.AggregationType
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.ShowOnScheduledMaintenanceView.IsNull() && !plan.ShowOnScheduledMaintenanceView.IsUnknown() {
+        data.ShowOnScheduledMaintenanceView = plan.ShowOnScheduledMaintenanceView
+    }
+    if config.Order.IsNull() && !plan.Order.IsUnknown() {
+        data.Order = plan.Order
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

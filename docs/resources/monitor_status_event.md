@@ -13,8 +13,8 @@ Change state of the monitor (Operational to Offline for example)
 
 ```terraform
 resource "oneuptime_monitor_status_event" "example" {
-  monitor_id = "123e4567-e89b-12d3-a456-426614174000"
-  monitor_status_id = "123e4567-e89b-12d3-a456-426614174000"
+  monitor_id        = oneuptime_monitor.example.id
+  monitor_status_id = oneuptime_monitor_status.example.id
 }
 ```
 
@@ -22,30 +22,37 @@ resource "oneuptime_monitor_status_event" "example" {
 
 ### Required
 
-- `monitor_id` (String) A unique identifier for an object, represented as a UUID..
-- `monitor_status_id` (String) A unique identifier for an object, represented as a UUID..
+- `monitor_id` (String) Relation to Monitor ID Resource in which this object belongs. The ID of a `oneuptime_monitor`.
+- `monitor_status_id` (String) Relation to Monitor Status ID Resource in which this object belongs. The ID of a `oneuptime_monitor_status`.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `root_cause` (String) What is the root cause of this status change?..
-- `ends_at` (String) A date time object..
-- `starts_at` (String) A date time object..
+- `ends_at` (String) When did this status change end?
+- `root_cause` (String) What is the root cause of this status change?
+- `starts_at` (String) When did this status change?
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `is_owner_notified` (Bool) Are owners notified of status change?..
-- `status_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Status Timeline], Update: [No access - you don't have permission for this operation].
+- `is_owner_notified` (Boolean) Are owners notified of status change?
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `status_change_log` (String) A JSON value: write it with `jsonencode()`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing monitor status event by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_monitor_status_event.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_monitor_status_event.example <id>

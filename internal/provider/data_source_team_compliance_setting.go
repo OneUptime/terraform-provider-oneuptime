@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -30,11 +29,8 @@ type TeamComplianceSettingDataSource struct {
 // TeamComplianceSettingDataSourceModel describes the data source data model.
 type TeamComplianceSettingDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     TeamId types.String `tfsdk:"team_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -53,74 +49,66 @@ func (d *TeamComplianceSettingDataSource) Metadata(ctx context.Context, req data
 
 func (d *TeamComplianceSettingDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Compliance settings for your OneUptime team Look up an existing team_compliance_setting by `id` or by `name`.",
+        MarkdownDescription: "Compliance settings for your OneUptime team Look up an existing team compliance setting by `id`, or by any of its other arguments (`created_by_user_id`, `enabled`, `notification_channel`, ...): each one set must match, and exactly one team compliance setting may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Team this compliance setting belongs to. The ID of a `oneuptime_team`.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "rule_type": schema.StringAttribute{
-                MarkdownDescription: "Type of compliance rule..",
+                MarkdownDescription: "Type of compliance rule.",
+                Optional: true,
                 Computed: true,
             },
             "enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this compliance rule is enabled..",
+                MarkdownDescription: "Whether this compliance rule is enabled.",
+                Optional: true,
                 Computed: true,
             },
             "options": schema.StringAttribute{
-                MarkdownDescription: "Additional options for this compliance rule..",
+                MarkdownDescription: "Additional options for this compliance rule. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "notification_channel": schema.StringAttribute{
-                MarkdownDescription: "Deprecated: use notificationChannels. The first of the rule's notification channels, or empty when it accepts any channel. Sending this field without notificationChannels sets the rule to that one channel (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams or Webhook)..",
+                MarkdownDescription: "Deprecated: use notificationChannels. The first of the rule's notification channels, or empty when it accepts any channel. Sending this field without notificationChannels sets the rule to that one channel (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams or Webhook).",
+                Optional: true,
                 Computed: true,
             },
             "notification_channels": schema.StringAttribute{
-                MarkdownDescription: "On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams or Webhook). Leave empty to accept any channel..",
+                MarkdownDescription: "On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams or Webhook). Leave empty to accept any channel. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Incident and incident episode on-call rules only: the severities members must have a rule for. Leave empty to require every incident severity..",
+                MarkdownDescription: "Incident and incident episode on-call rules only: the severities members must have a rule for. Leave empty to require every incident severity. IDs of `oneuptime_incident_severity` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Alert and alert episode on-call rules only: the severities members must have a rule for. Leave empty to require every alert severity..",
+                MarkdownDescription: "Alert and alert episode on-call rules only: the severities members must have a rule for. Leave empty to require every alert severity. IDs of `oneuptime_alert_severity` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -158,22 +146,50 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.TeamId.IsNull() && !data.TeamId.IsUnknown() {
+        filters["teamId"] = data.TeamId.ValueString()
+        filterNames = append(filterNames, "team_id = "+fmt.Sprintf("%q", data.TeamId.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.RuleType.IsNull() && !data.RuleType.IsUnknown() {
+        filters["ruleType"] = data.RuleType.ValueString()
+        filterNames = append(filterNames, "rule_type = "+fmt.Sprintf("%q", data.RuleType.ValueString()))
+    }
+    if !data.Enabled.IsNull() && !data.Enabled.IsUnknown() {
+        filters["enabled"] = data.Enabled.ValueBool()
+        filterNames = append(filterNames, "enabled = "+fmt.Sprintf("%t", data.Enabled.ValueBool()))
+    }
+    if !data.NotificationChannel.IsNull() && !data.NotificationChannel.IsUnknown() {
+        filters["notificationChannel"] = data.NotificationChannel.ValueString()
+        filterNames = append(filterNames, "notification_channel = "+fmt.Sprintf("%q", data.NotificationChannel.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a team_compliance_setting.",
+            "Look the team compliance setting up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the team compliance setting up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "teamId": true,
         "createdByUserId": true,
@@ -196,7 +212,7 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No team_compliance_setting found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No team compliance setting found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -209,11 +225,10 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -230,11 +245,11 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No team_compliance_setting found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No team compliance setting matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one team_compliance_setting matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one team compliance setting matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -262,23 +277,6 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -313,34 +311,6 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

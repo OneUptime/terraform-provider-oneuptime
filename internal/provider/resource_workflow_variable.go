@@ -55,14 +55,11 @@ type WorkflowVariableResourceModel struct {
     OauthClientAuthenticationMethod types.String `tfsdk:"oauth_client_authentication_method"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     OauthAccessTokenExpiresAt RFC3339Value `tfsdk:"oauth_access_token_expires_at"`
     OauthLastRefreshedAt RFC3339Value `tfsdk:"oauth_last_refreshed_at"`
     OauthLastRefreshError types.String `tfsdk:"oauth_last_refresh_error"`
     OauthLastRefreshErrorAt RFC3339Value `tfsdk:"oauth_last_refresh_error_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (r *WorkflowVariableResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -70,26 +67,30 @@ func (r *WorkflowVariableResource) Metadata(ctx context.Context, req resource.Me
 }
 
 func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *WorkflowVariableResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Store environment variables or secrets for your workflows.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "workflow_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Workflow this variable belong to. If this is null then this variable will be a global variable. The ID of a `oneuptime_workflow`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -110,7 +111,7 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "content": schema.StringAttribute{
-                MarkdownDescription: "Content of the variable. Required for Static variables. Not used by OAuth 2.0 variables, whose value is the access token OneUptime fetches..",
+                MarkdownDescription: "Content of the variable. Required for Static variables. Not used by OAuth 2.0 variables, whose value is the access token OneUptime fetches.",
                 Optional: true,
             },
             "is_secret": schema.BoolAttribute{
@@ -123,7 +124,7 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "variable_type": schema.StringAttribute{
-                MarkdownDescription: "Static: the content you save is used as is. OAuth 2.0: OneUptime fetches an access token from your identity provider and refreshes it automatically when a workflow uses it after it has expired..",
+                MarkdownDescription: "Static: the content you save is used as is. OAuth 2.0: OneUptime fetches an access token from your identity provider and refreshes it automatically when a workflow uses it after it has expired.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Static"),
@@ -133,7 +134,7 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "oauth_grant_type": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. Client Credentials for machine-to-machine access, or Refresh Token to keep delegated access alive with a refresh token you obtained once..",
+                MarkdownDescription: "OAuth 2.0 variables only. Client Credentials for machine-to-machine access, or Refresh Token to keep delegated access alive with a refresh token you obtained once.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -142,7 +143,7 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "oauth_token_url": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. The token endpoint of your identity provider..",
+                MarkdownDescription: "OAuth 2.0 variables only. The token endpoint of your identity provider.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -150,7 +151,7 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "oauth_client_id": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. The client ID of the application registered with your identity provider..",
+                MarkdownDescription: "OAuth 2.0 variables only. The client ID of the application registered with your identity provider.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -158,15 +159,15 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "oauth_client_secret": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. The client secret of the application. Required for the Client Credentials grant; optional for the Refresh Token grant (public clients have none). Encrypted, and never readable through the API..",
+                MarkdownDescription: "OAuth 2.0 variables only. The client secret of the application. Required for the Client Credentials grant; optional for the Refresh Token grant (public clients have none). Encrypted, and never readable through the API.",
                 Optional: true,
             },
             "oauth_refresh_token": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables using the Refresh Token grant only. OneUptime exchanges it for access tokens and stores the replacement when your identity provider rotates it. Encrypted, and never readable through the API..",
+                MarkdownDescription: "OAuth 2.0 variables using the Refresh Token grant only. OneUptime exchanges it for access tokens and stores the replacement when your identity provider rotates it. Encrypted, and never readable through the API.",
                 Optional: true,
             },
             "oauth_scope": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. Space-separated scopes to request. Leave empty to use the scopes your identity provider grants by default..",
+                MarkdownDescription: "OAuth 2.0 variables only. Space-separated scopes to request. Leave empty to use the scopes your identity provider grants by default.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -174,7 +175,7 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "oauth_additional_parameters": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here..",
+                MarkdownDescription: "OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -186,7 +187,7 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "oauth_client_authentication_method": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. How the client ID and secret are sent: in an HTTP Basic header (client_secret_basic, the default) or in the request body (client_secret_post)..",
+                MarkdownDescription: "OAuth 2.0 variables only. How the client ID and secret are sent: in an HTTP Basic header (client_secret_basic, the default) or in the request body (client_secret_post).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -194,50 +195,43 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "oauth_access_token_expires_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the cached access token expires, as reported by the identity provider (expires_in) or by the token itself (the JWT exp claim). Empty when neither says.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "oauth_last_refreshed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When OneUptime last fetched an access token for this variable. Cleared when the OAuth settings change.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "oauth_last_refresh_error": schema.StringAttribute{
-                MarkdownDescription: "Why the last attempt to fetch an access token failed. Cleared by the next successful refresh..",
+                MarkdownDescription: "Why the last attempt to fetch an access token failed. Cleared by the next successful refresh.",
                 Computed: true,
             },
             "oauth_last_refresh_error_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the last failed attempt to fetch an access token happened.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -273,6 +267,14 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config WorkflowVariableResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -385,14 +387,11 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
         "oauthClientAuthenticationMethod": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "oauthAccessTokenExpiresAt": true,
         "oauthLastRefreshedAt": true,
         "oauthLastRefreshError": true,
         "oauthLastRefreshErrorAt": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -831,34 +830,6 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["oauthAccessTokenExpiresAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.OauthAccessTokenExpiresAt = NewRFC3339Value(val)
@@ -966,43 +937,6 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1010,6 +944,9 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
     }
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -1044,14 +981,11 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
         "oauthClientAuthenticationMethod": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "oauthAccessTokenExpiresAt": true,
         "oauthLastRefreshedAt": true,
         "oauthLastRefreshError": true,
         "oauthLastRefreshErrorAt": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -1491,34 +1425,6 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["oauthAccessTokenExpiresAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.OauthAccessTokenExpiresAt = NewRFC3339Value(val)
@@ -1626,43 +1532,6 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1691,6 +1560,14 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config WorkflowVariableResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     workflowVariableRequest := map[string]interface{}{
@@ -1773,14 +1650,11 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
         "oauthClientAuthenticationMethod": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "oauthAccessTokenExpiresAt": true,
         "oauthLastRefreshedAt": true,
         "oauthLastRefreshError": true,
         "oauthLastRefreshErrorAt": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -2214,34 +2088,6 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["oauthAccessTokenExpiresAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.OauthAccessTokenExpiresAt = NewRFC3339Value(val)
@@ -2349,49 +2195,15 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
     data.Id = state.Id
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2429,6 +2241,47 @@ func (r *WorkflowVariableResource) Delete(ctx context.Context, req resource.Dele
 
 func (r *WorkflowVariableResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *WorkflowVariableResource) keepPlannedValues(data *WorkflowVariableResourceModel, plan *WorkflowVariableResourceModel, config *WorkflowVariableResourceModel) {
+    if config.WorkflowId.IsNull() && !plan.WorkflowId.IsUnknown() {
+        data.WorkflowId = plan.WorkflowId
+    }
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.IsSecret.IsNull() && !plan.IsSecret.IsUnknown() {
+        data.IsSecret = plan.IsSecret
+    }
+    if config.VariableType.IsNull() && !plan.VariableType.IsUnknown() {
+        data.VariableType = plan.VariableType
+    }
+    if config.OauthGrantType.IsNull() && !plan.OauthGrantType.IsUnknown() {
+        data.OauthGrantType = plan.OauthGrantType
+    }
+    if config.OauthTokenUrl.IsNull() && !plan.OauthTokenUrl.IsUnknown() {
+        data.OauthTokenUrl = plan.OauthTokenUrl
+    }
+    if config.OauthClientId.IsNull() && !plan.OauthClientId.IsUnknown() {
+        data.OauthClientId = plan.OauthClientId
+    }
+    if config.OauthScope.IsNull() && !plan.OauthScope.IsUnknown() {
+        data.OauthScope = plan.OauthScope
+    }
+    if config.OauthAdditionalParameters.IsNull() && !plan.OauthAdditionalParameters.IsUnknown() {
+        data.OauthAdditionalParameters = plan.OauthAdditionalParameters
+    }
+    if config.OauthClientAuthenticationMethod.IsNull() && !plan.OauthClientAuthenticationMethod.IsUnknown() {
+        data.OauthClientAuthenticationMethod = plan.OauthClientAuthenticationMethod
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

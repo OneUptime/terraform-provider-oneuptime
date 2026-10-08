@@ -45,8 +45,6 @@ type IncidentStateTimelineResourceModel struct {
     StartsAt RFC3339Value `tfsdk:"starts_at"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     SubscriberNotificationStatus types.String `tfsdk:"subscriber_notification_status"`
     SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
@@ -59,37 +57,41 @@ func (r *IncidentStateTimelineResource) Metadata(ctx context.Context, req resour
 }
 
 func (r *IncidentStateTimelineResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *IncidentStateTimelineResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Change state of the incidents (Created to Acknowledged for example)",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Incident ID in which this resource belongs. The ID of a `oneuptime_incident`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "incident_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Incident State ID Relation. Which incident state does this incident change to? The ID of a `oneuptime_incident_state`.",
                 Required: true,
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this state change?.",
+                MarkdownDescription: "Should subscribers be notified about this state change?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -99,7 +101,7 @@ func (r *IncidentStateTimelineResource) Schema(ctx context.Context, req resource
                 },
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "What is the root cause of this status change?.",
+                MarkdownDescription: "What is the root cause of this status change?",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -108,7 +110,7 @@ func (r *IncidentStateTimelineResource) Schema(ctx context.Context, req resource
                 },
             },
             "ends_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When did this status change end?",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -118,7 +120,7 @@ func (r *IncidentStateTimelineResource) Schema(ctx context.Context, req resource
                 },
             },
             "starts_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When did this status change? Correct this when the recorded time is wrong - every measurement derived from this timeline is recomputed from the corrected value.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -127,27 +129,24 @@ func (r *IncidentStateTimelineResource) Schema(ctx context.Context, req resource
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "subscriber_notification_status": schema.StringAttribute{
                 MarkdownDescription: "Status of notification sent to subscribers about this incident state change.",
@@ -158,11 +157,11 @@ func (r *IncidentStateTimelineResource) Schema(ctx context.Context, req resource
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of state change?.",
+                MarkdownDescription: "Are owners notified of state change?",
                 Computed: true,
             },
             "state_change_log": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -200,6 +199,14 @@ func (r *IncidentStateTimelineResource) Create(ctx context.Context, req resource
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentStateTimelineResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -283,8 +290,6 @@ func (r *IncidentStateTimelineResource) Create(ctx context.Context, req resource
         "startsAt": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "subscriberNotificationStatus": true,
         "subscriberNotificationStatusMessage": true,
@@ -491,34 +496,6 @@ func (r *IncidentStateTimelineResource) Create(ctx context.Context, req resource
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -678,6 +655,9 @@ func (r *IncidentStateTimelineResource) Create(ctx context.Context, req resource
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -706,8 +686,6 @@ func (r *IncidentStateTimelineResource) Read(ctx context.Context, req resource.R
         "startsAt": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "subscriberNotificationStatus": true,
         "subscriberNotificationStatusMessage": true,
@@ -915,34 +893,6 @@ func (r *IncidentStateTimelineResource) Read(ctx context.Context, req resource.R
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1123,6 +1073,14 @@ func (r *IncidentStateTimelineResource) Update(ctx context.Context, req resource
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentStateTimelineResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     incidentStateTimelineRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -1167,8 +1125,6 @@ func (r *IncidentStateTimelineResource) Update(ctx context.Context, req resource
         "startsAt": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "subscriberNotificationStatus": true,
         "subscriberNotificationStatusMessage": true,
@@ -1370,34 +1326,6 @@ func (r *IncidentStateTimelineResource) Update(ctx context.Context, req resource
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1556,6 +1484,9 @@ func (r *IncidentStateTimelineResource) Update(ctx context.Context, req resource
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1592,6 +1523,29 @@ func (r *IncidentStateTimelineResource) Delete(ctx context.Context, req resource
 
 func (r *IncidentStateTimelineResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *IncidentStateTimelineResource) keepPlannedValues(data *IncidentStateTimelineResourceModel, plan *IncidentStateTimelineResourceModel, config *IncidentStateTimelineResourceModel) {
+    if config.ShouldStatusPageSubscribersBeNotified.IsNull() && !plan.ShouldStatusPageSubscribersBeNotified.IsUnknown() {
+        data.ShouldStatusPageSubscribersBeNotified = plan.ShouldStatusPageSubscribersBeNotified
+    }
+    if config.RootCause.IsNull() && !plan.RootCause.IsUnknown() {
+        data.RootCause = plan.RootCause
+    }
+    if config.EndsAt.IsNull() && !plan.EndsAt.IsUnknown() {
+        data.EndsAt = plan.EndsAt
+    }
+    if config.StartsAt.IsNull() && !plan.StartsAt.IsUnknown() {
+        data.StartsAt = plan.StartsAt
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

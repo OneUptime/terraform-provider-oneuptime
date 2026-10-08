@@ -30,11 +30,8 @@ type IncidentDataSource struct {
 // IncidentDataSourceModel describes the data source data model.
 type IncidentDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
@@ -108,314 +105,334 @@ func (d *IncidentDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage incidents for your project Look up an existing incident by `id` or by `name`.",
+        MarkdownDescription: "Manage incidents for your project Look up an existing incident by `id`, or by any of its other arguments (`change_monitor_status_to_id`, `created_by_probe_id`, `created_by_user_id`, ...): each one set must match, and exactly one incident may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "Title of this incident.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Short description of this incident. This is in markdown and will be visible on the status page..",
+                MarkdownDescription: "Short description of this incident. This is in markdown and will be visible on the status page.",
+                Optional: true,
                 Computed: true,
             },
             "declared_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and time when this incident was declared.",
                 Computed: true,
             },
             "impact_started_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When customer impact actually began. Left blank until someone records it - never inferred, because a guessed value is worse than no value.",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors affected by this incident.",
+                MarkdownDescription: "List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts affected by this incident..",
+                MarkdownDescription: "List of hosts affected by this incident. IDs of `oneuptime_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes clusters affected by this incident..",
+                MarkdownDescription: "List of Kubernetes clusters affected by this incident. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_resources": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this incident..",
+                MarkdownDescription: "List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this incident.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_containers": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes containers affected by this incident..",
+                MarkdownDescription: "List of Kubernetes containers affected by this incident.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Docker hosts affected by this incident..",
+                MarkdownDescription: "List of Docker hosts affected by this incident. IDs of `oneuptime_docker_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Podman hosts affected by this incident..",
+                MarkdownDescription: "List of Podman hosts affected by this incident. IDs of `oneuptime_podman_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "proxmox_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Proxmox clusters affected by this incident..",
+                MarkdownDescription: "List of Proxmox clusters affected by this incident. IDs of `oneuptime_proxmox_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "vmware_v_centers": schema.SetAttribute{
-                MarkdownDescription: "List of vCenters affected by this incident..",
+                MarkdownDescription: "List of vCenters affected by this incident. IDs of `oneuptime_vcenter` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "iot_fleets": schema.SetAttribute{
-                MarkdownDescription: "List of IoT fleets affected by this incident..",
+                MarkdownDescription: "List of IoT fleets affected by this incident. IDs of `oneuptime_iot_fleet` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_swarm_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Docker Swarm clusters affected by this incident..",
+                MarkdownDescription: "List of Docker Swarm clusters affected by this incident. IDs of `oneuptime_docker_swarm_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "ceph_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Ceph clusters affected by this incident..",
+                MarkdownDescription: "List of Ceph clusters affected by this incident. IDs of `oneuptime_ceph_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "storage_arrays": schema.SetAttribute{
-                MarkdownDescription: "List of storage arrays affected by this incident..",
+                MarkdownDescription: "List of storage arrays affected by this incident. IDs of `oneuptime_storage_array` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "database_servers": schema.SetAttribute{
-                MarkdownDescription: "List of databases affected by this incident..",
+                MarkdownDescription: "List of databases affected by this incident. IDs of `oneuptime_database` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_resources": schema.SetAttribute{
-                MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this incident..",
+                MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this incident.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "podman_resources": schema.SetAttribute{
-                MarkdownDescription: "List of Podman resources (containers, images, networks, volumes) affected by this incident..",
+                MarkdownDescription: "List of Podman resources (containers, images, networks, volumes) affected by this incident.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services affected by this incident..",
+                MarkdownDescription: "List of services affected by this incident. IDs of `oneuptime_service` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "service_level_objectives": schema.SetAttribute{
-                MarkdownDescription: "List of Service Level Objectives (SLOs) affected by this incident..",
+                MarkdownDescription: "List of Service Level Objectives (SLOs) affected by this incident. IDs of `oneuptime_service_level_objective` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies affected by this incident..",
+                MarkdownDescription: "List of on-call duty policies affected by this incident. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "current_incident_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Current Incident State ID. The ID of a `oneuptime_incident_state`.",
+                Optional: true,
                 Computed: true,
             },
             "incident_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Incident Severity ID. The ID of a `oneuptime_incident_severity`.",
+                Optional: true,
                 Computed: true,
             },
             "change_monitor_status_to_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the incident is created. The ID of a `oneuptime_monitor_status`.",
+                Optional: true,
                 Computed: true,
             },
             "subscriber_notification_status_on_incident_created": schema.StringAttribute{
                 MarkdownDescription: "Status of notification sent to subscribers about this incident.",
+                Optional: true,
                 Computed: true,
             },
             "subscriber_notification_status_message": schema.StringAttribute{
                 MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.",
+                Optional: true,
                 Computed: true,
             },
             "subscriber_notification_status_on_postmortem_published": schema.StringAttribute{
                 MarkdownDescription: "Status of notification sent to subscribers about this incident postmortem.",
+                Optional: true,
                 Computed: true,
             },
             "subscriber_notification_status_message_on_postmortem_published": schema.StringAttribute{
                 MarkdownDescription: "Status message for subscriber notifications on postmortem published - includes success messages, failure reasons, or skip reasons.",
+                Optional: true,
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_on_incident_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this incident?.",
+                MarkdownDescription: "Should subscribers be notified about this incident?",
+                Optional: true,
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only..",
+                MarkdownDescription: "The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?.",
+                MarkdownDescription: "Are owners notified of when this resource is created?",
+                Optional: true,
                 Computed: true,
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "What is the root cause of this incident?.",
+                MarkdownDescription: "What is the root cause of this incident?",
+                Optional: true,
                 Computed: true,
             },
             "postmortem_note": schema.StringAttribute{
-                MarkdownDescription: "Document the postmortem summary for this incident..",
+                MarkdownDescription: "Document the postmortem summary for this incident.",
+                Optional: true,
                 Computed: true,
             },
             "show_postmortem_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should the postmortem note and attachments be visible on the status page once published?.",
+                MarkdownDescription: "Should the postmortem note and attachments be visible on the status page once published?",
+                Optional: true,
                 Computed: true,
             },
             "notify_subscribers_on_postmortem_published": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified when the postmortem is published?.",
+                MarkdownDescription: "Should subscribers be notified when the postmortem is published?",
+                Optional: true,
                 Computed: true,
             },
             "postmortem_posted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Timestamp that will be shown alongside the published postmortem on the status page.",
                 Computed: true,
             },
             "postmortem_attachments": schema.SetAttribute{
-                MarkdownDescription: "Files that accompany the postmortem note and can be shared publicly when enabled..",
+                MarkdownDescription: "Files that accompany the postmortem note and can be shared publicly when enabled. IDs of `oneuptime_file` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "created_state_log": schema.StringAttribute{
+                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "created_criteria_id": schema.StringAttribute{
-                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the criteria that created it..",
+                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the criteria that created it.",
+                Optional: true,
                 Computed: true,
             },
             "created_incident_template_id": schema.StringAttribute{
-                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the incident template that was used for creation..",
+                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the incident template that was used for creation.",
+                Optional: true,
                 Computed: true,
             },
             "series_fingerprint": schema.StringAttribute{
-                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one incident is created per affected series..",
+                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one incident is created per affected series.",
+                Optional: true,
                 Computed: true,
             },
             "series_labels": schema.StringAttribute{
-                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach..",
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "monitor_summary": schema.StringAttribute{
-                MarkdownDescription: "The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out..",
+                MarkdownDescription: "The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "created_by_probe_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the probe that created it. The ID of a `oneuptime_probe`.",
+                Optional: true,
                 Computed: true,
             },
             "is_created_automatically": schema.BoolAttribute{
-                MarkdownDescription: "Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?.",
+                MarkdownDescription: "Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?",
+                Optional: true,
                 Computed: true,
             },
             "holds_monitors": schema.BoolAttribute{
-                MarkdownDescription: "Whether this incident is holding its monitors - keeping them in its monitor status, or their monitoring paused - so that resolving it gives them back: their monitoring resumes and their status returns to operational. True from when the incident is declared open, or from when an edit while it is open puts its monitors in its monitor status. False for an incident declared already resolved, which never held them, and once a resolve has given them back. Empty for incidents from before it was recorded, which give their monitors back when they are resolved. Set by OneUptime; it cannot be written..",
+                MarkdownDescription: "Whether this incident is holding its monitors - keeping them in its monitor status, or their monitoring paused - so that resolving it gives them back: their monitoring resumes and their status returns to operational. True from when the incident is declared open, or from when an edit while it is open puts its monitors in its monitor status. False for an incident declared already resolved, which never held them, and once a resolve has given them back. Empty for incidents from before it was recorded, which give their monitors back when they are resolved. Set by OneUptime; it cannot be written.",
+                Optional: true,
                 Computed: true,
             },
             "remediation_notes": schema.StringAttribute{
-                MarkdownDescription: "Notes on how to remediate this incident. This is in markdown..",
+                MarkdownDescription: "Notes on how to remediate this incident. This is in markdown.",
+                Optional: true,
                 Computed: true,
             },
             "telemetry_query": schema.StringAttribute{
-                MarkdownDescription: "Telemetry query for this incident.",
+                MarkdownDescription: "Telemetry query for this incident. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "incident_number": schema.NumberAttribute{
                 MarkdownDescription: "Incident Number.",
+                Optional: true,
                 Computed: true,
             },
             "incident_number_with_prefix": schema.StringAttribute{
                 MarkdownDescription: "Incident number with prefix (e.g., 'INC-42' or '#42').",
+                Optional: true,
                 Computed: true,
             },
             "is_visible_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should this incident be visible on the status page?.",
+                MarkdownDescription: "Should this incident be visible on the status page?",
+                Optional: true,
                 Computed: true,
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "Limit this incident to these status pages. When set, the incident is shown on, and notifies the subscribers of, only these pages among the status pages that list its monitors. Leave empty to reach every status page that lists its monitors..",
+                MarkdownDescription: "Limit this incident to these status pages. When set, the incident is shown on, and notifies the subscribers of, only these pages among the status pages that list its monitors. Leave empty to reach every status page that lists its monitors. IDs of `oneuptime_status_page` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "is_scoped_to_status_pages": schema.BoolAttribute{
-                MarkdownDescription: "Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored..",
+                MarkdownDescription: "Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored.",
+                Optional: true,
                 Computed: true,
             },
             "status_pages_notified_on_creation": schema.StringAttribute{
-                MarkdownDescription: "IDs of the status pages whose subscribers were sent the notification that this incident was created..",
+                MarkdownDescription: "IDs of the status pages whose subscribers were sent the notification that this incident was created. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages..",
+                MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages.",
+                Optional: true,
                 Computed: true,
             },
             "enable_reminders": schema.BoolAttribute{
-                MarkdownDescription: "Should reminder notifications be sent to owners while this incident is still open? Reminders are sent based on the reminder rules configured for this project..",
+                MarkdownDescription: "Should reminder notifications be sent to owners while this incident is still open? Reminders are sent based on the reminder rules configured for this project.",
+                Optional: true,
                 Computed: true,
             },
             "next_reminder_notification_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When will the next reminder notification be sent to owners of this incident? This is set automatically based on the reminder rules configured for this project.",
                 Computed: true,
             },
             "reminder_notification_sent_count": schema.NumberAttribute{
-                MarkdownDescription: "How many reminder notifications have been sent to owners of this incident so far..",
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this incident so far.",
+                Optional: true,
                 Computed: true,
             },
             "incident_episode_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the latest Incident Episode this incident is a member of. Read-only: set by OneUptime when the incident is added to or removed from an episode's members (Incident Episode Member). The ID of a `oneuptime_incident_episode`.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -452,22 +469,158 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Title.IsNull() && !data.Title.IsUnknown() {
+        filters["title"] = data.Title.ValueString()
+        filterNames = append(filterNames, "title = "+fmt.Sprintf("%q", data.Title.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.CurrentIncidentStateId.IsNull() && !data.CurrentIncidentStateId.IsUnknown() {
+        filters["currentIncidentStateId"] = data.CurrentIncidentStateId.ValueString()
+        filterNames = append(filterNames, "current_incident_state_id = "+fmt.Sprintf("%q", data.CurrentIncidentStateId.ValueString()))
+    }
+    if !data.IncidentSeverityId.IsNull() && !data.IncidentSeverityId.IsUnknown() {
+        filters["incidentSeverityId"] = data.IncidentSeverityId.ValueString()
+        filterNames = append(filterNames, "incident_severity_id = "+fmt.Sprintf("%q", data.IncidentSeverityId.ValueString()))
+    }
+    if !data.ChangeMonitorStatusToId.IsNull() && !data.ChangeMonitorStatusToId.IsUnknown() {
+        filters["changeMonitorStatusToId"] = data.ChangeMonitorStatusToId.ValueString()
+        filterNames = append(filterNames, "change_monitor_status_to_id = "+fmt.Sprintf("%q", data.ChangeMonitorStatusToId.ValueString()))
+    }
+    if !data.SubscriberNotificationStatusOnIncidentCreated.IsNull() && !data.SubscriberNotificationStatusOnIncidentCreated.IsUnknown() {
+        filters["subscriberNotificationStatusOnIncidentCreated"] = data.SubscriberNotificationStatusOnIncidentCreated.ValueString()
+        filterNames = append(filterNames, "subscriber_notification_status_on_incident_created = "+fmt.Sprintf("%q", data.SubscriberNotificationStatusOnIncidentCreated.ValueString()))
+    }
+    if !data.SubscriberNotificationStatusMessage.IsNull() && !data.SubscriberNotificationStatusMessage.IsUnknown() {
+        filters["subscriberNotificationStatusMessage"] = data.SubscriberNotificationStatusMessage.ValueString()
+        filterNames = append(filterNames, "subscriber_notification_status_message = "+fmt.Sprintf("%q", data.SubscriberNotificationStatusMessage.ValueString()))
+    }
+    if !data.SubscriberNotificationStatusOnPostmortemPublished.IsNull() && !data.SubscriberNotificationStatusOnPostmortemPublished.IsUnknown() {
+        filters["subscriberNotificationStatusOnPostmortemPublished"] = data.SubscriberNotificationStatusOnPostmortemPublished.ValueString()
+        filterNames = append(filterNames, "subscriber_notification_status_on_postmortem_published = "+fmt.Sprintf("%q", data.SubscriberNotificationStatusOnPostmortemPublished.ValueString()))
+    }
+    if !data.SubscriberNotificationStatusMessageOnPostmortemPublished.IsNull() && !data.SubscriberNotificationStatusMessageOnPostmortemPublished.IsUnknown() {
+        filters["subscriberNotificationStatusMessageOnPostmortemPublished"] = data.SubscriberNotificationStatusMessageOnPostmortemPublished.ValueString()
+        filterNames = append(filterNames, "subscriber_notification_status_message_on_postmortem_published = "+fmt.Sprintf("%q", data.SubscriberNotificationStatusMessageOnPostmortemPublished.ValueString()))
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedOnIncidentCreated.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedOnIncidentCreated.IsUnknown() {
+        filters["shouldStatusPageSubscribersBeNotifiedOnIncidentCreated"] = data.ShouldStatusPageSubscribersBeNotifiedOnIncidentCreated.ValueBool()
+        filterNames = append(filterNames, "should_status_page_subscribers_be_notified_on_incident_created = "+fmt.Sprintf("%t", data.ShouldStatusPageSubscribersBeNotifiedOnIncidentCreated.ValueBool()))
+    }
+    if !data.IsOwnerNotifiedOfResourceCreation.IsNull() && !data.IsOwnerNotifiedOfResourceCreation.IsUnknown() {
+        filters["isOwnerNotifiedOfResourceCreation"] = data.IsOwnerNotifiedOfResourceCreation.ValueBool()
+        filterNames = append(filterNames, "is_owner_notified_of_resource_creation = "+fmt.Sprintf("%t", data.IsOwnerNotifiedOfResourceCreation.ValueBool()))
+    }
+    if !data.RootCause.IsNull() && !data.RootCause.IsUnknown() {
+        filters["rootCause"] = data.RootCause.ValueString()
+        filterNames = append(filterNames, "root_cause = "+fmt.Sprintf("%q", data.RootCause.ValueString()))
+    }
+    if !data.PostmortemNote.IsNull() && !data.PostmortemNote.IsUnknown() {
+        filters["postmortemNote"] = data.PostmortemNote.ValueString()
+        filterNames = append(filterNames, "postmortem_note = "+fmt.Sprintf("%q", data.PostmortemNote.ValueString()))
+    }
+    if !data.ShowPostmortemOnStatusPage.IsNull() && !data.ShowPostmortemOnStatusPage.IsUnknown() {
+        filters["showPostmortemOnStatusPage"] = data.ShowPostmortemOnStatusPage.ValueBool()
+        filterNames = append(filterNames, "show_postmortem_on_status_page = "+fmt.Sprintf("%t", data.ShowPostmortemOnStatusPage.ValueBool()))
+    }
+    if !data.NotifySubscribersOnPostmortemPublished.IsNull() && !data.NotifySubscribersOnPostmortemPublished.IsUnknown() {
+        filters["notifySubscribersOnPostmortemPublished"] = data.NotifySubscribersOnPostmortemPublished.ValueBool()
+        filterNames = append(filterNames, "notify_subscribers_on_postmortem_published = "+fmt.Sprintf("%t", data.NotifySubscribersOnPostmortemPublished.ValueBool()))
+    }
+    if !data.CreatedCriteriaId.IsNull() && !data.CreatedCriteriaId.IsUnknown() {
+        filters["createdCriteriaId"] = data.CreatedCriteriaId.ValueString()
+        filterNames = append(filterNames, "created_criteria_id = "+fmt.Sprintf("%q", data.CreatedCriteriaId.ValueString()))
+    }
+    if !data.CreatedIncidentTemplateId.IsNull() && !data.CreatedIncidentTemplateId.IsUnknown() {
+        filters["createdIncidentTemplateId"] = data.CreatedIncidentTemplateId.ValueString()
+        filterNames = append(filterNames, "created_incident_template_id = "+fmt.Sprintf("%q", data.CreatedIncidentTemplateId.ValueString()))
+    }
+    if !data.SeriesFingerprint.IsNull() && !data.SeriesFingerprint.IsUnknown() {
+        filters["seriesFingerprint"] = data.SeriesFingerprint.ValueString()
+        filterNames = append(filterNames, "series_fingerprint = "+fmt.Sprintf("%q", data.SeriesFingerprint.ValueString()))
+    }
+    if !data.CreatedByProbeId.IsNull() && !data.CreatedByProbeId.IsUnknown() {
+        filters["createdByProbeId"] = data.CreatedByProbeId.ValueString()
+        filterNames = append(filterNames, "created_by_probe_id = "+fmt.Sprintf("%q", data.CreatedByProbeId.ValueString()))
+    }
+    if !data.IsCreatedAutomatically.IsNull() && !data.IsCreatedAutomatically.IsUnknown() {
+        filters["isCreatedAutomatically"] = data.IsCreatedAutomatically.ValueBool()
+        filterNames = append(filterNames, "is_created_automatically = "+fmt.Sprintf("%t", data.IsCreatedAutomatically.ValueBool()))
+    }
+    if !data.HoldsMonitors.IsNull() && !data.HoldsMonitors.IsUnknown() {
+        filters["holdsMonitors"] = data.HoldsMonitors.ValueBool()
+        filterNames = append(filterNames, "holds_monitors = "+fmt.Sprintf("%t", data.HoldsMonitors.ValueBool()))
+    }
+    if !data.RemediationNotes.IsNull() && !data.RemediationNotes.IsUnknown() {
+        filters["remediationNotes"] = data.RemediationNotes.ValueString()
+        filterNames = append(filterNames, "remediation_notes = "+fmt.Sprintf("%q", data.RemediationNotes.ValueString()))
+    }
+    if !data.IncidentNumber.IsNull() && !data.IncidentNumber.IsUnknown() {
+        filters["incidentNumber"] = lookupNumber(data.IncidentNumber)
+        filterNames = append(filterNames, "incident_number = "+data.IncidentNumber.ValueBigFloat().String())
+    }
+    if !data.IncidentNumberWithPrefix.IsNull() && !data.IncidentNumberWithPrefix.IsUnknown() {
+        filters["incidentNumberWithPrefix"] = data.IncidentNumberWithPrefix.ValueString()
+        filterNames = append(filterNames, "incident_number_with_prefix = "+fmt.Sprintf("%q", data.IncidentNumberWithPrefix.ValueString()))
+    }
+    if !data.IsVisibleOnStatusPage.IsNull() && !data.IsVisibleOnStatusPage.IsUnknown() {
+        filters["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
+        filterNames = append(filterNames, "is_visible_on_status_page = "+fmt.Sprintf("%t", data.IsVisibleOnStatusPage.ValueBool()))
+    }
+    if !data.IsScopedToStatusPages.IsNull() && !data.IsScopedToStatusPages.IsUnknown() {
+        filters["isScopedToStatusPages"] = data.IsScopedToStatusPages.ValueBool()
+        filterNames = append(filterNames, "is_scoped_to_status_pages = "+fmt.Sprintf("%t", data.IsScopedToStatusPages.ValueBool()))
+    }
+    if !data.IsPrivate.IsNull() && !data.IsPrivate.IsUnknown() {
+        filters["isPrivate"] = data.IsPrivate.ValueBool()
+        filterNames = append(filterNames, "is_private = "+fmt.Sprintf("%t", data.IsPrivate.ValueBool()))
+    }
+    if !data.EnableReminders.IsNull() && !data.EnableReminders.IsUnknown() {
+        filters["enableReminders"] = data.EnableReminders.ValueBool()
+        filterNames = append(filterNames, "enable_reminders = "+fmt.Sprintf("%t", data.EnableReminders.ValueBool()))
+    }
+    if !data.ReminderNotificationSentCount.IsNull() && !data.ReminderNotificationSentCount.IsUnknown() {
+        filters["reminderNotificationSentCount"] = lookupNumber(data.ReminderNotificationSentCount)
+        filterNames = append(filterNames, "reminder_notification_sent_count = "+data.ReminderNotificationSentCount.ValueBigFloat().String())
+    }
+    if !data.IncidentEpisodeId.IsNull() && !data.IncidentEpisodeId.IsUnknown() {
+        filters["incidentEpisodeId"] = data.IncidentEpisodeId.ValueString()
+        filterNames = append(filterNames, "incident_episode_id = "+fmt.Sprintf("%q", data.IncidentEpisodeId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a incident.",
+            "Look the incident up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the incident up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "title": true,
         "description": true,
@@ -558,11 +711,10 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -579,11 +731,11 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incident matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incident matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -611,23 +763,6 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -662,34 +797,6 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

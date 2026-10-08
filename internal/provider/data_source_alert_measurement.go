@@ -28,12 +28,10 @@ type AlertMeasurementDataSource struct {
 // AlertMeasurementDataSourceModel describes the data source data model.
 type AlertMeasurementDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Key types.String `tfsdk:"key"`
     Description types.String `tfsdk:"description"`
     MetricName types.String `tfsdk:"metric_name"`
@@ -63,121 +61,131 @@ func (d *AlertMeasurementDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *AlertMeasurementDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A named duration between two points in an alert's life, computed automatically for every alert Look up an existing alert_measurement by `id` or by `name`.",
+        MarkdownDescription: "A named duration between two points in an alert's life, computed automatically for every alert Look up an existing alert measurement by `id`, or by any of its other arguments (`name`, `aggregation_type`, `created_by_user_id`, ...): each one set must match, and exactly one alert measurement may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Human readable name of this measurement, such as Time to Acknowledge. This is what charts call it.",
+                Optional: true,
                 Computed: true,
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Acknowledge becomes time-to-acknowledge, with -2, -3 and so on added when another measurement already has it. It cannot be changed once the measurement is created, because it is used to build the metric name that every recorded point is written under; to rename a measurement, change the Name instead..",
+                MarkdownDescription: "Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Acknowledge becomes time-to-acknowledge, with -2, -3 and so on added when another measurement already has it. It cannot be changed once the measurement is created, because it is used to build the metric name that every recorded point is written under; to rename a measurement, change the Name instead.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Description of what this measurement means to your team.",
+                Optional: true,
                 Computed: true,
             },
             "metric_name": schema.StringAttribute{
-                MarkdownDescription: "The metric name every recorded point of this measurement is written under. Derived from the key as oneuptime.alert.measurement.<key> and maintained for you..",
+                MarkdownDescription: "The metric name every recorded point of this measurement is written under. Derived from the key as oneuptime.alert.measurement.<key> and maintained for you.",
+                Optional: true,
                 Computed: true,
             },
             "start_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered..",
+                MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered.",
+                Optional: true,
                 Computed: true,
             },
             "end_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered..",
+                MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered.",
+                Optional: true,
                 Computed: true,
             },
             "start_alert_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert state this measurement starts at. Required only when the Start Anchor Type is State Entered. Cleared if that state is deleted, at which point the measurement reports Not Applicable rather than a wrong number. The ID of a `oneuptime_alert_state`.",
+                Optional: true,
                 Computed: true,
             },
             "end_alert_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert state this measurement ends at. Required only when the End Anchor Type is State Entered. Cleared if that state is deleted, at which point the measurement reports Not Applicable rather than a wrong number. The ID of a `oneuptime_alert_state`.",
+                Optional: true,
                 Computed: true,
             },
             "start_alert_state_role": schema.StringAttribute{
-                MarkdownDescription: "The role of the state this measurement starts at - Created, Acknowledged or Resolved. Used when the Start Anchor Type is State Role Entered. Resolving by role keeps the measurement working when a project renames or replaces the state that plays that part..",
+                MarkdownDescription: "The role of the state this measurement starts at - Created, Acknowledged or Resolved. Used when the Start Anchor Type is State Role Entered. Resolving by role keeps the measurement working when a project renames or replaces the state that plays that part.",
+                Optional: true,
                 Computed: true,
             },
             "end_alert_state_role": schema.StringAttribute{
-                MarkdownDescription: "The role of the state this measurement ends at - Created, Acknowledged or Resolved. Used when the End Anchor Type is State Role Entered..",
+                MarkdownDescription: "The role of the state this measurement ends at - Created, Acknowledged or Resolved. Used when the End Anchor Type is State Role Entered.",
+                Optional: true,
                 Computed: true,
             },
             "start_state_occurrence": schema.StringAttribute{
-                MarkdownDescription: "Which entry to use when the start state is entered more than once - First or Last. First matches the built-in alert metrics; Last follows a reopened alert to its final pass through that state..",
+                MarkdownDescription: "Which entry to use when the start state is entered more than once - First or Last. First matches the built-in alert metrics; Last follows a reopened alert to its final pass through that state.",
+                Optional: true,
                 Computed: true,
             },
             "end_state_occurrence": schema.StringAttribute{
-                MarkdownDescription: "Which entry to use when the end state is entered more than once - First or Last. First matches the built-in alert metrics; Last follows a reopened alert to its final pass through that state..",
+                MarkdownDescription: "Which entry to use when the end state is entered more than once - First or Last. First matches the built-in alert metrics; Last follows a reopened alert to its final pass through that state.",
+                Optional: true,
                 Computed: true,
             },
             "unit": schema.StringAttribute{
-                MarkdownDescription: "The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the alert; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds..",
+                MarkdownDescription: "The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the alert; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds.",
+                Optional: true,
                 Computed: true,
             },
             "aggregation_type": schema.StringAttribute{
-                MarkdownDescription: "How this measurement's chart sums up many alerts by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across alerts produces a number with no meaning..",
+                MarkdownDescription: "How this measurement's chart sums up many alerts by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across alerts produces a number with no meaning.",
+                Optional: true,
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether this measurement is computed for new and updated alerts.",
+                Optional: true,
                 Computed: true,
             },
             "show_on_alert_view": schema.BoolAttribute{
                 MarkdownDescription: "Whether this measurement is shown on the alert page alongside the alert's other timings.",
+                Optional: true,
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
+                MarkdownDescription: "Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
+                Optional: true,
                 Computed: true,
             },
             "is_system_defined": schema.BoolAttribute{
                 MarkdownDescription: "Whether this measurement was seeded by OneUptime rather than created by your team.",
+                Optional: true,
                 Computed: true,
             },
             "backfill_requested_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a backfill of this measurement over existing alerts was requested.",
                 Computed: true,
             },
             "backfill_cursor_created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "How far the backfill has walked this project, so a restart resumes instead of starting over.",
                 Computed: true,
             },
             "backfill_completed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the backfill of this measurement over existing alerts finished.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -214,23 +222,108 @@ func (d *AlertMeasurementDataSource) Read(ctx context.Context, req datasource.Re
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Key.IsNull() && !data.Key.IsUnknown() {
+        filters["key"] = data.Key.ValueString()
+        filterNames = append(filterNames, "key = "+fmt.Sprintf("%q", data.Key.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.MetricName.IsNull() && !data.MetricName.IsUnknown() {
+        filters["metricName"] = data.MetricName.ValueString()
+        filterNames = append(filterNames, "metric_name = "+fmt.Sprintf("%q", data.MetricName.ValueString()))
+    }
+    if !data.StartAnchorType.IsNull() && !data.StartAnchorType.IsUnknown() {
+        filters["startAnchorType"] = data.StartAnchorType.ValueString()
+        filterNames = append(filterNames, "start_anchor_type = "+fmt.Sprintf("%q", data.StartAnchorType.ValueString()))
+    }
+    if !data.EndAnchorType.IsNull() && !data.EndAnchorType.IsUnknown() {
+        filters["endAnchorType"] = data.EndAnchorType.ValueString()
+        filterNames = append(filterNames, "end_anchor_type = "+fmt.Sprintf("%q", data.EndAnchorType.ValueString()))
+    }
+    if !data.StartAlertStateId.IsNull() && !data.StartAlertStateId.IsUnknown() {
+        filters["startAlertStateId"] = data.StartAlertStateId.ValueString()
+        filterNames = append(filterNames, "start_alert_state_id = "+fmt.Sprintf("%q", data.StartAlertStateId.ValueString()))
+    }
+    if !data.EndAlertStateId.IsNull() && !data.EndAlertStateId.IsUnknown() {
+        filters["endAlertStateId"] = data.EndAlertStateId.ValueString()
+        filterNames = append(filterNames, "end_alert_state_id = "+fmt.Sprintf("%q", data.EndAlertStateId.ValueString()))
+    }
+    if !data.StartAlertStateRole.IsNull() && !data.StartAlertStateRole.IsUnknown() {
+        filters["startAlertStateRole"] = data.StartAlertStateRole.ValueString()
+        filterNames = append(filterNames, "start_alert_state_role = "+fmt.Sprintf("%q", data.StartAlertStateRole.ValueString()))
+    }
+    if !data.EndAlertStateRole.IsNull() && !data.EndAlertStateRole.IsUnknown() {
+        filters["endAlertStateRole"] = data.EndAlertStateRole.ValueString()
+        filterNames = append(filterNames, "end_alert_state_role = "+fmt.Sprintf("%q", data.EndAlertStateRole.ValueString()))
+    }
+    if !data.StartStateOccurrence.IsNull() && !data.StartStateOccurrence.IsUnknown() {
+        filters["startStateOccurrence"] = data.StartStateOccurrence.ValueString()
+        filterNames = append(filterNames, "start_state_occurrence = "+fmt.Sprintf("%q", data.StartStateOccurrence.ValueString()))
+    }
+    if !data.EndStateOccurrence.IsNull() && !data.EndStateOccurrence.IsUnknown() {
+        filters["endStateOccurrence"] = data.EndStateOccurrence.ValueString()
+        filterNames = append(filterNames, "end_state_occurrence = "+fmt.Sprintf("%q", data.EndStateOccurrence.ValueString()))
+    }
+    if !data.Unit.IsNull() && !data.Unit.IsUnknown() {
+        filters["unit"] = data.Unit.ValueString()
+        filterNames = append(filterNames, "unit = "+fmt.Sprintf("%q", data.Unit.ValueString()))
+    }
+    if !data.AggregationType.IsNull() && !data.AggregationType.IsUnknown() {
+        filters["aggregationType"] = data.AggregationType.ValueString()
+        filterNames = append(filterNames, "aggregation_type = "+fmt.Sprintf("%q", data.AggregationType.ValueString()))
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        filters["isEnabled"] = data.IsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
+    }
+    if !data.ShowOnAlertView.IsNull() && !data.ShowOnAlertView.IsUnknown() {
+        filters["showOnAlertView"] = data.ShowOnAlertView.ValueBool()
+        filterNames = append(filterNames, "show_on_alert_view = "+fmt.Sprintf("%t", data.ShowOnAlertView.ValueBool()))
+    }
+    if !data.Order.IsNull() && !data.Order.IsUnknown() {
+        filters["order"] = lookupNumber(data.Order)
+        filterNames = append(filterNames, "order = "+data.Order.ValueBigFloat().String())
+    }
+    if !data.IsSystemDefined.IsNull() && !data.IsSystemDefined.IsUnknown() {
+        filters["isSystemDefined"] = data.IsSystemDefined.ValueBool()
+        filterNames = append(filterNames, "is_system_defined = "+fmt.Sprintf("%t", data.IsSystemDefined.ValueBool()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a alert_measurement.",
+            "Look the alert measurement up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the alert measurement up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "key": true,
         "description": true,
         "metricName": true,
@@ -264,7 +357,7 @@ func (d *AlertMeasurementDataSource) Read(ctx context.Context, req datasource.Re
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert_measurement found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert measurement found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -277,11 +370,10 @@ func (d *AlertMeasurementDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -298,11 +390,11 @@ func (d *AlertMeasurementDataSource) Read(ctx context.Context, req datasource.Re
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert_measurement found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert measurement matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert_measurement matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert measurement matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -330,23 +422,6 @@ func (d *AlertMeasurementDataSource) Read(ctx context.Context, req datasource.Re
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -382,34 +457,6 @@ func (d *AlertMeasurementDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -426,6 +473,23 @@ func (d *AlertMeasurementDataSource) Read(ctx context.Context, req datasource.Re
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["key"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

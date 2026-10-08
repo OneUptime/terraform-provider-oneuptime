@@ -7,32 +7,35 @@ description: |-
 
 # oneuptime_incident_postmortem_template (Data Source)
 
-Manage postmortem templates for your incidents Look up by `id` or by `name` (must match exactly one item).
+Manage postmortem templates for your incidents
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one incident postmortem template may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_incident_postmortem_template" "by_name" {
-  name = "example-incident_postmortem_template"
+data "oneuptime_incident_postmortem_template" "example" {
+  postmortem_note = "example-postmortem-note"
 }
 
+# Or by id:
 data "oneuptime_incident_postmortem_template" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `postmortem_note` (String) Markdown template used when documenting an incident postmortem... Computed.
-- `template_name` (String) Name of the Postmortem Template.. Computed.
-- `template_description` (String) Description of the Postmortem Template.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `postmortem_note` (String) Markdown template used when documenting an incident postmortem.
+- `template_description` (String) Description of the Postmortem Template.
+- `template_name` (String) Name of the Postmortem Template.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

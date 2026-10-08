@@ -13,14 +13,10 @@ Draw uplinks on the network topology map from labels: every device carrying the 
 
 ```terraform
 resource "oneuptime_network_device_link_rule" "example" {
-  name = "Example short text"
-  child_device_labels = [{
-    id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  }]
-  parent_device_labels = [{
-    id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  }]
-  description = "This is an example of longer text content that might be stored in this field."
+  name                 = "Example network device link rule"
+  child_device_labels  = [oneuptime_label.example.id]
+  parent_device_labels = [oneuptime_label.example.id]
+  description          = "Managed by Terraform"
 }
 ```
 
@@ -28,30 +24,36 @@ resource "oneuptime_network_device_link_rule" "example" {
 
 ### Required
 
-- `name` (String) Friendly name for this rule..
-- `child_device_labels` (Set) Devices carrying ALL of these labels each get one uplink drawn to the parent device. Empty matches nothing — a rule that linked every device in the project is never what anyone meant...
-- `parent_device_labels` (Set) The device carrying ALL of these labels is what the children uplink to. It has to identify exactly one device: match none and the rule draws nothing, match several and the rule is ambiguous and also draws nothing...
+- `child_device_labels` (Set of String) Devices carrying ALL of these labels each get one uplink drawn to the parent device. Empty matches nothing — a rule that linked every device in the project is never what anyone meant. IDs of `oneuptime_label` resources.
+- `name` (String) Friendly name for this rule.
+- `parent_device_labels` (Set of String) The device carrying ALL of these labels is what the children uplink to. It has to identify exactly one device: match none and the rule draws nothing, match several and the rule is ambiguous and also draws nothing. IDs of `oneuptime_label` resources.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Description of this rule..
-- `is_enabled` (Bool) Whether this rule draws links. Disable to take its edges off the map without deleting the rule...
-- `scope` (String) How wide the 'exactly one parent device' question is asked. Project (the default) looks for one parent across the whole project. Site asks once per site, so the same rule can draw an uplink in every building. Rules created before this existed are Project...
+- `description` (String) Description of this rule.
+- `is_enabled` (Boolean) Whether this rule draws links. Disable to take its edges off the map without deleting the rule. Defaults to `true`.
+- `scope` (String) How wide the 'exactly one parent device' question is asked. Project (the default) looks for one parent across the whole project. Site asks once per site, so the same rule can draw an uplink in every building. Rules created before this existed are Project.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing network device link rule by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_network_device_link_rule.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_network_device_link_rule.example <id>

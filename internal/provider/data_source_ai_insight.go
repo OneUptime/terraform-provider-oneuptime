@@ -28,11 +28,8 @@ type AiInsightDataSource struct {
 // AiInsightDataSourceModel describes the data source data model.
 type AiInsightDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     InsightType types.String `tfsdk:"insight_type"`
     Status types.String `tfsdk:"status"`
@@ -65,129 +62,134 @@ func (d *AiInsightDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *AiInsightDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A preventive finding from OneUptime AI's deterministic telemetry sensors — new or spiking exceptions, error-log spikes, trace-latency regressions and metric drift — surfaced in a quiet insights inbox that never pages and never opens incidents. Look up an existing ai_insight by `id` or by `name`.",
+        MarkdownDescription: "A preventive finding from OneUptime AI's deterministic telemetry sensors — new or spiking exceptions, error-log spikes, trace-latency regressions and metric drift — surfaced in a quiet insights inbox that never pages and never opens incidents. Look up an existing ai insight by `id`, or by any of its other arguments (`classification`, `detail_markdown`, `fingerprint`, ...): each one set must match, and exactly one ai insight may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this insight belongs to. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "insight_type": schema.StringAttribute{
-                MarkdownDescription: "Which deterministic detector produced this insight: NewException, ExceptionSpike, ErrorLogSpike, TraceLatencyRegression or MetricDrift..",
+                MarkdownDescription: "Which deterministic detector produced this insight: NewException, ExceptionSpike, ErrorLogSpike, TraceLatencyRegression or MetricDrift.",
+                Optional: true,
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Lifecycle of the insight. Detected is the defensive initial state — the scanner routes to ActionRequired or FixOpened in the same tick; Resolved and Dismissed are human actions..",
+                MarkdownDescription: "Lifecycle of the insight. Detected is the defensive initial state — the scanner routes to ActionRequired or FixOpened in the same tick; Resolved and Dismissed are human actions.",
+                Optional: true,
                 Computed: true,
             },
             "severity": schema.StringAttribute{
-                MarkdownDescription: "How urgent this insight is (High, Medium or Low), assigned deterministically by the detector..",
+                MarkdownDescription: "How urgent this insight is (High, Medium or Low), assigned deterministically by the detector.",
+                Optional: true,
                 Computed: true,
             },
             "classification": schema.StringAttribute{
-                MarkdownDescription: "AI triage verdict: code-fault, user-error, expected-denial, infrastructure or unknown. Automatic fix pull requests are only opened for code-fault..",
+                MarkdownDescription: "AI triage verdict: code-fault, user-error, expected-denial, infrastructure or unknown. Automatic fix pull requests are only opened for code-fault.",
+                Optional: true,
                 Computed: true,
             },
             "fingerprint": schema.StringAttribute{
-                MarkdownDescription: "The detector's stable dedupe key for this finding. Recurring detections refresh the existing non-terminal insight with the same fingerprint..",
+                MarkdownDescription: "The detector's stable dedupe key for this finding. Recurring detections refresh the existing non-terminal insight with the same fingerprint.",
+                Optional: true,
                 Computed: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "One-line human-readable summary of the finding..",
+                MarkdownDescription: "One-line human-readable summary of the finding.",
+                Optional: true,
                 Computed: true,
             },
             "detail_markdown": schema.StringAttribute{
-                MarkdownDescription: "The deterministic evidence rendered as markdown: real counts, baselines and multipliers written by the detector at detect time..",
+                MarkdownDescription: "The deterministic evidence rendered as markdown: real counts, baselines and multipliers written by the detector at detect time.",
+                Optional: true,
                 Computed: true,
             },
             "service_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the telemetry service this insight is about..",
+                MarkdownDescription: "Name of the telemetry service this insight is about.",
+                Optional: true,
                 Computed: true,
             },
             "telemetry_service_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the telemetry service this insight is about.",
+                Optional: true,
                 Computed: true,
             },
             "telemetry_exception_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The telemetry exception behind this insight (for NewException and ExceptionSpike insights).",
+                Optional: true,
                 Computed: true,
             },
             "trace_id": schema.StringAttribute{
-                MarkdownDescription: "A representative slow trace (for TraceLatencyRegression insights)..",
+                MarkdownDescription: "A representative slow trace (for TraceLatencyRegression insights).",
+                Optional: true,
                 Computed: true,
             },
             "metric_name": schema.StringAttribute{
-                MarkdownDescription: "The drifting metric's name (for MetricDrift insights)..",
+                MarkdownDescription: "The drifting metric's name (for MetricDrift insights).",
+                Optional: true,
                 Computed: true,
             },
             "evidence": schema.StringAttribute{
-                MarkdownDescription: "The deterministic evidence computed at detect time: counts, baselines, multipliers and (for latency insights) span-tree findings..",
+                MarkdownDescription: "The deterministic evidence computed at detect time: counts, baselines, multipliers and (for latency insights) span-tree findings. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "first_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this finding was first detected.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this finding was most recently re-detected by the scanner.",
                 Computed: true,
             },
             "occurrence_count": schema.NumberAttribute{
-                MarkdownDescription: "How many scanner ticks have detected this finding. Incremented on each dedupe refresh..",
+                MarkdownDescription: "How many scanner ticks have detected this finding. Incremented on each dedupe refresh.",
+                Optional: true,
                 Computed: true,
             },
             "triage_ai_run_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The budgeted, read-only AI triage run enqueued for this insight (an Investigation AIRun).",
+                Optional: true,
                 Computed: true,
             },
             "fix_ai_run_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The AI agent fix task queued for this insight (a CodeFix AIRun that opens a pull request, ready for review).",
+                Optional: true,
                 Computed: true,
             },
             "triage_summary_markdown": schema.StringAttribute{
-                MarkdownDescription: "The AI triage analysis for this insight: probable root cause, blast radius and suggested action, with citations..",
+                MarkdownDescription: "The AI triage analysis for this insight: probable root cause, blast radius and suggested action, with citations.",
+                Optional: true,
                 Computed: true,
             },
             "triage_completed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the AI triage analysis completed.",
                 Computed: true,
             },
             "human_verdict": schema.StringAttribute{
-                MarkdownDescription: "The one-click human verdict on this insight (Confirmed or Dismissed). Null until a user weighs in..",
+                MarkdownDescription: "The one-click human verdict on this insight (Confirmed or Dismissed). Null until a user weighs in.",
+                Optional: true,
                 Computed: true,
             },
             "human_verdict_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the human verdict was recorded (or last changed).",
                 Computed: true,
             },
             "human_verdict_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The user who recorded (or last changed) the human verdict.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -224,22 +226,102 @@ func (d *AiInsightDataSource) Read(ctx context.Context, req datasource.ReadReque
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.InsightType.IsNull() && !data.InsightType.IsUnknown() {
+        filters["insightType"] = data.InsightType.ValueString()
+        filterNames = append(filterNames, "insight_type = "+fmt.Sprintf("%q", data.InsightType.ValueString()))
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.Severity.IsNull() && !data.Severity.IsUnknown() {
+        filters["severity"] = data.Severity.ValueString()
+        filterNames = append(filterNames, "severity = "+fmt.Sprintf("%q", data.Severity.ValueString()))
+    }
+    if !data.Classification.IsNull() && !data.Classification.IsUnknown() {
+        filters["classification"] = data.Classification.ValueString()
+        filterNames = append(filterNames, "classification = "+fmt.Sprintf("%q", data.Classification.ValueString()))
+    }
+    if !data.Fingerprint.IsNull() && !data.Fingerprint.IsUnknown() {
+        filters["fingerprint"] = data.Fingerprint.ValueString()
+        filterNames = append(filterNames, "fingerprint = "+fmt.Sprintf("%q", data.Fingerprint.ValueString()))
+    }
+    if !data.Title.IsNull() && !data.Title.IsUnknown() {
+        filters["title"] = data.Title.ValueString()
+        filterNames = append(filterNames, "title = "+fmt.Sprintf("%q", data.Title.ValueString()))
+    }
+    if !data.DetailMarkdown.IsNull() && !data.DetailMarkdown.IsUnknown() {
+        filters["detailMarkdown"] = data.DetailMarkdown.ValueString()
+        filterNames = append(filterNames, "detail_markdown = "+fmt.Sprintf("%q", data.DetailMarkdown.ValueString()))
+    }
+    if !data.ServiceName.IsNull() && !data.ServiceName.IsUnknown() {
+        filters["serviceName"] = data.ServiceName.ValueString()
+        filterNames = append(filterNames, "service_name = "+fmt.Sprintf("%q", data.ServiceName.ValueString()))
+    }
+    if !data.TelemetryServiceId.IsNull() && !data.TelemetryServiceId.IsUnknown() {
+        filters["telemetryServiceId"] = data.TelemetryServiceId.ValueString()
+        filterNames = append(filterNames, "telemetry_service_id = "+fmt.Sprintf("%q", data.TelemetryServiceId.ValueString()))
+    }
+    if !data.TelemetryExceptionId.IsNull() && !data.TelemetryExceptionId.IsUnknown() {
+        filters["telemetryExceptionId"] = data.TelemetryExceptionId.ValueString()
+        filterNames = append(filterNames, "telemetry_exception_id = "+fmt.Sprintf("%q", data.TelemetryExceptionId.ValueString()))
+    }
+    if !data.TraceId.IsNull() && !data.TraceId.IsUnknown() {
+        filters["traceId"] = data.TraceId.ValueString()
+        filterNames = append(filterNames, "trace_id = "+fmt.Sprintf("%q", data.TraceId.ValueString()))
+    }
+    if !data.MetricName.IsNull() && !data.MetricName.IsUnknown() {
+        filters["metricName"] = data.MetricName.ValueString()
+        filterNames = append(filterNames, "metric_name = "+fmt.Sprintf("%q", data.MetricName.ValueString()))
+    }
+    if !data.OccurrenceCount.IsNull() && !data.OccurrenceCount.IsUnknown() {
+        filters["occurrenceCount"] = lookupNumber(data.OccurrenceCount)
+        filterNames = append(filterNames, "occurrence_count = "+data.OccurrenceCount.ValueBigFloat().String())
+    }
+    if !data.TriageAiRunId.IsNull() && !data.TriageAiRunId.IsUnknown() {
+        filters["triageAiRunId"] = data.TriageAiRunId.ValueString()
+        filterNames = append(filterNames, "triage_ai_run_id = "+fmt.Sprintf("%q", data.TriageAiRunId.ValueString()))
+    }
+    if !data.FixAiRunId.IsNull() && !data.FixAiRunId.IsUnknown() {
+        filters["fixAiRunId"] = data.FixAiRunId.ValueString()
+        filterNames = append(filterNames, "fix_ai_run_id = "+fmt.Sprintf("%q", data.FixAiRunId.ValueString()))
+    }
+    if !data.TriageSummaryMarkdown.IsNull() && !data.TriageSummaryMarkdown.IsUnknown() {
+        filters["triageSummaryMarkdown"] = data.TriageSummaryMarkdown.ValueString()
+        filterNames = append(filterNames, "triage_summary_markdown = "+fmt.Sprintf("%q", data.TriageSummaryMarkdown.ValueString()))
+    }
+    if !data.HumanVerdict.IsNull() && !data.HumanVerdict.IsUnknown() {
+        filters["humanVerdict"] = data.HumanVerdict.ValueString()
+        filterNames = append(filterNames, "human_verdict = "+fmt.Sprintf("%q", data.HumanVerdict.ValueString()))
+    }
+    if !data.HumanVerdictByUserId.IsNull() && !data.HumanVerdictByUserId.IsUnknown() {
+        filters["humanVerdictByUserId"] = data.HumanVerdictByUserId.ValueString()
+        filterNames = append(filterNames, "human_verdict_by_user_id = "+fmt.Sprintf("%q", data.HumanVerdictByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a ai_insight.",
+            "Look the ai insight up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the ai insight up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "insightType": true,
         "status": true,
@@ -276,7 +358,7 @@ func (d *AiInsightDataSource) Read(ctx context.Context, req datasource.ReadReque
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_insight found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai insight found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -289,11 +371,10 @@ func (d *AiInsightDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -310,11 +391,11 @@ func (d *AiInsightDataSource) Read(ctx context.Context, req datasource.ReadReque
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_insight found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai insight matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai_insight matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai insight matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -342,23 +423,6 @@ func (d *AiInsightDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -393,34 +457,6 @@ func (d *AiInsightDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

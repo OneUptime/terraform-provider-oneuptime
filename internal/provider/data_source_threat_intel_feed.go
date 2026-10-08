@@ -28,12 +28,10 @@ type ThreatIntelFeedDataSource struct {
 // ThreatIntelFeedDataSourceModel describes the data source data model.
 type ThreatIntelFeedDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     ApiRootUrl types.String `tfsdk:"api_root_url"`
     CollectionId types.String `tfsdk:"collection_id"`
@@ -55,7 +53,6 @@ type ThreatIntelFeedDataSourceModel struct {
     LastMatchAt types.String `tfsdk:"last_match_at"`
     LastMatchError types.String `tfsdk:"last_match_error"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *ThreatIntelFeedDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -64,125 +61,131 @@ func (d *ThreatIntelFeedDataSource) Metadata(ctx context.Context, req datasource
 
 func (d *ThreatIntelFeedDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "STIX/TAXII 2.1 threat-intelligence feeds. Indicators are polled on an interval and matched against incoming security events. Look up an existing threat_intel_feed by `id` or by `name`.",
+        MarkdownDescription: "STIX/TAXII 2.1 threat-intelligence feeds. Indicators are polled on an interval and matched against incoming security events. Look up an existing threat intel feed by `id`, or by any of its other arguments (`name`, `alert_severity_id`, `api_root_url`, ...): each one set must match, and exactly one threat intel feed may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this feed belongs to. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Friendly name for this feed, e.g. 'Corporate MISP'.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "What this feed carries and why it is subscribed..",
+                MarkdownDescription: "What this feed carries and why it is subscribed.",
+                Optional: true,
                 Computed: true,
             },
             "api_root_url": schema.StringAttribute{
-                MarkdownDescription: "The TAXII 2.1 API root, e.g. https://taxii.example.com/api1/. Collections are addressed beneath it..",
+                MarkdownDescription: "The TAXII 2.1 API root, e.g. https://taxii.example.com/api1/. Collections are addressed beneath it.",
+                Optional: true,
                 Computed: true,
             },
             "collection_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the TAXII collection to poll for indicator objects..",
+                MarkdownDescription: "ID of the TAXII collection to poll for indicator objects.",
+                Optional: true,
                 Computed: true,
             },
             "basic_auth_username": schema.StringAttribute{
-                MarkdownDescription: "Username for basic-auth collections. Leave empty for anonymous or token-authenticated collections..",
+                MarkdownDescription: "Username for basic-auth collections. Leave empty for anonymous or token-authenticated collections.",
+                Optional: true,
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this feed is polled and matched..",
+                MarkdownDescription: "Whether this feed is polled and matched.",
+                Optional: true,
                 Computed: true,
             },
             "poll_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often the collection is polled for new indicators..",
+                MarkdownDescription: "How often the collection is polled for new indicators.",
+                Optional: true,
                 Computed: true,
             },
             "minimum_confidence": schema.NumberAttribute{
-                MarkdownDescription: "Skip indicators whose STIX confidence is below this (0-100). 0 ingests everything; indicators that carry no confidence always pass..",
+                MarkdownDescription: "Skip indicators whose STIX confidence is below this (0-100). 0 ingests everything; indicators that carry no confidence always pass.",
+                Optional: true,
                 Computed: true,
             },
             "should_create_alert": schema.BoolAttribute{
-                MarkdownDescription: "Whether indicator matches open OneUptime alerts..",
+                MarkdownDescription: "Whether indicator matches open OneUptime alerts.",
+                Optional: true,
                 Computed: true,
             },
             "should_write_detection_finding": schema.BoolAttribute{
-                MarkdownDescription: "Whether matches also write a Detection Finding security event back into the events table..",
+                MarkdownDescription: "Whether matches also write a Detection Finding security event back into the events table.",
+                Optional: true,
                 Computed: true,
             },
             "should_create_incident": schema.BoolAttribute{
-                MarkdownDescription: "Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per feed..",
+                MarkdownDescription: "Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per feed.",
+                Optional: true,
                 Computed: true,
             },
             "alert_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert severity for alerts opened by this feed. The ID of a `oneuptime_alert_severity`.",
+                Optional: true,
                 Computed: true,
             },
             "incident_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the incident severity for incidents opened by this feed. The ID of a `oneuptime_incident_severity`.",
+                Optional: true,
                 Computed: true,
             },
             "last_polled_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this feed was last polled. Null means it has never run.",
                 Computed: true,
             },
             "cursor": schema.StringAttribute{
-                MarkdownDescription: "Poll cursor: the TAXII added_after timestamp already ingested, as an ISO string..",
+                MarkdownDescription: "Poll cursor: the TAXII added_after timestamp already ingested, as an ISO string.",
+                Optional: true,
                 Computed: true,
             },
             "next_page_token": schema.StringAttribute{
-                MarkdownDescription: "Resume token for a poll that ended mid-pagination on a server that sends no X-TAXII-Date-Added-Last header. Cleared once the collection drains or the cursor advances..",
+                MarkdownDescription: "Resume token for a poll that ended mid-pagination on a server that sends no X-TAXII-Date-Added-Last header. Cleared once the collection drains or the cursor advances.",
+                Optional: true,
                 Computed: true,
             },
             "last_poll_summary": schema.StringAttribute{
-                MarkdownDescription: "What the most recent successful poll did: objects fetched, indicators ingested, unsupported patterns skipped..",
+                MarkdownDescription: "What the most recent successful poll did: objects fetched, indicators ingested, unsupported patterns skipped.",
+                Optional: true,
                 Computed: true,
             },
             "last_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent poll error, if any. Cleared on the next successful poll..",
+                MarkdownDescription: "The most recent poll error, if any. Cleared on the next successful poll.",
+                Optional: true,
                 Computed: true,
             },
             "last_evaluated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the matcher last evaluated security events against this feed's indicators. Null means it has never run.",
                 Computed: true,
             },
             "last_match_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this feed's indicators most recently matched security events. Null means they never have.",
                 Computed: true,
             },
             "last_match_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent matcher error, if any. Cleared on the next successful evaluation..",
+                MarkdownDescription: "The most recent matcher error, if any. Cleared on the next successful evaluation.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user who created this feed. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -219,23 +222,108 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.ApiRootUrl.IsNull() && !data.ApiRootUrl.IsUnknown() {
+        filters["apiRootUrl"] = data.ApiRootUrl.ValueString()
+        filterNames = append(filterNames, "api_root_url = "+fmt.Sprintf("%q", data.ApiRootUrl.ValueString()))
+    }
+    if !data.CollectionId.IsNull() && !data.CollectionId.IsUnknown() {
+        filters["collectionId"] = data.CollectionId.ValueString()
+        filterNames = append(filterNames, "collection_id = "+fmt.Sprintf("%q", data.CollectionId.ValueString()))
+    }
+    if !data.BasicAuthUsername.IsNull() && !data.BasicAuthUsername.IsUnknown() {
+        filters["basicAuthUsername"] = data.BasicAuthUsername.ValueString()
+        filterNames = append(filterNames, "basic_auth_username = "+fmt.Sprintf("%q", data.BasicAuthUsername.ValueString()))
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        filters["isEnabled"] = data.IsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
+    }
+    if !data.PollIntervalInMinutes.IsNull() && !data.PollIntervalInMinutes.IsUnknown() {
+        filters["pollIntervalInMinutes"] = lookupNumber(data.PollIntervalInMinutes)
+        filterNames = append(filterNames, "poll_interval_in_minutes = "+data.PollIntervalInMinutes.ValueBigFloat().String())
+    }
+    if !data.MinimumConfidence.IsNull() && !data.MinimumConfidence.IsUnknown() {
+        filters["minimumConfidence"] = lookupNumber(data.MinimumConfidence)
+        filterNames = append(filterNames, "minimum_confidence = "+data.MinimumConfidence.ValueBigFloat().String())
+    }
+    if !data.ShouldCreateAlert.IsNull() && !data.ShouldCreateAlert.IsUnknown() {
+        filters["shouldCreateAlert"] = data.ShouldCreateAlert.ValueBool()
+        filterNames = append(filterNames, "should_create_alert = "+fmt.Sprintf("%t", data.ShouldCreateAlert.ValueBool()))
+    }
+    if !data.ShouldWriteDetectionFinding.IsNull() && !data.ShouldWriteDetectionFinding.IsUnknown() {
+        filters["shouldWriteDetectionFinding"] = data.ShouldWriteDetectionFinding.ValueBool()
+        filterNames = append(filterNames, "should_write_detection_finding = "+fmt.Sprintf("%t", data.ShouldWriteDetectionFinding.ValueBool()))
+    }
+    if !data.ShouldCreateIncident.IsNull() && !data.ShouldCreateIncident.IsUnknown() {
+        filters["shouldCreateIncident"] = data.ShouldCreateIncident.ValueBool()
+        filterNames = append(filterNames, "should_create_incident = "+fmt.Sprintf("%t", data.ShouldCreateIncident.ValueBool()))
+    }
+    if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
+        filters["alertSeverityId"] = data.AlertSeverityId.ValueString()
+        filterNames = append(filterNames, "alert_severity_id = "+fmt.Sprintf("%q", data.AlertSeverityId.ValueString()))
+    }
+    if !data.IncidentSeverityId.IsNull() && !data.IncidentSeverityId.IsUnknown() {
+        filters["incidentSeverityId"] = data.IncidentSeverityId.ValueString()
+        filterNames = append(filterNames, "incident_severity_id = "+fmt.Sprintf("%q", data.IncidentSeverityId.ValueString()))
+    }
+    if !data.Cursor.IsNull() && !data.Cursor.IsUnknown() {
+        filters["cursor"] = data.Cursor.ValueString()
+        filterNames = append(filterNames, "cursor = "+fmt.Sprintf("%q", data.Cursor.ValueString()))
+    }
+    if !data.NextPageToken.IsNull() && !data.NextPageToken.IsUnknown() {
+        filters["nextPageToken"] = data.NextPageToken.ValueString()
+        filterNames = append(filterNames, "next_page_token = "+fmt.Sprintf("%q", data.NextPageToken.ValueString()))
+    }
+    if !data.LastPollSummary.IsNull() && !data.LastPollSummary.IsUnknown() {
+        filters["lastPollSummary"] = data.LastPollSummary.ValueString()
+        filterNames = append(filterNames, "last_poll_summary = "+fmt.Sprintf("%q", data.LastPollSummary.ValueString()))
+    }
+    if !data.LastError.IsNull() && !data.LastError.IsUnknown() {
+        filters["lastError"] = data.LastError.ValueString()
+        filterNames = append(filterNames, "last_error = "+fmt.Sprintf("%q", data.LastError.ValueString()))
+    }
+    if !data.LastMatchError.IsNull() && !data.LastMatchError.IsUnknown() {
+        filters["lastMatchError"] = data.LastMatchError.ValueString()
+        filterNames = append(filterNames, "last_match_error = "+fmt.Sprintf("%q", data.LastMatchError.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a threat_intel_feed.",
+            "Look the threat intel feed up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the threat intel feed up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "description": true,
         "apiRootUrl": true,
         "collectionId": true,
@@ -257,7 +345,6 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
         "lastMatchAt": true,
         "lastMatchError": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -270,7 +357,7 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No threat_intel_feed found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No threat intel feed found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -283,11 +370,10 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -304,11 +390,11 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No threat_intel_feed found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No threat intel feed matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one threat_intel_feed matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one threat intel feed matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -336,23 +422,6 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -388,34 +457,6 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -432,6 +473,23 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -729,23 +787,6 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

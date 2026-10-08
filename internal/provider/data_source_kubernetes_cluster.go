@@ -30,12 +30,10 @@ type KubernetesClusterDataSource struct {
 // KubernetesClusterDataSourceModel describes the data source data model.
 type KubernetesClusterDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
     ClusterIdentifier types.String `tfsdk:"cluster_identifier"`
@@ -50,7 +48,6 @@ type KubernetesClusterDataSourceModel struct {
     IsArchived types.Bool `tfsdk:"is_archived"`
     ArchivedAt types.String `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
@@ -71,146 +68,152 @@ func (d *KubernetesClusterDataSource) Metadata(ctx context.Context, req datasour
 
 func (d *KubernetesClusterDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Kubernetes Clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime kubernetes-agent sends metrics, or can be manually registered. Look up an existing kubernetes_cluster by `id` or by `name`.",
+        MarkdownDescription: "Kubernetes Clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime kubernetes-agent sends metrics, or can be manually registered. Look up an existing kubernetes cluster by `id`, or by any of its other arguments (`name`, `agent_version`, `ai_access_credential_id`, ...): each one set must match, and exactly one kubernetes cluster may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Friendly name for this Kubernetes cluster.",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description for this Kubernetes cluster.",
+                Optional: true,
                 Computed: true,
             },
             "cluster_identifier": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for this cluster, sourced from the k8s.cluster.name OTel resource attribute.",
+                Optional: true,
                 Computed: true,
             },
             "provider_value": schema.StringAttribute{
                 MarkdownDescription: "Cloud provider or platform running this cluster (EKS, GKE, AKS, self-managed, unknown).",
+                Optional: true,
                 Computed: true,
             },
             "otel_collector_status": schema.StringAttribute{
                 MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected).",
+                Optional: true,
                 Computed: true,
             },
             "agent_version": schema.StringAttribute{
                 MarkdownDescription: "Version of the OneUptime Kubernetes agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute.",
+                Optional: true,
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When metrics were last received from this cluster.",
                 Computed: true,
             },
             "node_count": schema.NumberAttribute{
                 MarkdownDescription: "Cached count of nodes in this cluster.",
+                Optional: true,
                 Computed: true,
             },
             "pod_count": schema.NumberAttribute{
                 MarkdownDescription: "Cached count of pods in this cluster.",
+                Optional: true,
                 Computed: true,
             },
             "namespace_count": schema.NumberAttribute{
                 MarkdownDescription: "Cached count of namespaces in this cluster.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this Kubernetes cluster archived? Archived Kubernetes clusters are hidden from lists but keep collecting telemetry..",
+                MarkdownDescription: "Is this Kubernetes cluster archived? Archived Kubernetes clusters are hidden from lists but keep collecting telemetry.",
+                Optional: true,
                 Computed: true,
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this Kubernetes cluster archived?",
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry data for this Kubernetes cluster. Leave blank to use the project-wide default..",
+                MarkdownDescription: "Number of days to retain telemetry data for this Kubernetes cluster. Leave blank to use the project-wide default.",
+                Optional: true,
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this Kubernetes cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the cluster default, then the project's retention settings..",
+                MarkdownDescription: "Per-pillar retention overrides for this Kubernetes cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the cluster default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "ai_access_runner_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Runner OneUptime AI uses to run kubectl against this cluster. Another cluster's in-cluster Runner cannot be bound. Binding a Runner, or switching to a different one, needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can clear it. The ID of a `oneuptime_runner`.",
+                Optional: true,
                 Computed: true,
             },
             "ai_access_credential_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Kubernetes credential the AI access Runner uses for this cluster; the credential must be assigned to that Runner. Empty for the in-cluster Runner, which is never given a credential. Binding a credential needs Project Owner, Project Admin or Edit Auto Remediation Rule, and also permission to read credentials (Project Owner, Project Admin or Read Runbook Credential); anyone who may edit the cluster can clear it. The ID of a `oneuptime_runbook_credential`.",
+                Optional: true,
                 Computed: true,
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
-                MarkdownDescription: "When on, OneUptime AI runs read-only kubectl commands (get, describe, logs, events, top, rollout status) on this cluster, through the cluster's Kubernetes AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the cluster can turn it on or off..",
+                MarkdownDescription: "When on, OneUptime AI runs read-only kubectl commands (get, describe, logs, events, top, rollout status) on this cluster, through the cluster's Kubernetes AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the cluster can turn it on or off.",
+                Optional: true,
                 Computed: true,
             },
             "ai_remediation_mode": schema.StringAttribute{
-                MarkdownDescription: "Disabled: AI never proposes or runs a change on this cluster. RequireApproval: AI composes a kubectl plan and a human approves it with one click before anything runs. Any follow-up plan asks again. Automatic: AI runs safe changes without a human — each on ONE named object: rollout restart/undo/pause/resume of one workload, scale one workload above zero, delete one named pod, cordon/uncordon one node, label/annotate one pod or workload with unreserved keys. A riskier change (patch, set image, drain, taint, scale to zero, deleting workloads or jobs, anything touching several objects) never runs without one: when the round could only find riskier fixes it ends by proposing exactly those for one-click approval; when it also ran safe fixes, a riskier fix is proposed only if verification shows the safe ones did not recover the signal (the follow-up round, which asks). Shapes on the cluster's kubectl allowlist run on their own. BypassApproval: AI does not ask. Every change the policy allows — safe AND riskier — runs on its own, follow-up rounds included, except for what always asks (below). In EVERY mode, Bypass approval included: destructive commands (Denied tier) never run; a write in a protected namespace (kube-system, kube-public, kube-node-lease), a node drain, a node taint and a patch of a Node always need a human; the in-cluster Runner never changes its own namespace or anything outside the namespaces its chart may write; and an unattended run becomes a proposal when the hourly per-cluster circuit breaker trips or another unattended round already holds the cluster. Anyone who may edit the cluster can lower the mode (to Disabled, RequireApproval, or from BypassApproval to Automatic); raising it to Automatic or BypassApproval needs Project Owner, Project Admin or Edit Auto Remediation Rule..",
+                MarkdownDescription: "Disabled: AI never proposes or runs a change on this cluster. RequireApproval: AI composes a kubectl plan and a human approves it with one click before anything runs. Any follow-up plan asks again. Automatic: AI runs safe changes without a human — each on ONE named object: rollout restart/undo/pause/resume of one workload, scale one workload above zero, delete one named pod, cordon/uncordon one node, label/annotate one pod or workload with unreserved keys. A riskier change (patch, set image, drain, taint, scale to zero, deleting workloads or jobs, anything touching several objects) never runs without one: when the round could only find riskier fixes it ends by proposing exactly those for one-click approval; when it also ran safe fixes, a riskier fix is proposed only if verification shows the safe ones did not recover the signal (the follow-up round, which asks). Shapes on the cluster's kubectl allowlist run on their own. BypassApproval: AI does not ask. Every change the policy allows — safe AND riskier — runs on its own, follow-up rounds included, except for what always asks (below). In EVERY mode, Bypass approval included: destructive commands (Denied tier) never run; a write in a protected namespace (kube-system, kube-public, kube-node-lease), a node drain, a node taint and a patch of a Node always need a human; the in-cluster Runner never changes its own namespace or anything outside the namespaces its chart may write; and an unattended run becomes a proposal when the hourly per-cluster circuit breaker trips or another unattended round already holds the cluster. Anyone who may edit the cluster can lower the mode (to Disabled, RequireApproval, or from BypassApproval to Automatic); raising it to Automatic or BypassApproval needs Project Owner, Project Admin or Edit Auto Remediation Rule.",
+                Optional: true,
                 Computed: true,
             },
             "ai_kubectl_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of kubectl command patterns that Automatic mode may run without approval even though they are riskier changes, for example: [\"kubectl set image deployment/web * -n web\"]. A pattern is compared with the command word by word: * stands for exactly one word (an image, a name), never for extra objects, flags or a second -n, every flag the command uses must be written out in the pattern, and the leading \"kubectl\" is optional. At most 100 patterns of at most 500 characters each; a pattern that is not one kubectl command line is refused. Destructive commands (Denied tier) never run regardless, and a write in a protected namespace (kube-system, kube-public, kube-node-lease) or a node drain still needs a human. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can remove patterns or clear the list..",
+                MarkdownDescription: "Optional JSON array of kubectl command patterns that Automatic mode may run without approval even though they are riskier changes, for example: [\"kubectl set image deployment/web * -n web\"]. A pattern is compared with the command word by word: * stands for exactly one word (an image, a name), never for extra objects, flags or a second -n, every flag the command uses must be written out in the pattern, and the leading \"kubectl\" is optional. At most 100 patterns of at most 500 characters each; a pattern that is not one kubectl command line is refused. Destructive commands (Denied tier) never run regardless, and a write in a protected namespace (kube-system, kube-public, kube-node-lease) or a node drain still needs a human. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a kubectl command from OneUptime AI last succeeded on this cluster. Set by the server.",
                 Computed: true,
             },
             "ai_access_last_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent failure OneUptime AI hit while running kubectl on this cluster, kept until the next successful command. Set by the server..",
+                MarkdownDescription: "The most recent failure OneUptime AI hit while running kubectl on this cluster, kept until the next successful command. Set by the server.",
+                Optional: true,
                 Computed: true,
             },
             "ai_access_configured_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When OneUptime AI access to this cluster was first configured: by the in-cluster Runner's first registration, or by anyone saving an AI access setting. Set by the server; never cleared, so an in-cluster Runner that registers later never overwrites a setting an operator chose.",
                 Computed: true,
             },
             "ai_access_runner_bound_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a Runner was first bound to this cluster for OneUptime AI access. Set by the server; never cleared, so a cluster whose Runner was cleared or deleted is not silently re-bound when the in-cluster Runner registers again.",
                 Computed: true,
             },
         },
@@ -247,23 +250,108 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.ClusterIdentifier.IsNull() && !data.ClusterIdentifier.IsUnknown() {
+        filters["clusterIdentifier"] = data.ClusterIdentifier.ValueString()
+        filterNames = append(filterNames, "cluster_identifier = "+fmt.Sprintf("%q", data.ClusterIdentifier.ValueString()))
+    }
+    if !data.ProviderValue.IsNull() && !data.ProviderValue.IsUnknown() {
+        filters["provider"] = data.ProviderValue.ValueString()
+        filterNames = append(filterNames, "provider_value = "+fmt.Sprintf("%q", data.ProviderValue.ValueString()))
+    }
+    if !data.OtelCollectorStatus.IsNull() && !data.OtelCollectorStatus.IsUnknown() {
+        filters["otelCollectorStatus"] = data.OtelCollectorStatus.ValueString()
+        filterNames = append(filterNames, "otel_collector_status = "+fmt.Sprintf("%q", data.OtelCollectorStatus.ValueString()))
+    }
+    if !data.AgentVersion.IsNull() && !data.AgentVersion.IsUnknown() {
+        filters["agentVersion"] = data.AgentVersion.ValueString()
+        filterNames = append(filterNames, "agent_version = "+fmt.Sprintf("%q", data.AgentVersion.ValueString()))
+    }
+    if !data.NodeCount.IsNull() && !data.NodeCount.IsUnknown() {
+        filters["nodeCount"] = lookupNumber(data.NodeCount)
+        filterNames = append(filterNames, "node_count = "+data.NodeCount.ValueBigFloat().String())
+    }
+    if !data.PodCount.IsNull() && !data.PodCount.IsUnknown() {
+        filters["podCount"] = lookupNumber(data.PodCount)
+        filterNames = append(filterNames, "pod_count = "+data.PodCount.ValueBigFloat().String())
+    }
+    if !data.NamespaceCount.IsNull() && !data.NamespaceCount.IsUnknown() {
+        filters["namespaceCount"] = lookupNumber(data.NamespaceCount)
+        filterNames = append(filterNames, "namespace_count = "+data.NamespaceCount.ValueBigFloat().String())
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
+    if !data.RetainTelemetryDataForDays.IsNull() && !data.RetainTelemetryDataForDays.IsUnknown() {
+        filters["retainTelemetryDataForDays"] = lookupNumber(data.RetainTelemetryDataForDays)
+        filterNames = append(filterNames, "retain_telemetry_data_for_days = "+data.RetainTelemetryDataForDays.ValueBigFloat().String())
+    }
+    if !data.AiAccessRunnerId.IsNull() && !data.AiAccessRunnerId.IsUnknown() {
+        filters["aiAccessRunnerId"] = data.AiAccessRunnerId.ValueString()
+        filterNames = append(filterNames, "ai_access_runner_id = "+fmt.Sprintf("%q", data.AiAccessRunnerId.ValueString()))
+    }
+    if !data.AiAccessCredentialId.IsNull() && !data.AiAccessCredentialId.IsUnknown() {
+        filters["aiAccessCredentialId"] = data.AiAccessCredentialId.ValueString()
+        filterNames = append(filterNames, "ai_access_credential_id = "+fmt.Sprintf("%q", data.AiAccessCredentialId.ValueString()))
+    }
+    if !data.IsAiInvestigationEnabled.IsNull() && !data.IsAiInvestigationEnabled.IsUnknown() {
+        filters["isAiInvestigationEnabled"] = data.IsAiInvestigationEnabled.ValueBool()
+        filterNames = append(filterNames, "is_ai_investigation_enabled = "+fmt.Sprintf("%t", data.IsAiInvestigationEnabled.ValueBool()))
+    }
+    if !data.AiRemediationMode.IsNull() && !data.AiRemediationMode.IsUnknown() {
+        filters["aiRemediationMode"] = data.AiRemediationMode.ValueString()
+        filterNames = append(filterNames, "ai_remediation_mode = "+fmt.Sprintf("%q", data.AiRemediationMode.ValueString()))
+    }
+    if !data.AiAccessLastError.IsNull() && !data.AiAccessLastError.IsUnknown() {
+        filters["aiAccessLastError"] = data.AiAccessLastError.ValueString()
+        filterNames = append(filterNames, "ai_access_last_error = "+fmt.Sprintf("%q", data.AiAccessLastError.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a kubernetes_cluster.",
+            "Look the kubernetes cluster up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the kubernetes cluster up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "slug": true,
         "description": true,
         "clusterIdentifier": true,
@@ -278,7 +366,6 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         "isArchived": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -303,7 +390,7 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No kubernetes_cluster found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No kubernetes cluster found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -316,11 +403,10 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -337,11 +423,11 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No kubernetes_cluster found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No kubernetes cluster matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one kubernetes_cluster matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one kubernetes cluster matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -369,23 +455,6 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -421,34 +490,6 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -465,6 +506,23 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["slug"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -673,23 +731,6 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value

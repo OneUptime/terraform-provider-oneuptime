@@ -7,37 +7,40 @@ description: |-
 
 # oneuptime_table_view (Data Source)
 
-Table View is view settings for a table in a project. It contains columns, filters, and other settings. Look up by `id` or by `name` (must match exactly one item).
+Table View is view settings for a table in a project. It contains columns, filters, and other settings.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one table view may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_table_view" "by_name" {
-  name = "example-table_view"
+data "oneuptime_table_view" "example" {
+  name = "Example table view"
 }
 
+# Or by id:
 data "oneuptime_table_view" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `table_id` (String) ID of the table this view is for.. Computed.
-- `description` (String) Friendly description that will help you remember.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `query` (String) Filters for this table view.. Computed.
-- `sort` (String) Sort for this table view.. Computed.
-- `items_on_page` (Number) Items on page.. Computed.
-- `facets` (String) Facet selections (owner, labels, status, etc.) for this table view.. Computed.
-- `columns` (String) Which columns are shown, and in what order, for this table view.. Computed.
+### Optional
+
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `description` (String) Friendly description that will help you remember.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `items_on_page` (Number) Items on page.
+- `name` (String) Any friendly name of this object.
+- `table_id` (String) ID of the table this view is for.
+
+### Read-Only
+
+- `columns` (String) Which columns are shown, and in what order, for this table view. A JSON value: write it with `jsonencode()`.
+- `created_at` (String) Date and Time when the object was created.
+- `facets` (String) Facet selections (owner, labels, status, etc.) for this table view. A JSON value: write it with `jsonencode()`.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `query` (String) Filters for this table view. A JSON value: write it with `jsonencode()`.
+- `sort` (String) Sort for this table view. A JSON value: write it with `jsonencode()`.
+- `updated_at` (String) Date and Time when the object was updated.

@@ -73,13 +73,10 @@ type StorageArrayResourceModel struct {
     HealthStatus types.Number `tfsdk:"health_status"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (r *StorageArrayResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -87,26 +84,30 @@ func (r *StorageArrayResource) Metadata(ctx context.Context, req resource.Metada
 }
 
 func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *StorageArrayResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Storage arrays (Pure Storage FlashArray and FlashBlade) that are being monitored in this project. Each array is auto-discovered when the OneUptime Storage Array Agent sends metrics, or can be registered by hand.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this storage array in OneUptime. This is the join key — it must match the storage.array.name OTel resource attribute stamped by the OneUptime Storage Array Agent..",
+                MarkdownDescription: "Name of this storage array in OneUptime. This is the join key — it must match the storage.array.name OTel resource attribute stamped by the OneUptime Storage Array Agent.",
                 Required: true,
             },
             "description": schema.StringAttribute{
@@ -118,7 +119,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this storage array archived? Archived storage arrays are hidden from lists but keep collecting telemetry..",
+                MarkdownDescription: "Is this storage array archived? Archived storage arrays are hidden from lists but keep collecting telemetry.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -127,7 +128,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -136,7 +137,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry data for this storage array. Leave blank to use the project-wide default..",
+                MarkdownDescription: "Number of days to retain telemetry data for this storage array. Leave blank to use the project-wide default.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -144,7 +145,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this storage array (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the storage array default, then the project's retention settings..",
+                MarkdownDescription: "Per-pillar retention overrides for this storage array (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the storage array default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -156,7 +157,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "storage_system": schema.StringAttribute{
-                MarkdownDescription: "The storage platform this array runs, normalized from the storage.system OTel resource attribute (or detected from the metric names): purestorage.flasharray or purestorage.flashblade..",
+                MarkdownDescription: "The storage platform this array runs, normalized from the storage.system OTel resource attribute (or detected from the metric names): purestorage.flasharray or purestorage.flashblade.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -164,7 +165,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "reported_name": schema.StringAttribute{
-                MarkdownDescription: "The name the array reports for itself (array_name on purefa_info / purefb_info). Can differ from the OneUptime name, which comes from the agent configuration..",
+                MarkdownDescription: "The name the array reports for itself (array_name on purefa_info / purefb_info). Can differ from the OneUptime name, which comes from the agent configuration.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -172,7 +173,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "system_id": schema.StringAttribute{
-                MarkdownDescription: "The array's own system identifier (system_id on purefa_info / purefb_info)..",
+                MarkdownDescription: "The array's own system identifier (system_id on purefa_info / purefb_info).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -180,7 +181,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "os_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the array's operating system as it reports it (os on purefa_info / purefb_info)..",
+                MarkdownDescription: "Name of the array's operating system as it reports it (os on purefa_info / purefb_info).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -188,7 +189,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "os_version": schema.StringAttribute{
-                MarkdownDescription: "Version of the array's operating system as it reports it (version on purefa_info / purefb_info)..",
+                MarkdownDescription: "Version of the array's operating system as it reports it (version on purefa_info / purefb_info).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -212,7 +213,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When metrics were last received from this storage array.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -221,7 +222,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "capacity_bytes": schema.NumberAttribute{
-                MarkdownDescription: "Cached usable capacity of the array in bytes (purefa_array_space_bytes{space=\"capacity\"} / purefb_array_space_bytes{type=\"array\",space=\"capacity\"}). Null until the first array metric batch arrives..",
+                MarkdownDescription: "Cached usable capacity of the array in bytes (purefa_array_space_bytes{space=\"capacity\"} / purefb_array_space_bytes{type=\"array\",space=\"capacity\"}). Null until the first array metric batch arrives.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -229,7 +230,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "used_bytes": schema.NumberAttribute{
-                MarkdownDescription: "Cached physical space used on the array in bytes: capacity minus empty space, or capacity times utilization when the empty series is missing. Null until the first array metric batch arrives..",
+                MarkdownDescription: "Cached physical space used on the array in bytes: capacity minus empty space, or capacity times utilization when the empty series is missing. Null until the first array metric batch arrives.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -237,7 +238,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "capacity_used_percent": schema.NumberAttribute{
-                MarkdownDescription: "Cached array space utilization in percent (purefa_array_space_utilization / purefb_array_space_utilization). Stored as decimal so sub-percent precision survives the round trip. Null until the first array metric batch arrives..",
+                MarkdownDescription: "Cached array space utilization in percent (purefa_array_space_utilization / purefb_array_space_utilization). Stored as decimal so sub-percent precision survives the round trip. Null until the first array metric batch arrives.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -245,7 +246,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "data_reduction_ratio": schema.NumberAttribute{
-                MarkdownDescription: "Cached data reduction ratio of the array (purefa_array_space_data_reduction_ratio / purefb_array_space_data_reduction_ratio), for example 4.2 for 4.2:1. Null until the first array metric batch arrives..",
+                MarkdownDescription: "Cached data reduction ratio of the array (purefa_array_space_data_reduction_ratio / purefb_array_space_data_reduction_ratio), for example 4.2 for 4.2:1. Null until the first array metric batch arrives.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -253,7 +254,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "open_alert_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of alerts open on the array itself (purefa_alerts_open / purefb_alerts_open series, hidden alerts excluded)..",
+                MarkdownDescription: "Cached count of alerts open on the array itself (purefa_alerts_open / purefb_alerts_open series, hidden alerts excluded).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -261,7 +262,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "critical_alert_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of open array alerts with critical severity..",
+                MarkdownDescription: "Cached count of open array alerts with critical severity.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -269,7 +270,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "warning_alert_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of open array alerts with warning severity..",
+                MarkdownDescription: "Cached count of open array alerts with warning severity.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -277,7 +278,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "volume_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of volumes on the array (FlashArray)..",
+                MarkdownDescription: "Cached count of volumes on the array (FlashArray).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -285,7 +286,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "host_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of hosts defined on the array (FlashArray)..",
+                MarkdownDescription: "Cached count of hosts defined on the array (FlashArray).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -293,7 +294,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "pod_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of pods (ActiveCluster / ActiveDR replication containers) on the array (FlashArray)..",
+                MarkdownDescription: "Cached count of pods (ActiveCluster / ActiveDR replication containers) on the array (FlashArray).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -301,7 +302,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "file_system_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of file systems on the array (FlashBlade)..",
+                MarkdownDescription: "Cached count of file systems on the array (FlashBlade).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -309,7 +310,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "bucket_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of object store buckets on the array (FlashBlade)..",
+                MarkdownDescription: "Cached count of object store buckets on the array (FlashBlade).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -317,7 +318,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "hardware_component_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of hardware components the array reports (chassis, controllers, drive bays, power supplies, fans, ports, blades...)..",
+                MarkdownDescription: "Cached count of hardware components the array reports (chassis, controllers, drive bays, power supplies, fans, ports, blades...).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -325,7 +326,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "unhealthy_hardware_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of hardware components, drives and controllers in a critical, degraded, failed or unknown state..",
+                MarkdownDescription: "Cached count of hardware components, drives and controllers in a critical, degraded, failed or unknown state.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -333,7 +334,7 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "health_status": schema.NumberAttribute{
-                MarkdownDescription: "Cached array health derived from the array's open alerts and hardware state: 0 = OK, 1 = Warning (a warning alert, or a degraded or unknown component), 2 = Critical (a critical alert, or a failed or critical component). Rendered as the health pill. Null until the first metric batch arrives..",
+                MarkdownDescription: "Cached array health derived from the array's open alerts and hardware state: 0 = OK, 1 = Warning (a warning alert, or a degraded or unknown component), 2 = Critical (a critical alert, or a failed or critical component). Rendered as the health pill. Null until the first metric batch arrives.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -341,22 +342,16 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -364,20 +359,19 @@ func (r *StorageArrayResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this storage array archived?",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
         },
@@ -414,6 +408,14 @@ func (r *StorageArrayResource) Create(ctx context.Context, req resource.CreateRe
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config StorageArrayResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -520,13 +522,10 @@ func (r *StorageArrayResource) Create(ctx context.Context, req resource.CreateRe
         "healthStatus": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -1280,34 +1279,6 @@ func (r *StorageArrayResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1430,43 +1401,6 @@ func (r *StorageArrayResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1474,6 +1408,9 @@ func (r *StorageArrayResource) Create(ctx context.Context, req resource.CreateRe
     }
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -1526,13 +1463,10 @@ func (r *StorageArrayResource) Read(ctx context.Context, req resource.ReadReques
         "healthStatus": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -2287,34 +2221,6 @@ func (r *StorageArrayResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2437,43 +2343,6 @@ func (r *StorageArrayResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2502,6 +2371,14 @@ func (r *StorageArrayResource) Update(ctx context.Context, req resource.UpdateRe
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config StorageArrayResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     storageArrayRequest := map[string]interface{}{
@@ -2656,13 +2533,10 @@ func (r *StorageArrayResource) Update(ctx context.Context, req resource.UpdateRe
         "healthStatus": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -3411,34 +3285,6 @@ func (r *StorageArrayResource) Update(ctx context.Context, req resource.UpdateRe
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3561,49 +3407,15 @@ func (r *StorageArrayResource) Update(ctx context.Context, req resource.UpdateRe
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
     data.Id = state.Id
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -3641,6 +3453,101 @@ func (r *StorageArrayResource) Delete(ctx context.Context, req resource.DeleteRe
 
 func (r *StorageArrayResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *StorageArrayResource) keepPlannedValues(data *StorageArrayResourceModel, plan *StorageArrayResourceModel, config *StorageArrayResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.RetainTelemetryDataForDays.IsNull() && !plan.RetainTelemetryDataForDays.IsUnknown() {
+        data.RetainTelemetryDataForDays = plan.RetainTelemetryDataForDays
+    }
+    if config.TelemetryRetentionConfig.IsNull() && !plan.TelemetryRetentionConfig.IsUnknown() {
+        data.TelemetryRetentionConfig = plan.TelemetryRetentionConfig
+    }
+    if config.StorageSystem.IsNull() && !plan.StorageSystem.IsUnknown() {
+        data.StorageSystem = plan.StorageSystem
+    }
+    if config.ReportedName.IsNull() && !plan.ReportedName.IsUnknown() {
+        data.ReportedName = plan.ReportedName
+    }
+    if config.SystemId.IsNull() && !plan.SystemId.IsUnknown() {
+        data.SystemId = plan.SystemId
+    }
+    if config.OsName.IsNull() && !plan.OsName.IsUnknown() {
+        data.OsName = plan.OsName
+    }
+    if config.OsVersion.IsNull() && !plan.OsVersion.IsUnknown() {
+        data.OsVersion = plan.OsVersion
+    }
+    if config.OtelCollectorStatus.IsNull() && !plan.OtelCollectorStatus.IsUnknown() {
+        data.OtelCollectorStatus = plan.OtelCollectorStatus
+    }
+    if config.AgentVersion.IsNull() && !plan.AgentVersion.IsUnknown() {
+        data.AgentVersion = plan.AgentVersion
+    }
+    if config.LastSeenAt.IsNull() && !plan.LastSeenAt.IsUnknown() {
+        data.LastSeenAt = plan.LastSeenAt
+    }
+    if config.CapacityBytes.IsNull() && !plan.CapacityBytes.IsUnknown() {
+        data.CapacityBytes = plan.CapacityBytes
+    }
+    if config.UsedBytes.IsNull() && !plan.UsedBytes.IsUnknown() {
+        data.UsedBytes = plan.UsedBytes
+    }
+    if config.CapacityUsedPercent.IsNull() && !plan.CapacityUsedPercent.IsUnknown() {
+        data.CapacityUsedPercent = plan.CapacityUsedPercent
+    }
+    if config.DataReductionRatio.IsNull() && !plan.DataReductionRatio.IsUnknown() {
+        data.DataReductionRatio = plan.DataReductionRatio
+    }
+    if config.OpenAlertCount.IsNull() && !plan.OpenAlertCount.IsUnknown() {
+        data.OpenAlertCount = plan.OpenAlertCount
+    }
+    if config.CriticalAlertCount.IsNull() && !plan.CriticalAlertCount.IsUnknown() {
+        data.CriticalAlertCount = plan.CriticalAlertCount
+    }
+    if config.WarningAlertCount.IsNull() && !plan.WarningAlertCount.IsUnknown() {
+        data.WarningAlertCount = plan.WarningAlertCount
+    }
+    if config.VolumeCount.IsNull() && !plan.VolumeCount.IsUnknown() {
+        data.VolumeCount = plan.VolumeCount
+    }
+    if config.HostCount.IsNull() && !plan.HostCount.IsUnknown() {
+        data.HostCount = plan.HostCount
+    }
+    if config.PodCount.IsNull() && !plan.PodCount.IsUnknown() {
+        data.PodCount = plan.PodCount
+    }
+    if config.FileSystemCount.IsNull() && !plan.FileSystemCount.IsUnknown() {
+        data.FileSystemCount = plan.FileSystemCount
+    }
+    if config.BucketCount.IsNull() && !plan.BucketCount.IsUnknown() {
+        data.BucketCount = plan.BucketCount
+    }
+    if config.HardwareComponentCount.IsNull() && !plan.HardwareComponentCount.IsUnknown() {
+        data.HardwareComponentCount = plan.HardwareComponentCount
+    }
+    if config.UnhealthyHardwareCount.IsNull() && !plan.UnhealthyHardwareCount.IsUnknown() {
+        data.UnhealthyHardwareCount = plan.UnhealthyHardwareCount
+    }
+    if config.HealthStatus.IsNull() && !plan.HealthStatus.IsUnknown() {
+        data.HealthStatus = plan.HealthStatus
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

@@ -13,8 +13,8 @@ Configure rules for automatically attaching labels to databases when matching da
 
 ```terraform
 resource "oneuptime_database_label_rule" "example" {
-  name = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example database label rule"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -22,31 +22,38 @@ resource "oneuptime_database_label_rule" "example" {
 
 ### Required
 
-- `name` (String) Name of this database label rule..
+- `name` (String) Name of this database label rule.
 
 ### Optional
 
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource...
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Description of this database label rule..
-- `is_enabled` (Bool) Whether this rule is enabled..
-- `database_server_labels` (Set) Only trigger for databases that already have at least one of these labels. Leave empty to match regardless of labels...
-- `database_server_name_pattern` (String) Regex (case-insensitive) matched against the database name. Discovered databases are named after their engine (e.g. PostgreSQL orders-db:5432), so ^PostgreSQL matches every PostgreSQL database. Leave empty to match any name...
-- `database_server_description_pattern` (String) Regex (case-insensitive) matched against the database description. Leave empty to match any description...
-- `labels_to_add` (Set) Labels to attach to the database when this rule matches. Already-attached labels are not duplicated...
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `database_server_description_pattern` (String) Regex (case-insensitive) matched against the database description. Leave empty to match any description.
+- `database_server_labels` (Set of String) Only trigger for databases that already have at least one of these labels. Leave empty to match regardless of labels. IDs of `oneuptime_label` resources.
+- `database_server_name_pattern` (String) Regex (case-insensitive) matched against the database name. Discovered databases are named after their engine (e.g. PostgreSQL orders-db:5432), so ^PostgreSQL matches every PostgreSQL database. Leave empty to match any name.
+- `description` (String) Description of this database label rule.
+- `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
+- `labels_to_add` (Set of String) Labels to attach to the database when this rule matches. Already-attached labels are not duplicated. IDs of `oneuptime_label` resources.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing database label rule by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_database_label_rule.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_database_label_rule.example <id>

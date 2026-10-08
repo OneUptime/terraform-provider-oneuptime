@@ -57,10 +57,7 @@ type ExceptionResourceModel struct {
     Environment types.String `tfsdk:"environment"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     MarkedAsResolvedAt RFC3339Value `tfsdk:"marked_as_resolved_at"`
     MarkedAsArchivedAt RFC3339Value `tfsdk:"marked_as_archived_at"`
     MarkedAsResolvedByUserId types.String `tfsdk:"marked_as_resolved_by_user_id"`
@@ -77,30 +74,34 @@ func (r *ExceptionResource) Metadata(ctx context.Context, req resource.MetadataR
 }
 
 func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *ExceptionResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "List of all Telemetry Exceptions created for the telemetry service for this OneUptime project and it's status.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "primary_entity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the resource this exception belongs to (Service / Host / DockerHost / KubernetesCluster, or the projectId for unattributed telemetry — disambiguated by primaryEntityType).",
                 Required: true,
             },
             "primary_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry)..",
+                MarkdownDescription: "Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -141,7 +142,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "first_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When did this team member accept invitation.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -150,7 +151,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When did this team member accept invitation.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -159,7 +160,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "assign_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -167,7 +168,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "assign_to_team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Team ID who this exception is assigned to. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -175,7 +176,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "is_resolved": schema.BoolAttribute{
-                MarkdownDescription: "Is this exception resolved?.",
+                MarkdownDescription: "Is this exception resolved?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -184,7 +185,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this exception archived?.",
+                MarkdownDescription: "Is this exception archived?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -226,48 +227,41 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "marked_as_resolved_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When did this team member accept invitation.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "marked_as_archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When did this team member accept invitation.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "marked_as_resolved_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who marked this exception as resolved. The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
             "marked_as_archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who marked this exception as archived. The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
             "unhandled": schema.BoolAttribute{
@@ -279,7 +273,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 Computed: true,
             },
             "error_class": schema.StringAttribute{
-                MarkdownDescription: "Fault domain of this exception group (code-fault, user-error, expected-denial, infrastructure, unknown). Non-actionable classes are excluded from the Issues list..",
+                MarkdownDescription: "Fault domain of this exception group (code-fault, user-error, expected-denial, infrastructure, unknown). Non-actionable classes are excluded from the Issues list.",
                 Computed: true,
             },
             "error_class_source": schema.StringAttribute{
@@ -287,7 +281,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 Computed: true,
             },
             "ai_fix_declined_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Set when an AI-authored fix pull request for this exception was closed without merging; suppresses further automatic fix attempts.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -325,6 +319,14 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ExceptionResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -448,10 +450,7 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
         "environment": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "markedAsResolvedAt": true,
         "markedAsArchivedAt": true,
         "markedAsResolvedByUserId": true,
@@ -978,34 +977,6 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1042,43 +1013,6 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["markedAsResolvedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1309,6 +1243,9 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1347,10 +1284,7 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
         "environment": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "markedAsResolvedAt": true,
         "markedAsArchivedAt": true,
         "markedAsResolvedByUserId": true,
@@ -1878,34 +1812,6 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1942,43 +1848,6 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["markedAsResolvedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -2230,6 +2099,14 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ExceptionResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     exceptionRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -2323,10 +2200,7 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
         "environment": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "markedAsResolvedAt": true,
         "markedAsArchivedAt": true,
         "markedAsResolvedByUserId": true,
@@ -2848,34 +2722,6 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2912,43 +2758,6 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["markedAsResolvedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -3178,6 +2987,9 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3214,6 +3026,62 @@ func (r *ExceptionResource) Delete(ctx context.Context, req resource.DeleteReque
 
 func (r *ExceptionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *ExceptionResource) keepPlannedValues(data *ExceptionResourceModel, plan *ExceptionResourceModel, config *ExceptionResourceModel) {
+    if config.PrimaryEntityType.IsNull() && !plan.PrimaryEntityType.IsUnknown() {
+        data.PrimaryEntityType = plan.PrimaryEntityType
+    }
+    if config.Message.IsNull() && !plan.Message.IsUnknown() {
+        data.Message = plan.Message
+    }
+    if config.StackTrace.IsNull() && !plan.StackTrace.IsUnknown() {
+        data.StackTrace = plan.StackTrace
+    }
+    if config.ExceptionType.IsNull() && !plan.ExceptionType.IsUnknown() {
+        data.ExceptionType = plan.ExceptionType
+    }
+    if config.Fingerprint.IsNull() && !plan.Fingerprint.IsUnknown() {
+        data.Fingerprint = plan.Fingerprint
+    }
+    if config.FirstSeenAt.IsNull() && !plan.FirstSeenAt.IsUnknown() {
+        data.FirstSeenAt = plan.FirstSeenAt
+    }
+    if config.LastSeenAt.IsNull() && !plan.LastSeenAt.IsUnknown() {
+        data.LastSeenAt = plan.LastSeenAt
+    }
+    if config.AssignToUserId.IsNull() && !plan.AssignToUserId.IsUnknown() {
+        data.AssignToUserId = plan.AssignToUserId
+    }
+    if config.AssignToTeamId.IsNull() && !plan.AssignToTeamId.IsUnknown() {
+        data.AssignToTeamId = plan.AssignToTeamId
+    }
+    if config.IsResolved.IsNull() && !plan.IsResolved.IsUnknown() {
+        data.IsResolved = plan.IsResolved
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
+    }
+    if config.OccuranceCount.IsNull() && !plan.OccuranceCount.IsUnknown() {
+        data.OccuranceCount = plan.OccuranceCount
+    }
+    if config.FirstSeenInRelease.IsNull() && !plan.FirstSeenInRelease.IsUnknown() {
+        data.FirstSeenInRelease = plan.FirstSeenInRelease
+    }
+    if config.LastSeenInRelease.IsNull() && !plan.LastSeenInRelease.IsUnknown() {
+        data.LastSeenInRelease = plan.LastSeenInRelease
+    }
+    if config.Environment.IsNull() && !plan.Environment.IsUnknown() {
+        data.Environment = plan.Environment
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

@@ -51,8 +51,6 @@ type AiAgentTaskPullRequestResourceModel struct {
     RepoName types.String `tfsdk:"repo_name"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CiStatus types.String `tfsdk:"ci_status"`
     CiStatusAt RFC3339Value `tfsdk:"ci_status_at"`
     RunnerVerificationStatus types.String `tfsdk:"runner_verification_status"`
@@ -65,26 +63,30 @@ func (r *AiAgentTaskPullRequestResource) Metadata(ctx context.Context, req resou
 }
 
 func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *AiAgentTaskPullRequestResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Pull requests created by AI agents during task execution.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project this pull request belongs to. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "ai_run_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the AIRun (runType CodeFix) this pull request was opened by.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -93,7 +95,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "ai_agent_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the AI Agent that created this pull request. Null when it was proposed from an AI chat conversation. The ID of a `oneuptime_ai_agent`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -102,7 +104,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "code_repository_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Code Repository this pull request was created in. The ID of a `oneuptime_code_repository`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -111,11 +113,11 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of the pull request..",
+                MarkdownDescription: "Title of the pull request.",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description/body of the pull request..",
+                MarkdownDescription: "Description/body of the pull request.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -123,7 +125,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "pull_request_url": schema.StringAttribute{
-                MarkdownDescription: "URL to the pull request on the hosting platform..",
+                MarkdownDescription: "URL to the pull request on the hosting platform.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -131,7 +133,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "pull_request_id": schema.NumberAttribute{
-                MarkdownDescription: "The unique ID of the pull request from the hosting platform..",
+                MarkdownDescription: "The unique ID of the pull request from the hosting platform.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -140,7 +142,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "pull_request_number": schema.NumberAttribute{
-                MarkdownDescription: "The pull request number (e.g., #123)..",
+                MarkdownDescription: "The pull request number (e.g., #123).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -149,11 +151,11 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "pull_request_state": schema.StringAttribute{
-                MarkdownDescription: "Current state of the pull request (open, closed, merged)..",
+                MarkdownDescription: "Current state of the pull request (open, closed, merged).",
                 Required: true,
             },
             "head_ref_name": schema.StringAttribute{
-                MarkdownDescription: "The branch name of the pull request (source branch)..",
+                MarkdownDescription: "The branch name of the pull request (source branch).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -162,7 +164,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "base_ref_name": schema.StringAttribute{
-                MarkdownDescription: "The target branch for the pull request..",
+                MarkdownDescription: "The target branch for the pull request.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -171,7 +173,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "repo_organization_name": schema.StringAttribute{
-                MarkdownDescription: "Organization or username that owns the repository..",
+                MarkdownDescription: "Organization or username that owns the repository.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -180,7 +182,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "repo_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the repository..",
+                MarkdownDescription: "Name of the repository.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -189,44 +191,41 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "ci_status": schema.StringAttribute{
-                MarkdownDescription: "Rolled-up conclusion of the repository's own CI check runs on this pull request (Pending, Green, Red, ExpectedFailureObserved for should-fail regression-test PRs, NoCiConfigured). Null until the sync job first polls check runs. Written by AIAgent:SyncPullRequestStates — never by users..",
+                MarkdownDescription: "Rolled-up conclusion of the repository's own CI check runs on this pull request (Pending, Green, Red, ExpectedFailureObserved for should-fail regression-test PRs, NoCiConfigured). Null until the sync job first polls check runs. Written by AIAgent:SyncPullRequestStates — never by users.",
                 Computed: true,
             },
             "ci_status_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the CI status last changed.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "runner_verification_status": schema.StringAttribute{
-                MarkdownDescription: "Outcome of the Runner-side build/test verification that ran against the fix BEFORE this pull request opened (Passed, Failed, Skipped when the repository has no verification commands configured). Distinct from CI Status, which mirrors the repository's own CI checks after the PR exists. Written by the Runner at record time — never by users..",
+                MarkdownDescription: "Outcome of the Runner-side build/test verification that ran against the fix BEFORE this pull request opened (Passed, Failed, Skipped when the repository has no verification commands configured). Distinct from CI Status, which mirrors the repository's own CI checks after the PR exists. Written by the Runner at record time — never by users.",
                 Computed: true,
             },
             "runner_verification_summary": schema.StringAttribute{
-                MarkdownDescription: "Human-readable summary of the Runner-side verification (which commands ran, what failed, how many repair attempts were used). Written by the Runner at record time..",
+                MarkdownDescription: "Human-readable summary of the Runner-side verification (which commands ran, what failed, how many repair attempts were used). Written by the Runner at record time.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -262,6 +261,14 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config AiAgentTaskPullRequestResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -373,8 +380,6 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         "repoName": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "ciStatus": true,
         "ciStatusAt": true,
         "runnerVerificationStatus": true,
@@ -886,34 +891,6 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["ciStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1081,6 +1058,9 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1116,8 +1096,6 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         "repoName": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "ciStatus": true,
         "ciStatusAt": true,
         "runnerVerificationStatus": true,
@@ -1630,34 +1608,6 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["ciStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1846,6 +1796,14 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config AiAgentTaskPullRequestResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     aiAgentTaskPullRequestRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -1903,8 +1861,6 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         "repoName": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "ciStatus": true,
         "ciStatusAt": true,
         "runnerVerificationStatus": true,
@@ -2411,34 +2367,6 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["ciStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2605,6 +2533,9 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2641,6 +2572,50 @@ func (r *AiAgentTaskPullRequestResource) Delete(ctx context.Context, req resourc
 
 func (r *AiAgentTaskPullRequestResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *AiAgentTaskPullRequestResource) keepPlannedValues(data *AiAgentTaskPullRequestResourceModel, plan *AiAgentTaskPullRequestResourceModel, config *AiAgentTaskPullRequestResourceModel) {
+    if config.AiRunId.IsNull() && !plan.AiRunId.IsUnknown() {
+        data.AiRunId = plan.AiRunId
+    }
+    if config.AiAgentId.IsNull() && !plan.AiAgentId.IsUnknown() {
+        data.AiAgentId = plan.AiAgentId
+    }
+    if config.CodeRepositoryId.IsNull() && !plan.CodeRepositoryId.IsUnknown() {
+        data.CodeRepositoryId = plan.CodeRepositoryId
+    }
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.PullRequestUrl.IsNull() && !plan.PullRequestUrl.IsUnknown() {
+        data.PullRequestUrl = plan.PullRequestUrl
+    }
+    if config.PullRequestId.IsNull() && !plan.PullRequestId.IsUnknown() {
+        data.PullRequestId = plan.PullRequestId
+    }
+    if config.PullRequestNumber.IsNull() && !plan.PullRequestNumber.IsUnknown() {
+        data.PullRequestNumber = plan.PullRequestNumber
+    }
+    if config.HeadRefName.IsNull() && !plan.HeadRefName.IsUnknown() {
+        data.HeadRefName = plan.HeadRefName
+    }
+    if config.BaseRefName.IsNull() && !plan.BaseRefName.IsUnknown() {
+        data.BaseRefName = plan.BaseRefName
+    }
+    if config.RepoOrganizationName.IsNull() && !plan.RepoOrganizationName.IsUnknown() {
+        data.RepoOrganizationName = plan.RepoOrganizationName
+    }
+    if config.RepoName.IsNull() && !plan.RepoName.IsUnknown() {
+        data.RepoName = plan.RepoName
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

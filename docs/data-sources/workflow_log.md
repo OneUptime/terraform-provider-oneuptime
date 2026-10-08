@@ -7,35 +7,38 @@ description: |-
 
 # oneuptime_workflow_log (Data Source)
 
-Logs of the workflows executed Look up by `id` or by `name` (must match exactly one item).
+Logs of the workflows executed
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one workflow log may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_workflow_log" "by_name" {
-  name = "example-workflow_log"
+data "oneuptime_workflow_log" "example" {
+  workflow_id = oneuptime_workflow.example.id
 }
 
+# Or by id:
 data "oneuptime_workflow_log" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `workflow_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `logs` (String) Logs.. Computed.
-- `workflow_status` (String) Status of this workflow.. Computed.
-- `started_at` (String) A date time object.. Computed.
-- `completed_at` (String) A date time object.. Computed.
-- `resume_at` (String) A date time object.. Computed.
-- `step_trace` (String) Structured per-step record of this run: arguments, return values, the port taken and timing... Computed.
+### Optional
+
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `logs` (String) Logs.
+- `workflow_id` (String) ID of Workflow this logs belong to. The ID of a `oneuptime_workflow`.
+- `workflow_status` (String) Status of this workflow.
+
+### Read-Only
+
+- `completed_at` (String) When did this workflow complete.
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `resume_at` (String) When this workflow run is scheduled to resume after a Sleep step (only set while the run is Waiting).
+- `started_at` (String) When did this workflow start.
+- `step_trace` (String) Structured per-step record of this run: arguments, return values, the port taken and timing. A JSON value: write it with `jsonencode()`.
+- `updated_at` (String) Date and Time when the object was updated.

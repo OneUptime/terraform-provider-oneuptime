@@ -13,8 +13,8 @@ Configure rules for automatically attaching labels to alerts — including label
 
 ```terraform
 resource "oneuptime_alert_label_rule" "example" {
-  name = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example alert label rule"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -22,42 +22,49 @@ resource "oneuptime_alert_label_rule" "example" {
 
 ### Required
 
-- `name` (String) Name of this alert label rule..
+- `name` (String) Name of this alert label rule.
 
 ### Optional
 
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource...
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Description of this alert label rule..
-- `is_enabled` (Bool) Whether this rule is enabled..
-- `monitors` (Set) Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor...
-- `alert_severities` (Set) Only trigger for alerts with these severities. Leave empty to match alerts of any severity...
-- `alert_labels` (Set) Only trigger for alerts that already have at least one of these labels...
-- `monitor_labels` (Set) Only trigger for alerts from monitors that have at least one of these labels...
-- `alert_title_pattern` (String) Regex (case-insensitive) matched against the alert title...
-- `alert_description_pattern` (String) Regex (case-insensitive) matched against the alert description...
-- `monitor_name_pattern` (String) Regex (case-insensitive) matched against the alert's monitor name...
-- `monitor_description_pattern` (String) Regex (case-insensitive) matched against the alert's monitor description...
-- `labels_to_add` (Set) Labels to attach to the alert when this rule matches. Already-attached labels are not duplicated...
-- `inherit_labels_from_monitors` (Bool) When this rule matches, also copy every label of the alert's monitor onto the alert...
-- `inherit_labels_from_hosts` (Bool) When this rule matches, also copy every label of the alert's affected hosts onto the alert...
-- `inherit_labels_from_kubernetes_clusters` (Bool) When this rule matches, also copy every label of the alert's affected Kubernetes clusters onto the alert...
-- `inherit_labels_from_docker_hosts` (Bool) When this rule matches, also copy every label of the alert's affected Docker hosts onto the alert...
-- `inherit_labels_from_podman_hosts` (Bool) When this rule matches, also copy every label of the alert's affected Podman hosts onto the alert...
-- `inherit_labels_from_services` (Bool) When this rule matches, also copy every label of the alert's affected services onto the alert...
+- `alert_description_pattern` (String) Regex (case-insensitive) matched against the alert description.
+- `alert_labels` (Set of String) Only trigger for alerts that already have at least one of these labels. IDs of `oneuptime_label` resources.
+- `alert_severities` (Set of String) Only trigger for alerts with these severities. Leave empty to match alerts of any severity. IDs of `oneuptime_alert_severity` resources.
+- `alert_title_pattern` (String) Regex (case-insensitive) matched against the alert title.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `description` (String) Description of this alert label rule.
+- `inherit_labels_from_docker_hosts` (Boolean) When this rule matches, also copy every label of the alert's affected Docker hosts onto the alert. Defaults to `false`.
+- `inherit_labels_from_hosts` (Boolean) When this rule matches, also copy every label of the alert's affected hosts onto the alert. Defaults to `false`.
+- `inherit_labels_from_kubernetes_clusters` (Boolean) When this rule matches, also copy every label of the alert's affected Kubernetes clusters onto the alert. Defaults to `false`.
+- `inherit_labels_from_monitors` (Boolean) When this rule matches, also copy every label of the alert's monitor onto the alert. Defaults to `false`.
+- `inherit_labels_from_podman_hosts` (Boolean) When this rule matches, also copy every label of the alert's affected Podman hosts onto the alert. Defaults to `false`.
+- `inherit_labels_from_services` (Boolean) When this rule matches, also copy every label of the alert's affected services onto the alert. Defaults to `false`.
+- `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
+- `labels_to_add` (Set of String) Labels to attach to the alert when this rule matches. Already-attached labels are not duplicated. IDs of `oneuptime_label` resources.
+- `monitor_description_pattern` (String) Regex (case-insensitive) matched against the alert's monitor description.
+- `monitor_labels` (Set of String) Only trigger for alerts from monitors that have at least one of these labels. IDs of `oneuptime_label` resources.
+- `monitor_name_pattern` (String) Regex (case-insensitive) matched against the alert's monitor name.
+- `monitors` (Set of String) Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor. IDs of `oneuptime_monitor` resources.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing alert label rule by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_alert_label_rule.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_alert_label_rule.example <id>

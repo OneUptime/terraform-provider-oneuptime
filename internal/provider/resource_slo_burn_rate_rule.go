@@ -74,8 +74,6 @@ type SloBurnRateRuleResourceModel struct {
     AddSloOwnersAsOwners types.Bool `tfsdk:"add_slo_owners_as_owners"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     LastAlertCreatedAt RFC3339Value `tfsdk:"last_alert_created_at"`
     LastAlertResolvedAt RFC3339Value `tfsdk:"last_alert_resolved_at"`
     LastIncidentCreatedAt RFC3339Value `tfsdk:"last_incident_created_at"`
@@ -88,26 +86,30 @@ func (r *SloBurnRateRuleResource) Metadata(ctx context.Context, req resource.Met
 }
 
 func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Configure multi-window burn rate rules that raise alerts and/or declare incidents when a Service Level Objective consumes its error budget too quickly",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "service_level_objective_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Service Level Objective this burn rate rule belongs to. The ID of a `oneuptime_service_level_objective`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -127,19 +129,19 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "burn_rate_threshold": schema.NumberAttribute{
-                MarkdownDescription: "Alert when the burn rate in both the long and short windows is at or above this threshold (e.g. 14.4)..",
+                MarkdownDescription: "Alert when the burn rate in both the long and short windows is at or above this threshold (e.g. 14.4).",
                 Required: true,
             },
             "long_window_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Length of the long lookback window in minutes (e.g. 60). The alert fires when both windows exceed the threshold and resolves when the long window drops below it..",
+                MarkdownDescription: "Length of the long lookback window in minutes (e.g. 60). The alert fires when both windows exceed the threshold and resolves when the long window drops below it.",
                 Required: true,
             },
             "short_window_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Length of the short lookback window in minutes (e.g. 5). Guards against alerting on burn that has already stopped..",
+                MarkdownDescription: "Length of the short lookback window in minutes (e.g. 5). Guards against alerting on burn that has already stopped.",
                 Required: true,
             },
             "minimum_sample_count": schema.NumberAttribute{
-                MarkdownDescription: "For event-based SLIs only: skip this rule when the long window has fewer than this many total events. Prevents noisy alerts on low traffic..",
+                MarkdownDescription: "For event-based SLIs only: skip this rule when the long window has fewer than this many total events. Prevents noisy alerts on low traffic.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -147,7 +149,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "refire_suppression_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Minimum number of minutes after an alert or incident resolves before this rule can declare that same record again. Each output is suppressed independently, from its own resolve. Defaults to the long window length when not set..",
+                MarkdownDescription: "Minimum number of minutes after an alert or incident resolves before this rule can declare that same record again. Each output is suppressed independently, from its own resolve. Defaults to the long window length when not set.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -155,7 +157,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "should_create_alert": schema.BoolAttribute{
-                MarkdownDescription: "Raise an Alert when this burn rate rule fires. Enabled by default..",
+                MarkdownDescription: "Raise an Alert when this burn rate rule fires. Enabled by default.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -164,7 +166,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "should_create_incident": schema.BoolAttribute{
-                MarkdownDescription: "Declare an Incident when this burn rate rule fires. Disabled by default..",
+                MarkdownDescription: "Declare an Incident when this burn rate rule fires. Disabled by default.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -173,7 +175,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Alert Severity of the alert created when this burn rate rule fires. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -181,7 +183,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies attached to alerts created by this burn rate rule. Incidents have their own list..",
+                MarkdownDescription: "On-call duty policies attached to alerts created by this burn rate rule. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -190,7 +192,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_title_template": schema.StringAttribute{
-                MarkdownDescription: "Title of the alert raised when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title..",
+                MarkdownDescription: "Title of the alert raised when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -198,7 +200,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_description_template": schema.StringAttribute{
-                MarkdownDescription: "Description (in Markdown) of the alert raised when this burn rate rule fires. Supports template variables. Leave empty to use the default description..",
+                MarkdownDescription: "Description (in Markdown) of the alert raised when this burn rate rule fires. Supports template variables. Leave empty to use the default description.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -206,7 +208,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_remediation_notes": schema.StringAttribute{
-                MarkdownDescription: "Remediation notes (in Markdown) attached to the alert raised when this burn rate rule fires. Supports template variables..",
+                MarkdownDescription: "Remediation notes (in Markdown) attached to the alert raised when this burn rate rule fires. Supports template variables.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -214,7 +216,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "is_alert_private": schema.BoolAttribute{
-                MarkdownDescription: "Make the alert raised by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default..",
+                MarkdownDescription: "Make the alert raised by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -223,7 +225,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "auto_resolve_alert": schema.BoolAttribute{
-                MarkdownDescription: "Resolve the alert automatically when the burn rate over the long window drops back below the threshold. Enabled by default. When disabled, the alert stays open until someone resolves it..",
+                MarkdownDescription: "Resolve the alert automatically when the burn rate over the long window drops back below the threshold. Enabled by default. When disabled, the alert stays open until someone resolves it.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -232,7 +234,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_labels": schema.SetAttribute{
-                MarkdownDescription: "Labels added to alerts raised by this burn rate rule..",
+                MarkdownDescription: "Labels added to alerts raised by this burn rate rule. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -241,7 +243,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams added as owners of alerts raised by this burn rate rule..",
+                MarkdownDescription: "Teams added as owners of alerts raised by this burn rate rule. IDs of `oneuptime_team` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -250,7 +252,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users added as owners of alerts raised by this burn rate rule..",
+                MarkdownDescription: "Users added as owners of alerts raised by this burn rate rule. IDs of `oneuptime_user` records.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -259,7 +261,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Incident Severity of the incident declared when this burn rate rule fires. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -267,7 +269,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies attached to incidents declared by this burn rate rule..",
+                MarkdownDescription: "On-call duty policies attached to incidents declared by this burn rate rule. IDs of `oneuptime_on_call_policy` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -276,7 +278,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_title_template": schema.StringAttribute{
-                MarkdownDescription: "Title of the incident declared when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title..",
+                MarkdownDescription: "Title of the incident declared when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -284,7 +286,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_description_template": schema.StringAttribute{
-                MarkdownDescription: "Description (in Markdown) of the incident declared when this burn rate rule fires. Supports template variables. Leave empty to use the default description..",
+                MarkdownDescription: "Description (in Markdown) of the incident declared when this burn rate rule fires. Supports template variables. Leave empty to use the default description.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -292,7 +294,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_remediation_notes": schema.StringAttribute{
-                MarkdownDescription: "Remediation notes (in Markdown) attached to the incident declared when this burn rate rule fires. Supports template variables..",
+                MarkdownDescription: "Remediation notes (in Markdown) attached to the incident declared when this burn rate rule fires. Supports template variables.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -300,7 +302,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "is_incident_private": schema.BoolAttribute{
-                MarkdownDescription: "Make the incident declared by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default..",
+                MarkdownDescription: "Make the incident declared by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -309,7 +311,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "auto_resolve_incident": schema.BoolAttribute{
-                MarkdownDescription: "Resolve the incident automatically when the burn rate over the long window drops back below the threshold. Enabled by default. When disabled, the incident stays open until someone resolves it..",
+                MarkdownDescription: "Resolve the incident automatically when the burn rate over the long window drops back below the threshold. Enabled by default. When disabled, the incident stays open until someone resolves it.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -318,7 +320,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Labels added to incidents declared by this burn rate rule..",
+                MarkdownDescription: "Labels added to incidents declared by this burn rate rule. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -327,7 +329,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams added as owners of incidents declared by this burn rate rule..",
+                MarkdownDescription: "Teams added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_team` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -336,7 +338,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users added as owners of incidents declared by this burn rate rule..",
+                MarkdownDescription: "Users added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_user` records.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -345,7 +347,7 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "add_slo_owners_as_owners": schema.BoolAttribute{
-                MarkdownDescription: "Also add the owner users and owner teams of the Service Level Objective as owners of the alerts and incidents this burn rate rule creates. Disabled by default..",
+                MarkdownDescription: "Also add the owner users and owner teams of the Service Level Objective as owners of the alerts and incidents this burn rate rule creates. Disabled by default.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -354,47 +356,44 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "last_alert_created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "The last time an alert was created by this burn rate rule. Computed by the worker.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "last_alert_resolved_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "The last time an alert created by this burn rate rule was resolved. Computed by the worker.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "last_incident_created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "The last time an incident was declared by this burn rate rule. Computed by the worker.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "last_incident_resolved_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "The last time an incident declared by this burn rate rule was resolved. Computed by the worker.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -430,6 +429,14 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config SloBurnRateRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -613,8 +620,6 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
         "addSloOwnersAsOwners": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "lastAlertCreatedAt": true,
         "lastAlertResolvedAt": true,
         "lastIncidentCreatedAt": true,
@@ -1420,34 +1425,6 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["lastAlertCreatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastAlertCreatedAt = NewRFC3339Value(val)
@@ -1537,6 +1514,9 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1590,8 +1570,6 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
         "addSloOwnersAsOwners": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "lastAlertCreatedAt": true,
         "lastAlertResolvedAt": true,
         "lastIncidentCreatedAt": true,
@@ -2398,34 +2376,6 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["lastAlertCreatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastAlertCreatedAt = NewRFC3339Value(val)
@@ -2535,6 +2485,14 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config SloBurnRateRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     sloBurnRateRuleRequest := map[string]interface{}{
@@ -2689,8 +2647,6 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
         "addSloOwnersAsOwners": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "lastAlertCreatedAt": true,
         "lastAlertResolvedAt": true,
         "lastIncidentCreatedAt": true,
@@ -3491,34 +3447,6 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["lastAlertCreatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastAlertCreatedAt = NewRFC3339Value(val)
@@ -3607,6 +3535,9 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3643,6 +3574,95 @@ func (r *SloBurnRateRuleResource) Delete(ctx context.Context, req resource.Delet
 
 func (r *SloBurnRateRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *SloBurnRateRuleResource) keepPlannedValues(data *SloBurnRateRuleResourceModel, plan *SloBurnRateRuleResourceModel, config *SloBurnRateRuleResourceModel) {
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.MinimumSampleCount.IsNull() && !plan.MinimumSampleCount.IsUnknown() {
+        data.MinimumSampleCount = plan.MinimumSampleCount
+    }
+    if config.RefireSuppressionMinutes.IsNull() && !plan.RefireSuppressionMinutes.IsUnknown() {
+        data.RefireSuppressionMinutes = plan.RefireSuppressionMinutes
+    }
+    if config.ShouldCreateAlert.IsNull() && !plan.ShouldCreateAlert.IsUnknown() {
+        data.ShouldCreateAlert = plan.ShouldCreateAlert
+    }
+    if config.ShouldCreateIncident.IsNull() && !plan.ShouldCreateIncident.IsUnknown() {
+        data.ShouldCreateIncident = plan.ShouldCreateIncident
+    }
+    if config.AlertSeverityId.IsNull() && !plan.AlertSeverityId.IsUnknown() {
+        data.AlertSeverityId = plan.AlertSeverityId
+    }
+    if config.OnCallDutyPolicies.IsNull() && !plan.OnCallDutyPolicies.IsUnknown() {
+        data.OnCallDutyPolicies = plan.OnCallDutyPolicies
+    }
+    if config.AlertTitleTemplate.IsNull() && !plan.AlertTitleTemplate.IsUnknown() {
+        data.AlertTitleTemplate = plan.AlertTitleTemplate
+    }
+    if config.AlertDescriptionTemplate.IsNull() && !plan.AlertDescriptionTemplate.IsUnknown() {
+        data.AlertDescriptionTemplate = plan.AlertDescriptionTemplate
+    }
+    if config.AlertRemediationNotes.IsNull() && !plan.AlertRemediationNotes.IsUnknown() {
+        data.AlertRemediationNotes = plan.AlertRemediationNotes
+    }
+    if config.IsAlertPrivate.IsNull() && !plan.IsAlertPrivate.IsUnknown() {
+        data.IsAlertPrivate = plan.IsAlertPrivate
+    }
+    if config.AutoResolveAlert.IsNull() && !plan.AutoResolveAlert.IsUnknown() {
+        data.AutoResolveAlert = plan.AutoResolveAlert
+    }
+    if config.AlertLabels.IsNull() && !plan.AlertLabels.IsUnknown() {
+        data.AlertLabels = plan.AlertLabels
+    }
+    if config.AlertOwnerTeams.IsNull() && !plan.AlertOwnerTeams.IsUnknown() {
+        data.AlertOwnerTeams = plan.AlertOwnerTeams
+    }
+    if config.AlertOwnerUsers.IsNull() && !plan.AlertOwnerUsers.IsUnknown() {
+        data.AlertOwnerUsers = plan.AlertOwnerUsers
+    }
+    if config.IncidentSeverityId.IsNull() && !plan.IncidentSeverityId.IsUnknown() {
+        data.IncidentSeverityId = plan.IncidentSeverityId
+    }
+    if config.IncidentOnCallDutyPolicies.IsNull() && !plan.IncidentOnCallDutyPolicies.IsUnknown() {
+        data.IncidentOnCallDutyPolicies = plan.IncidentOnCallDutyPolicies
+    }
+    if config.IncidentTitleTemplate.IsNull() && !plan.IncidentTitleTemplate.IsUnknown() {
+        data.IncidentTitleTemplate = plan.IncidentTitleTemplate
+    }
+    if config.IncidentDescriptionTemplate.IsNull() && !plan.IncidentDescriptionTemplate.IsUnknown() {
+        data.IncidentDescriptionTemplate = plan.IncidentDescriptionTemplate
+    }
+    if config.IncidentRemediationNotes.IsNull() && !plan.IncidentRemediationNotes.IsUnknown() {
+        data.IncidentRemediationNotes = plan.IncidentRemediationNotes
+    }
+    if config.IsIncidentPrivate.IsNull() && !plan.IsIncidentPrivate.IsUnknown() {
+        data.IsIncidentPrivate = plan.IsIncidentPrivate
+    }
+    if config.AutoResolveIncident.IsNull() && !plan.AutoResolveIncident.IsUnknown() {
+        data.AutoResolveIncident = plan.AutoResolveIncident
+    }
+    if config.IncidentLabels.IsNull() && !plan.IncidentLabels.IsUnknown() {
+        data.IncidentLabels = plan.IncidentLabels
+    }
+    if config.IncidentOwnerTeams.IsNull() && !plan.IncidentOwnerTeams.IsUnknown() {
+        data.IncidentOwnerTeams = plan.IncidentOwnerTeams
+    }
+    if config.IncidentOwnerUsers.IsNull() && !plan.IncidentOwnerUsers.IsUnknown() {
+        data.IncidentOwnerUsers = plan.IncidentOwnerUsers
+    }
+    if config.AddSloOwnersAsOwners.IsNull() && !plan.AddSloOwnersAsOwners.IsUnknown() {
+        data.AddSloOwnersAsOwners = plan.AddSloOwnersAsOwners
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

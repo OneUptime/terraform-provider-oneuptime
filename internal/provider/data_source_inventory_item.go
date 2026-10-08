@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,11 +27,8 @@ type InventoryItemDataSource struct {
 // InventoryItemDataSourceModel describes the data source data model.
 type InventoryItemDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     EntityType types.String `tfsdk:"entity_type"`
     EntityKey types.String `tfsdk:"entity_key"`
@@ -52,7 +48,6 @@ type InventoryItemDataSourceModel struct {
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     CustomFields types.String `tfsdk:"custom_fields"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *InventoryItemDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -61,113 +56,107 @@ func (d *InventoryItemDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *InventoryItemDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Catalog of everything OneUptime knows about your estate (service, host, k8s.pod, container, network device, ...), discovered from telemetry resource attributes, mirrored from inventory tables, or registered by hand. Look up an existing inventory_item by `id` or by `name`.",
+        MarkdownDescription: "Catalog of everything OneUptime knows about your estate (service, host, k8s.pod, container, network device, ...), discovered from telemetry resource attributes, mirrored from inventory tables, or registered by hand. Look up an existing inventory item by `id`, or by any of its other arguments (`archived_by_user_id`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one inventory item may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "entity_type": schema.StringAttribute{
-                MarkdownDescription: "The OpenTelemetry entity type (service, host, k8s.pod, container, ...)..",
+                MarkdownDescription: "The OpenTelemetry entity type (service, host, k8s.pod, container, ...).",
+                Optional: true,
                 Computed: true,
             },
             "entity_key": schema.StringAttribute{
-                MarkdownDescription: "Stable identity hash derived from the entity's identifying attributes (matches the keys stamped into signal entityKeys columns)..",
+                MarkdownDescription: "Stable identity hash derived from the entity's identifying attributes (matches the keys stamped into signal entityKeys columns).",
+                Optional: true,
                 Computed: true,
             },
             "display_name": schema.StringAttribute{
-                MarkdownDescription: "Human-readable name shown in the Inventory list..",
+                MarkdownDescription: "Human-readable name shown in the Inventory list.",
+                Optional: true,
                 Computed: true,
             },
             "source": schema.StringAttribute{
-                MarkdownDescription: "How this row came to exist: discovered from telemetry, mirrored from a OneUptime inventory table, or created manually by a user. Determines whether stale-entity pruning applies..",
+                MarkdownDescription: "How this row came to exist: discovered from telemetry, mirrored from a OneUptime inventory table, or created manually by a user. Determines whether stale-entity pruning applies.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Free-text description. Primarily for manually created entities, where there are no telemetry attributes to explain what the thing is..",
+                MarkdownDescription: "Free-text description. Primarily for manually created entities, where there are no telemetry attributes to explain what the thing is.",
+                Optional: true,
                 Computed: true,
             },
             "identifying_attributes": schema.StringAttribute{
-                MarkdownDescription: "The immutable identifying attribute set (the entity's identity). Descriptive attributes are deliberately excluded so they can change without changing the entity key..",
+                MarkdownDescription: "The immutable identifying attribute set (the entity's identity). Descriptive attributes are deliberately excluded so they can change without changing the entity key. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "descriptive_attributes": schema.StringAttribute{
-                MarkdownDescription: "Mutable descriptive metadata (image tag, version, IP, ...) merged last-writer-wins. Never part of the identity..",
+                MarkdownDescription: "Mutable descriptive metadata (image tag, version, IP, ...) merged last-writer-wins. Never part of the identity. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "labels": schema.StringAttribute{
-                MarkdownDescription: "Labels observed on this entity's telemetry (e.g. promoted from oneuptime.label.* resource attributes), merged as a set union. Simple string array in v1 — a relation to the Label table is a follow-up..",
+                MarkdownDescription: "Labels observed on this entity's telemetry (e.g. promoted from oneuptime.label.* resource attributes), merged as a set union. Simple string array in v1 — a relation to the Label table is a follow-up. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "resource_type": schema.StringAttribute{
-                MarkdownDescription: "Polymorphic pointer type to a rich typed row, if one exists (Service / Host / DockerHost / KubernetesCluster)..",
+                MarkdownDescription: "Polymorphic pointer type to a rich typed row, if one exists (Service / Host / DockerHost / KubernetesCluster).",
+                Optional: true,
                 Computed: true,
             },
             "resource_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Polymorphic pointer id to the rich typed row named by resourceType, if any.",
+                Optional: true,
                 Computed: true,
             },
             "first_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this entity was first observed in telemetry.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Most recent time this entity was observed in telemetry (bumped, throttled). Drives staleness pruning.",
                 Computed: true,
             },
             "inventory_status": schema.StringAttribute{
-                MarkdownDescription: "Current heartbeat status: live, recent, stale, never seen, or not tracked..",
+                MarkdownDescription: "Current heartbeat status: live, recent, stale, never seen, or not tracked.",
+                Optional: true,
                 Computed: true,
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this item archived? Archived items are hidden from the default list but keep their identity and keep collecting telemetry..",
+                MarkdownDescription: "Is this item archived? Archived items are hidden from the default list but keep their identity and keep collecting telemetry.",
+                Optional: true,
                 Computed: true,
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this item was archived.",
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom fields on this item..",
+                MarkdownDescription: "Custom fields on this item. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -204,22 +193,74 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.EntityType.IsNull() && !data.EntityType.IsUnknown() {
+        filters["entityType"] = data.EntityType.ValueString()
+        filterNames = append(filterNames, "entity_type = "+fmt.Sprintf("%q", data.EntityType.ValueString()))
+    }
+    if !data.EntityKey.IsNull() && !data.EntityKey.IsUnknown() {
+        filters["entityKey"] = data.EntityKey.ValueString()
+        filterNames = append(filterNames, "entity_key = "+fmt.Sprintf("%q", data.EntityKey.ValueString()))
+    }
+    if !data.DisplayName.IsNull() && !data.DisplayName.IsUnknown() {
+        filters["displayName"] = data.DisplayName.ValueString()
+        filterNames = append(filterNames, "display_name = "+fmt.Sprintf("%q", data.DisplayName.ValueString()))
+    }
+    if !data.Source.IsNull() && !data.Source.IsUnknown() {
+        filters["source"] = data.Source.ValueString()
+        filterNames = append(filterNames, "source = "+fmt.Sprintf("%q", data.Source.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.ResourceType.IsNull() && !data.ResourceType.IsUnknown() {
+        filters["resourceType"] = data.ResourceType.ValueString()
+        filterNames = append(filterNames, "resource_type = "+fmt.Sprintf("%q", data.ResourceType.ValueString()))
+    }
+    if !data.ResourceId.IsNull() && !data.ResourceId.IsUnknown() {
+        filters["resourceId"] = data.ResourceId.ValueString()
+        filterNames = append(filterNames, "resource_id = "+fmt.Sprintf("%q", data.ResourceId.ValueString()))
+    }
+    if !data.InventoryStatus.IsNull() && !data.InventoryStatus.IsUnknown() {
+        filters["inventoryStatus"] = data.InventoryStatus.ValueString()
+        filterNames = append(filterNames, "inventory_status = "+fmt.Sprintf("%q", data.InventoryStatus.ValueString()))
+    }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a inventory_item.",
+            "Look the inventory item up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the inventory item up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "entityType": true,
         "entityKey": true,
@@ -239,7 +280,6 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
         "archivedByUserId": true,
         "customFields": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -252,7 +292,7 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No inventory_item found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No inventory item found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -265,11 +305,10 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -286,11 +325,11 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No inventory_item found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No inventory item matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one inventory_item matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one inventory item matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -318,23 +357,6 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -369,34 +391,6 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -708,23 +702,6 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

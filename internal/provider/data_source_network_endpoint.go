@@ -28,11 +28,8 @@ type NetworkEndpointDataSource struct {
 // NetworkEndpointDataSourceModel describes the data source data model.
 type NetworkEndpointDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     MacAddress types.String `tfsdk:"mac_address"`
     IpAddress types.String `tfsdk:"ip_address"`
@@ -46,7 +43,6 @@ type NetworkEndpointDataSourceModel struct {
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *NetworkEndpointDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -55,89 +51,82 @@ func (d *NetworkEndpointDataSource) Metadata(ctx context.Context, req datasource
 
 func (d *NetworkEndpointDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices. Rows are upserted by the server; users can classify them. Look up an existing network_endpoint by `id` or by `name`.",
+        MarkdownDescription: "LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices. Rows are upserted by the server; users can classify them. Look up an existing network endpoint by `id`, or by any of its other arguments (`attached_interface_index`, `attached_network_device_id`, `attached_port_name`, ...): each one set must match, and exactly one network endpoint may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "mac_address": schema.StringAttribute{
-                MarkdownDescription: "MAC address of this endpoint, colon-separated hex. One row per MAC per project..",
+                MarkdownDescription: "MAC address of this endpoint, colon-separated hex. One row per MAC per project.",
+                Optional: true,
                 Computed: true,
             },
             "ip_address": schema.StringAttribute{
-                MarkdownDescription: "Last IP address seen for this endpoint in ARP tables. Managed by the server..",
+                MarkdownDescription: "Last IP address seen for this endpoint in ARP tables. Managed by the server.",
+                Optional: true,
                 Computed: true,
             },
             "vendor": schema.StringAttribute{
-                MarkdownDescription: "Hardware vendor derived from the MAC OUI prefix. Managed by the server..",
+                MarkdownDescription: "Hardware vendor derived from the MAC OUI prefix. Managed by the server.",
+                Optional: true,
                 Computed: true,
             },
             "classification": schema.StringAttribute{
                 MarkdownDescription: "User-editable classification of this endpoint (POS, Kiosk, Camera, Printer, ...).",
+                Optional: true,
                 Computed: true,
             },
             "attached_network_device_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Device this endpoint was last seen attached to. The ID of a `oneuptime_network_device`.",
+                Optional: true,
                 Computed: true,
             },
             "attached_interface_index": schema.NumberAttribute{
-                MarkdownDescription: "SNMP ifIndex of the switch port this endpoint was last seen on. Managed by the server..",
+                MarkdownDescription: "SNMP ifIndex of the switch port this endpoint was last seen on. Managed by the server.",
+                Optional: true,
                 Computed: true,
             },
             "attached_port_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the switch port this endpoint was last seen on. Managed by the server..",
+                MarkdownDescription: "Name of the switch port this endpoint was last seen on. Managed by the server.",
+                Optional: true,
                 Computed: true,
             },
             "vlan_id": schema.NumberAttribute{
-                MarkdownDescription: "VLAN this endpoint was last seen on, from the FDB walk. Managed by the server..",
+                MarkdownDescription: "VLAN this endpoint was last seen on, from the FDB walk. Managed by the server.",
+                Optional: true,
                 Computed: true,
             },
             "site_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Site this endpoint belongs to. The ID of a `oneuptime_network_site`.",
+                Optional: true,
                 Computed: true,
             },
             "first_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this endpoint was first discovered on the network.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this endpoint was last seen in an ARP or FDB walk.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -174,22 +163,70 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.MacAddress.IsNull() && !data.MacAddress.IsUnknown() {
+        filters["macAddress"] = data.MacAddress.ValueString()
+        filterNames = append(filterNames, "mac_address = "+fmt.Sprintf("%q", data.MacAddress.ValueString()))
+    }
+    if !data.IpAddress.IsNull() && !data.IpAddress.IsUnknown() {
+        filters["ipAddress"] = data.IpAddress.ValueString()
+        filterNames = append(filterNames, "ip_address = "+fmt.Sprintf("%q", data.IpAddress.ValueString()))
+    }
+    if !data.Vendor.IsNull() && !data.Vendor.IsUnknown() {
+        filters["vendor"] = data.Vendor.ValueString()
+        filterNames = append(filterNames, "vendor = "+fmt.Sprintf("%q", data.Vendor.ValueString()))
+    }
+    if !data.Classification.IsNull() && !data.Classification.IsUnknown() {
+        filters["classification"] = data.Classification.ValueString()
+        filterNames = append(filterNames, "classification = "+fmt.Sprintf("%q", data.Classification.ValueString()))
+    }
+    if !data.AttachedNetworkDeviceId.IsNull() && !data.AttachedNetworkDeviceId.IsUnknown() {
+        filters["attachedNetworkDeviceId"] = data.AttachedNetworkDeviceId.ValueString()
+        filterNames = append(filterNames, "attached_network_device_id = "+fmt.Sprintf("%q", data.AttachedNetworkDeviceId.ValueString()))
+    }
+    if !data.AttachedInterfaceIndex.IsNull() && !data.AttachedInterfaceIndex.IsUnknown() {
+        filters["attachedInterfaceIndex"] = lookupNumber(data.AttachedInterfaceIndex)
+        filterNames = append(filterNames, "attached_interface_index = "+data.AttachedInterfaceIndex.ValueBigFloat().String())
+    }
+    if !data.AttachedPortName.IsNull() && !data.AttachedPortName.IsUnknown() {
+        filters["attachedPortName"] = data.AttachedPortName.ValueString()
+        filterNames = append(filterNames, "attached_port_name = "+fmt.Sprintf("%q", data.AttachedPortName.ValueString()))
+    }
+    if !data.VlanId.IsNull() && !data.VlanId.IsUnknown() {
+        filters["vlanId"] = lookupNumber(data.VlanId)
+        filterNames = append(filterNames, "vlan_id = "+data.VlanId.ValueBigFloat().String())
+    }
+    if !data.SiteId.IsNull() && !data.SiteId.IsUnknown() {
+        filters["siteId"] = data.SiteId.ValueString()
+        filterNames = append(filterNames, "site_id = "+fmt.Sprintf("%q", data.SiteId.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a network_endpoint.",
+            "Look the network endpoint up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the network endpoint up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "macAddress": true,
         "ipAddress": true,
@@ -203,7 +240,6 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
         "firstSeenAt": true,
         "lastSeenAt": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -216,7 +252,7 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_endpoint found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network endpoint found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -229,11 +265,10 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -250,11 +285,11 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_endpoint found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network endpoint matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_endpoint matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network endpoint matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -282,23 +317,6 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -333,34 +351,6 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -570,23 +560,6 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

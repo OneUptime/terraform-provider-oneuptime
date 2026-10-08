@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,11 +27,8 @@ type OnCallDutyExecutionLogTimelineDataSource struct {
 // OnCallDutyExecutionLogTimelineDataSourceModel describes the data source data model.
 type OnCallDutyExecutionLogTimelineDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
     TriggeredByIncidentId types.String `tfsdk:"triggered_by_incident_id"`
@@ -59,104 +55,108 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Metadata(ctx context.Context,
 
 func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Timeline events for on-call duty policy execution log. Look up an existing on_call_duty_execution_log_timeline by `id` or by `name`.",
+        MarkdownDescription: "Timeline events for on-call duty policy execution log. Look up an existing on call duty execution log timeline by `id`, or by any of its other arguments (`alert_sent_to_user_id`, `created_by_user_id`, `is_acknowledged`, ...): each one set must match, and exactly one on call duty execution log timeline may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime on-call duty policy in which this object belongs. The ID of a `oneuptime_on_call_policy`.",
+                Optional: true,
                 Computed: true,
             },
             "triggered_by_incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Incident in which this object belongs. The ID of a `oneuptime_incident`.",
+                Optional: true,
                 Computed: true,
             },
             "triggered_by_alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Alert in which this object belongs. The ID of a `oneuptime_alert`.",
+                Optional: true,
                 Computed: true,
             },
             "triggered_by_alert_episode_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Alert Episode in which this object belongs. The ID of a `oneuptime_alert_episode`.",
+                Optional: true,
                 Computed: true,
             },
             "triggered_by_incident_episode_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Incident Episode in which this object belongs. The ID of a `oneuptime_incident_episode`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policy_execution_log_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your On-Call Policy Execution Log where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your On-Call Policy Escalation Rule where this timeline event belongs. The ID of a `oneuptime_escalation_rule`.",
+                Optional: true,
                 Computed: true,
             },
             "user_notification_event_type": schema.StringAttribute{
-                MarkdownDescription: "Type of event that triggered this on-call duty policy..",
+                MarkdownDescription: "Type of event that triggered this on-call duty policy.",
+                Optional: true,
                 Computed: true,
             },
             "alert_sent_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user who we sent alert to. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "user_belongs_to_team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Which team ID did the user belong to when the alert was sent? The ID of a `oneuptime_team`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Which schedule ID did the user belong to when the alert was sent? The ID of a `oneuptime_on_call_policy_schedule`.",
+                Optional: true,
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Status message of this execution timeline event.",
+                Optional: true,
                 Computed: true,
             },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Status of this execution timeline event.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_acknowledged": schema.BoolAttribute{
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
                 Computed: true,
             },
             "acknowledged_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "overrided_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user this alert would have paged, when a user override sent it to the user in Alert Sent To User ID instead because they were away. Empty when no override applied. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -193,22 +193,94 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.OnCallDutyPolicyId.IsNull() && !data.OnCallDutyPolicyId.IsUnknown() {
+        filters["onCallDutyPolicyId"] = data.OnCallDutyPolicyId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyId.ValueString()))
+    }
+    if !data.TriggeredByIncidentId.IsNull() && !data.TriggeredByIncidentId.IsUnknown() {
+        filters["triggeredByIncidentId"] = data.TriggeredByIncidentId.ValueString()
+        filterNames = append(filterNames, "triggered_by_incident_id = "+fmt.Sprintf("%q", data.TriggeredByIncidentId.ValueString()))
+    }
+    if !data.TriggeredByAlertId.IsNull() && !data.TriggeredByAlertId.IsUnknown() {
+        filters["triggeredByAlertId"] = data.TriggeredByAlertId.ValueString()
+        filterNames = append(filterNames, "triggered_by_alert_id = "+fmt.Sprintf("%q", data.TriggeredByAlertId.ValueString()))
+    }
+    if !data.TriggeredByAlertEpisodeId.IsNull() && !data.TriggeredByAlertEpisodeId.IsUnknown() {
+        filters["triggeredByAlertEpisodeId"] = data.TriggeredByAlertEpisodeId.ValueString()
+        filterNames = append(filterNames, "triggered_by_alert_episode_id = "+fmt.Sprintf("%q", data.TriggeredByAlertEpisodeId.ValueString()))
+    }
+    if !data.TriggeredByIncidentEpisodeId.IsNull() && !data.TriggeredByIncidentEpisodeId.IsUnknown() {
+        filters["triggeredByIncidentEpisodeId"] = data.TriggeredByIncidentEpisodeId.ValueString()
+        filterNames = append(filterNames, "triggered_by_incident_episode_id = "+fmt.Sprintf("%q", data.TriggeredByIncidentEpisodeId.ValueString()))
+    }
+    if !data.OnCallDutyPolicyExecutionLogId.IsNull() && !data.OnCallDutyPolicyExecutionLogId.IsUnknown() {
+        filters["onCallDutyPolicyExecutionLogId"] = data.OnCallDutyPolicyExecutionLogId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_execution_log_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyExecutionLogId.ValueString()))
+    }
+    if !data.OnCallDutyPolicyEscalationRuleId.IsNull() && !data.OnCallDutyPolicyEscalationRuleId.IsUnknown() {
+        filters["onCallDutyPolicyEscalationRuleId"] = data.OnCallDutyPolicyEscalationRuleId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_escalation_rule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyEscalationRuleId.ValueString()))
+    }
+    if !data.UserNotificationEventType.IsNull() && !data.UserNotificationEventType.IsUnknown() {
+        filters["userNotificationEventType"] = data.UserNotificationEventType.ValueString()
+        filterNames = append(filterNames, "user_notification_event_type = "+fmt.Sprintf("%q", data.UserNotificationEventType.ValueString()))
+    }
+    if !data.AlertSentToUserId.IsNull() && !data.AlertSentToUserId.IsUnknown() {
+        filters["alertSentToUserId"] = data.AlertSentToUserId.ValueString()
+        filterNames = append(filterNames, "alert_sent_to_user_id = "+fmt.Sprintf("%q", data.AlertSentToUserId.ValueString()))
+    }
+    if !data.UserBelongsToTeamId.IsNull() && !data.UserBelongsToTeamId.IsUnknown() {
+        filters["userBelongsToTeamId"] = data.UserBelongsToTeamId.ValueString()
+        filterNames = append(filterNames, "user_belongs_to_team_id = "+fmt.Sprintf("%q", data.UserBelongsToTeamId.ValueString()))
+    }
+    if !data.OnCallDutyScheduleId.IsNull() && !data.OnCallDutyScheduleId.IsUnknown() {
+        filters["onCallDutyScheduleId"] = data.OnCallDutyScheduleId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_schedule_id = "+fmt.Sprintf("%q", data.OnCallDutyScheduleId.ValueString()))
+    }
+    if !data.StatusMessage.IsNull() && !data.StatusMessage.IsUnknown() {
+        filters["statusMessage"] = data.StatusMessage.ValueString()
+        filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsAcknowledged.IsNull() && !data.IsAcknowledged.IsUnknown() {
+        filters["isAcknowledged"] = data.IsAcknowledged.ValueBool()
+        filterNames = append(filterNames, "is_acknowledged = "+fmt.Sprintf("%t", data.IsAcknowledged.ValueBool()))
+    }
+    if !data.OverridedByUserId.IsNull() && !data.OverridedByUserId.IsUnknown() {
+        filters["overridedByUserId"] = data.OverridedByUserId.ValueString()
+        filterNames = append(filterNames, "overrided_by_user_id = "+fmt.Sprintf("%q", data.OverridedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a on_call_duty_execution_log_timeline.",
+            "Look the on call duty execution log timeline up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the on call duty execution log timeline up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "onCallDutyPolicyId": true,
         "triggeredByIncidentId": true,
@@ -239,7 +311,7 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No on_call_duty_execution_log_timeline found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No on call duty execution log timeline found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -252,11 +324,10 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -273,11 +344,11 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No on_call_duty_execution_log_timeline found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No on call duty execution log timeline matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one on_call_duty_execution_log_timeline matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one on call duty execution log timeline matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -305,23 +376,6 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -356,34 +410,6 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

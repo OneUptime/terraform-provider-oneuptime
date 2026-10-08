@@ -54,8 +54,6 @@ type IncomingCallPolicyResourceModel struct {
     ProjectCallSmsConfigId types.String `tfsdk:"project_call_sms_config_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     RoutingPhoneNumber JSONSubsetValue `tfsdk:"routing_phone_number"`
     CallProviderPhoneNumberId types.String `tfsdk:"call_provider_phone_number_id"`
@@ -70,19 +68,23 @@ func (r *IncomingCallPolicyResource) Metadata(ctx context.Context, req resource.
 }
 
 func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *IncomingCallPolicyResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Manage incoming call routing policies with escalation rules for on-call teams",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -152,7 +154,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -161,7 +163,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "project_call_sms_config_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -169,22 +171,16 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -192,7 +188,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 Computed: true,
             },
             "routing_phone_number": schema.StringAttribute{
-                MarkdownDescription: "Phone object",
+                MarkdownDescription: "The phone number for incoming calls to this policy.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -209,13 +205,16 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 Computed: true,
             },
             "phone_number_purchased_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the phone number was purchased.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -251,6 +250,14 @@ func (r *IncomingCallPolicyResource) Create(ctx context.Context, req resource.Cr
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncomingCallPolicyResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -350,8 +357,6 @@ func (r *IncomingCallPolicyResource) Create(ctx context.Context, req resource.Cr
         "projectCallSMSConfigId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "routingPhoneNumber": true,
         "callProviderPhoneNumberId": true,
@@ -701,34 +706,6 @@ func (r *IncomingCallPolicyResource) Create(ctx context.Context, req resource.Cr
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -970,6 +947,9 @@ func (r *IncomingCallPolicyResource) Create(ctx context.Context, req resource.Cr
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1002,8 +982,6 @@ func (r *IncomingCallPolicyResource) Read(ctx context.Context, req resource.Read
         "projectCallSMSConfigId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "routingPhoneNumber": true,
         "callProviderPhoneNumberId": true,
@@ -1354,34 +1332,6 @@ func (r *IncomingCallPolicyResource) Read(ctx context.Context, req resource.Read
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1644,6 +1594,14 @@ func (r *IncomingCallPolicyResource) Update(ctx context.Context, req resource.Up
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncomingCallPolicyResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     incomingCallPolicyRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -1716,8 +1674,6 @@ func (r *IncomingCallPolicyResource) Update(ctx context.Context, req resource.Up
         "projectCallSMSConfigId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "routingPhoneNumber": true,
         "callProviderPhoneNumberId": true,
@@ -2062,34 +2018,6 @@ func (r *IncomingCallPolicyResource) Update(ctx context.Context, req resource.Up
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2330,6 +2258,9 @@ func (r *IncomingCallPolicyResource) Update(ctx context.Context, req resource.Up
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2366,6 +2297,44 @@ func (r *IncomingCallPolicyResource) Delete(ctx context.Context, req resource.De
 
 func (r *IncomingCallPolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *IncomingCallPolicyResource) keepPlannedValues(data *IncomingCallPolicyResourceModel, plan *IncomingCallPolicyResourceModel, config *IncomingCallPolicyResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.GreetingMessage.IsNull() && !plan.GreetingMessage.IsUnknown() {
+        data.GreetingMessage = plan.GreetingMessage
+    }
+    if config.NoAnswerMessage.IsNull() && !plan.NoAnswerMessage.IsUnknown() {
+        data.NoAnswerMessage = plan.NoAnswerMessage
+    }
+    if config.NoOneAvailableMessage.IsNull() && !plan.NoOneAvailableMessage.IsUnknown() {
+        data.NoOneAvailableMessage = plan.NoOneAvailableMessage
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.RepeatPolicyIfNoOneAnswers.IsNull() && !plan.RepeatPolicyIfNoOneAnswers.IsUnknown() {
+        data.RepeatPolicyIfNoOneAnswers = plan.RepeatPolicyIfNoOneAnswers
+    }
+    if config.RepeatPolicyIfNoOneAnswersTimes.IsNull() && !plan.RepeatPolicyIfNoOneAnswersTimes.IsUnknown() {
+        data.RepeatPolicyIfNoOneAnswersTimes = plan.RepeatPolicyIfNoOneAnswersTimes
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.ProjectCallSmsConfigId.IsNull() && !plan.ProjectCallSmsConfigId.IsUnknown() {
+        data.ProjectCallSmsConfigId = plan.ProjectCallSmsConfigId
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

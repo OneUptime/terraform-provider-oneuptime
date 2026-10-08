@@ -28,11 +28,8 @@ type AlertMeasurementValueDataSource struct {
 // AlertMeasurementValueDataSourceModel describes the data source data model.
 type AlertMeasurementValueDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     AlertId types.String `tfsdk:"alert_id"`
     AlertMeasurementId types.String `tfsdk:"alert_measurement_id"`
@@ -52,77 +49,71 @@ func (d *AlertMeasurementValueDataSource) Metadata(ctx context.Context, req data
 
 func (d *AlertMeasurementValueDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "The computed value of one alert measurement for one alert, recomputed from the alert's timeline rather than accumulated Look up an existing alert_measurement_value by `id` or by `name`.",
+        MarkdownDescription: "The computed value of one alert measurement for one alert, recomputed from the alert's timeline rather than accumulated Look up an existing alert measurement value by `id`, or by any of its other arguments (`alert_id`, `alert_measurement_id`, `end_alert_state_timeline_id`, ...): each one set must match, and exactly one alert measurement value may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert this measurement value was computed for. The ID of a `oneuptime_alert`.",
+                Optional: true,
                 Computed: true,
             },
             "alert_measurement_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the measurement definition this value was computed from. The ID of a `oneuptime_alert_measurement`.",
+                Optional: true,
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this measurement's start anchor resolved to. Blank while the start anchor has not resolved.",
                 Computed: true,
             },
             "ended_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this measurement's end anchor resolved to. Blank while the end anchor has not resolved.",
                 Computed: true,
             },
             "value_in_seconds": schema.NumberAttribute{
-                MarkdownDescription: "The measured duration in seconds. Only set when the status is Recorded - a measurement that could not be computed is left blank rather than written as zero..",
+                MarkdownDescription: "The measured duration in seconds. Only set when the status is Recorded - a measurement that could not be computed is left blank rather than written as zero.",
+                Optional: true,
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "The outcome of evaluating this measurement: Recorded, Pending, Not Applicable or Invalid..",
+                MarkdownDescription: "The outcome of evaluating this measurement: Recorded, Pending, Not Applicable or Invalid.",
+                Optional: true,
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Why this measurement has the status it has, in plain words - for example which anchor has not been reached yet, or by how much the end precedes the start..",
+                MarkdownDescription: "Why this measurement has the status it has, in plain words - for example which anchor has not been reached yet, or by how much the end precedes the start.",
+                Optional: true,
                 Computed: true,
             },
             "start_alert_state_timeline_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The alert state timeline entry the start anchor resolved to. Recorded for provenance only - it carries no foreign key, so deleting a timeline entry never blocks or rewrites this row; the next recompute simply produces the right answer.",
+                Optional: true,
                 Computed: true,
             },
             "end_alert_state_timeline_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The alert state timeline entry the end anchor resolved to. Recorded for provenance only - it carries no foreign key, so deleting a timeline entry never blocks or rewrites this row; the next recompute simply produces the right answer.",
+                Optional: true,
                 Computed: true,
             },
             "computed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this value was last recomputed.",
                 Computed: true,
             },
         },
@@ -159,22 +150,58 @@ func (d *AlertMeasurementValueDataSource) Read(ctx context.Context, req datasour
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.AlertId.IsNull() && !data.AlertId.IsUnknown() {
+        filters["alertId"] = data.AlertId.ValueString()
+        filterNames = append(filterNames, "alert_id = "+fmt.Sprintf("%q", data.AlertId.ValueString()))
+    }
+    if !data.AlertMeasurementId.IsNull() && !data.AlertMeasurementId.IsUnknown() {
+        filters["alertMeasurementId"] = data.AlertMeasurementId.ValueString()
+        filterNames = append(filterNames, "alert_measurement_id = "+fmt.Sprintf("%q", data.AlertMeasurementId.ValueString()))
+    }
+    if !data.ValueInSeconds.IsNull() && !data.ValueInSeconds.IsUnknown() {
+        filters["valueInSeconds"] = lookupNumber(data.ValueInSeconds)
+        filterNames = append(filterNames, "value_in_seconds = "+data.ValueInSeconds.ValueBigFloat().String())
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.StatusMessage.IsNull() && !data.StatusMessage.IsUnknown() {
+        filters["statusMessage"] = data.StatusMessage.ValueString()
+        filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
+    }
+    if !data.StartAlertStateTimelineId.IsNull() && !data.StartAlertStateTimelineId.IsUnknown() {
+        filters["startAlertStateTimelineId"] = data.StartAlertStateTimelineId.ValueString()
+        filterNames = append(filterNames, "start_alert_state_timeline_id = "+fmt.Sprintf("%q", data.StartAlertStateTimelineId.ValueString()))
+    }
+    if !data.EndAlertStateTimelineId.IsNull() && !data.EndAlertStateTimelineId.IsUnknown() {
+        filters["endAlertStateTimelineId"] = data.EndAlertStateTimelineId.ValueString()
+        filterNames = append(filterNames, "end_alert_state_timeline_id = "+fmt.Sprintf("%q", data.EndAlertStateTimelineId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a alert_measurement_value.",
+            "Look the alert measurement value up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the alert measurement value up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "alertId": true,
         "alertMeasurementId": true,
@@ -198,7 +225,7 @@ func (d *AlertMeasurementValueDataSource) Read(ctx context.Context, req datasour
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert_measurement_value found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert measurement value found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -211,11 +238,10 @@ func (d *AlertMeasurementValueDataSource) Read(ctx context.Context, req datasour
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -232,11 +258,11 @@ func (d *AlertMeasurementValueDataSource) Read(ctx context.Context, req datasour
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert_measurement_value found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert measurement value matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert_measurement_value matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert measurement value matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -264,23 +290,6 @@ func (d *AlertMeasurementValueDataSource) Read(ctx context.Context, req datasour
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -315,34 +324,6 @@ func (d *AlertMeasurementValueDataSource) Read(ctx context.Context, req datasour
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

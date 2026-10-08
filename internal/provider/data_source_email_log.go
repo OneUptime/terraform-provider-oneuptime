@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,11 +27,8 @@ type EmailLogDataSource struct {
 // EmailLogDataSourceModel describes the data source data model.
 type EmailLogDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     ToEmail types.String `tfsdk:"to_email"`
     FromEmail types.String `tfsdk:"from_email"`
@@ -59,105 +55,107 @@ func (d *EmailLogDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *EmailLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Logs of all the Email sent out to all users and subscribers for this project. Look up an existing email_log by `id` or by `name`.",
+        MarkdownDescription: "Logs of all the Email sent out to all users and subscribers for this project. Look up an existing email log by `id`, or by any of its other arguments (`alert_id`, `incident_id`, `monitor_id`, ...): each one set must match, and exactly one email log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "to_email": schema.StringAttribute{
-                MarkdownDescription: "Email object",
+                MarkdownDescription: "Email address where the mail was sent.",
                 Computed: true,
             },
             "from_email": schema.StringAttribute{
-                MarkdownDescription: "Email object",
+                MarkdownDescription: "Email address where the mail was sent from.",
                 Computed: true,
             },
             "subject": schema.StringAttribute{
                 MarkdownDescription: "Subject of the email sent.",
+                Optional: true,
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Status Message (if any).",
+                Optional: true,
                 Computed: true,
             },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Status of the SMS sent.",
+                Optional: true,
                 Computed: true,
             },
             "project_smtp_config_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your Project Smtp Config in which this object belongs.",
+                Optional: true,
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Incident associated with this email (if any). The ID of a `oneuptime_incident`.",
+                Optional: true,
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of User who initiated this email (if any). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Alert associated with this email (if any). The ID of a `oneuptime_alert`.",
+                Optional: true,
                 Computed: true,
             },
             "monitor_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Monitor associated with this email (if any). The ID of a `oneuptime_monitor`.",
+                Optional: true,
                 Computed: true,
             },
             "scheduled_maintenance_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Scheduled Maintenance associated with this email (if any). The ID of a `oneuptime_scheduled_maintenance_event`.",
+                Optional: true,
                 Computed: true,
             },
             "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Status Page associated with this email (if any). The ID of a `oneuptime_status_page`.",
+                Optional: true,
                 Computed: true,
             },
             "status_page_announcement_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Status Page Announcement associated with this email (if any). The ID of a `oneuptime_status_page_announcement`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of On-Call Duty Policy associated with this email (if any). The ID of a `oneuptime_on_call_policy`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of On-Call Duty Policy Escalation Rule associated with this email (if any). The ID of a `oneuptime_escalation_rule`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of On-Call Duty Policy Schedule associated with this email (if any). The ID of a `oneuptime_on_call_policy_schedule`.",
+                Optional: true,
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Team associated with this email (if any). The ID of a `oneuptime_team`.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -194,22 +192,90 @@ func (d *EmailLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Subject.IsNull() && !data.Subject.IsUnknown() {
+        filters["subject"] = data.Subject.ValueString()
+        filterNames = append(filterNames, "subject = "+fmt.Sprintf("%q", data.Subject.ValueString()))
+    }
+    if !data.StatusMessage.IsNull() && !data.StatusMessage.IsUnknown() {
+        filters["statusMessage"] = data.StatusMessage.ValueString()
+        filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.ProjectSmtpConfigId.IsNull() && !data.ProjectSmtpConfigId.IsUnknown() {
+        filters["projectSmtpConfigId"] = data.ProjectSmtpConfigId.ValueString()
+        filterNames = append(filterNames, "project_smtp_config_id = "+fmt.Sprintf("%q", data.ProjectSmtpConfigId.ValueString()))
+    }
+    if !data.IncidentId.IsNull() && !data.IncidentId.IsUnknown() {
+        filters["incidentId"] = data.IncidentId.ValueString()
+        filterNames = append(filterNames, "incident_id = "+fmt.Sprintf("%q", data.IncidentId.ValueString()))
+    }
+    if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
+        filters["userId"] = data.UserId.ValueString()
+        filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
+    if !data.AlertId.IsNull() && !data.AlertId.IsUnknown() {
+        filters["alertId"] = data.AlertId.ValueString()
+        filterNames = append(filterNames, "alert_id = "+fmt.Sprintf("%q", data.AlertId.ValueString()))
+    }
+    if !data.MonitorId.IsNull() && !data.MonitorId.IsUnknown() {
+        filters["monitorId"] = data.MonitorId.ValueString()
+        filterNames = append(filterNames, "monitor_id = "+fmt.Sprintf("%q", data.MonitorId.ValueString()))
+    }
+    if !data.ScheduledMaintenanceId.IsNull() && !data.ScheduledMaintenanceId.IsUnknown() {
+        filters["scheduledMaintenanceId"] = data.ScheduledMaintenanceId.ValueString()
+        filterNames = append(filterNames, "scheduled_maintenance_id = "+fmt.Sprintf("%q", data.ScheduledMaintenanceId.ValueString()))
+    }
+    if !data.StatusPageId.IsNull() && !data.StatusPageId.IsUnknown() {
+        filters["statusPageId"] = data.StatusPageId.ValueString()
+        filterNames = append(filterNames, "status_page_id = "+fmt.Sprintf("%q", data.StatusPageId.ValueString()))
+    }
+    if !data.StatusPageAnnouncementId.IsNull() && !data.StatusPageAnnouncementId.IsUnknown() {
+        filters["statusPageAnnouncementId"] = data.StatusPageAnnouncementId.ValueString()
+        filterNames = append(filterNames, "status_page_announcement_id = "+fmt.Sprintf("%q", data.StatusPageAnnouncementId.ValueString()))
+    }
+    if !data.OnCallDutyPolicyId.IsNull() && !data.OnCallDutyPolicyId.IsUnknown() {
+        filters["onCallDutyPolicyId"] = data.OnCallDutyPolicyId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyId.ValueString()))
+    }
+    if !data.OnCallDutyPolicyEscalationRuleId.IsNull() && !data.OnCallDutyPolicyEscalationRuleId.IsUnknown() {
+        filters["onCallDutyPolicyEscalationRuleId"] = data.OnCallDutyPolicyEscalationRuleId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_escalation_rule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyEscalationRuleId.ValueString()))
+    }
+    if !data.OnCallDutyPolicyScheduleId.IsNull() && !data.OnCallDutyPolicyScheduleId.IsUnknown() {
+        filters["onCallDutyPolicyScheduleId"] = data.OnCallDutyPolicyScheduleId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_schedule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyScheduleId.ValueString()))
+    }
+    if !data.TeamId.IsNull() && !data.TeamId.IsUnknown() {
+        filters["teamId"] = data.TeamId.ValueString()
+        filterNames = append(filterNames, "team_id = "+fmt.Sprintf("%q", data.TeamId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a email_log.",
+            "Look the email log up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the email log up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "toEmail": true,
         "fromEmail": true,
@@ -240,7 +306,7 @@ func (d *EmailLogDataSource) Read(ctx context.Context, req datasource.ReadReques
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No email_log found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No email log found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -253,11 +319,10 @@ func (d *EmailLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -274,11 +339,11 @@ func (d *EmailLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No email_log found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No email log matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one email_log matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one email log matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -306,23 +371,6 @@ func (d *EmailLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -357,34 +405,6 @@ func (d *EmailLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

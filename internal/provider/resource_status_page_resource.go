@@ -54,8 +54,6 @@ type StatusPageResourceResourceModel struct {
     ColumnAxisValue types.String `tfsdk:"column_axis_value"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     StatusPageMonitorRuleId types.String `tfsdk:"status_page_monitor_rule_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -65,33 +63,37 @@ func (r *StatusPageResourceResource) Metadata(ctx context.Context, req resource.
 }
 
 func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *StatusPageResourceResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Add resources like monitors to your status page",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "monitor_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Monitor ID Resource in which this object belongs. The ID of a `oneuptime_monitor`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -99,7 +101,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "monitor_group_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Monitor Group ID Resource in which this object belongs. The ID of a `oneuptime_monitor_group`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -107,7 +109,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "status_page_group_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Does this monitor belong to a status page group? The ID of a `oneuptime_status_page_group`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -119,7 +121,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 Required: true,
             },
             "display_description": schema.StringAttribute{
-                MarkdownDescription: "Display description of the monitor on the Status Page. This is in markdown format..",
+                MarkdownDescription: "Display description of the monitor on the Status Page. This is in markdown format.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -135,7 +137,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "show_current_status": schema.BoolAttribute{
-                MarkdownDescription: "Show current status like offline, operational or degraded..",
+                MarkdownDescription: "Show current status like offline, operational or degraded.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -178,7 +180,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "row_axis_value": schema.StringAttribute{
-                MarkdownDescription: "Row this resource belongs to when its status page group is rendered as a grid. Should match one of the row axis values defined on the group..",
+                MarkdownDescription: "Row this resource belongs to when its status page group is rendered as a grid. Should match one of the row axis values defined on the group.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -186,7 +188,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "column_axis_value": schema.StringAttribute{
-                MarkdownDescription: "Column this resource belongs to when its status page group is rendered as a grid. Should match one of the column axis values defined on the group..",
+                MarkdownDescription: "Column this resource belongs to when its status page group is rendered as a grid. Should match one of the column axis values defined on the group.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -194,31 +196,28 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "status_page_monitor_rule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the rule that added this resource, if it was added by a rule instead of by hand. The ID of a `oneuptime_status_page_monitor_rule`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -254,6 +253,14 @@ func (r *StatusPageResourceResource) Create(ctx context.Context, req resource.Cr
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config StatusPageResourceResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -369,8 +376,6 @@ func (r *StatusPageResourceResource) Create(ctx context.Context, req resource.Cr
         "columnAxisValue": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "statusPageMonitorRuleId": true,
         "createdByUserId": true,
         "_id": true,
@@ -834,34 +839,6 @@ func (r *StatusPageResourceResource) Create(ctx context.Context, req resource.Cr
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["statusPageMonitorRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -944,6 +921,9 @@ func (r *StatusPageResourceResource) Create(ctx context.Context, req resource.Cr
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -980,8 +960,6 @@ func (r *StatusPageResourceResource) Read(ctx context.Context, req resource.Read
         "columnAxisValue": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "statusPageMonitorRuleId": true,
         "createdByUserId": true,
         "_id": true,
@@ -1446,34 +1424,6 @@ func (r *StatusPageResourceResource) Read(ctx context.Context, req resource.Read
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["statusPageMonitorRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1577,6 +1527,14 @@ func (r *StatusPageResourceResource) Update(ctx context.Context, req resource.Up
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config StatusPageResourceResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     statusPageResourceRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -1662,8 +1620,6 @@ func (r *StatusPageResourceResource) Update(ctx context.Context, req resource.Up
         "columnAxisValue": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "statusPageMonitorRuleId": true,
         "createdByUserId": true,
         "_id": true,
@@ -2122,34 +2078,6 @@ func (r *StatusPageResourceResource) Update(ctx context.Context, req resource.Up
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["statusPageMonitorRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2231,6 +2159,9 @@ func (r *StatusPageResourceResource) Update(ctx context.Context, req resource.Up
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2267,6 +2198,53 @@ func (r *StatusPageResourceResource) Delete(ctx context.Context, req resource.De
 
 func (r *StatusPageResourceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *StatusPageResourceResource) keepPlannedValues(data *StatusPageResourceResourceModel, plan *StatusPageResourceResourceModel, config *StatusPageResourceResourceModel) {
+    if config.MonitorId.IsNull() && !plan.MonitorId.IsUnknown() {
+        data.MonitorId = plan.MonitorId
+    }
+    if config.MonitorGroupId.IsNull() && !plan.MonitorGroupId.IsUnknown() {
+        data.MonitorGroupId = plan.MonitorGroupId
+    }
+    if config.StatusPageGroupId.IsNull() && !plan.StatusPageGroupId.IsUnknown() {
+        data.StatusPageGroupId = plan.StatusPageGroupId
+    }
+    if config.DisplayDescription.IsNull() && !plan.DisplayDescription.IsUnknown() {
+        data.DisplayDescription = plan.DisplayDescription
+    }
+    if config.DisplayTooltip.IsNull() && !plan.DisplayTooltip.IsUnknown() {
+        data.DisplayTooltip = plan.DisplayTooltip
+    }
+    if config.ShowCurrentStatus.IsNull() && !plan.ShowCurrentStatus.IsUnknown() {
+        data.ShowCurrentStatus = plan.ShowCurrentStatus
+    }
+    if config.ShowUptimePercent.IsNull() && !plan.ShowUptimePercent.IsUnknown() {
+        data.ShowUptimePercent = plan.ShowUptimePercent
+    }
+    if config.UptimePercentPrecision.IsNull() && !plan.UptimePercentPrecision.IsUnknown() {
+        data.UptimePercentPrecision = plan.UptimePercentPrecision
+    }
+    if config.ShowStatusHistoryChart.IsNull() && !plan.ShowStatusHistoryChart.IsUnknown() {
+        data.ShowStatusHistoryChart = plan.ShowStatusHistoryChart
+    }
+    if config.Order.IsNull() && !plan.Order.IsUnknown() {
+        data.Order = plan.Order
+    }
+    if config.RowAxisValue.IsNull() && !plan.RowAxisValue.IsUnknown() {
+        data.RowAxisValue = plan.RowAxisValue
+    }
+    if config.ColumnAxisValue.IsNull() && !plan.ColumnAxisValue.IsUnknown() {
+        data.ColumnAxisValue = plan.ColumnAxisValue
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

@@ -52,8 +52,6 @@ type NetworkDeviceAutoImportRuleResourceModel struct {
     OidTemplateId types.String `tfsdk:"oid_template_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -62,19 +60,23 @@ func (r *NetworkDeviceAutoImportRuleResource) Metadata(ctx context.Context, req 
 }
 
 func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *NetworkDeviceAutoImportRuleResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Automatically import matching hosts from network device discovery scan results as Network Devices and optionally provision a monitor from a template",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -86,7 +88,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -114,7 +116,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "ip_match_target": schema.StringAttribute{
-                MarkdownDescription: "Only trigger for discovered hosts whose IP is inside this CIDR (192.168.1.0/24) or octet range (10.16-22.0-255.51-66) — the same notations a scan target takes. Leave empty to match any address..",
+                MarkdownDescription: "Only trigger for discovered hosts whose IP is inside this CIDR (192.168.1.0/24) or octet range (10.16-22.0-255.51-66) — the same notations a scan target takes. Leave empty to match any address.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -122,7 +124,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "sys_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex or * wildcard pattern (case-insensitive) matched against the discovered host's SNMP sysName. Leave empty to match any name..",
+                MarkdownDescription: "Regex or * wildcard pattern (case-insensitive) matched against the discovered host's SNMP sysName. Leave empty to match any name.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -130,7 +132,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "sys_descr_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex or * wildcard pattern (case-insensitive) matched against the discovered host's SNMP sysDescr. Leave empty to match any description..",
+                MarkdownDescription: "Regex or * wildcard pattern (case-insensitive) matched against the discovered host's SNMP sysDescr. Leave empty to match any description.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -138,7 +140,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "sys_object_id_pattern": schema.StringAttribute{
-                MarkdownDescription: "An OID prefix (1.3.6.1.4.1.9) or a '*' wildcard OID pattern with literal dots (1.3.6.1.4.1.9.* for Cisco) matched against the discovered host's SNMP sysObjectID — the vendor's registered enterprise OID. Not regex: dots match dots, so 1.3.6.1.4.1.9.* can never match enterprise 94. Leave empty to match any vendor. Only hosts reported by probes new enough to carry sysObjectID can match..",
+                MarkdownDescription: "An OID prefix (1.3.6.1.4.1.9) or a '*' wildcard OID pattern with literal dots (1.3.6.1.4.1.9.* for Cisco) matched against the discovered host's SNMP sysObjectID — the vendor's registered enterprise OID. Not regex: dots match dots, so 1.3.6.1.4.1.9.* can never match enterprise 94. Leave empty to match any vendor. Only hosts reported by probes new enough to carry sysObjectID can match.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -146,7 +148,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "include_ping_only_hosts": schema.BoolAttribute{
-                MarkdownDescription: "Also import hosts that answered ping but not SNMP. Off by default: a wrong SNMP credential makes every host on a subnet report as ping-only, and this rule would then import all of them as half-identified devices..",
+                MarkdownDescription: "Also import hosts that answered ping but not SNMP. Off by default: a wrong SNMP credential makes every host on a subnet report as ping-only, and this rule would then import all of them as half-identified devices.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -155,7 +157,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "is_exclusion": schema.BoolAttribute{
-                MarkdownDescription: "Invert this rule: matching hosts are NEVER auto-imported, even when another rule matches them. Use it to carve printers, phones, or other unwanted hosts out of a broader rule..",
+                MarkdownDescription: "Invert this rule: matching hosts are NEVER auto-imported, even when another rule matches them. Use it to carve printers, phones, or other unwanted hosts out of a broader rule.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -164,7 +166,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "monitor_template_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the optional Network Device monitor template to apply to devices imported by this rule. The ID of a `oneuptime_monitor_template`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -172,7 +174,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "oid_template_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the optional OID Collection Template to link to devices imported by this rule. The ID of a `oneuptime_oid_collection_template`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -180,27 +182,24 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -236,6 +235,14 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config NetworkDeviceAutoImportRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -343,8 +350,6 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
         "oidTemplateId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -753,34 +758,6 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -826,6 +803,9 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -860,8 +840,6 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
         "oidTemplateId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1271,34 +1249,6 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1364,6 +1314,14 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config NetworkDeviceAutoImportRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     networkDeviceAutoImportRuleRequest := map[string]interface{}{
@@ -1450,8 +1408,6 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
         "oidTemplateId": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1855,34 +1811,6 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1927,6 +1855,9 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1963,6 +1894,50 @@ func (r *NetworkDeviceAutoImportRuleResource) Delete(ctx context.Context, req re
 
 func (r *NetworkDeviceAutoImportRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *NetworkDeviceAutoImportRuleResource) keepPlannedValues(data *NetworkDeviceAutoImportRuleResourceModel, plan *NetworkDeviceAutoImportRuleResourceModel, config *NetworkDeviceAutoImportRuleResourceModel) {
+    if config.Criteria.IsNull() && !plan.Criteria.IsUnknown() {
+        data.Criteria = plan.Criteria
+    }
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.IpMatchTarget.IsNull() && !plan.IpMatchTarget.IsUnknown() {
+        data.IpMatchTarget = plan.IpMatchTarget
+    }
+    if config.SysNamePattern.IsNull() && !plan.SysNamePattern.IsUnknown() {
+        data.SysNamePattern = plan.SysNamePattern
+    }
+    if config.SysDescrPattern.IsNull() && !plan.SysDescrPattern.IsUnknown() {
+        data.SysDescrPattern = plan.SysDescrPattern
+    }
+    if config.SysObjectIdPattern.IsNull() && !plan.SysObjectIdPattern.IsUnknown() {
+        data.SysObjectIdPattern = plan.SysObjectIdPattern
+    }
+    if config.IncludePingOnlyHosts.IsNull() && !plan.IncludePingOnlyHosts.IsUnknown() {
+        data.IncludePingOnlyHosts = plan.IncludePingOnlyHosts
+    }
+    if config.IsExclusion.IsNull() && !plan.IsExclusion.IsUnknown() {
+        data.IsExclusion = plan.IsExclusion
+    }
+    if config.MonitorTemplateId.IsNull() && !plan.MonitorTemplateId.IsUnknown() {
+        data.MonitorTemplateId = plan.MonitorTemplateId
+    }
+    if config.OidTemplateId.IsNull() && !plan.OidTemplateId.IsUnknown() {
+        data.OidTemplateId = plan.OidTemplateId
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

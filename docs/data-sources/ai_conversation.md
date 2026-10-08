@@ -7,36 +7,39 @@ description: |-
 
 # oneuptime_ai_conversation (Data Source)
 
-A conversation with the OneUptime AI about observability data (logs, traces, metrics, exceptions, incidents, monitors and alerts). Look up by `id` or by `name` (must match exactly one item).
+A conversation with the OneUptime AI about observability data (logs, traces, metrics, exceptions, incidents, monitors and alerts).
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one ai conversation may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_ai_conversation" "by_name" {
-  name = "example-ai_conversation"
+data "oneuptime_ai_conversation" "example" {
+  title = "example-title"
 }
 
+# Or by id:
 data "oneuptime_ai_conversation" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `title` (String) Title of the conversation. Generated from the first message... Computed.
-- `last_message_at` (String) A date time object.. Computed.
-- `llm_provider_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `permission_mode` (String) How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly... Computed.
-- `page_context` (String) The dashboard page (entity) this conversation is about. Set from the first message that carried a page context... Computed.
-- `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `alert_id` (String) ID of the alert whose investigation box this shared conversation belongs to. The ID of a `oneuptime_alert`.
+- `created_by_user_id` (String) User ID who created this conversation.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `incident_id` (String) ID of the incident whose investigation box this shared conversation belongs to. The ID of a `oneuptime_incident`.
+- `llm_provider_id` (String) The LLM provider selected for this conversation. If empty, the project default (or global) provider is used.
+- `permission_mode` (String) How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly.
+- `title` (String) Title of the conversation. Generated from the first message.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `last_message_at` (String) When the last message in this conversation was sent.
+- `page_context` (String) The dashboard page (entity) this conversation is about. Set from the first message that carried a page context. A JSON value: write it with `jsonencode()`.
+- `project_id` (String) ID of the project this conversation belongs to. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

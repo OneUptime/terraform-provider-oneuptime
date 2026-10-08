@@ -7,36 +7,39 @@ description: |-
 
 # oneuptime_ai_run_event (Data Source)
 
-An event in an AI run: LLM calls, tool calls with validated arguments, and lifecycle transitions. Look up by `id` or by `name` (must match exactly one item).
+An event in an AI run: LLM calls, tool calls with validated arguments, and lifecycle transitions.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one ai run event may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_ai_run_event" "by_name" {
-  name = "example-ai_run_event"
+data "oneuptime_ai_run_event" "example" {
+  ai_run_id = data.oneuptime_ai_run.example.id
 }
 
+# Or by id:
 data "oneuptime_ai_run_event" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `ai_run_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `sequence` (Number) Order of this event within the run... Computed.
-- `event_type` (String) Type of event... Computed.
-- `tool_name` (String) Name of the tool for tool-call events... Computed.
-- `tool_arguments` (String) Validated tool arguments as executed... Computed.
-- `result_summary` (String) Summary of the result: row count, duration, truncation and bytes sent to the LLM... Computed.
-- `citation_id` (String) ID of the citation this event minted (e.g. C1), if it produced one... Computed.
+### Optional
+
+- `ai_run_id` (String) ID of the run this event belongs to. The ID of a `oneuptime_ai_run` (see the data source).
+- `citation_id` (String) ID of the citation this event minted (e.g. C1), if it produced one.
+- `event_type` (String) Type of event.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `sequence` (Number) Order of this event within the run.
+- `tool_name` (String) Name of the tool for tool-call events.
+- `user_id` (String) ID of the user whose run this event belongs to. The ID of a `oneuptime_user` (see the data source).
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of the project this event belongs to. The ID of a `oneuptime_project`.
+- `result_summary` (String) Summary of the result: row count, duration, truncation and bytes sent to the LLM. A JSON value: write it with `jsonencode()`.
+- `tool_arguments` (String) Validated tool arguments as executed. A JSON value: write it with `jsonencode()`.
+- `updated_at` (String) Date and Time when the object was updated.

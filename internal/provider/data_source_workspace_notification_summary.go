@@ -28,12 +28,10 @@ type WorkspaceNotificationSummaryDataSource struct {
 // WorkspaceNotificationSummaryDataSourceModel describes the data source data model.
 type WorkspaceNotificationSummaryDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     WorkspaceType types.String `tfsdk:"workspace_type"`
     SummaryType types.String `tfsdk:"summary_type"`
@@ -50,7 +48,6 @@ type WorkspaceNotificationSummaryDataSourceModel struct {
     LastSentAt types.String `tfsdk:"last_sent_at"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
 func (d *WorkspaceNotificationSummaryDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -59,105 +56,102 @@ func (d *WorkspaceNotificationSummaryDataSource) Metadata(ctx context.Context, r
 
 func (d *WorkspaceNotificationSummaryDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Recurring summary reports for incidents and alerts sent to Slack or Microsoft Teams Look up an existing workspace_notification_summary by `id` or by `name`.",
+        MarkdownDescription: "Recurring summary reports for incidents and alerts sent to Slack or Microsoft Teams Look up an existing workspace notification summary by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one workspace notification summary may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Name of the Summary Rule.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Description of the Summary Rule.",
+                Optional: true,
                 Computed: true,
             },
             "workspace_type": schema.StringAttribute{
-                MarkdownDescription: "Type of Workspace - Slack, Microsoft Teams, etc..",
+                MarkdownDescription: "Type of Workspace - Slack, Microsoft Teams, etc.",
+                Optional: true,
                 Computed: true,
             },
             "summary_type": schema.StringAttribute{
                 MarkdownDescription: "Type of summary - Incident, Alert, Incident Episode, or Alert Episode.",
+                Optional: true,
                 Computed: true,
             },
             "recurring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often should the summary be sent?.",
+                MarkdownDescription: "How often should the summary be sent? A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "number_of_days_of_data": schema.NumberAttribute{
                 MarkdownDescription: "How many days of data to include in the summary.",
+                Optional: true,
                 Computed: true,
             },
             "send_first_report_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When should the first summary report be sent? Subsequent reports will follow the recurring interval from this date.",
                 Computed: true,
             },
             "timezone": schema.StringAttribute{
-                MarkdownDescription: "The IANA time zone the summary's schedule is read in, such as Europe/Berlin or America/New_York. The summary goes out at the same time of day there all year, also after the clocks change for daylight saving time. Left out when the summary is created, it is the time zone in the creator's profile, or UTC when no person creates it (an API key or a workflow). A summary without one is read in UTC..",
+                MarkdownDescription: "The IANA time zone the summary's schedule is read in, such as Europe/Berlin or America/New_York. The summary goes out at the same time of day there all year, also after the clocks change for daylight saving time. Left out when the summary is created, it is the time zone in the creator's profile, or UTC when no person creates it (an API key or a workflow). A summary without one is read in UTC.",
+                Optional: true,
                 Computed: true,
             },
             "channel_names": schema.StringAttribute{
-                MarkdownDescription: "List of channel names to post the summary to.",
+                MarkdownDescription: "List of channel names to post the summary to. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "team_name": schema.StringAttribute{
                 MarkdownDescription: "Microsoft Teams team name (only for Microsoft Teams).",
+                Optional: true,
                 Computed: true,
             },
             "summary_items": schema.StringAttribute{
-                MarkdownDescription: "Checklist of items to include in the summary.",
+                MarkdownDescription: "Checklist of items to include in the summary. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "filters": schema.StringAttribute{
-                MarkdownDescription: "Filter conditions for which items to include in the summary.",
+                MarkdownDescription: "Filter conditions for which items to include in the summary. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "filter_condition": schema.StringAttribute{
                 MarkdownDescription: "How to combine filters - Any or All.",
+                Optional: true,
                 Computed: true,
             },
             "next_send_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the next summary should be sent.",
                 Computed: true,
             },
             "last_sent_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the last summary was sent.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Is this summary rule enabled?.",
+                MarkdownDescription: "Is this summary rule enabled?",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -194,23 +188,72 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.WorkspaceType.IsNull() && !data.WorkspaceType.IsUnknown() {
+        filters["workspaceType"] = data.WorkspaceType.ValueString()
+        filterNames = append(filterNames, "workspace_type = "+fmt.Sprintf("%q", data.WorkspaceType.ValueString()))
+    }
+    if !data.SummaryType.IsNull() && !data.SummaryType.IsUnknown() {
+        filters["summaryType"] = data.SummaryType.ValueString()
+        filterNames = append(filterNames, "summary_type = "+fmt.Sprintf("%q", data.SummaryType.ValueString()))
+    }
+    if !data.NumberOfDaysOfData.IsNull() && !data.NumberOfDaysOfData.IsUnknown() {
+        filters["numberOfDaysOfData"] = lookupNumber(data.NumberOfDaysOfData)
+        filterNames = append(filterNames, "number_of_days_of_data = "+data.NumberOfDaysOfData.ValueBigFloat().String())
+    }
+    if !data.Timezone.IsNull() && !data.Timezone.IsUnknown() {
+        filters["timezone"] = data.Timezone.ValueString()
+        filterNames = append(filterNames, "timezone = "+fmt.Sprintf("%q", data.Timezone.ValueString()))
+    }
+    if !data.TeamName.IsNull() && !data.TeamName.IsUnknown() {
+        filters["teamName"] = data.TeamName.ValueString()
+        filterNames = append(filterNames, "team_name = "+fmt.Sprintf("%q", data.TeamName.ValueString()))
+    }
+    if !data.FilterCondition.IsNull() && !data.FilterCondition.IsUnknown() {
+        filters["filterCondition"] = data.FilterCondition.ValueString()
+        filterNames = append(filterNames, "filter_condition = "+fmt.Sprintf("%q", data.FilterCondition.ValueString()))
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        filters["isEnabled"] = data.IsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a workspace_notification_summary.",
+            "Look the workspace notification summary up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the workspace notification summary up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "description": true,
         "workspaceType": true,
         "summaryType": true,
@@ -227,7 +270,6 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
         "lastSentAt": true,
         "isEnabled": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
@@ -240,7 +282,7 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No workspace_notification_summary found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No workspace notification summary found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -253,11 +295,10 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -274,11 +315,11 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No workspace_notification_summary found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No workspace notification summary matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one workspace_notification_summary matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one workspace notification summary matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -306,23 +347,6 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -358,34 +382,6 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -402,6 +398,23 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -656,23 +669,6 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

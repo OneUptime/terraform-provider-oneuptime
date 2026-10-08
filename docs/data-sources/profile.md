@@ -7,49 +7,54 @@ description: |-
 
 # oneuptime_profile (Data Source)
 
-API endpoints for Profile Look up by `id` or by `name` (must match exactly one item).
+API endpoints for Profile
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one profile may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_profile" "by_name" {
-  name = "example-profile"
+data "oneuptime_profile" "example" {
+  primary_entity_id = "example-primary-entity-id"
 }
 
+# Or by id:
 data "oneuptime_profile" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `project_id` (String) Project ID. Computed.
-- `primary_entity_id` (String) Service ID. Computed.
-- `primary_entity_type` (String) Service Type. Computed.
-- `profile_id` (String) Profile ID. Computed.
-- `trace_id` (String) Trace ID. Computed.
-- `span_id` (String) Span ID. Computed.
-- `start_time` (String) Start Time. Computed.
-- `end_time` (String) End Time. Computed.
-- `start_time_unix_nano` (String) Start Time in Unix Nano. Computed.
-- `end_time_unix_nano` (String) End Time in Unix Nano. Computed.
-- `duration_nano` (String) Duration in Nanoseconds. Computed.
-- `profile_type` (String) Profile Type. Computed.
-- `unit` (String) Unit. Computed.
-- `period_type` (String) Period Type. Computed.
-- `period` (String) Period. Computed.
-- `attributes` (String) Attributes. Computed.
-- `attribute_keys` (Set) Attribute Keys. Computed.
-- `entity_keys` (Set) Entity Keys. Computed.
-- `service_entity_key` (String) Service Entity Key. Computed.
-- `host_entity_key` (String) Host Entity Key. Computed.
-- `k8s_pod_entity_key` (String) Kubernetes Pod Entity Key. Computed.
-- `k8s_node_entity_key` (String) Kubernetes Node Entity Key. Computed.
-- `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key. Computed.
-- `container_entity_key` (String) Container Entity Key. Computed.
-- `sample_count` (Number) Sample Count. Computed.
-- `original_payload_format` (String) Original Payload Format. Computed.
+### Optional
+
+- `attributes` (String) Attributes.
+- `container_entity_key` (String) Container Entity Key.
+- `duration_nano` (String) Duration in Nanoseconds.
+- `end_time` (String) End Time.
+- `end_time_unix_nano` (String) End Time in Unix Nano.
+- `host_entity_key` (String) Host Entity Key.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key.
+- `k8s_node_entity_key` (String) Kubernetes Node Entity Key.
+- `k8s_pod_entity_key` (String) Kubernetes Pod Entity Key.
+- `original_payload_format` (String) Original Payload Format.
+- `period` (String) Period.
+- `period_type` (String) Period Type.
+- `primary_entity_id` (String) Service ID.
+- `primary_entity_type` (String) Service Type.
+- `profile_id` (String) Profile ID.
+- `profile_type` (String) Profile Type.
+- `sample_count` (Number) Sample Count.
+- `service_entity_key` (String) Service Entity Key.
+- `span_id` (String) Span ID.
+- `start_time` (String) Start Time.
+- `start_time_unix_nano` (String) Start Time in Unix Nano.
+- `trace_id` (String) Trace ID.
+- `unit` (String) Unit.
+
+### Read-Only
+
+- `attribute_keys` (Set of String) Attribute Keys.
+- `entity_keys` (Set of String) Entity Keys.
+- `project_id` (String) Project ID.

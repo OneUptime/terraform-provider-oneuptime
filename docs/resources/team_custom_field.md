@@ -13,8 +13,8 @@ Manage custom fields for your teams
 
 ```terraform
 resource "oneuptime_team_custom_field" "example" {
-  name = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example team custom field"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -22,30 +22,36 @@ resource "oneuptime_team_custom_field" "example" {
 
 ### Required
 
-- `name` (String) Any friendly name of this object..
+- `name` (String) Any friendly name of this object.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Friendly description of this custom field that will help you remember..
-- `custom_field_type` (String) Is this field Text, Number, Boolean or Dropdown?..
-- `dropdown_options` (String) Options and optional colors for dropdown fields. Plain one-per-line values remain supported...
-- `map_from_resource_type` (String) Related resource this field copies its value from. Empty means values are entered by hand...
-- `map_from_custom_field_name` (String) Name of the custom field on the related resource this field copies its value from...
+- `custom_field_type` (String) Is this field Text, Number, Boolean or Dropdown? A JSON value: write it with `jsonencode()`.
+- `description` (String) Friendly description of this custom field that will help you remember.
+- `dropdown_options` (String) Options and optional colors for dropdown fields. Plain one-per-line values remain supported.
+- `map_from_custom_field_name` (String) Name of the custom field on the related resource this field copies its value from.
+- `map_from_resource_type` (String) Related resource this field copies its value from. Empty means values are entered by hand.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing team custom field by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_team_custom_field.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_team_custom_field.example <id>

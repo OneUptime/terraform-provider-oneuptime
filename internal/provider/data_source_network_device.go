@@ -30,12 +30,10 @@ type NetworkDeviceDataSource struct {
 // NetworkDeviceDataSourceModel describes the data source data model.
 type NetworkDeviceDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
     Hostname types.String `tfsdk:"hostname"`
@@ -96,7 +94,6 @@ type NetworkDeviceDataSourceModel struct {
     IsArchived types.Bool `tfsdk:"is_archived"`
     ArchivedAt types.String `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
 }
 
@@ -106,285 +103,320 @@ func (d *NetworkDeviceDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Network Devices (routers, switches, firewalls) that are being monitored in this project via SNMP polling and traps. Look up an existing network_device by `id` or by `name`.",
+        MarkdownDescription: "Network Devices (routers, switches, firewalls) that are being monitored in this project via SNMP polling and traps. Look up an existing network device by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `auto_apply_vendor_health_template`, ...): each one set must match, and exactly one network device may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Friendly name for this network device.",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description for this network device.",
+                Optional: true,
                 Computed: true,
             },
             "hostname": schema.StringAttribute{
                 MarkdownDescription: "IP address or hostname the probe polls; also matches SNMP trap sources.",
+                Optional: true,
                 Computed: true,
             },
             "dns_name": schema.StringAttribute{
-                MarkdownDescription: "Fully qualified DNS name of this device, from its reverse-DNS (PTR) record when it was discovered, or its previous full name when its name was shortened to the hostname. Kept so the device can still be found, and matched by site-assignment hostname patterns, by the name DNS gives it..",
+                MarkdownDescription: "Fully qualified DNS name of this device, from its reverse-DNS (PTR) record when it was discovered, or its previous full name when its name was shortened to the hostname. Kept so the device can still be found, and matched by site-assignment hostname patterns, by the name DNS gives it.",
+                Optional: true,
                 Computed: true,
             },
             "mac_address": schema.StringAttribute{
-                MarkdownDescription: "MAC address of this device. Lets the topology map find the switch port it is plugged into from the forwarding tables of walked switches, for a device that speaks neither LLDP nor CDP (one monitored by ping alone). Optional: a device whose hostname is an IP address that a walked router's ARP table resolves is matched by address, and the MAC learned that way is stored here..",
+                MarkdownDescription: "MAC address of this device. Lets the topology map find the switch port it is plugged into from the forwarding tables of walked switches, for a device that speaks neither LLDP nor CDP (one monitored by ping alone). Optional: a device whose hostname is an IP address that a walked router's ARP table resolves is matched by address, and the MAC learned that way is stored here.",
+                Optional: true,
                 Computed: true,
             },
             "is_mac_address_learned": schema.BoolAttribute{
-                MarkdownDescription: "True when the MAC Address was filled in from a walked device's ARP table rather than typed. A learned MAC is corrected when a later walk binds the device's address to a different MAC; a typed one is never touched..",
+                MarkdownDescription: "True when the MAC Address was filled in from a walked device's ARP table rather than typed. A learned MAC is corrected when a later walk binds the device's address to a different MAC; a typed one is never touched.",
+                Optional: true,
                 Computed: true,
             },
             "probe_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Probe that polls this network device. The ID of a `oneuptime_probe`.",
+                Optional: true,
                 Computed: true,
             },
             "site_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Site this network device belongs to. The ID of a `oneuptime_network_site`.",
+                Optional: true,
                 Computed: true,
             },
             "oid_template_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the OID Collection Template this device collects. The ID of a `oneuptime_oid_collection_template`.",
+                Optional: true,
                 Computed: true,
             },
             "snmp_credential_profile_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the SNMP Credential Profile this device is walked with. The ID of a `oneuptime_snmp_credential_profile`.",
+                Optional: true,
                 Computed: true,
             },
             "current_monitor_status_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Whats the current status ID of this network device? Stamped from the monitor that polls it. The ID of a `oneuptime_monitor_status`.",
+                Optional: true,
                 Computed: true,
             },
             "monitoring_method": schema.StringAttribute{
-                MarkdownDescription: "How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP..",
+                MarkdownDescription: "How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP.",
+                Optional: true,
                 Computed: true,
             },
             "device_role": schema.StringAttribute{
-                MarkdownDescription: "Deprecated legacy device role key. Use the Network Device Role relation instead; this column exists only for the backfill migration and will be removed..",
+                MarkdownDescription: "Deprecated legacy device role key. Use the Network Device Role relation instead; this column exists only for the backfill migration and will be removed.",
+                Optional: true,
                 Computed: true,
             },
             "network_device_role_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Network Device Role this device is assigned. The ID of a `oneuptime_network_device_role`.",
+                Optional: true,
                 Computed: true,
             },
             "monitor_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the monitor that reports this device's health when its monitoring method is Monitor. The ID of a `oneuptime_monitor`.",
+                Optional: true,
                 Computed: true,
             },
             "snmp_version": schema.StringAttribute{
                 MarkdownDescription: "SNMP version to use when polling this device (V1, V2c, V3).",
+                Optional: true,
                 Computed: true,
             },
             "snmp_community_string": schema.StringAttribute{
                 MarkdownDescription: "Community string used for SNMP v1/v2c polling.",
+                Optional: true,
                 Computed: true,
             },
             "snmp_port": schema.NumberAttribute{
                 MarkdownDescription: "UDP port used for SNMP polling.",
+                Optional: true,
                 Computed: true,
             },
             "snmp_v3_auth": schema.StringAttribute{
-                MarkdownDescription: "Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices..",
+                MarkdownDescription: "Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "snmp_v3_security_level": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 security level: noAuthNoPriv, authNoPriv, or authPriv.",
+                Optional: true,
                 Computed: true,
             },
             "snmp_v3_username": schema.StringAttribute{
                 MarkdownDescription: "Security name (username) used for SNMP v3 polling.",
+                Optional: true,
                 Computed: true,
             },
             "snmp_v3_auth_protocol": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512.",
+                Optional: true,
                 Computed: true,
             },
             "snmp_v3_auth_key": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 authentication passphrase.",
+                Optional: true,
                 Computed: true,
             },
             "snmp_v3_priv_protocol": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256.",
+                Optional: true,
                 Computed: true,
             },
             "snmp_v3_priv_key": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 privacy (encryption) passphrase.",
+                Optional: true,
                 Computed: true,
             },
             "is_polling_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether the assigned probe polls this device on a schedule. Disable to pause SNMP polling without deleting the device..",
+                MarkdownDescription: "Whether the assigned probe polls this device on a schedule. Disable to pause SNMP polling without deleting the device.",
+                Optional: true,
                 Computed: true,
             },
             "polling_interval_in_minutes": schema.NumberAttribute{
                 MarkdownDescription: "How often, in minutes, the assigned probe polls this device via SNMP.",
+                Optional: true,
                 Computed: true,
             },
             "walk_interfaces": schema.BoolAttribute{
-                MarkdownDescription: "Walk the IF-MIB interface tables on each poll to inventory interfaces, bandwidth, and errors. Also collects LLDP/CDP neighbors for the topology graph..",
+                MarkdownDescription: "Walk the IF-MIB interface tables on each poll to inventory interfaces, bandwidth, and errors. Also collects LLDP/CDP neighbors for the topology graph.",
+                Optional: true,
                 Computed: true,
             },
             "collect_endpoints": schema.BoolAttribute{
-                MarkdownDescription: "Also walk the device's ARP cache and bridge forwarding database on each poll to discover endpoints (laptops, printers, POS terminals) attached to it. Strictly opt-in: costs extra SNMP table walks per poll. Only meaningful when Walk Interfaces is on..",
+                MarkdownDescription: "Also walk the device's ARP cache and bridge forwarding database on each poll to discover endpoints (laptops, printers, POS terminals) attached to it. Strictly opt-in: costs extra SNMP table walks per poll. Only meaningful when Walk Interfaces is on.",
+                Optional: true,
                 Computed: true,
             },
             "snmp_oids": schema.StringAttribute{
-                MarkdownDescription: "SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead..",
+                MarkdownDescription: "SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "snmp_tables": schema.StringAttribute{
-                MarkdownDescription: "SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device..",
+                MarkdownDescription: "SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "auto_apply_vendor_health_template": schema.BoolAttribute{
-                MarkdownDescription: "When the device's vendor is fingerprinted from its SNMP sysObjectID and no Health OIDs are configured yet, apply the matching vendor health template automatically on the next poll. Off by default for hand-made devices — the vendor template banner stays the manual path; auto-imported devices enable it so the zero-touch pipeline ends with health metrics, not an empty OID list..",
+                MarkdownDescription: "When the device's vendor is fingerprinted from its SNMP sysObjectID and no Health OIDs are configured yet, apply the matching vendor health template automatically on the next poll. Off by default for hand-made devices — the vendor template banner stays the manual path; auto-imported devices enable it so the zero-touch pipeline ends with health metrics, not an empty OID list.",
+                Optional: true,
                 Computed: true,
             },
             "next_poll_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the assigned probe should next poll this device. Advanced by the claim cycle; a device created now is due immediately.",
                 Computed: true,
             },
             "last_walk_log": schema.StringAttribute{
-                MarkdownDescription: "The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server..",
+                MarkdownDescription: "The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "sys_descr": schema.StringAttribute{
                 MarkdownDescription: "System description (sysDescr) enriched from SNMP walks of this device.",
+                Optional: true,
                 Computed: true,
             },
             "sys_name": schema.StringAttribute{
                 MarkdownDescription: "System name (sysName) enriched from SNMP walks of this device.",
+                Optional: true,
                 Computed: true,
             },
             "sys_object_id": schema.StringAttribute{
-                MarkdownDescription: "sysObjectID — the vendor's registered OID for this device model, enriched from SNMP walks. Used to fingerprint the vendor and suggest an OID template..",
+                MarkdownDescription: "sysObjectID — the vendor's registered OID for this device model, enriched from SNMP walks. Used to fingerprint the vendor and suggest an OID template.",
+                Optional: true,
                 Computed: true,
             },
             "sys_location": schema.StringAttribute{
                 MarkdownDescription: "System location (sysLocation) enriched from SNMP walks of this device.",
+                Optional: true,
                 Computed: true,
             },
             "sys_contact": schema.StringAttribute{
                 MarkdownDescription: "System contact (sysContact) enriched from SNMP walks of this device.",
+                Optional: true,
                 Computed: true,
             },
             "vendor": schema.StringAttribute{
-                MarkdownDescription: "Hardware vendor, from ENTITY-MIB or derived from sysObjectID. Managed by the probe..",
+                MarkdownDescription: "Hardware vendor, from ENTITY-MIB or derived from sysObjectID. Managed by the probe.",
+                Optional: true,
                 Computed: true,
             },
             "device_model": schema.StringAttribute{
-                MarkdownDescription: "Hardware model from ENTITY-MIB (entPhysicalModelName). Managed by the probe..",
+                MarkdownDescription: "Hardware model from ENTITY-MIB (entPhysicalModelName). Managed by the probe.",
+                Optional: true,
                 Computed: true,
             },
             "serial_number": schema.StringAttribute{
-                MarkdownDescription: "Chassis serial number from ENTITY-MIB (entPhysicalSerialNum). Managed by the probe..",
+                MarkdownDescription: "Chassis serial number from ENTITY-MIB (entPhysicalSerialNum). Managed by the probe.",
+                Optional: true,
                 Computed: true,
             },
             "firmware_version": schema.StringAttribute{
-                MarkdownDescription: "Firmware revision from ENTITY-MIB (entPhysicalFirmwareRev). Managed by the probe..",
+                MarkdownDescription: "Firmware revision from ENTITY-MIB (entPhysicalFirmwareRev). Managed by the probe.",
+                Optional: true,
                 Computed: true,
             },
             "software_version": schema.StringAttribute{
-                MarkdownDescription: "Operating system / software revision from ENTITY-MIB (entPhysicalSoftwareRev). Managed by the probe..",
+                MarkdownDescription: "Operating system / software revision from ENTITY-MIB (entPhysicalSoftwareRev). Managed by the probe.",
+                Optional: true,
                 Computed: true,
             },
             "last_rebooted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Device boot time computed from sysUpTime on each walk. Managed by the probe.",
                 Computed: true,
             },
             "cdp_neighbors": schema.StringAttribute{
-                MarkdownDescription: "CDP neighbors discovered on the last SNMP walk, complementing LLDP for the topology graph. Managed by the probe..",
+                MarkdownDescription: "CDP neighbors discovered on the last SNMP walk, complementing LLDP for the topology graph. Managed by the probe. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "lldp_neighbors": schema.StringAttribute{
-                MarkdownDescription: "LLDP neighbors discovered on the last SNMP walk, used to build the network topology graph. Managed by the probe..",
+                MarkdownDescription: "LLDP neighbors discovered on the last SNMP walk, used to build the network topology graph. Managed by the probe. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "snmp_table_snapshot": schema.StringAttribute{
-                MarkdownDescription: "The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe..",
+                MarkdownDescription: "The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When SNMP data was last received from this device.",
                 Computed: true,
             },
             "last_polled_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the assigned probe last ATTEMPTED an SNMP walk of this device, whether or not the device answered. Paired with lastSeenAt (which only moves on a successful walk) this is what separates \"the device did not answer\" from \"we have not asked recently\". Managed by the probe.",
                 Computed: true,
             },
             "is_reachable": schema.BoolAttribute{
-                MarkdownDescription: "Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe..",
+                MarkdownDescription: "Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe.",
+                Optional: true,
                 Computed: true,
             },
             "is_snmp_reachable": schema.BoolAttribute{
-                MarkdownDescription: "Whether the most recent SNMP walk of this device succeeded. Separate from isReachable, which is the ping verdict: a device that answers ping but not SNMP is Up with a failing SNMP walk, which almost always means wrong credentials or SNMP disabled on the device. NULL means no walk was attempted — the device has no usable SNMP credentials (it is pinged only) or has never been polled. Managed by the probe..",
+                MarkdownDescription: "Whether the most recent SNMP walk of this device succeeded. Separate from isReachable, which is the ping verdict: a device that answers ping but not SNMP is Up with a failing SNMP walk, which almost always means wrong credentials or SNMP disabled on the device. NULL means no walk was attempted — the device has no usable SNMP credentials (it is pinged only) or has never been polled. Managed by the probe.",
+                Optional: true,
                 Computed: true,
             },
             "last_snmp_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the last SUCCESSFUL SNMP walk of this device completed — the moment its interfaces, inventory and health OIDs were last refreshed. Only moves on a successful walk, so it stays honest while lastSeenAt keeps moving on ping alone. Managed by the probe.",
                 Computed: true,
             },
             "interfaces_total": schema.NumberAttribute{
                 MarkdownDescription: "Cached total count of interfaces on this device.",
+                Optional: true,
                 Computed: true,
             },
             "interfaces_up": schema.NumberAttribute{
                 MarkdownDescription: "Cached count of operationally up interfaces on this device.",
+                Optional: true,
                 Computed: true,
             },
             "interfaces_down": schema.NumberAttribute{
                 MarkdownDescription: "Cached count of operationally down interfaces on this device.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this network device archived? Archived network devices are hidden from lists but keep collecting telemetry..",
+                MarkdownDescription: "Is this network device archived? Archived network devices are hidden from lists but keep collecting telemetry.",
+                Optional: true,
                 Computed: true,
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this network device archived?",
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -422,23 +454,224 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.Hostname.IsNull() && !data.Hostname.IsUnknown() {
+        filters["hostname"] = data.Hostname.ValueString()
+        filterNames = append(filterNames, "hostname = "+fmt.Sprintf("%q", data.Hostname.ValueString()))
+    }
+    if !data.DnsName.IsNull() && !data.DnsName.IsUnknown() {
+        filters["dnsName"] = data.DnsName.ValueString()
+        filterNames = append(filterNames, "dns_name = "+fmt.Sprintf("%q", data.DnsName.ValueString()))
+    }
+    if !data.MacAddress.IsNull() && !data.MacAddress.IsUnknown() {
+        filters["macAddress"] = data.MacAddress.ValueString()
+        filterNames = append(filterNames, "mac_address = "+fmt.Sprintf("%q", data.MacAddress.ValueString()))
+    }
+    if !data.IsMacAddressLearned.IsNull() && !data.IsMacAddressLearned.IsUnknown() {
+        filters["isMacAddressLearned"] = data.IsMacAddressLearned.ValueBool()
+        filterNames = append(filterNames, "is_mac_address_learned = "+fmt.Sprintf("%t", data.IsMacAddressLearned.ValueBool()))
+    }
+    if !data.ProbeId.IsNull() && !data.ProbeId.IsUnknown() {
+        filters["probeId"] = data.ProbeId.ValueString()
+        filterNames = append(filterNames, "probe_id = "+fmt.Sprintf("%q", data.ProbeId.ValueString()))
+    }
+    if !data.SiteId.IsNull() && !data.SiteId.IsUnknown() {
+        filters["siteId"] = data.SiteId.ValueString()
+        filterNames = append(filterNames, "site_id = "+fmt.Sprintf("%q", data.SiteId.ValueString()))
+    }
+    if !data.OidTemplateId.IsNull() && !data.OidTemplateId.IsUnknown() {
+        filters["oidTemplateId"] = data.OidTemplateId.ValueString()
+        filterNames = append(filterNames, "oid_template_id = "+fmt.Sprintf("%q", data.OidTemplateId.ValueString()))
+    }
+    if !data.SnmpCredentialProfileId.IsNull() && !data.SnmpCredentialProfileId.IsUnknown() {
+        filters["snmpCredentialProfileId"] = data.SnmpCredentialProfileId.ValueString()
+        filterNames = append(filterNames, "snmp_credential_profile_id = "+fmt.Sprintf("%q", data.SnmpCredentialProfileId.ValueString()))
+    }
+    if !data.CurrentMonitorStatusId.IsNull() && !data.CurrentMonitorStatusId.IsUnknown() {
+        filters["currentMonitorStatusId"] = data.CurrentMonitorStatusId.ValueString()
+        filterNames = append(filterNames, "current_monitor_status_id = "+fmt.Sprintf("%q", data.CurrentMonitorStatusId.ValueString()))
+    }
+    if !data.MonitoringMethod.IsNull() && !data.MonitoringMethod.IsUnknown() {
+        filters["monitoringMethod"] = data.MonitoringMethod.ValueString()
+        filterNames = append(filterNames, "monitoring_method = "+fmt.Sprintf("%q", data.MonitoringMethod.ValueString()))
+    }
+    if !data.DeviceRole.IsNull() && !data.DeviceRole.IsUnknown() {
+        filters["deviceRole"] = data.DeviceRole.ValueString()
+        filterNames = append(filterNames, "device_role = "+fmt.Sprintf("%q", data.DeviceRole.ValueString()))
+    }
+    if !data.NetworkDeviceRoleId.IsNull() && !data.NetworkDeviceRoleId.IsUnknown() {
+        filters["networkDeviceRoleId"] = data.NetworkDeviceRoleId.ValueString()
+        filterNames = append(filterNames, "network_device_role_id = "+fmt.Sprintf("%q", data.NetworkDeviceRoleId.ValueString()))
+    }
+    if !data.MonitorId.IsNull() && !data.MonitorId.IsUnknown() {
+        filters["monitorId"] = data.MonitorId.ValueString()
+        filterNames = append(filterNames, "monitor_id = "+fmt.Sprintf("%q", data.MonitorId.ValueString()))
+    }
+    if !data.SnmpVersion.IsNull() && !data.SnmpVersion.IsUnknown() {
+        filters["snmpVersion"] = data.SnmpVersion.ValueString()
+        filterNames = append(filterNames, "snmp_version = "+fmt.Sprintf("%q", data.SnmpVersion.ValueString()))
+    }
+    if !data.SnmpCommunityString.IsNull() && !data.SnmpCommunityString.IsUnknown() {
+        filters["snmpCommunityString"] = data.SnmpCommunityString.ValueString()
+        filterNames = append(filterNames, "snmp_community_string = "+fmt.Sprintf("%q", data.SnmpCommunityString.ValueString()))
+    }
+    if !data.SnmpPort.IsNull() && !data.SnmpPort.IsUnknown() {
+        filters["snmpPort"] = lookupNumber(data.SnmpPort)
+        filterNames = append(filterNames, "snmp_port = "+data.SnmpPort.ValueBigFloat().String())
+    }
+    if !data.SnmpV3SecurityLevel.IsNull() && !data.SnmpV3SecurityLevel.IsUnknown() {
+        filters["snmpV3SecurityLevel"] = data.SnmpV3SecurityLevel.ValueString()
+        filterNames = append(filterNames, "snmp_v3_security_level = "+fmt.Sprintf("%q", data.SnmpV3SecurityLevel.ValueString()))
+    }
+    if !data.SnmpV3Username.IsNull() && !data.SnmpV3Username.IsUnknown() {
+        filters["snmpV3Username"] = data.SnmpV3Username.ValueString()
+        filterNames = append(filterNames, "snmp_v3_username = "+fmt.Sprintf("%q", data.SnmpV3Username.ValueString()))
+    }
+    if !data.SnmpV3AuthProtocol.IsNull() && !data.SnmpV3AuthProtocol.IsUnknown() {
+        filters["snmpV3AuthProtocol"] = data.SnmpV3AuthProtocol.ValueString()
+        filterNames = append(filterNames, "snmp_v3_auth_protocol = "+fmt.Sprintf("%q", data.SnmpV3AuthProtocol.ValueString()))
+    }
+    if !data.SnmpV3AuthKey.IsNull() && !data.SnmpV3AuthKey.IsUnknown() {
+        filters["snmpV3AuthKey"] = data.SnmpV3AuthKey.ValueString()
+        filterNames = append(filterNames, "snmp_v3_auth_key = "+fmt.Sprintf("%q", data.SnmpV3AuthKey.ValueString()))
+    }
+    if !data.SnmpV3PrivProtocol.IsNull() && !data.SnmpV3PrivProtocol.IsUnknown() {
+        filters["snmpV3PrivProtocol"] = data.SnmpV3PrivProtocol.ValueString()
+        filterNames = append(filterNames, "snmp_v3_priv_protocol = "+fmt.Sprintf("%q", data.SnmpV3PrivProtocol.ValueString()))
+    }
+    if !data.SnmpV3PrivKey.IsNull() && !data.SnmpV3PrivKey.IsUnknown() {
+        filters["snmpV3PrivKey"] = data.SnmpV3PrivKey.ValueString()
+        filterNames = append(filterNames, "snmp_v3_priv_key = "+fmt.Sprintf("%q", data.SnmpV3PrivKey.ValueString()))
+    }
+    if !data.IsPollingEnabled.IsNull() && !data.IsPollingEnabled.IsUnknown() {
+        filters["isPollingEnabled"] = data.IsPollingEnabled.ValueBool()
+        filterNames = append(filterNames, "is_polling_enabled = "+fmt.Sprintf("%t", data.IsPollingEnabled.ValueBool()))
+    }
+    if !data.PollingIntervalInMinutes.IsNull() && !data.PollingIntervalInMinutes.IsUnknown() {
+        filters["pollingIntervalInMinutes"] = lookupNumber(data.PollingIntervalInMinutes)
+        filterNames = append(filterNames, "polling_interval_in_minutes = "+data.PollingIntervalInMinutes.ValueBigFloat().String())
+    }
+    if !data.WalkInterfaces.IsNull() && !data.WalkInterfaces.IsUnknown() {
+        filters["walkInterfaces"] = data.WalkInterfaces.ValueBool()
+        filterNames = append(filterNames, "walk_interfaces = "+fmt.Sprintf("%t", data.WalkInterfaces.ValueBool()))
+    }
+    if !data.CollectEndpoints.IsNull() && !data.CollectEndpoints.IsUnknown() {
+        filters["collectEndpoints"] = data.CollectEndpoints.ValueBool()
+        filterNames = append(filterNames, "collect_endpoints = "+fmt.Sprintf("%t", data.CollectEndpoints.ValueBool()))
+    }
+    if !data.AutoApplyVendorHealthTemplate.IsNull() && !data.AutoApplyVendorHealthTemplate.IsUnknown() {
+        filters["autoApplyVendorHealthTemplate"] = data.AutoApplyVendorHealthTemplate.ValueBool()
+        filterNames = append(filterNames, "auto_apply_vendor_health_template = "+fmt.Sprintf("%t", data.AutoApplyVendorHealthTemplate.ValueBool()))
+    }
+    if !data.SysDescr.IsNull() && !data.SysDescr.IsUnknown() {
+        filters["sysDescr"] = data.SysDescr.ValueString()
+        filterNames = append(filterNames, "sys_descr = "+fmt.Sprintf("%q", data.SysDescr.ValueString()))
+    }
+    if !data.SysName.IsNull() && !data.SysName.IsUnknown() {
+        filters["sysName"] = data.SysName.ValueString()
+        filterNames = append(filterNames, "sys_name = "+fmt.Sprintf("%q", data.SysName.ValueString()))
+    }
+    if !data.SysObjectId.IsNull() && !data.SysObjectId.IsUnknown() {
+        filters["sysObjectId"] = data.SysObjectId.ValueString()
+        filterNames = append(filterNames, "sys_object_id = "+fmt.Sprintf("%q", data.SysObjectId.ValueString()))
+    }
+    if !data.SysLocation.IsNull() && !data.SysLocation.IsUnknown() {
+        filters["sysLocation"] = data.SysLocation.ValueString()
+        filterNames = append(filterNames, "sys_location = "+fmt.Sprintf("%q", data.SysLocation.ValueString()))
+    }
+    if !data.SysContact.IsNull() && !data.SysContact.IsUnknown() {
+        filters["sysContact"] = data.SysContact.ValueString()
+        filterNames = append(filterNames, "sys_contact = "+fmt.Sprintf("%q", data.SysContact.ValueString()))
+    }
+    if !data.Vendor.IsNull() && !data.Vendor.IsUnknown() {
+        filters["vendor"] = data.Vendor.ValueString()
+        filterNames = append(filterNames, "vendor = "+fmt.Sprintf("%q", data.Vendor.ValueString()))
+    }
+    if !data.DeviceModel.IsNull() && !data.DeviceModel.IsUnknown() {
+        filters["deviceModel"] = data.DeviceModel.ValueString()
+        filterNames = append(filterNames, "device_model = "+fmt.Sprintf("%q", data.DeviceModel.ValueString()))
+    }
+    if !data.SerialNumber.IsNull() && !data.SerialNumber.IsUnknown() {
+        filters["serialNumber"] = data.SerialNumber.ValueString()
+        filterNames = append(filterNames, "serial_number = "+fmt.Sprintf("%q", data.SerialNumber.ValueString()))
+    }
+    if !data.FirmwareVersion.IsNull() && !data.FirmwareVersion.IsUnknown() {
+        filters["firmwareVersion"] = data.FirmwareVersion.ValueString()
+        filterNames = append(filterNames, "firmware_version = "+fmt.Sprintf("%q", data.FirmwareVersion.ValueString()))
+    }
+    if !data.SoftwareVersion.IsNull() && !data.SoftwareVersion.IsUnknown() {
+        filters["softwareVersion"] = data.SoftwareVersion.ValueString()
+        filterNames = append(filterNames, "software_version = "+fmt.Sprintf("%q", data.SoftwareVersion.ValueString()))
+    }
+    if !data.IsReachable.IsNull() && !data.IsReachable.IsUnknown() {
+        filters["isReachable"] = data.IsReachable.ValueBool()
+        filterNames = append(filterNames, "is_reachable = "+fmt.Sprintf("%t", data.IsReachable.ValueBool()))
+    }
+    if !data.IsSnmpReachable.IsNull() && !data.IsSnmpReachable.IsUnknown() {
+        filters["isSnmpReachable"] = data.IsSnmpReachable.ValueBool()
+        filterNames = append(filterNames, "is_snmp_reachable = "+fmt.Sprintf("%t", data.IsSnmpReachable.ValueBool()))
+    }
+    if !data.InterfacesTotal.IsNull() && !data.InterfacesTotal.IsUnknown() {
+        filters["interfacesTotal"] = lookupNumber(data.InterfacesTotal)
+        filterNames = append(filterNames, "interfaces_total = "+data.InterfacesTotal.ValueBigFloat().String())
+    }
+    if !data.InterfacesUp.IsNull() && !data.InterfacesUp.IsUnknown() {
+        filters["interfacesUp"] = lookupNumber(data.InterfacesUp)
+        filterNames = append(filterNames, "interfaces_up = "+data.InterfacesUp.ValueBigFloat().String())
+    }
+    if !data.InterfacesDown.IsNull() && !data.InterfacesDown.IsUnknown() {
+        filters["interfacesDown"] = lookupNumber(data.InterfacesDown)
+        filterNames = append(filterNames, "interfaces_down = "+data.InterfacesDown.ValueBigFloat().String())
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a network_device.",
+            "Look the network device up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the network device up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "slug": true,
         "description": true,
         "hostname": true,
@@ -499,7 +732,6 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "isArchived": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "labels": true,
         "_id": true,
     }
@@ -513,7 +745,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_device found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network device found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -526,11 +758,10 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -547,11 +778,11 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_device found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network device matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_device matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network device matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -579,23 +810,6 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -631,34 +845,6 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -675,6 +861,23 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["slug"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1569,23 +1772,6 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value

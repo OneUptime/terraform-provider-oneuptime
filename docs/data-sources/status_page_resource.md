@@ -7,44 +7,47 @@ description: |-
 
 # oneuptime_status_page_resource (Data Source)
 
-Add resources like monitors to your status page Look up by `id` or by `name` (must match exactly one item).
+Add resources like monitors to your status page
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one status page resource may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_status_page_resource" "by_name" {
-  name = "example-status_page_resource"
+data "oneuptime_status_page_resource" "example" {
+  status_page_id = oneuptime_status_page.example.id
 }
 
+# Or by id:
 data "oneuptime_status_page_resource" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `monitor_group_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `status_page_group_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `status_page_monitor_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `display_name` (String) Display name of the monitor on the Status Page.. Computed.
-- `display_description` (String) Display description of the monitor on the Status Page. This is in markdown format... Computed.
-- `display_tooltip` (String) Tooltip of the monitor on the Status Page.. Computed.
-- `show_current_status` (Bool) Show current status like offline, operational or degraded... Computed.
-- `show_uptime_percent` (Bool) Show uptime percent of this monitor for the last 90 days.. Computed.
-- `uptime_percent_precision` (String) Precision of uptime percent of this monitor for the last 90 days.. Computed.
-- `show_status_history_chart` (Bool) Show a 90 day uptime history of this monitor.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `order` (Number) Order / Priority of this resource.. Computed.
-- `row_axis_value` (String) Row this resource belongs to when its status page group is rendered as a grid. Should match one of the row axis values defined on the group... Computed.
-- `column_axis_value` (String) Column this resource belongs to when its status page group is rendered as a grid. Should match one of the column axis values defined on the group... Computed.
+### Optional
+
+- `column_axis_value` (String) Column this resource belongs to when its status page group is rendered as a grid. Should match one of the column axis values defined on the group.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `display_description` (String) Display description of the monitor on the Status Page. This is in markdown format.
+- `display_name` (String) Display name of the monitor on the Status Page.
+- `display_tooltip` (String) Tooltip of the monitor on the Status Page.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `monitor_group_id` (String) Relation to Monitor Group ID Resource in which this object belongs. The ID of a `oneuptime_monitor_group`.
+- `monitor_id` (String) Relation to Monitor ID Resource in which this object belongs. The ID of a `oneuptime_monitor`.
+- `order` (Number) Order / Priority of this resource.
+- `row_axis_value` (String) Row this resource belongs to when its status page group is rendered as a grid. Should match one of the row axis values defined on the group.
+- `show_current_status` (Boolean) Show current status like offline, operational or degraded.
+- `show_status_history_chart` (Boolean) Show a 90 day uptime history of this monitor.
+- `show_uptime_percent` (Boolean) Show uptime percent of this monitor for the last 90 days.
+- `status_page_group_id` (String) Does this monitor belong to a status page group? The ID of a `oneuptime_status_page_group`.
+- `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
+- `status_page_monitor_rule_id` (String) ID of the rule that added this resource, if it was added by a rule instead of by hand. The ID of a `oneuptime_status_page_monitor_rule`.
+- `uptime_percent_precision` (String) Precision of uptime percent of this monitor for the last 90 days.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

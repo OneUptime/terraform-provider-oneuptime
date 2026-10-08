@@ -112,8 +112,6 @@ type StatusPageResourceModel struct {
     EnabledLanguages JSONSubsetValue `tfsdk:"enabled_languages"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
@@ -127,19 +125,23 @@ func (r *StatusPageResource) Metadata(ctx context.Context, req resource.Metadata
 }
 
 func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *StatusPageResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Manage status pages for your project.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -150,7 +152,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 Required: true,
             },
             "page_title": schema.StringAttribute{
-                MarkdownDescription: "Title of your Status Page. This is used for SEO..",
+                MarkdownDescription: "Title of your Status Page. This is used for SEO.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -158,7 +160,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "page_description": schema.StringAttribute{
-                MarkdownDescription: "Description of your Status Page. This is used for SEO..",
+                MarkdownDescription: "Description of your Status Page. This is used for SEO.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -166,7 +168,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_search_engine_indexing": schema.BoolAttribute{
-                MarkdownDescription: "Should search engines like Google and Bing be allowed to index this status page? Turn this off to keep the page reachable by link but out of search results..",
+                MarkdownDescription: "Should search engines like Google and Bing be allowed to index this status page? Turn this off to keep the page reachable by link but out of search results.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -183,7 +185,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -192,7 +194,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online..",
+                MarkdownDescription: "Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -201,7 +203,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "favicon_file_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Status Page Favicon File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -209,7 +211,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "logo_file_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Status Page Logo File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -217,7 +219,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "cover_image_file_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Status Page Cover Image ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -225,7 +227,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "header_html": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom HTML Header. Served only from a verified custom domain..",
+                MarkdownDescription: "Status Page Custom HTML Header. Served only from a verified custom domain.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -233,7 +235,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "footer_html": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom HTML Footer. Served only from a verified custom domain..",
+                MarkdownDescription: "Status Page Custom HTML Footer. Served only from a verified custom domain.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -241,7 +243,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "custom_css": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom CSS. Served only from a verified custom domain..",
+                MarkdownDescription: "Status Page Custom CSS. Served only from a verified custom domain.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -249,7 +251,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "custom_java_script": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom JavaScript. This runs when the status page is loaded from a verified custom domain..",
+                MarkdownDescription: "Status Page Custom JavaScript. This runs when the status page is loaded from a verified custom domain.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -257,7 +259,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "is_public_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Is this status page public?.",
+                MarkdownDescription: "Is this status page public?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -266,7 +268,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_mcp_server": schema.BoolAttribute{
-                MarkdownDescription: "Can AI agents read this status page over the public OneUptime MCP server? This does not affect the status page website, its RSS feed, or its public JSON API..",
+                MarkdownDescription: "Can AI agents read this status page over the public OneUptime MCP server? This does not affect the status page website, its RSS feed, or its public JSON API.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -275,7 +277,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_master_password": schema.BoolAttribute{
-                MarkdownDescription: "Require visitors to enter a master password before viewing a private status page..",
+                MarkdownDescription: "Require visitors to enter a master password before viewing a private status page.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -284,7 +286,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "master_password": schema.StringAttribute{
-                MarkdownDescription: "Password required to unlock a private status page. This value is stored as a secure hash..",
+                MarkdownDescription: "Password required to unlock a private status page. This value is stored as a secure hash.",
                 Optional: true,
                 Computed: true,
                 Sensitive: true,
@@ -293,7 +295,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_incident_labels_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Incident Labels on Status Page?.",
+                MarkdownDescription: "Show Incident Labels on Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -302,7 +304,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_scheduled_event_labels_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Scheduled Event Labels on Status Page?.",
+                MarkdownDescription: "Show Scheduled Event Labels on Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -311,7 +313,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_email_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can email subscribers subscribe to this Status Page?.",
+                MarkdownDescription: "Can email subscribers subscribe to this Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -320,7 +322,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "allow_subscribers_to_choose_resources": schema.BoolAttribute{
-                MarkdownDescription: "Can subscribers choose which resources to subscribe to?.",
+                MarkdownDescription: "Can subscribers choose which resources to subscribe to?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -329,7 +331,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "allow_subscribers_to_choose_event_types": schema.BoolAttribute{
-                MarkdownDescription: "Can subscribers choose which event type like Announcements, Incidents, Scheduled Events to subscribe to?.",
+                MarkdownDescription: "Can subscribers choose which event type like Announcements, Incidents, Scheduled Events to subscribe to?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -338,7 +340,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_sms_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can SMS subscribers subscribe to this Status Page?.",
+                MarkdownDescription: "Can SMS subscribers subscribe to this Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -347,7 +349,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_slack_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can Slack subscribers subscribe to this Status Page?.",
+                MarkdownDescription: "Can Slack subscribers subscribe to this Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -356,7 +358,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_microsoft_teams_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can Microsoft Teams subscribers subscribe to this Status Page?.",
+                MarkdownDescription: "Can Microsoft Teams subscribers subscribe to this Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -365,7 +367,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_webhook_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can Webhook subscribers subscribe to this Status Page?.",
+                MarkdownDescription: "Can Webhook subscribers subscribe to this Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -382,7 +384,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "logo_alt_text": schema.StringAttribute{
-                MarkdownDescription: "Alternative text for the logo image, read by screen readers for accessibility..",
+                MarkdownDescription: "Alternative text for the logo image, read by screen readers for accessibility.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -390,7 +392,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "cover_image_alt_text": schema.StringAttribute{
-                MarkdownDescription: "Alternative text for the cover image, read by screen readers for accessibility. Leave blank if the cover image is purely decorative..",
+                MarkdownDescription: "Alternative text for the cover image, read by screen readers for accessibility. Leave blank if the cover image is purely decorative.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -398,7 +400,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -419,7 +421,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "smtp_config_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your SMTP Config Resource which is used to send email to subscribers.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -427,7 +429,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "call_sms_config_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your Call/SMS Config Resource which is used to send SMS to subscribers.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -435,7 +437,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_incident_history_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of incident history should be shown on the status page (in days)?.",
+                MarkdownDescription: "How many days of incident history should be shown on the status page (in days)?",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
@@ -444,7 +446,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_announcement_history_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of announcement history should be shown on the status page (in days)?.",
+                MarkdownDescription: "How many days of announcement history should be shown on the status page (in days)?",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
@@ -453,7 +455,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_scheduled_event_history_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of scheduled event history should be shown on the status page (in days)?.",
+                MarkdownDescription: "How many days of scheduled event history should be shown on the status page (in days)?",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
@@ -462,7 +464,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "overview_page_description": schema.StringAttribute{
-                MarkdownDescription: "Overview Page description for your status page. This is a markdown field..",
+                MarkdownDescription: "Overview Page description for your status page. This is a markdown field.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -470,7 +472,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "hide_powered_by_one_uptime_branding": schema.BoolAttribute{
-                MarkdownDescription: "Hide Powered By OneUptime Branding?.",
+                MarkdownDescription: "Hide Powered By OneUptime Branding?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -479,7 +481,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "default_bar_color": schema.StringAttribute{
-                MarkdownDescription: "Color object",
+                MarkdownDescription: "Default color of the bar on the overview page.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -491,7 +493,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "subscriber_timezones": schema.StringAttribute{
-                MarkdownDescription: "Timezones of subscribers to this status page..",
+                MarkdownDescription: "Timezones of subscribers to this status page. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -503,7 +505,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "is_report_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it..",
+                MarkdownDescription: "Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -512,7 +514,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "report_start_date_time": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the first report goes out. Every later one follows it by the recurring interval, at the same time of day. Left out when reports are turned on, it is 09:00 in the report timezone at the start of the next period of the interval: the next 1st of the month for a monthly schedule (the default), the next Monday for a weekly one, the next day for a daily one and the next 1 January for a yearly one. An hourly schedule starts at the next full hour.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -521,7 +523,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "report_recurring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often a report goes out. Left out when reports are turned on, it is every month..",
+                MarkdownDescription: "How often a report goes out. Left out when reports are turned on, it is every month. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -533,7 +535,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "send_next_report_by": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the next report goes out. The server works it out from the schedule.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -542,7 +544,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "report_data_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of data should be included in the report?.",
+                MarkdownDescription: "How many days of data should be included in the report?",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(30)),
@@ -551,7 +553,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "report_period_type": schema.StringAttribute{
-                MarkdownDescription: "Should the report cover a rolling number of days, or the previous whole calendar period?.",
+                MarkdownDescription: "Should the report cover a rolling number of days, or the previous whole calendar period?",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Rolling"),
@@ -560,7 +562,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "report_timezone": schema.StringAttribute{
-                MarkdownDescription: "The timezone report periods and send times are resolved in. A monthly report in this timezone runs from the 1st at 00:00 to the last day at 23:59..",
+                MarkdownDescription: "The timezone report periods and send times are resolved in. A monthly report in this timezone runs from the 1st at 00:00 to the last day at 23:59.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("UTC"),
@@ -569,7 +571,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_overall_uptime_percent_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Overall Uptime Percent on Status Page?.",
+                MarkdownDescription: "Show Overall Uptime Percent on Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -578,7 +580,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "overall_uptime_percent_precision": schema.StringAttribute{
-                MarkdownDescription: "Overall Precision of uptime percent for this status page..",
+                MarkdownDescription: "Overall Precision of uptime percent for this status page.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("99.99% (Two Decimal)"),
@@ -587,7 +589,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "subscriber_email_notification_footer_text": schema.StringAttribute{
-                MarkdownDescription: "Text to send to subscribers in the footer of the email..",
+                MarkdownDescription: "Text to send to subscribers in the footer of the email.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -595,7 +597,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_custom_subscriber_email_notification_footer_text": schema.BoolAttribute{
-                MarkdownDescription: "Enable custom footer text in subscriber email notifications..",
+                MarkdownDescription: "Enable custom footer text in subscriber email notifications.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -604,7 +606,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_incidents_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Incidents on Status Page?.",
+                MarkdownDescription: "Show Incidents on Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -613,7 +615,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "only_show_scoped_incidents": schema.BoolAttribute{
-                MarkdownDescription: "When on, this status page shows and notifies its subscribers about only the incidents limited to it. Incidents that are not limited to any status page never reach it..",
+                MarkdownDescription: "When on, this status page shows and notifies its subscribers about only the incidents limited to it. Incidents that are not limited to any status page never reach it.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -622,7 +624,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_announcements_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Announcements on Status Page?.",
+                MarkdownDescription: "Show Announcements on Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -631,7 +633,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_episodes_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Incident Episodes on Status Page?.",
+                MarkdownDescription: "Show Incident Episodes on Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -649,7 +651,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_episode_labels_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Episode Labels on Status Page?.",
+                MarkdownDescription: "Show Episode Labels on Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -658,7 +660,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_scheduled_maintenance_events_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Scheduled Maintenance Events on Status Page?.",
+                MarkdownDescription: "Show Scheduled Maintenance Events on Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -667,7 +669,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_subscriber_page_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Subscriber Page on Status Page?.",
+                MarkdownDescription: "Show Subscriber Page on Status Page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -676,7 +678,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "ip_whitelist": schema.StringAttribute{
-                MarkdownDescription: "IP Whitelist for this Status Page. One IP per line. Only used if the status page is private..",
+                MarkdownDescription: "IP Whitelist for this Status Page. One IP per line. Only used if the status page is private.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -684,7 +686,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_embedded_overall_status": schema.BoolAttribute{
-                MarkdownDescription: "Enable embedded overall status badge that can be displayed on external websites?.",
+                MarkdownDescription: "Enable embedded overall status badge that can be displayed on external websites?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -693,7 +695,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_uptime_history_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of uptime history should be shown on the status page? Maximum is 90 days..",
+                MarkdownDescription: "How many days of uptime history should be shown on the status page? Maximum is 90 days.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(90)),
@@ -702,7 +704,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "embedded_overall_status_token": schema.StringAttribute{
-                MarkdownDescription: "Security token required to access the embedded overall status badge. This token must be provided in the URL..",
+                MarkdownDescription: "Security token required to access the embedded overall status badge. This token must be provided in the URL.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -710,7 +712,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "default_language": schema.StringAttribute{
-                MarkdownDescription: "Default language that the status page is shown in when a visitor arrives for the first time..",
+                MarkdownDescription: "Default language that the status page is shown in when a visitor arrives for the first time.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("en"),
@@ -719,7 +721,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enabled_languages": schema.StringAttribute{
-                MarkdownDescription: "Languages offered in the footer language switcher. Leave empty to offer all supported languages..",
+                MarkdownDescription: "Languages offered in the footer language switcher. Leave empty to offer all supported languages. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -731,22 +733,16 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -754,24 +750,27 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this status page was archived. Empty while it is not archived.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?.",
+                MarkdownDescription: "Are owners notified of when this resource is created?",
                 Computed: true,
             },
             "downtime_monitor_statuses": schema.SetAttribute{
-                MarkdownDescription: "List of monitors statuses that are considered as \"down\" for this status page..",
+                MarkdownDescription: "List of monitors statuses that are considered as \"down\" for this status page. IDs of `oneuptime_monitor_status` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -809,6 +808,14 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config StatusPageResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -1132,8 +1139,6 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "enabledLanguages": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
@@ -2552,34 +2557,6 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2745,6 +2722,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -2833,8 +2813,6 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "enabledLanguages": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
@@ -4254,34 +4232,6 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4467,6 +4417,14 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config StatusPageResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     statusPageRequest := map[string]interface{}{
@@ -4789,8 +4747,6 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "enabledLanguages": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "archivedAt": true,
@@ -6204,34 +6160,6 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6396,6 +6324,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -6432,6 +6363,212 @@ func (r *StatusPageResource) Delete(ctx context.Context, req resource.DeleteRequ
 
 func (r *StatusPageResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *StatusPageResource) keepPlannedValues(data *StatusPageResourceModel, plan *StatusPageResourceModel, config *StatusPageResourceModel) {
+    if config.PageTitle.IsNull() && !plan.PageTitle.IsUnknown() {
+        data.PageTitle = plan.PageTitle
+    }
+    if config.PageDescription.IsNull() && !plan.PageDescription.IsUnknown() {
+        data.PageDescription = plan.PageDescription
+    }
+    if config.EnableSearchEngineIndexing.IsNull() && !plan.EnableSearchEngineIndexing.IsUnknown() {
+        data.EnableSearchEngineIndexing = plan.EnableSearchEngineIndexing
+    }
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
+    }
+    if config.FaviconFileId.IsNull() && !plan.FaviconFileId.IsUnknown() {
+        data.FaviconFileId = plan.FaviconFileId
+    }
+    if config.LogoFileId.IsNull() && !plan.LogoFileId.IsUnknown() {
+        data.LogoFileId = plan.LogoFileId
+    }
+    if config.CoverImageFileId.IsNull() && !plan.CoverImageFileId.IsUnknown() {
+        data.CoverImageFileId = plan.CoverImageFileId
+    }
+    if config.HeaderHtml.IsNull() && !plan.HeaderHtml.IsUnknown() {
+        data.HeaderHtml = plan.HeaderHtml
+    }
+    if config.FooterHtml.IsNull() && !plan.FooterHtml.IsUnknown() {
+        data.FooterHtml = plan.FooterHtml
+    }
+    if config.CustomCss.IsNull() && !plan.CustomCss.IsUnknown() {
+        data.CustomCss = plan.CustomCss
+    }
+    if config.CustomJavaScript.IsNull() && !plan.CustomJavaScript.IsUnknown() {
+        data.CustomJavaScript = plan.CustomJavaScript
+    }
+    if config.IsPublicStatusPage.IsNull() && !plan.IsPublicStatusPage.IsUnknown() {
+        data.IsPublicStatusPage = plan.IsPublicStatusPage
+    }
+    if config.EnableMcpServer.IsNull() && !plan.EnableMcpServer.IsUnknown() {
+        data.EnableMcpServer = plan.EnableMcpServer
+    }
+    if config.EnableMasterPassword.IsNull() && !plan.EnableMasterPassword.IsUnknown() {
+        data.EnableMasterPassword = plan.EnableMasterPassword
+    }
+    if config.MasterPassword.IsNull() && !plan.MasterPassword.IsUnknown() {
+        data.MasterPassword = plan.MasterPassword
+    }
+    if config.ShowIncidentLabelsOnStatusPage.IsNull() && !plan.ShowIncidentLabelsOnStatusPage.IsUnknown() {
+        data.ShowIncidentLabelsOnStatusPage = plan.ShowIncidentLabelsOnStatusPage
+    }
+    if config.ShowScheduledEventLabelsOnStatusPage.IsNull() && !plan.ShowScheduledEventLabelsOnStatusPage.IsUnknown() {
+        data.ShowScheduledEventLabelsOnStatusPage = plan.ShowScheduledEventLabelsOnStatusPage
+    }
+    if config.EnableEmailSubscribers.IsNull() && !plan.EnableEmailSubscribers.IsUnknown() {
+        data.EnableEmailSubscribers = plan.EnableEmailSubscribers
+    }
+    if config.AllowSubscribersToChooseResources.IsNull() && !plan.AllowSubscribersToChooseResources.IsUnknown() {
+        data.AllowSubscribersToChooseResources = plan.AllowSubscribersToChooseResources
+    }
+    if config.AllowSubscribersToChooseEventTypes.IsNull() && !plan.AllowSubscribersToChooseEventTypes.IsUnknown() {
+        data.AllowSubscribersToChooseEventTypes = plan.AllowSubscribersToChooseEventTypes
+    }
+    if config.EnableSmsSubscribers.IsNull() && !plan.EnableSmsSubscribers.IsUnknown() {
+        data.EnableSmsSubscribers = plan.EnableSmsSubscribers
+    }
+    if config.EnableSlackSubscribers.IsNull() && !plan.EnableSlackSubscribers.IsUnknown() {
+        data.EnableSlackSubscribers = plan.EnableSlackSubscribers
+    }
+    if config.EnableMicrosoftTeamsSubscribers.IsNull() && !plan.EnableMicrosoftTeamsSubscribers.IsUnknown() {
+        data.EnableMicrosoftTeamsSubscribers = plan.EnableMicrosoftTeamsSubscribers
+    }
+    if config.EnableWebhookSubscribers.IsNull() && !plan.EnableWebhookSubscribers.IsUnknown() {
+        data.EnableWebhookSubscribers = plan.EnableWebhookSubscribers
+    }
+    if config.CopyrightText.IsNull() && !plan.CopyrightText.IsUnknown() {
+        data.CopyrightText = plan.CopyrightText
+    }
+    if config.LogoAltText.IsNull() && !plan.LogoAltText.IsUnknown() {
+        data.LogoAltText = plan.LogoAltText
+    }
+    if config.CoverImageAltText.IsNull() && !plan.CoverImageAltText.IsUnknown() {
+        data.CoverImageAltText = plan.CoverImageAltText
+    }
+    if config.CustomFields.IsNull() && !plan.CustomFields.IsUnknown() {
+        data.CustomFields = plan.CustomFields
+    }
+    if config.RequireSsoForLogin.IsNull() && !plan.RequireSsoForLogin.IsUnknown() {
+        data.RequireSsoForLogin = plan.RequireSsoForLogin
+    }
+    if config.SmtpConfigId.IsNull() && !plan.SmtpConfigId.IsUnknown() {
+        data.SmtpConfigId = plan.SmtpConfigId
+    }
+    if config.CallSmsConfigId.IsNull() && !plan.CallSmsConfigId.IsUnknown() {
+        data.CallSmsConfigId = plan.CallSmsConfigId
+    }
+    if config.ShowIncidentHistoryInDays.IsNull() && !plan.ShowIncidentHistoryInDays.IsUnknown() {
+        data.ShowIncidentHistoryInDays = plan.ShowIncidentHistoryInDays
+    }
+    if config.ShowAnnouncementHistoryInDays.IsNull() && !plan.ShowAnnouncementHistoryInDays.IsUnknown() {
+        data.ShowAnnouncementHistoryInDays = plan.ShowAnnouncementHistoryInDays
+    }
+    if config.ShowScheduledEventHistoryInDays.IsNull() && !plan.ShowScheduledEventHistoryInDays.IsUnknown() {
+        data.ShowScheduledEventHistoryInDays = plan.ShowScheduledEventHistoryInDays
+    }
+    if config.OverviewPageDescription.IsNull() && !plan.OverviewPageDescription.IsUnknown() {
+        data.OverviewPageDescription = plan.OverviewPageDescription
+    }
+    if config.HidePoweredByOneUptimeBranding.IsNull() && !plan.HidePoweredByOneUptimeBranding.IsUnknown() {
+        data.HidePoweredByOneUptimeBranding = plan.HidePoweredByOneUptimeBranding
+    }
+    if config.DefaultBarColor.IsNull() && !plan.DefaultBarColor.IsUnknown() {
+        data.DefaultBarColor = plan.DefaultBarColor
+    }
+    if config.SubscriberTimezones.IsNull() && !plan.SubscriberTimezones.IsUnknown() {
+        data.SubscriberTimezones = plan.SubscriberTimezones
+    }
+    if config.IsReportEnabled.IsNull() && !plan.IsReportEnabled.IsUnknown() {
+        data.IsReportEnabled = plan.IsReportEnabled
+    }
+    if config.ReportStartDateTime.IsNull() && !plan.ReportStartDateTime.IsUnknown() {
+        data.ReportStartDateTime = plan.ReportStartDateTime
+    }
+    if config.ReportRecurringInterval.IsNull() && !plan.ReportRecurringInterval.IsUnknown() {
+        data.ReportRecurringInterval = plan.ReportRecurringInterval
+    }
+    if config.SendNextReportBy.IsNull() && !plan.SendNextReportBy.IsUnknown() {
+        data.SendNextReportBy = plan.SendNextReportBy
+    }
+    if config.ReportDataInDays.IsNull() && !plan.ReportDataInDays.IsUnknown() {
+        data.ReportDataInDays = plan.ReportDataInDays
+    }
+    if config.ReportPeriodType.IsNull() && !plan.ReportPeriodType.IsUnknown() {
+        data.ReportPeriodType = plan.ReportPeriodType
+    }
+    if config.ReportTimezone.IsNull() && !plan.ReportTimezone.IsUnknown() {
+        data.ReportTimezone = plan.ReportTimezone
+    }
+    if config.ShowOverallUptimePercentOnStatusPage.IsNull() && !plan.ShowOverallUptimePercentOnStatusPage.IsUnknown() {
+        data.ShowOverallUptimePercentOnStatusPage = plan.ShowOverallUptimePercentOnStatusPage
+    }
+    if config.OverallUptimePercentPrecision.IsNull() && !plan.OverallUptimePercentPrecision.IsUnknown() {
+        data.OverallUptimePercentPrecision = plan.OverallUptimePercentPrecision
+    }
+    if config.SubscriberEmailNotificationFooterText.IsNull() && !plan.SubscriberEmailNotificationFooterText.IsUnknown() {
+        data.SubscriberEmailNotificationFooterText = plan.SubscriberEmailNotificationFooterText
+    }
+    if config.EnableCustomSubscriberEmailNotificationFooterText.IsNull() && !plan.EnableCustomSubscriberEmailNotificationFooterText.IsUnknown() {
+        data.EnableCustomSubscriberEmailNotificationFooterText = plan.EnableCustomSubscriberEmailNotificationFooterText
+    }
+    if config.ShowIncidentsOnStatusPage.IsNull() && !plan.ShowIncidentsOnStatusPage.IsUnknown() {
+        data.ShowIncidentsOnStatusPage = plan.ShowIncidentsOnStatusPage
+    }
+    if config.OnlyShowScopedIncidents.IsNull() && !plan.OnlyShowScopedIncidents.IsUnknown() {
+        data.OnlyShowScopedIncidents = plan.OnlyShowScopedIncidents
+    }
+    if config.ShowAnnouncementsOnStatusPage.IsNull() && !plan.ShowAnnouncementsOnStatusPage.IsUnknown() {
+        data.ShowAnnouncementsOnStatusPage = plan.ShowAnnouncementsOnStatusPage
+    }
+    if config.ShowEpisodesOnStatusPage.IsNull() && !plan.ShowEpisodesOnStatusPage.IsUnknown() {
+        data.ShowEpisodesOnStatusPage = plan.ShowEpisodesOnStatusPage
+    }
+    if config.ShowEpisodeHistoryInDays.IsNull() && !plan.ShowEpisodeHistoryInDays.IsUnknown() {
+        data.ShowEpisodeHistoryInDays = plan.ShowEpisodeHistoryInDays
+    }
+    if config.ShowEpisodeLabelsOnStatusPage.IsNull() && !plan.ShowEpisodeLabelsOnStatusPage.IsUnknown() {
+        data.ShowEpisodeLabelsOnStatusPage = plan.ShowEpisodeLabelsOnStatusPage
+    }
+    if config.ShowScheduledMaintenanceEventsOnStatusPage.IsNull() && !plan.ShowScheduledMaintenanceEventsOnStatusPage.IsUnknown() {
+        data.ShowScheduledMaintenanceEventsOnStatusPage = plan.ShowScheduledMaintenanceEventsOnStatusPage
+    }
+    if config.ShowSubscriberPageOnStatusPage.IsNull() && !plan.ShowSubscriberPageOnStatusPage.IsUnknown() {
+        data.ShowSubscriberPageOnStatusPage = plan.ShowSubscriberPageOnStatusPage
+    }
+    if config.IpWhitelist.IsNull() && !plan.IpWhitelist.IsUnknown() {
+        data.IpWhitelist = plan.IpWhitelist
+    }
+    if config.EnableEmbeddedOverallStatus.IsNull() && !plan.EnableEmbeddedOverallStatus.IsUnknown() {
+        data.EnableEmbeddedOverallStatus = plan.EnableEmbeddedOverallStatus
+    }
+    if config.ShowUptimeHistoryInDays.IsNull() && !plan.ShowUptimeHistoryInDays.IsUnknown() {
+        data.ShowUptimeHistoryInDays = plan.ShowUptimeHistoryInDays
+    }
+    if config.EmbeddedOverallStatusToken.IsNull() && !plan.EmbeddedOverallStatusToken.IsUnknown() {
+        data.EmbeddedOverallStatusToken = plan.EmbeddedOverallStatusToken
+    }
+    if config.DefaultLanguage.IsNull() && !plan.DefaultLanguage.IsUnknown() {
+        data.DefaultLanguage = plan.DefaultLanguage
+    }
+    if config.EnabledLanguages.IsNull() && !plan.EnabledLanguages.IsUnknown() {
+        data.EnabledLanguages = plan.EnabledLanguages
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

@@ -13,8 +13,8 @@ Manage status pages for your project.
 
 ```terraform
 resource "oneuptime_status_page" "example" {
-  name = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example status page"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -22,94 +22,101 @@ resource "oneuptime_status_page" "example" {
 
 ### Required
 
-- `name` (String) Any friendly name of this object..
+- `name` (String) Any friendly name of this object.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `page_title` (String) Title of your Status Page. This is used for SEO...
-- `page_description` (String) Description of your Status Page. This is used for SEO...
-- `enable_search_engine_indexing` (Bool) Should search engines like Google and Bing be allowed to index this status page? Turn this off to keep the page reachable by link but out of search results...
-- `description` (String) Friendly description that will help you remember..
-- `labels` (Set) Relation to Labels Array where this object is categorized in...
-- `is_archived` (Bool) Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online...
-- `favicon_file_id` (String) A unique identifier for an object, represented as a UUID..
-- `logo_file_id` (String) A unique identifier for an object, represented as a UUID..
-- `cover_image_file_id` (String) A unique identifier for an object, represented as a UUID..
-- `header_html` (String) Status Page Custom HTML Header. Served only from a verified custom domain...
-- `footer_html` (String) Status Page Custom HTML Footer. Served only from a verified custom domain...
-- `custom_css` (String) Status Page Custom CSS. Served only from a verified custom domain...
-- `custom_java_script` (String) Status Page Custom JavaScript. This runs when the status page is loaded from a verified custom domain...
-- `is_public_status_page` (Bool) Is this status page public?..
-- `enable_mcp_server` (Bool) Can AI agents read this status page over the public OneUptime MCP server? This does not affect the status page website, its RSS feed, or its public JSON API...
-- `enable_master_password` (Bool) Require visitors to enter a master password before viewing a private status page...
-- `master_password` (String, Sensitive) Password required to unlock a private status page. This value is stored as a secure hash...
-- `show_incident_labels_on_status_page` (Bool) Show Incident Labels on Status Page?..
-- `show_scheduled_event_labels_on_status_page` (Bool) Show Scheduled Event Labels on Status Page?..
-- `enable_email_subscribers` (Bool) Can email subscribers subscribe to this Status Page?..
-- `allow_subscribers_to_choose_resources` (Bool) Can subscribers choose which resources to subscribe to?..
-- `allow_subscribers_to_choose_event_types` (Bool) Can subscribers choose which event type like Announcements, Incidents, Scheduled Events to subscribe to?..
-- `enable_sms_subscribers` (Bool) Can SMS subscribers subscribe to this Status Page?..
-- `enable_slack_subscribers` (Bool) Can Slack subscribers subscribe to this Status Page?..
-- `enable_microsoft_teams_subscribers` (Bool) Can Microsoft Teams subscribers subscribe to this Status Page?..
-- `enable_webhook_subscribers` (Bool) Can Webhook subscribers subscribe to this Status Page?..
-- `copyright_text` (String) Copyright Text..
-- `logo_alt_text` (String) Alternative text for the logo image, read by screen readers for accessibility...
-- `cover_image_alt_text` (String) Alternative text for the cover image, read by screen readers for accessibility. Leave blank if the cover image is purely decorative...
-- `custom_fields` (String) Custom Fields on this resource...
-- `require_sso_for_login` (Bool) Should SSO be required to login to Private Status Page..
-- `smtp_config_id` (String) A unique identifier for an object, represented as a UUID..
-- `call_sms_config_id` (String) A unique identifier for an object, represented as a UUID..
-- `show_incident_history_in_days` (Number) How many days of incident history should be shown on the status page (in days)?..
-- `show_announcement_history_in_days` (Number) How many days of announcement history should be shown on the status page (in days)?..
-- `show_scheduled_event_history_in_days` (Number) How many days of scheduled event history should be shown on the status page (in days)?..
-- `overview_page_description` (String) Overview Page description for your status page. This is a markdown field...
-- `hide_powered_by_one_uptime_branding` (Bool) Hide Powered By OneUptime Branding?..
-- `default_bar_color` (String) Color object.
-- `subscriber_timezones` (String) Timezones of subscribers to this status page...
-- `is_report_enabled` (Bool) Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it...
-- `report_start_date_time` (String) A date time object..
-- `report_recurring_interval` (String) How often a report goes out. Left out when reports are turned on, it is every month...
-- `send_next_report_by` (String) A date time object..
-- `report_data_in_days` (Number) How many days of data should be included in the report?..
-- `report_period_type` (String) Should the report cover a rolling number of days, or the previous whole calendar period?..
-- `report_timezone` (String) The timezone report periods and send times are resolved in. A monthly report in this timezone runs from the 1st at 00:00 to the last day at 23:59...
-- `show_overall_uptime_percent_on_status_page` (Bool) Show Overall Uptime Percent on Status Page?..
-- `overall_uptime_percent_precision` (String) Overall Precision of uptime percent for this status page...
-- `subscriber_email_notification_footer_text` (String) Text to send to subscribers in the footer of the email...
-- `enable_custom_subscriber_email_notification_footer_text` (Bool) Enable custom footer text in subscriber email notifications...
-- `show_incidents_on_status_page` (Bool) Show Incidents on Status Page?..
-- `only_show_scoped_incidents` (Bool) When on, this status page shows and notifies its subscribers about only the incidents limited to it. Incidents that are not limited to any status page never reach it...
-- `show_announcements_on_status_page` (Bool) Show Announcements on Status Page?..
-- `show_episodes_on_status_page` (Bool) Show Incident Episodes on Status Page?..
-- `show_episode_history_in_days` (Number) How many days of episode history to show on the status page..
-- `show_episode_labels_on_status_page` (Bool) Show Episode Labels on Status Page?..
-- `show_scheduled_maintenance_events_on_status_page` (Bool) Show Scheduled Maintenance Events on Status Page?..
-- `show_subscriber_page_on_status_page` (Bool) Show Subscriber Page on Status Page?..
-- `ip_whitelist` (String) IP Whitelist for this Status Page. One IP per line. Only used if the status page is private...
-- `enable_embedded_overall_status` (Bool) Enable embedded overall status badge that can be displayed on external websites?..
-- `show_uptime_history_in_days` (Number) How many days of uptime history should be shown on the status page? Maximum is 90 days...
-- `embedded_overall_status_token` (String) Security token required to access the embedded overall status badge. This token must be provided in the URL...
-- `default_language` (String) Default language that the status page is shown in when a visitor arrives for the first time...
-- `enabled_languages` (String) Languages offered in the footer language switcher. Leave empty to offer all supported languages...
+- `allow_subscribers_to_choose_event_types` (Boolean) Can subscribers choose which event type like Announcements, Incidents, Scheduled Events to subscribe to? Defaults to `false`.
+- `allow_subscribers_to_choose_resources` (Boolean) Can subscribers choose which resources to subscribe to? Defaults to `false`.
+- `call_sms_config_id` (String) ID of your Call/SMS Config Resource which is used to send SMS to subscribers.
+- `copyright_text` (String) Copyright Text.
+- `cover_image_alt_text` (String) Alternative text for the cover image, read by screen readers for accessibility. Leave blank if the cover image is purely decorative.
+- `cover_image_file_id` (String) Status Page Cover Image ID. The ID of a `oneuptime_file`.
+- `custom_css` (String) Status Page Custom CSS. Served only from a verified custom domain.
+- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `custom_java_script` (String) Status Page Custom JavaScript. This runs when the status page is loaded from a verified custom domain.
+- `default_bar_color` (String) Default color of the bar on the overview page.
+- `default_language` (String) Default language that the status page is shown in when a visitor arrives for the first time. Defaults to `en`.
+- `description` (String) Friendly description that will help you remember.
+- `embedded_overall_status_token` (String) Security token required to access the embedded overall status badge. This token must be provided in the URL.
+- `enable_custom_subscriber_email_notification_footer_text` (Boolean) Enable custom footer text in subscriber email notifications. Defaults to `false`.
+- `enable_email_subscribers` (Boolean) Can email subscribers subscribe to this Status Page? Defaults to `true`.
+- `enable_embedded_overall_status` (Boolean) Enable embedded overall status badge that can be displayed on external websites? Defaults to `false`.
+- `enable_master_password` (Boolean) Require visitors to enter a master password before viewing a private status page. Defaults to `false`.
+- `enable_mcp_server` (Boolean) Can AI agents read this status page over the public OneUptime MCP server? This does not affect the status page website, its RSS feed, or its public JSON API. Defaults to `true`.
+- `enable_microsoft_teams_subscribers` (Boolean) Can Microsoft Teams subscribers subscribe to this Status Page? Defaults to `false`.
+- `enable_search_engine_indexing` (Boolean) Should search engines like Google and Bing be allowed to index this status page? Turn this off to keep the page reachable by link but out of search results. Defaults to `true`.
+- `enable_slack_subscribers` (Boolean) Can Slack subscribers subscribe to this Status Page? Defaults to `false`.
+- `enable_sms_subscribers` (Boolean) Can SMS subscribers subscribe to this Status Page? Defaults to `false`.
+- `enable_webhook_subscribers` (Boolean) Can Webhook subscribers subscribe to this Status Page? Defaults to `false`.
+- `enabled_languages` (String) Languages offered in the footer language switcher. Leave empty to offer all supported languages. A JSON value: write it with `jsonencode()`.
+- `favicon_file_id` (String) Status Page Favicon File ID. The ID of a `oneuptime_file`.
+- `footer_html` (String) Status Page Custom HTML Footer. Served only from a verified custom domain.
+- `header_html` (String) Status Page Custom HTML Header. Served only from a verified custom domain.
+- `hide_powered_by_one_uptime_branding` (Boolean) Hide Powered By OneUptime Branding? Defaults to `false`.
+- `ip_whitelist` (String) IP Whitelist for this Status Page. One IP per line. Only used if the status page is private.
+- `is_archived` (Boolean) Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online. Defaults to `false`.
+- `is_public_status_page` (Boolean) Is this status page public? Defaults to `true`.
+- `is_report_enabled` (Boolean) Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it. Defaults to `false`.
+- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `logo_alt_text` (String) Alternative text for the logo image, read by screen readers for accessibility.
+- `logo_file_id` (String) Status Page Logo File ID. The ID of a `oneuptime_file`.
+- `master_password` (String, Sensitive) Password required to unlock a private status page. This value is stored as a secure hash.
+- `only_show_scoped_incidents` (Boolean) When on, this status page shows and notifies its subscribers about only the incidents limited to it. Incidents that are not limited to any status page never reach it. Defaults to `false`.
+- `overall_uptime_percent_precision` (String) Overall Precision of uptime percent for this status page. Defaults to `99.99% (Two Decimal)`.
+- `overview_page_description` (String) Overview Page description for your status page. This is a markdown field.
+- `page_description` (String) Description of your Status Page. This is used for SEO.
+- `page_title` (String) Title of your Status Page. This is used for SEO.
+- `report_data_in_days` (Number) How many days of data should be included in the report? Defaults to `30`.
+- `report_period_type` (String) Should the report cover a rolling number of days, or the previous whole calendar period? Defaults to `Rolling`.
+- `report_recurring_interval` (String) How often a report goes out. Left out when reports are turned on, it is every month. A JSON value: write it with `jsonencode()`.
+- `report_start_date_time` (String) When the first report goes out. Every later one follows it by the recurring interval, at the same time of day. Left out when reports are turned on, it is 09:00 in the report timezone at the start of the next period of the interval: the next 1st of the month for a monthly schedule (the default), the next Monday for a weekly one, the next day for a daily one and the next 1 January for a yearly one. An hourly schedule starts at the next full hour.
+- `report_timezone` (String) The timezone report periods and send times are resolved in. A monthly report in this timezone runs from the 1st at 00:00 to the last day at 23:59. Defaults to `UTC`.
+- `require_sso_for_login` (Boolean) Should SSO be required to login to Private Status Page. Defaults to `false`.
+- `send_next_report_by` (String) When the next report goes out. The server works it out from the schedule.
+- `show_announcement_history_in_days` (Number) How many days of announcement history should be shown on the status page (in days)? Defaults to `14`.
+- `show_announcements_on_status_page` (Boolean) Show Announcements on Status Page? Defaults to `true`.
+- `show_episode_history_in_days` (Number) How many days of episode history to show on the status page. Defaults to `14`.
+- `show_episode_labels_on_status_page` (Boolean) Show Episode Labels on Status Page? Defaults to `false`.
+- `show_episodes_on_status_page` (Boolean) Show Incident Episodes on Status Page? Defaults to `true`.
+- `show_incident_history_in_days` (Number) How many days of incident history should be shown on the status page (in days)? Defaults to `14`.
+- `show_incident_labels_on_status_page` (Boolean) Show Incident Labels on Status Page? Defaults to `false`.
+- `show_incidents_on_status_page` (Boolean) Show Incidents on Status Page? Defaults to `true`.
+- `show_overall_uptime_percent_on_status_page` (Boolean) Show Overall Uptime Percent on Status Page? Defaults to `false`.
+- `show_scheduled_event_history_in_days` (Number) How many days of scheduled event history should be shown on the status page (in days)? Defaults to `14`.
+- `show_scheduled_event_labels_on_status_page` (Boolean) Show Scheduled Event Labels on Status Page? Defaults to `false`.
+- `show_scheduled_maintenance_events_on_status_page` (Boolean) Show Scheduled Maintenance Events on Status Page? Defaults to `true`.
+- `show_subscriber_page_on_status_page` (Boolean) Show Subscriber Page on Status Page? Defaults to `true`.
+- `show_uptime_history_in_days` (Number) How many days of uptime history should be shown on the status page? Maximum is 90 days. Defaults to `90`.
+- `smtp_config_id` (String) ID of your SMTP Config Resource which is used to send email to subscribers.
+- `subscriber_email_notification_footer_text` (String) Text to send to subscribers in the footer of the email.
+- `subscriber_timezones` (String) Timezones of subscribers to this status page. A JSON value: write it with `jsonencode()`.
 
 ### Read-Only
 
+- `archived_at` (String) When this status page was archived. Empty while it is not archived.
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `downtime_monitor_statuses` (Set of String) List of monitors statuses that are considered as "down" for this status page. IDs of `oneuptime_monitor_status` resources.
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `slug` (String) Friendly globally unique name for your object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `archived_at` (String) A date time object..
-- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `is_owner_notified_of_resource_creation` (Bool) Are owners notified of when this resource is created?..
-- `downtime_monitor_statuses` (Set) List of monitors statuses that are considered as "down" for this status page...
+- `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `slug` (String) Friendly globally unique name for your object.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing status page by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_status_page.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_status_page.example <id>

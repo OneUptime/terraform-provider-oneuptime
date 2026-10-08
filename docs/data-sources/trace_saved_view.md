@@ -7,32 +7,35 @@ description: |-
 
 # oneuptime_trace_saved_view (Data Source)
 
-Save and reuse traces explorer views, including the current search, filters, time range, and page size. Look up by `id` or by `name` (must match exactly one item).
+Save and reuse traces explorer views, including the current search, filters, time range, and page size.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one trace saved view may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_trace_saved_view" "by_name" {
-  name = "example-trace_saved_view"
+data "oneuptime_trace_saved_view" "example" {
+  name = "Example trace saved view"
 }
 
+# Or by id:
 data "oneuptime_trace_saved_view" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `query` (String) Serialized traces explorer view state (search, filters, time range, page size) for this saved view... Computed.
-- `is_default` (Bool) Whether this saved trace view should be applied by default... Computed.
+### Optional
+
+- `created_by_user_id` (String) ID of the user who created this saved trace view. The ID of a `oneuptime_user` (see the data source).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_default` (Boolean) Whether this saved trace view should be applied by default.
+- `name` (String) Friendly name for this saved trace view.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of the project this saved trace view belongs to. The ID of a `oneuptime_project`.
+- `query` (String) Serialized traces explorer view state (search, filters, time range, page size) for this saved view. A JSON value: write it with `jsonencode()`.
+- `updated_at` (String) Date and Time when the object was updated.

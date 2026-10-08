@@ -13,13 +13,13 @@ Configure Status Page SSO
 
 ```terraform
 resource "oneuptime_status_page_sso" "example" {
-  status_page_id = "123e4567-e89b-12d3-a456-426614174000"
-  name = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
-  signature_method = "Example short text"
-  digest_method = "Example short text"
-  sign_on_url = "https://www.example.com/path/to/resource?param=value"
-  issuer_url = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
+  status_page_id     = oneuptime_status_page.example.id
+  name               = "Example status page sso"
+  description        = "Managed by Terraform"
+  signature_method   = "Example short text"
+  digest_method      = "Example short text"
+  sign_on_url        = "https://www.example.com/path/to/resource?param=value"
+  issuer_url         = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
   public_certificate = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
 }
 ```
@@ -28,34 +28,40 @@ resource "oneuptime_status_page_sso" "example" {
 
 ### Required
 
-- `status_page_id` (String) A unique identifier for an object, represented as a UUID..
-- `name` (String) Any friendly name of this object..
-- `description` (String) Status page sso description.
-- `signature_method` (String) Status page sso signature_method.
-- `digest_method` (String) Status page sso digest_method.
-- `sign_on_url` (String) Status page sso sign_on_url.
-- `issuer_url` (String) Status page sso issuer_url.
-- `public_certificate` (String) Status page sso public_certificate.
+- `description` (String)
+- `digest_method` (String)
+- `issuer_url` (String)
+- `name` (String) Any friendly name of this object.
+- `public_certificate` (String)
+- `sign_on_url` (String)
+- `signature_method` (String)
+- `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `is_enabled` (Bool) Status page sso is_enabled.
-- `is_tested` (Bool) Status page sso is_tested.
+- `is_enabled` (Boolean) Defaults to `false`.
+- `is_tested` (Boolean) Defaults to `false`.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing status page sso by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_status_page_sso.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_status_page_sso.example <id>

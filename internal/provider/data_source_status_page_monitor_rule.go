@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -30,14 +29,12 @@ type StatusPageMonitorRuleDataSource struct {
 // StatusPageMonitorRuleDataSourceModel describes the data source data model.
 type StatusPageMonitorRuleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Criteria types.String `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     MonitorLabels types.Set `tfsdk:"monitor_labels"`
@@ -57,90 +54,93 @@ func (d *StatusPageMonitorRuleDataSource) Metadata(ctx context.Context, req data
 
 func (d *StatusPageMonitorRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure rules that automatically add matching monitors to a status page group, instead of picking every monitor by hand Look up an existing status_page_monitor_rule by `id` or by `name`.",
+        MarkdownDescription: "Configure rules that automatically add matching monitors to a status page group, instead of picking every monitor by hand Look up an existing status page monitor rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one status page monitor rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the status page this rule adds matching monitors to. The ID of a `oneuptime_status_page`.",
+                Optional: true,
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Name of this status page monitor rule.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Description of this status page monitor rule.",
+                Optional: true,
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. A disabled rule removes the monitors it had added..",
+                MarkdownDescription: "Whether this rule is enabled. A disabled rule removes the monitors it had added.",
+                Optional: true,
                 Computed: true,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only match monitors that carry at least one of these labels. Leave empty to skip the label filter..",
+                MarkdownDescription: "Only match monitors that carry at least one of these labels. Leave empty to skip the label filter. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to skip the name filter. Use .* to match every monitor..",
+                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to skip the name filter. Use .* to match every monitor.",
+                Optional: true,
                 Computed: true,
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to skip the description filter..",
+                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to skip the description filter.",
+                Optional: true,
                 Computed: true,
             },
             "status_page_group_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the group that matched monitors are added to. Empty means ungrouped. The ID of a `oneuptime_status_page_group`.",
+                Optional: true,
                 Computed: true,
             },
             "show_current_status": schema.BoolAttribute{
-                MarkdownDescription: "Show current status like offline, operational or degraded on the resources this rule adds..",
+                MarkdownDescription: "Show current status like offline, operational or degraded on the resources this rule adds.",
+                Optional: true,
                 Computed: true,
             },
             "show_uptime_percent": schema.BoolAttribute{
-                MarkdownDescription: "Show uptime percent on the resources this rule adds to the status page..",
+                MarkdownDescription: "Show uptime percent on the resources this rule adds to the status page.",
+                Optional: true,
                 Computed: true,
             },
             "uptime_percent_precision": schema.StringAttribute{
                 MarkdownDescription: "Precision of the uptime percent shown on the resources this rule adds.",
+                Optional: true,
                 Computed: true,
             },
             "show_status_history_chart": schema.BoolAttribute{
-                MarkdownDescription: "Show a 90 day uptime history on the resources this rule adds to the status page..",
+                MarkdownDescription: "Show a 90 day uptime history on the resources this rule adds to the status page.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -177,25 +177,82 @@ func (d *StatusPageMonitorRuleDataSource) Read(ctx context.Context, req datasour
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.StatusPageId.IsNull() && !data.StatusPageId.IsUnknown() {
+        filters["statusPageId"] = data.StatusPageId.ValueString()
+        filterNames = append(filterNames, "status_page_id = "+fmt.Sprintf("%q", data.StatusPageId.ValueString()))
+    }
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        filters["isEnabled"] = data.IsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
+    }
+    if !data.MonitorNamePattern.IsNull() && !data.MonitorNamePattern.IsUnknown() {
+        filters["monitorNamePattern"] = data.MonitorNamePattern.ValueString()
+        filterNames = append(filterNames, "monitor_name_pattern = "+fmt.Sprintf("%q", data.MonitorNamePattern.ValueString()))
+    }
+    if !data.MonitorDescriptionPattern.IsNull() && !data.MonitorDescriptionPattern.IsUnknown() {
+        filters["monitorDescriptionPattern"] = data.MonitorDescriptionPattern.ValueString()
+        filterNames = append(filterNames, "monitor_description_pattern = "+fmt.Sprintf("%q", data.MonitorDescriptionPattern.ValueString()))
+    }
+    if !data.StatusPageGroupId.IsNull() && !data.StatusPageGroupId.IsUnknown() {
+        filters["statusPageGroupId"] = data.StatusPageGroupId.ValueString()
+        filterNames = append(filterNames, "status_page_group_id = "+fmt.Sprintf("%q", data.StatusPageGroupId.ValueString()))
+    }
+    if !data.ShowCurrentStatus.IsNull() && !data.ShowCurrentStatus.IsUnknown() {
+        filters["showCurrentStatus"] = data.ShowCurrentStatus.ValueBool()
+        filterNames = append(filterNames, "show_current_status = "+fmt.Sprintf("%t", data.ShowCurrentStatus.ValueBool()))
+    }
+    if !data.ShowUptimePercent.IsNull() && !data.ShowUptimePercent.IsUnknown() {
+        filters["showUptimePercent"] = data.ShowUptimePercent.ValueBool()
+        filterNames = append(filterNames, "show_uptime_percent = "+fmt.Sprintf("%t", data.ShowUptimePercent.ValueBool()))
+    }
+    if !data.UptimePercentPrecision.IsNull() && !data.UptimePercentPrecision.IsUnknown() {
+        filters["uptimePercentPrecision"] = data.UptimePercentPrecision.ValueString()
+        filterNames = append(filterNames, "uptime_percent_precision = "+fmt.Sprintf("%q", data.UptimePercentPrecision.ValueString()))
+    }
+    if !data.ShowStatusHistoryChart.IsNull() && !data.ShowStatusHistoryChart.IsUnknown() {
+        filters["showStatusHistoryChart"] = data.ShowStatusHistoryChart.ValueBool()
+        filterNames = append(filterNames, "show_status_history_chart = "+fmt.Sprintf("%t", data.ShowStatusHistoryChart.ValueBool()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a status_page_monitor_rule.",
+            "Look the status page monitor rule up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the status page monitor rule up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "criteria": true,
         "projectId": true,
         "statusPageId": true,
+        "name": true,
         "description": true,
         "isEnabled": true,
         "monitorLabels": true,
@@ -219,7 +276,7 @@ func (d *StatusPageMonitorRuleDataSource) Read(ctx context.Context, req datasour
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status_page_monitor_rule found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status page monitor rule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -232,11 +289,10 @@ func (d *StatusPageMonitorRuleDataSource) Read(ctx context.Context, req datasour
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -253,11 +309,11 @@ func (d *StatusPageMonitorRuleDataSource) Read(ctx context.Context, req datasour
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status_page_monitor_rule found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No status page monitor rule matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one status_page_monitor_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one status page monitor rule matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -285,23 +341,6 @@ func (d *StatusPageMonitorRuleDataSource) Read(ctx context.Context, req datasour
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -336,34 +375,6 @@ func (d *StatusPageMonitorRuleDataSource) Read(ctx context.Context, req datasour
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["criteria"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -415,6 +426,23 @@ func (d *StatusPageMonitorRuleDataSource) Read(ctx context.Context, req datasour
         data.StatusPageId = types.StringValue(val)
     } else {
         data.StatusPageId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -59,8 +59,6 @@ type DatabaseResourceModel struct {
     AiCommandAllowlist JSONSubsetValue `tfsdk:"ai_command_allowlist"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     WorkloadIdentifier types.String `tfsdk:"workload_identifier"`
     DbVersion types.String `tfsdk:"db_version"`
@@ -84,7 +82,6 @@ type DatabaseResourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     AiAccessLastVerifiedAt RFC3339Value `tfsdk:"ai_access_last_verified_at"`
     AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
     AiAccessConfiguredAt RFC3339Value `tfsdk:"ai_access_configured_at"`
@@ -95,26 +92,30 @@ func (r *DatabaseResource) Metadata(ctx context.Context, req resource.MetadataRe
 }
 
 func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *DatabaseResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Database servers this project runs or talks to. Each database is discovered from OpenTelemetry Collector database receivers, from database calls in application traces, from database workloads on monitored Kubernetes clusters and Docker / Podman hosts, or added manually.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this database. Discovered databases are named after their engine and endpoint, e.g. PostgreSQL orders-db.internal:5432. Not unique - rename freely..",
+                MarkdownDescription: "Name of this database. Discovered databases are named after their engine and endpoint, e.g. PostgreSQL orders-db.internal:5432. Not unique - rename freely.",
                 Required: true,
             },
             "description": schema.StringAttribute{
@@ -126,21 +127,21 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "database_identifier": schema.StringAttribute{
-                MarkdownDescription: "Stable identity of this database within the project: the engine family and its canonical endpoint joined with '|' (e.g. postgresql|orders-db.internal:5432), or the workload form for databases discovered on Kubernetes / Docker / Podman (e.g. postgresql|kubernetes:prod-cluster/data/statefulset/orders-db). A fork keys like the engine it forks (a MariaDB database is mysql|..., a Valkey one redis|...), so learning which of the two a database is never changes its identity. Computed by the server for manually added databases..",
+                MarkdownDescription: "Stable identity of this database within the project: the engine family and its canonical endpoint joined with '|' (e.g. postgresql|orders-db.internal:5432), or the workload form for databases discovered on Kubernetes / Docker / Podman (e.g. postgresql|kubernetes:prod-cluster/data/statefulset/orders-db). A fork keys like the engine it forks (a MariaDB database is mysql|..., a Valkey one redis|...), so learning which of the two a database is never changes its identity. Computed by the server for manually added databases.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "db_system": schema.StringAttribute{
-                MarkdownDescription: "Database engine family as an OpenTelemetry db.system.name value, e.g. postgresql, mysql, redis, mongodb, microsoft.sql_server..",
+                MarkdownDescription: "Database engine family as an OpenTelemetry db.system.name value, e.g. postgresql, mysql, redis, mongodb, microsoft.sql_server.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "server_address": schema.StringAttribute{
-                MarkdownDescription: "Host name or IP address of the primary endpoint of this database (the OpenTelemetry server.address attribute)..",
+                MarkdownDescription: "Host name or IP address of the primary endpoint of this database (the OpenTelemetry server.address attribute).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -149,7 +150,7 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "server_port": schema.NumberAttribute{
-                MarkdownDescription: "Port of the primary endpoint of this database (the OpenTelemetry server.port attribute). Defaults to the engine's standard port when not given..",
+                MarkdownDescription: "Port of the primary endpoint of this database (the OpenTelemetry server.port attribute). Defaults to the engine's standard port when not given.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -158,7 +159,7 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "discovery_source": schema.StringAttribute{
-                MarkdownDescription: "How this database was first discovered: collector, client-spans, kubernetes, docker, podman or manual..",
+                MarkdownDescription: "How this database was first discovered: collector, client-spans, kubernetes, docker, podman or manual.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -167,7 +168,7 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this database archived? Archived databases are hidden from lists but keep collecting telemetry..",
+                MarkdownDescription: "Is this database archived? Archived databases are hidden from lists but keep collecting telemetry.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -176,7 +177,7 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -185,7 +186,7 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry collected from this database by a collector / agent. Leave blank to use the project-wide default..",
+                MarkdownDescription: "Number of days to retain telemetry collected from this database by a collector / agent. Leave blank to use the project-wide default.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -193,7 +194,7 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for telemetry collected from this database by a collector / agent (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the database default, then the project's retention settings..",
+                MarkdownDescription: "Per-pillar retention overrides for telemetry collected from this database by a collector / agent (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the database default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -205,7 +206,7 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
-                MarkdownDescription: "When on, OneUptime AI runs read-only commands (db diagnostics from a fixed catalog such as ping, version and sessions; never free-form SQL) on this database server, through its Database AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the database server can turn it on or off..",
+                MarkdownDescription: "When on, OneUptime AI runs read-only commands (db diagnostics from a fixed catalog such as ping, version and sessions; never free-form SQL) on this database server, through its Database AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the database server can turn it on or off.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -214,7 +215,7 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "ai_remediation_mode": schema.StringAttribute{
-                MarkdownDescription: "Disabled: AI never proposes or runs a change on this database server. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the database server's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the database server can lower the mode; raising it needs Project Owner, Project Admin or Edit Auto Remediation Rule..",
+                MarkdownDescription: "Disabled: AI never proposes or runs a change on this database server. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the database server's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the database server can lower the mode; raising it needs Project Owner, Project Admin or Edit Auto Remediation Rule.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Disabled"),
@@ -223,7 +224,7 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "ai_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this database server without approval even though they are riskier changes. Each pattern is one command line for this database server's agent (db, a fixed catalog of diagnostics, never free-form SQL) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this database server is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the database server can remove patterns or clear the list..",
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this database server without approval even though they are riskier changes. Each pattern is one command line for this database server's agent (db, a fixed catalog of diagnostics, never free-form SQL) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this database server is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the database server can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -235,22 +236,16 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -258,52 +253,52 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 Computed: true,
             },
             "workload_identifier": schema.StringAttribute{
-                MarkdownDescription: "Identity of the Kubernetes / Docker / Podman workload this database runs as, e.g. postgresql|kubernetes:prod-cluster/data/statefulset/orders-db. The prefix is the engine family, not the engine (a MariaDB workload is mysql|..., a Valkey one redis|...). Empty for databases that are only known by their endpoint..",
+                MarkdownDescription: "Identity of the Kubernetes / Docker / Podman workload this database runs as, e.g. postgresql|kubernetes:prod-cluster/data/statefulset/orders-db. The prefix is the engine family, not the engine (a MariaDB workload is mysql|..., a Valkey one redis|...). Empty for databases that are only known by their endpoint.",
                 Computed: true,
             },
             "db_version": schema.StringAttribute{
-                MarkdownDescription: "Engine version last reported for this database, from the collector receiver or the container image tag..",
+                MarkdownDescription: "Engine version last reported for this database, from the collector receiver or the container image tag.",
                 Computed: true,
             },
             "kubernetes_cluster_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Kubernetes cluster this database runs on, when it was discovered as a workload on a monitored cluster. The ID of a `oneuptime_kubernetes_cluster`.",
                 Computed: true,
             },
             "kubernetes_namespace": schema.StringAttribute{
-                MarkdownDescription: "Kubernetes namespace of the workload this database runs as..",
+                MarkdownDescription: "Kubernetes namespace of the workload this database runs as.",
                 Computed: true,
             },
             "workload_kind": schema.StringAttribute{
-                MarkdownDescription: "Kind of workload this database runs as, e.g. StatefulSet, Deployment, Cluster (an operator-managed cluster) or Container..",
+                MarkdownDescription: "Kind of workload this database runs as, e.g. StatefulSet, Deployment, Cluster (an operator-managed cluster) or Container.",
                 Computed: true,
             },
             "workload_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the workload (StatefulSet, Deployment, operator cluster or container group) this database runs as..",
+                MarkdownDescription: "Name of the workload (StatefulSet, Deployment, operator cluster or container group) this database runs as.",
                 Computed: true,
             },
             "docker_host_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Docker host this database runs on, when it was discovered as a container on a monitored host. The ID of a `oneuptime_docker_host`.",
                 Computed: true,
             },
             "podman_host_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Podman host this database runs on, when it was discovered as a container on a monitored host. The ID of a `oneuptime_podman_host`.",
                 Computed: true,
             },
             "member_entity_keys": schema.StringAttribute{
-                MarkdownDescription: "Telemetry entity keys of the pods / containers this database runs as, each with the time it was last seen. Maintained by discovery..",
+                MarkdownDescription: "Telemetry entity keys of the pods / containers this database runs as, each with the time it was last seen. Maintained by discovery. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "instance_count": schema.NumberAttribute{
-                MarkdownDescription: "Number of running instances (pods / containers) last seen for this database's workload..",
+                MarkdownDescription: "Number of running instances (pods / containers) last seen for this database's workload.",
                 Computed: true,
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Whether engine metrics are currently being received from a collector / agent for this database (connected) or a collector reported and has stopped (disconnected). Empty when no collector has ever reported..",
+                MarkdownDescription: "Whether engine metrics are currently being received from a collector / agent for this database (connected) or a collector reported and has stopped (disconnected). Empty when no collector has ever reported.",
                 Computed: true,
             },
             "collector_last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When engine telemetry from a collector / agent was last received for this database.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -312,62 +307,61 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this database was last seen by any discovery source - engine telemetry, application database calls or the workload inventory.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "auto_archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this database was archived automatically because no discovery source had seen it for a while. Empty when it was archived by a person or is not archived.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "manually_restored_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a person last restored this database from the archive. Automatic archiving leaves it alone until it is seen again or a grace period passes.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "db_system_source": schema.StringAttribute{
-                MarkdownDescription: "What the database engine was last determined from: manual, collector, container or client-spans. Stronger evidence may correct the engine; weaker evidence never changes it..",
+                MarkdownDescription: "What the database engine was last determined from: manual, collector, container or client-spans. Stronger evidence may correct the engine; weaker evidence never changes it.",
                 Computed: true,
             },
             "workload_last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When Kubernetes, Docker or Podman discovery last saw the workload this database runs as. Empty for a database that is not a discovered workload.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "automatic_assignments": schema.StringAttribute{
-                MarkdownDescription: "Label and owner ids that label rules, owner rules or telemetry attached automatically. Maintained by OneUptime..",
+                MarkdownDescription: "Label and owner ids that label rules, owner rules or telemetry attached automatically. Maintained by OneUptime. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this database archived?",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When a command from OneUptime AI last succeeded on this database server through its Database AI agent. Set by the server.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "ai_access_last_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent failure OneUptime AI hit while running a command on this database server, kept until the next successful command. Set by the server..",
+                MarkdownDescription: "The most recent failure OneUptime AI hit while running a command on this database server, kept until the next successful command. Set by the server.",
                 Computed: true,
             },
             "ai_access_configured_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When OneUptime AI access to this database server was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Database AI agent that registers later never overwrites a setting an operator chose.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -405,6 +399,14 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config DatabaseResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -511,8 +513,6 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
         "aiCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "workloadIdentifier": true,
         "dbVersion": true,
@@ -536,7 +536,6 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
@@ -1009,34 +1008,6 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1713,43 +1684,6 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
@@ -1817,6 +1751,9 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1853,8 +1790,6 @@ func (r *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, r
         "aiCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "workloadIdentifier": true,
         "dbVersion": true,
@@ -1878,7 +1813,6 @@ func (r *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, r
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
@@ -2353,34 +2287,6 @@ func (r *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3056,43 +2962,6 @@ func (r *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
@@ -3181,6 +3050,14 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config DatabaseResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     databaseRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -3264,8 +3141,6 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
         "aiCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "workloadIdentifier": true,
         "dbVersion": true,
@@ -3289,7 +3164,6 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
-        "deletedByUserId": true,
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
@@ -3758,34 +3632,6 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4461,43 +4307,6 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
@@ -4564,6 +4373,9 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -4600,6 +4412,50 @@ func (r *DatabaseResource) Delete(ctx context.Context, req resource.DeleteReques
 
 func (r *DatabaseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *DatabaseResource) keepPlannedValues(data *DatabaseResourceModel, plan *DatabaseResourceModel, config *DatabaseResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.ServerAddress.IsNull() && !plan.ServerAddress.IsUnknown() {
+        data.ServerAddress = plan.ServerAddress
+    }
+    if config.ServerPort.IsNull() && !plan.ServerPort.IsUnknown() {
+        data.ServerPort = plan.ServerPort
+    }
+    if config.DiscoverySource.IsNull() && !plan.DiscoverySource.IsUnknown() {
+        data.DiscoverySource = plan.DiscoverySource
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.RetainTelemetryDataForDays.IsNull() && !plan.RetainTelemetryDataForDays.IsUnknown() {
+        data.RetainTelemetryDataForDays = plan.RetainTelemetryDataForDays
+    }
+    if config.TelemetryRetentionConfig.IsNull() && !plan.TelemetryRetentionConfig.IsUnknown() {
+        data.TelemetryRetentionConfig = plan.TelemetryRetentionConfig
+    }
+    if config.IsAiInvestigationEnabled.IsNull() && !plan.IsAiInvestigationEnabled.IsUnknown() {
+        data.IsAiInvestigationEnabled = plan.IsAiInvestigationEnabled
+    }
+    if config.AiRemediationMode.IsNull() && !plan.AiRemediationMode.IsUnknown() {
+        data.AiRemediationMode = plan.AiRemediationMode
+    }
+    if config.AiCommandAllowlist.IsNull() && !plan.AiCommandAllowlist.IsUnknown() {
+        data.AiCommandAllowlist = plan.AiCommandAllowlist
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

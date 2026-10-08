@@ -7,38 +7,42 @@ description: |-
 
 # oneuptime_probe (Data Source)
 
-Manages custom probes. Deploy probes anywhere in the world and connect it to your project. Look up by `id` or by `name` (must match exactly one item).
+Manages custom probes. Deploy probes anywhere in the world and connect it to your project.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one probe may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_probe" "by_name" {
-  name = "example-probe"
+data "oneuptime_probe" "example" {
+  name = "Example probe"
 }
 
+# Or by id:
 data "oneuptime_probe" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `key` (String) Probe key. Computed.
-- `description` (String) Name object. Computed.
-- `slug` (String) Friendly globally unique name for your object.. Computed.
-- `probe_version` (String) Version object. Computed.
-- `last_alive` (String) A date time object.. Computed.
-- `icon_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `should_auto_enable_probe_on_new_monitors` (Bool) Auto Enable Probe on New Monitors.. Computed.
-- `connection_status` (String) Connection Status of the Probe.. Computed.
-- `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
+### Optional
+
+- `connection_status` (String) Connection Status of the Probe.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
+- `icon_file_id` (String) Probe Page Icon File ID. The ID of a `oneuptime_file`.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `key` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]
+- `name` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]
+- `should_auto_enable_probe_on_new_monitors` (Boolean) Auto Enable Probe on New Monitors.
+- `slug` (String) Friendly globally unique name for your object.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `description` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]
+- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `last_alive` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [No access - you don't have permission for this operation]
+- `probe_version` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]
+- `project_id` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [No access - you don't have permission for this operation]
+- `updated_at` (String) Date and Time when the object was updated.

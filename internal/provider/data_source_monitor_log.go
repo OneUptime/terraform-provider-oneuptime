@@ -27,7 +27,6 @@ type MonitorLogDataSource struct {
 // MonitorLogDataSourceModel describes the data source data model.
 type MonitorLogDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
     Time types.String `tfsdk:"time"`
@@ -40,33 +39,30 @@ func (d *MonitorLogDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *MonitorLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "API endpoints for Monitor Log Look up an existing monitor_log by `id` or by `name`.",
+        MarkdownDescription: "API endpoints for Monitor Log Look up an existing monitor log by `id`, or by any of its other arguments (`monitor_id`, `time`): each one set must match, and exactly one monitor log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Project ID",
+                MarkdownDescription: "Project ID.",
                 Computed: true,
             },
             "monitor_id": schema.StringAttribute{
-                MarkdownDescription: "Monitor ID",
+                MarkdownDescription: "Monitor ID.",
+                Optional: true,
                 Computed: true,
             },
             "time": schema.StringAttribute{
-                MarkdownDescription: "Time",
+                MarkdownDescription: "Time.",
+                Optional: true,
                 Computed: true,
             },
             "log_body": schema.StringAttribute{
-                MarkdownDescription: "Log Body",
+                MarkdownDescription: "Log Body. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
         },
@@ -103,18 +99,36 @@ func (d *MonitorLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.MonitorId.IsNull() && !data.MonitorId.IsUnknown() {
+        filters["monitorId"] = data.MonitorId.ValueString()
+        filterNames = append(filterNames, "monitor_id = "+fmt.Sprintf("%q", data.MonitorId.ValueString()))
+    }
+    if !data.Time.IsNull() && !data.Time.IsUnknown() {
+        filters["time"] = data.Time.ValueString()
+        filterNames = append(filterNames, "time = "+fmt.Sprintf("%q", data.Time.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a monitor_log.",
+            "Look the monitor log up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the monitor log up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "projectId": true,
         "monitorId": true,
         "time": true,
@@ -131,7 +145,7 @@ func (d *MonitorLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No monitor_log found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No monitor log found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -144,11 +158,10 @@ func (d *MonitorLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -165,11 +178,11 @@ func (d *MonitorLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No monitor_log found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No monitor log matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one monitor_log matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one monitor log matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -197,23 +210,6 @@ func (d *MonitorLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

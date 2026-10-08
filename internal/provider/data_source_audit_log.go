@@ -29,7 +29,6 @@ type AuditLogDataSource struct {
 // AuditLogDataSourceModel describes the data source data model.
 type AuditLogDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     ResourceType types.String `tfsdk:"resource_type"`
     ResourceId types.String `tfsdk:"resource_id"`
@@ -56,89 +55,100 @@ func (d *AuditLogDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *AuditLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "API endpoints for Audit Log Look up an existing audit_log by `id` or by `name`.",
+        MarkdownDescription: "API endpoints for Audit Log Look up an existing audit log by `id`, or by any of its other arguments (`action`, `api_key_id`, `api_key_name`, ...): each one set must match, and exactly one audit log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Project ID",
+                MarkdownDescription: "Project ID.",
                 Computed: true,
             },
             "resource_type": schema.StringAttribute{
-                MarkdownDescription: "Resource Type",
+                MarkdownDescription: "Resource Type.",
+                Optional: true,
                 Computed: true,
             },
             "resource_id": schema.StringAttribute{
-                MarkdownDescription: "Resource ID",
+                MarkdownDescription: "Resource ID.",
+                Optional: true,
                 Computed: true,
             },
             "resource_name": schema.StringAttribute{
-                MarkdownDescription: "Resource Name",
+                MarkdownDescription: "Resource Name.",
+                Optional: true,
                 Computed: true,
             },
             "root_resource_type": schema.StringAttribute{
-                MarkdownDescription: "Root Resource Type",
+                MarkdownDescription: "Root Resource Type.",
+                Optional: true,
                 Computed: true,
             },
             "root_resource_id": schema.StringAttribute{
-                MarkdownDescription: "Root Resource ID",
+                MarkdownDescription: "Root Resource ID.",
+                Optional: true,
                 Computed: true,
             },
             "action": schema.StringAttribute{
-                MarkdownDescription: "Action",
+                MarkdownDescription: "Action.",
+                Optional: true,
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "User ID",
+                MarkdownDescription: "User ID.",
+                Optional: true,
                 Computed: true,
             },
             "user_name": schema.StringAttribute{
-                MarkdownDescription: "User Name",
+                MarkdownDescription: "User Name.",
+                Optional: true,
                 Computed: true,
             },
             "user_email": schema.StringAttribute{
-                MarkdownDescription: "User Email",
+                MarkdownDescription: "User Email.",
+                Optional: true,
                 Computed: true,
             },
             "user_type": schema.StringAttribute{
-                MarkdownDescription: "User Type",
+                MarkdownDescription: "User Type.",
+                Optional: true,
                 Computed: true,
             },
             "api_key_id": schema.StringAttribute{
-                MarkdownDescription: "API Key ID",
+                MarkdownDescription: "API Key ID.",
+                Optional: true,
                 Computed: true,
             },
             "api_key_name": schema.StringAttribute{
-                MarkdownDescription: "API Key Name",
+                MarkdownDescription: "API Key Name.",
+                Optional: true,
                 Computed: true,
             },
             "mcp_o_auth_grant_id": schema.StringAttribute{
-                MarkdownDescription: "MCP Client Authorization ID",
+                MarkdownDescription: "MCP Client Authorization ID.",
+                Optional: true,
                 Computed: true,
             },
             "mcp_client_name": schema.StringAttribute{
-                MarkdownDescription: "MCP Client Name",
+                MarkdownDescription: "MCP Client Name.",
+                Optional: true,
                 Computed: true,
             },
             "workflow_id": schema.StringAttribute{
-                MarkdownDescription: "Workflow ID",
+                MarkdownDescription: "Workflow ID.",
+                Optional: true,
                 Computed: true,
             },
             "workflow_name": schema.StringAttribute{
-                MarkdownDescription: "Workflow Name",
+                MarkdownDescription: "Workflow Name.",
+                Optional: true,
                 Computed: true,
             },
             "changes": schema.SetAttribute{
-                MarkdownDescription: "Changes",
+                MarkdownDescription: "Changes.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -176,18 +186,92 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.ResourceType.IsNull() && !data.ResourceType.IsUnknown() {
+        filters["resourceType"] = data.ResourceType.ValueString()
+        filterNames = append(filterNames, "resource_type = "+fmt.Sprintf("%q", data.ResourceType.ValueString()))
+    }
+    if !data.ResourceId.IsNull() && !data.ResourceId.IsUnknown() {
+        filters["resourceId"] = data.ResourceId.ValueString()
+        filterNames = append(filterNames, "resource_id = "+fmt.Sprintf("%q", data.ResourceId.ValueString()))
+    }
+    if !data.ResourceName.IsNull() && !data.ResourceName.IsUnknown() {
+        filters["resourceName"] = data.ResourceName.ValueString()
+        filterNames = append(filterNames, "resource_name = "+fmt.Sprintf("%q", data.ResourceName.ValueString()))
+    }
+    if !data.RootResourceType.IsNull() && !data.RootResourceType.IsUnknown() {
+        filters["rootResourceType"] = data.RootResourceType.ValueString()
+        filterNames = append(filterNames, "root_resource_type = "+fmt.Sprintf("%q", data.RootResourceType.ValueString()))
+    }
+    if !data.RootResourceId.IsNull() && !data.RootResourceId.IsUnknown() {
+        filters["rootResourceId"] = data.RootResourceId.ValueString()
+        filterNames = append(filterNames, "root_resource_id = "+fmt.Sprintf("%q", data.RootResourceId.ValueString()))
+    }
+    if !data.Action.IsNull() && !data.Action.IsUnknown() {
+        filters["action"] = data.Action.ValueString()
+        filterNames = append(filterNames, "action = "+fmt.Sprintf("%q", data.Action.ValueString()))
+    }
+    if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
+        filters["userId"] = data.UserId.ValueString()
+        filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
+    if !data.UserName.IsNull() && !data.UserName.IsUnknown() {
+        filters["userName"] = data.UserName.ValueString()
+        filterNames = append(filterNames, "user_name = "+fmt.Sprintf("%q", data.UserName.ValueString()))
+    }
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        filters["userEmail"] = data.UserEmail.ValueString()
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
+    }
+    if !data.UserType.IsNull() && !data.UserType.IsUnknown() {
+        filters["userType"] = data.UserType.ValueString()
+        filterNames = append(filterNames, "user_type = "+fmt.Sprintf("%q", data.UserType.ValueString()))
+    }
+    if !data.ApiKeyId.IsNull() && !data.ApiKeyId.IsUnknown() {
+        filters["apiKeyId"] = data.ApiKeyId.ValueString()
+        filterNames = append(filterNames, "api_key_id = "+fmt.Sprintf("%q", data.ApiKeyId.ValueString()))
+    }
+    if !data.ApiKeyName.IsNull() && !data.ApiKeyName.IsUnknown() {
+        filters["apiKeyName"] = data.ApiKeyName.ValueString()
+        filterNames = append(filterNames, "api_key_name = "+fmt.Sprintf("%q", data.ApiKeyName.ValueString()))
+    }
+    if !data.McpOAuthGrantId.IsNull() && !data.McpOAuthGrantId.IsUnknown() {
+        filters["mcpOAuthGrantId"] = data.McpOAuthGrantId.ValueString()
+        filterNames = append(filterNames, "mcp_o_auth_grant_id = "+fmt.Sprintf("%q", data.McpOAuthGrantId.ValueString()))
+    }
+    if !data.McpClientName.IsNull() && !data.McpClientName.IsUnknown() {
+        filters["mcpClientName"] = data.McpClientName.ValueString()
+        filterNames = append(filterNames, "mcp_client_name = "+fmt.Sprintf("%q", data.McpClientName.ValueString()))
+    }
+    if !data.WorkflowId.IsNull() && !data.WorkflowId.IsUnknown() {
+        filters["workflowId"] = data.WorkflowId.ValueString()
+        filterNames = append(filterNames, "workflow_id = "+fmt.Sprintf("%q", data.WorkflowId.ValueString()))
+    }
+    if !data.WorkflowName.IsNull() && !data.WorkflowName.IsUnknown() {
+        filters["workflowName"] = data.WorkflowName.ValueString()
+        filterNames = append(filterNames, "workflow_name = "+fmt.Sprintf("%q", data.WorkflowName.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a audit_log.",
+            "Look the audit log up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the audit log up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "projectId": true,
         "resourceType": true,
         "resourceId": true,
@@ -218,7 +302,7 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No audit_log found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No audit log found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -231,11 +315,10 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -252,11 +335,11 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No audit_log found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No audit log matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one audit_log matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one audit log matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -284,23 +367,6 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

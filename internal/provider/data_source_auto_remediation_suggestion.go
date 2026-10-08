@@ -28,11 +28,8 @@ type AutoRemediationSuggestionDataSource struct {
 // AutoRemediationSuggestionDataSourceModel describes the data source data model.
 type AutoRemediationSuggestionDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     AutoRemediationRuleId types.String `tfsdk:"auto_remediation_rule_id"`
     RuleNameSnapshot types.String `tfsdk:"rule_name_snapshot"`
@@ -68,141 +65,149 @@ func (d *AutoRemediationSuggestionDataSource) Metadata(ctx context.Context, req 
 
 func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A proposed or executed remediation runbook attached to an incident or alert by an auto-remediation rule. Look up an existing auto_remediation_suggestion by `id` or by `name`.",
+        MarkdownDescription: "A proposed or executed remediation runbook attached to an incident or alert by an auto-remediation rule. Look up an existing auto remediation suggestion by `id`, or by any of its other arguments (`ai_run_id`, `alert_id`, `approved_by_user_id`, ...): each one set must match, and exactly one auto remediation suggestion may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "auto_remediation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the rule that produced this suggestion. The ID of a `oneuptime_auto_remediation_rule`.",
+                Optional: true,
                 Computed: true,
             },
             "rule_name_snapshot": schema.StringAttribute{
-                MarkdownDescription: "Name of the rule when this suggestion was created — survives rule deletion..",
+                MarkdownDescription: "Name of the rule when this suggestion was created — survives rule deletion.",
+                Optional: true,
                 Computed: true,
             },
             "kubernetes_cluster_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the cluster whose AI remediation mode produced this suggestion. The ID of a `oneuptime_kubernetes_cluster`.",
+                Optional: true,
                 Computed: true,
             },
             "resource_type": schema.StringAttribute{
-                MarkdownDescription: "The kind of resource whose AI remediation mode produced this suggestion (DockerHost, PodmanHost, DockerSwarmCluster, ProxmoxCluster, VMwareVCenter, CephCluster, DatabaseServer or Host; resource-level remediation, no rule)..",
+                MarkdownDescription: "The kind of resource whose AI remediation mode produced this suggestion (DockerHost, PodmanHost, DockerSwarmCluster, ProxmoxCluster, VMwareVCenter, CephCluster, DatabaseServer or Host; resource-level remediation, no rule).",
+                Optional: true,
                 Computed: true,
             },
             "resource_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the resource whose AI remediation mode produced this suggestion, in the table its resource type names.",
+                Optional: true,
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the incident this suggestion remediates. The ID of a `oneuptime_incident`.",
+                Optional: true,
                 Computed: true,
             },
             "alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert this suggestion remediates. The ID of a `oneuptime_alert`.",
+                Optional: true,
                 Computed: true,
             },
             "runbook_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the proposed runbook. The ID of a `oneuptime_runbook`.",
+                Optional: true,
                 Computed: true,
             },
             "runbook_name_snapshot": schema.StringAttribute{
-                MarkdownDescription: "Name of the proposed runbook when this suggestion was created — survives runbook deletion..",
+                MarkdownDescription: "Name of the proposed runbook when this suggestion was created — survives runbook deletion.",
+                Optional: true,
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Lifecycle status: Planning, Suggested, Approved, AutoExecuted, Dismissed or NoneApplicable..",
+                MarkdownDescription: "Lifecycle status: Planning, Suggested, Approved, AutoExecuted, Dismissed or NoneApplicable.",
+                Optional: true,
                 Computed: true,
             },
             "execution_mode": schema.StringAttribute{
-                MarkdownDescription: "The rule's execution mode when this suggestion was created (Suggest or FullAuto)..",
+                MarkdownDescription: "The rule's execution mode when this suggestion was created (Suggest or FullAuto).",
+                Optional: true,
                 Computed: true,
             },
             "suggestion_type": schema.StringAttribute{
-                MarkdownDescription: "Runbook suggestions propose starting a pre-authored runbook; CommandPlan suggestions carry an AI-composed command plan..",
+                MarkdownDescription: "Runbook suggestions propose starting a pre-authored runbook; CommandPlan suggestions carry an AI-composed command plan.",
+                Optional: true,
                 Computed: true,
             },
             "command_plan": schema.StringAttribute{
-                MarkdownDescription: "The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run..",
+                MarkdownDescription: "The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "rationale_markdown": schema.StringAttribute{
-                MarkdownDescription: "Why this runbook was proposed — the AI planning run's reasoning for AI rules, or a short note for deterministic rules..",
+                MarkdownDescription: "Why this runbook was proposed — the AI planning run's reasoning for AI rules, or a short note for deterministic rules.",
+                Optional: true,
                 Computed: true,
             },
             "ai_run_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The AI planning run that picked the runbook (AI rules only).",
+                Optional: true,
                 Computed: true,
             },
             "runbook_execution_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "The runbook execution started when this suggestion was approved or auto-executed.",
+                Optional: true,
                 Computed: true,
             },
             "approved_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user who approved this suggestion. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "approved_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this suggestion was approved.",
                 Computed: true,
             },
             "dismissed_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the user who dismissed this suggestion. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "dismissed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this suggestion was dismissed.",
                 Computed: true,
             },
             "verification_status": schema.StringAttribute{
-                MarkdownDescription: "Outcome verification after execution: Pending, Verified, Failed or Skipped. Empty until a runbook is started..",
+                MarkdownDescription: "Outcome verification after execution: Pending, Verified, Failed or Skipped. Empty until a runbook is started.",
+                Optional: true,
                 Computed: true,
             },
             "verification_deadline_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When the verification window closes — the monitors must be operational by this time.",
                 Computed: true,
             },
             "verification_completed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When verification reached a terminal outcome.",
                 Computed: true,
             },
             "verification_note": schema.StringAttribute{
-                MarkdownDescription: "Why verification ended the way it did..",
+                MarkdownDescription: "Why verification ended the way it did.",
+                Optional: true,
                 Computed: true,
             },
             "verification_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Snapshot of the rule's verification window when this suggestion was created..",
+                MarkdownDescription: "Snapshot of the rule's verification window when this suggestion was created.",
+                Optional: true,
                 Computed: true,
             },
             "auto_resolve_on_recovery": schema.BoolAttribute{
-                MarkdownDescription: "Snapshot of the rule's auto-resolve-on-verified-recovery setting when this suggestion was created..",
+                MarkdownDescription: "Snapshot of the rule's auto-resolve-on-verified-recovery setting when this suggestion was created.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -239,22 +244,114 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.AutoRemediationRuleId.IsNull() && !data.AutoRemediationRuleId.IsUnknown() {
+        filters["autoRemediationRuleId"] = data.AutoRemediationRuleId.ValueString()
+        filterNames = append(filterNames, "auto_remediation_rule_id = "+fmt.Sprintf("%q", data.AutoRemediationRuleId.ValueString()))
+    }
+    if !data.RuleNameSnapshot.IsNull() && !data.RuleNameSnapshot.IsUnknown() {
+        filters["ruleNameSnapshot"] = data.RuleNameSnapshot.ValueString()
+        filterNames = append(filterNames, "rule_name_snapshot = "+fmt.Sprintf("%q", data.RuleNameSnapshot.ValueString()))
+    }
+    if !data.KubernetesClusterId.IsNull() && !data.KubernetesClusterId.IsUnknown() {
+        filters["kubernetesClusterId"] = data.KubernetesClusterId.ValueString()
+        filterNames = append(filterNames, "kubernetes_cluster_id = "+fmt.Sprintf("%q", data.KubernetesClusterId.ValueString()))
+    }
+    if !data.ResourceType.IsNull() && !data.ResourceType.IsUnknown() {
+        filters["resourceType"] = data.ResourceType.ValueString()
+        filterNames = append(filterNames, "resource_type = "+fmt.Sprintf("%q", data.ResourceType.ValueString()))
+    }
+    if !data.ResourceId.IsNull() && !data.ResourceId.IsUnknown() {
+        filters["resourceId"] = data.ResourceId.ValueString()
+        filterNames = append(filterNames, "resource_id = "+fmt.Sprintf("%q", data.ResourceId.ValueString()))
+    }
+    if !data.IncidentId.IsNull() && !data.IncidentId.IsUnknown() {
+        filters["incidentId"] = data.IncidentId.ValueString()
+        filterNames = append(filterNames, "incident_id = "+fmt.Sprintf("%q", data.IncidentId.ValueString()))
+    }
+    if !data.AlertId.IsNull() && !data.AlertId.IsUnknown() {
+        filters["alertId"] = data.AlertId.ValueString()
+        filterNames = append(filterNames, "alert_id = "+fmt.Sprintf("%q", data.AlertId.ValueString()))
+    }
+    if !data.RunbookId.IsNull() && !data.RunbookId.IsUnknown() {
+        filters["runbookId"] = data.RunbookId.ValueString()
+        filterNames = append(filterNames, "runbook_id = "+fmt.Sprintf("%q", data.RunbookId.ValueString()))
+    }
+    if !data.RunbookNameSnapshot.IsNull() && !data.RunbookNameSnapshot.IsUnknown() {
+        filters["runbookNameSnapshot"] = data.RunbookNameSnapshot.ValueString()
+        filterNames = append(filterNames, "runbook_name_snapshot = "+fmt.Sprintf("%q", data.RunbookNameSnapshot.ValueString()))
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.ExecutionMode.IsNull() && !data.ExecutionMode.IsUnknown() {
+        filters["executionMode"] = data.ExecutionMode.ValueString()
+        filterNames = append(filterNames, "execution_mode = "+fmt.Sprintf("%q", data.ExecutionMode.ValueString()))
+    }
+    if !data.SuggestionType.IsNull() && !data.SuggestionType.IsUnknown() {
+        filters["suggestionType"] = data.SuggestionType.ValueString()
+        filterNames = append(filterNames, "suggestion_type = "+fmt.Sprintf("%q", data.SuggestionType.ValueString()))
+    }
+    if !data.RationaleMarkdown.IsNull() && !data.RationaleMarkdown.IsUnknown() {
+        filters["rationaleMarkdown"] = data.RationaleMarkdown.ValueString()
+        filterNames = append(filterNames, "rationale_markdown = "+fmt.Sprintf("%q", data.RationaleMarkdown.ValueString()))
+    }
+    if !data.AiRunId.IsNull() && !data.AiRunId.IsUnknown() {
+        filters["aiRunId"] = data.AiRunId.ValueString()
+        filterNames = append(filterNames, "ai_run_id = "+fmt.Sprintf("%q", data.AiRunId.ValueString()))
+    }
+    if !data.RunbookExecutionId.IsNull() && !data.RunbookExecutionId.IsUnknown() {
+        filters["runbookExecutionId"] = data.RunbookExecutionId.ValueString()
+        filterNames = append(filterNames, "runbook_execution_id = "+fmt.Sprintf("%q", data.RunbookExecutionId.ValueString()))
+    }
+    if !data.ApprovedByUserId.IsNull() && !data.ApprovedByUserId.IsUnknown() {
+        filters["approvedByUserId"] = data.ApprovedByUserId.ValueString()
+        filterNames = append(filterNames, "approved_by_user_id = "+fmt.Sprintf("%q", data.ApprovedByUserId.ValueString()))
+    }
+    if !data.DismissedByUserId.IsNull() && !data.DismissedByUserId.IsUnknown() {
+        filters["dismissedByUserId"] = data.DismissedByUserId.ValueString()
+        filterNames = append(filterNames, "dismissed_by_user_id = "+fmt.Sprintf("%q", data.DismissedByUserId.ValueString()))
+    }
+    if !data.VerificationStatus.IsNull() && !data.VerificationStatus.IsUnknown() {
+        filters["verificationStatus"] = data.VerificationStatus.ValueString()
+        filterNames = append(filterNames, "verification_status = "+fmt.Sprintf("%q", data.VerificationStatus.ValueString()))
+    }
+    if !data.VerificationNote.IsNull() && !data.VerificationNote.IsUnknown() {
+        filters["verificationNote"] = data.VerificationNote.ValueString()
+        filterNames = append(filterNames, "verification_note = "+fmt.Sprintf("%q", data.VerificationNote.ValueString()))
+    }
+    if !data.VerificationWindowMinutes.IsNull() && !data.VerificationWindowMinutes.IsUnknown() {
+        filters["verificationWindowMinutes"] = lookupNumber(data.VerificationWindowMinutes)
+        filterNames = append(filterNames, "verification_window_minutes = "+data.VerificationWindowMinutes.ValueBigFloat().String())
+    }
+    if !data.AutoResolveOnRecovery.IsNull() && !data.AutoResolveOnRecovery.IsUnknown() {
+        filters["autoResolveOnRecovery"] = data.AutoResolveOnRecovery.ValueBool()
+        filterNames = append(filterNames, "auto_resolve_on_recovery = "+fmt.Sprintf("%t", data.AutoResolveOnRecovery.ValueBool()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a auto_remediation_suggestion.",
+            "Look the auto remediation suggestion up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the auto remediation suggestion up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "autoRemediationRuleId": true,
         "ruleNameSnapshot": true,
@@ -294,7 +391,7 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No auto_remediation_suggestion found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No auto remediation suggestion found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -307,11 +404,10 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -328,11 +424,11 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No auto_remediation_suggestion found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No auto remediation suggestion matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one auto_remediation_suggestion matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one auto remediation suggestion matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -360,23 +456,6 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -411,34 +490,6 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

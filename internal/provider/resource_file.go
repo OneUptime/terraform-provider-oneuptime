@@ -45,12 +45,16 @@ func (r *FileResource) Metadata(ctx context.Context, req resource.MetadataReques
 }
 
 func (r *FileResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *FileResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "BLOB or File storage",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -78,7 +82,7 @@ func (r *FileResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "is_public": schema.BoolAttribute{
-                MarkdownDescription: "Whether anyone may read the file without signing in. Set by OneUptime: every upload starts private, and a file becomes public only when a record that shows it to everyone, such as a public note or a probe's icon, is published..",
+                MarkdownDescription: "Whether anyone may read the file without signing in. Set by OneUptime: every upload starts private, and a file becomes public only when a record that shows it to everyone, such as a public note or a probe's icon, is published.",
                 Computed: true,
             },
             "image_access_token": schema.StringAttribute{
@@ -118,6 +122,14 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config FileResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Store the original file value since API won't return it
     originalFileValue := data.File.ValueString()
@@ -333,6 +345,9 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         data.Id = types.StringNull()
     }
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -390,6 +405,20 @@ func (r *FileResource) ImportState(ctx context.Context, req resource.ImportState
         "Import Not Supported",
         "oneuptime_file cannot be imported: the OneUptime API exposes no read endpoint for it.",
     )
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *FileResource) keepPlannedValues(data *FileResourceModel, plan *FileResourceModel, config *FileResourceModel) {
+    if config.Slug.IsNull() && !plan.Slug.IsUnknown() {
+        data.Slug = plan.Slug
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

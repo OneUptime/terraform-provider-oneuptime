@@ -53,8 +53,6 @@ type MonitorTemplateResourceModel struct {
     MinimumProbeAgreement types.Number `tfsdk:"minimum_probe_agreement"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -64,19 +62,23 @@ func (r *MonitorTemplateResource) Metadata(ctx context.Context, req resource.Met
 }
 
 func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *MonitorTemplateResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Reusable monitor template. Use it to create new monitors with the same configuration.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -91,7 +93,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 Required: true,
             },
             "monitor_name": schema.StringAttribute{
-                MarkdownDescription: "Default name applied to monitors created from this template. Users can override on creation. Leave it blank to name each monitor after the resource it watches..",
+                MarkdownDescription: "Default name applied to monitors created from this template. Users can override on creation. Leave it blank to name each monitor after the resource it watches.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -99,7 +101,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_description": schema.StringAttribute{
-                MarkdownDescription: "Default description applied to monitors created from this template..",
+                MarkdownDescription: "Default description applied to monitors created from this template.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -107,7 +109,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_type": schema.StringAttribute{
-                MarkdownDescription: "What is the type of monitor created from this template?.",
+                MarkdownDescription: "What is the type of monitor created from this template?",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -116,9 +118,9 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                     stringvalidator.OneOf("Manual", "Website", "API", "Ping", "Kubernetes", "Docker", "Host", "Podman", "Docker Swarm", "Proxmox", "VMware", "Ceph", "Storage Array", "IoT Device", "IP", "Incoming Request", "Incoming Email", "Port", "Server", "SSL Certificate", "SQL Query", "Database", "Synthetic Monitor", "Custom JavaScript Code", "Logs", "Metrics", "Traces", "Exceptions", "Profiles", "Security Events", "Network Device", "DNS", "DNSSEC", "Domain", "External Status Page"),
                 },
             },
-            "monitor_steps": MonitorStepsSchemaAttribute("MonitorSteps object"),
+            "monitor_steps": MonitorStepsSchemaAttribute("Monitor steps and criteria copied to monitors created from this template."),
             "monitoring_interval": schema.StringAttribute{
-                MarkdownDescription: "Default monitoring interval for monitors created from this template. A 5-field cron expression, not a label: \"*/5 * * * *\" is every five minutes..",
+                MarkdownDescription: "Default monitoring interval for monitors created from this template. A 5-field cron expression, not a label: \"*/5 * * * *\" is every five minutes.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -126,7 +128,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Default labels applied to monitors created from this template..",
+                MarkdownDescription: "Default labels applied to monitors created from this template. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -135,7 +137,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -147,7 +149,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "minimum_probe_agreement": schema.NumberAttribute{
-                MarkdownDescription: "Default minimum number of probes that must agree on a status before the monitor status changes..",
+                MarkdownDescription: "Default minimum number of probes that must agree on a status before the monitor status changes.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -155,22 +157,16 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -178,8 +174,11 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -215,6 +214,14 @@ func (r *MonitorTemplateResource) Create(ctx context.Context, req resource.Creat
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config MonitorTemplateResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -319,8 +326,6 @@ func (r *MonitorTemplateResource) Create(ctx context.Context, req resource.Creat
         "minimumProbeAgreement": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "_id": true,
@@ -701,34 +706,6 @@ func (r *MonitorTemplateResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -811,6 +788,9 @@ func (r *MonitorTemplateResource) Create(ctx context.Context, req resource.Creat
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -843,8 +823,6 @@ func (r *MonitorTemplateResource) Read(ctx context.Context, req resource.ReadReq
         "minimumProbeAgreement": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "_id": true,
@@ -1226,34 +1204,6 @@ func (r *MonitorTemplateResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1357,6 +1307,14 @@ func (r *MonitorTemplateResource) Update(ctx context.Context, req resource.Updat
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config MonitorTemplateResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     monitorTemplateRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -1436,8 +1394,6 @@ func (r *MonitorTemplateResource) Update(ctx context.Context, req resource.Updat
         "minimumProbeAgreement": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "_id": true,
@@ -1813,34 +1769,6 @@ func (r *MonitorTemplateResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1922,6 +1850,9 @@ func (r *MonitorTemplateResource) Update(ctx context.Context, req resource.Updat
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1958,6 +1889,38 @@ func (r *MonitorTemplateResource) Delete(ctx context.Context, req resource.Delet
 
 func (r *MonitorTemplateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *MonitorTemplateResource) keepPlannedValues(data *MonitorTemplateResourceModel, plan *MonitorTemplateResourceModel, config *MonitorTemplateResourceModel) {
+    if config.MonitorName.IsNull() && !plan.MonitorName.IsUnknown() {
+        data.MonitorName = plan.MonitorName
+    }
+    if config.MonitorDescription.IsNull() && !plan.MonitorDescription.IsUnknown() {
+        data.MonitorDescription = plan.MonitorDescription
+    }
+    if config.MonitorSteps.IsNull() && !plan.MonitorSteps.IsUnknown() {
+        data.MonitorSteps = plan.MonitorSteps
+    }
+    if config.MonitoringInterval.IsNull() && !plan.MonitoringInterval.IsUnknown() {
+        data.MonitoringInterval = plan.MonitoringInterval
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.CustomFields.IsNull() && !plan.CustomFields.IsUnknown() {
+        data.CustomFields = plan.CustomFields
+    }
+    if config.MinimumProbeAgreement.IsNull() && !plan.MinimumProbeAgreement.IsUnknown() {
+        data.MinimumProbeAgreement = plan.MinimumProbeAgreement
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

@@ -7,38 +7,43 @@ description: |-
 
 # oneuptime_network_flow (Data Source)
 
-API endpoints for Network Flow Look up by `id` or by `name` (must match exactly one item).
+API endpoints for Network Flow
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one network flow may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_network_flow" "by_name" {
-  name = "example-network_flow"
+data "oneuptime_network_flow" "example" {
+  network_device_id = "example-network-device-id"
 }
 
+# Or by id:
 data "oneuptime_network_flow" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `project_id` (String) Project ID. Computed.
-- `network_device_id` (String) Network Device ID. Computed.
-- `exporter_ip` (String) Exporter IP. Computed.
-- `src_ip` (String) Source IP. Computed.
-- `dst_ip` (String) Destination IP. Computed.
-- `src_port` (Number) Source Port. Computed.
-- `dst_port` (Number) Destination Port. Computed.
-- `protocol` (Number) Protocol. Computed.
-- `input_interface_index` (Number) Input Interface Index. Computed.
-- `output_interface_index` (Number) Output Interface Index. Computed.
-- `octets` (String) Octets. Computed.
-- `packets` (String) Packets. Computed.
-- `flow_start_at` (String) Flow Start. Computed.
-- `flow_end_at` (String) Flow End. Computed.
-- `ingested_at` (String) Ingested At. Computed.
+### Optional
+
+- `dst_ip` (String) Destination IP.
+- `dst_port` (Number) Destination Port.
+- `exporter_ip` (String) Exporter IP.
+- `flow_end_at` (String) Flow End.
+- `flow_start_at` (String) Flow Start.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `ingested_at` (String) Ingested At.
+- `input_interface_index` (Number) Input Interface Index.
+- `network_device_id` (String) Network Device ID.
+- `octets` (String) Octets.
+- `output_interface_index` (Number) Output Interface Index.
+- `packets` (String) Packets.
+- `protocol` (Number) Protocol.
+- `src_ip` (String) Source IP.
+- `src_port` (Number) Source Port.
+
+### Read-Only
+
+- `project_id` (String) Project ID.

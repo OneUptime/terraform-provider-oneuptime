@@ -13,10 +13,7 @@ Save and reuse traces explorer views, including the current search, filters, tim
 
 ```terraform
 resource "oneuptime_trace_saved_view" "example" {
-  name = jsonencode({
-    "_type": "Name",
-    "value": "John Doe"
-  })
+  name = "Example trace saved view"
 }
 ```
 
@@ -24,27 +21,33 @@ resource "oneuptime_trace_saved_view" "example" {
 
 ### Required
 
-- `name` (String) Name object.
+- `name` (String) Friendly name for this saved trace view.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `query` (String) Serialized traces explorer view state (search, filters, time range, page size) for this saved view...
-- `is_default` (Bool) Whether this saved trace view should be applied by default...
+- `is_default` (Boolean) Whether this saved trace view should be applied by default. Defaults to `false`.
+- `query` (String) Serialized traces explorer view state (search, filters, time range, page size) for this saved view. A JSON value: write it with `jsonencode()`.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) ID of the user who created this saved trace view. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of the project this saved trace view belongs to. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing trace saved view by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_trace_saved_view.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_trace_saved_view.example <id>

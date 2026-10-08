@@ -13,8 +13,8 @@ Configure rules for automatically assigning owner users and teams when matching 
 
 ```terraform
 resource "oneuptime_workflow_owner_rule" "example" {
-  name = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example workflow owner rule"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -22,33 +22,40 @@ resource "oneuptime_workflow_owner_rule" "example" {
 
 ### Required
 
-- `name` (String) Name of this workflow owner rule..
+- `name` (String) Name of this workflow owner rule.
 
 ### Optional
 
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource...
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Description of this workflow owner rule..
-- `is_enabled` (Bool) Whether this rule is enabled..
-- `notify_owners` (Bool) Send notifications to owner users and teams when they are added by this rule..
-- `workflow_labels` (Set) Only trigger for workflows that have at least one of these labels. Leave empty to match regardless of labels...
-- `workflow_name_pattern` (String) Regex (case-insensitive) matched against the workflow name. Leave empty to match any name...
-- `workflow_description_pattern` (String) Regex (case-insensitive) matched against the workflow description. Leave empty to match any description...
-- `owner_users` (Set) Users to add as owners on the workflow when this rule matches...
-- `owner_teams` (Set) Teams to add as owners on the workflow when this rule matches...
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `description` (String) Description of this workflow owner rule.
+- `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
+- `notify_owners` (Boolean) Send notifications to owner users and teams when they are added by this rule. Defaults to `true`.
+- `owner_teams` (Set of String) Teams to add as owners on the workflow when this rule matches. IDs of `oneuptime_team` resources.
+- `owner_users` (Set of String) Users to add as owners on the workflow when this rule matches. IDs of `oneuptime_user` records.
+- `workflow_description_pattern` (String) Regex (case-insensitive) matched against the workflow description. Leave empty to match any description.
+- `workflow_labels` (Set of String) Only trigger for workflows that have at least one of these labels. Leave empty to match regardless of labels. IDs of `oneuptime_label` resources.
+- `workflow_name_pattern` (String) Regex (case-insensitive) matched against the workflow name. Leave empty to match any name.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing workflow owner rule by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_workflow_owner_rule.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_workflow_owner_rule.example <id>

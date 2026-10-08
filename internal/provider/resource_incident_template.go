@@ -59,8 +59,6 @@ type IncidentTemplateResourceModel struct {
     CustomFieldSettings JSONSubsetValue `tfsdk:"custom_field_settings"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsScopedToStatusPages types.Bool `tfsdk:"is_scoped_to_status_pages"`
@@ -71,19 +69,23 @@ func (r *IncidentTemplateResource) Metadata(ctx context.Context, req resource.Me
 }
 
 func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Manage incident templates for your project",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -102,7 +104,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Short description of this incident. This is in markdown and will be visible on the status page..",
+                MarkdownDescription: "Short description of this incident. This is in markdown and will be visible on the status page.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -110,7 +112,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors affected by this incident.",
+                MarkdownDescription: "List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -119,7 +121,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts to pre-populate on incidents created from this template..",
+                MarkdownDescription: "List of hosts to pre-populate on incidents created from this template. IDs of `oneuptime_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -128,7 +130,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes clusters to pre-populate on incidents created from this template..",
+                MarkdownDescription: "List of Kubernetes clusters to pre-populate on incidents created from this template. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -137,7 +139,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Docker hosts to pre-populate on incidents created from this template..",
+                MarkdownDescription: "List of Docker hosts to pre-populate on incidents created from this template. IDs of `oneuptime_docker_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -146,7 +148,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Podman hosts to pre-populate on incidents created from this template..",
+                MarkdownDescription: "List of Podman hosts to pre-populate on incidents created from this template. IDs of `oneuptime_podman_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -155,7 +157,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services to pre-populate on incidents created from this template..",
+                MarkdownDescription: "List of services to pre-populate on incidents created from this template. IDs of `oneuptime_service` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -164,7 +166,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies affected by this incident template..",
+                MarkdownDescription: "List of on-call duty policies affected by this incident template. IDs of `oneuptime_on_call_policy` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -173,7 +175,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "Limit incidents declared from this template to these status pages. Leave empty to reach every status page that lists the incident's monitors..",
+                MarkdownDescription: "Limit incidents declared from this template to these status pages. Leave empty to reach every status page that lists the incident's monitors. IDs of `oneuptime_status_page` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -182,7 +184,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -191,7 +193,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "incident_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Incident Severity ID. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -199,7 +201,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "change_monitor_status_to_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the incident is created. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -207,7 +209,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "initial_incident_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Incident State Object ID. Incidents created from this template will start in this state. The ID of a `oneuptime_incident_state`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -215,7 +217,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies..",
+                MarkdownDescription: "The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -227,7 +229,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "custom_field_settings": schema.StringAttribute{
-                MarkdownDescription: "How the Declare Incident form treats each incident custom field when an incident is declared from this template, keyed by the field's template variable key (variableKey). Each value is Required (asked, must be filled in), Optional (asked, may be left empty), Hidden (not asked; the field keeps this template's value) or Default. A field that is not listed, or is Default, follows its own Show on Create and Required on Create settings. Only the dashboard's Declare Incident form applies these settings: incidents created through the API are not checked against them..",
+                MarkdownDescription: "How the Declare Incident form treats each incident custom field when an incident is declared from this template, keyed by the field's template variable key (variableKey). Each value is Required (asked, must be filled in), Optional (asked, may be left empty), Hidden (not asked; the field keeps this template's value) or Default. A field that is not listed, or is Default, follows its own Show on Create and Required on Create settings. Only the dashboard's Declare Incident form applies these settings: incidents created through the API are not checked against them. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -239,22 +241,16 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -262,11 +258,14 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "is_scoped_to_status_pages": schema.BoolAttribute{
-                MarkdownDescription: "Whether incidents declared from this template are limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored..",
+                MarkdownDescription: "Whether incidents declared from this template are limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored.",
                 Computed: true,
             },
         },
@@ -303,6 +302,14 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentTemplateResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -434,8 +441,6 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
         "customFieldSettings": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "isScopedToStatusPages": true,
@@ -1125,34 +1130,6 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1238,6 +1215,9 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1278,8 +1258,6 @@ func (r *IncidentTemplateResource) Read(ctx context.Context, req resource.ReadRe
         "customFieldSettings": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "isScopedToStatusPages": true,
@@ -1970,34 +1948,6 @@ func (r *IncidentTemplateResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2103,6 +2053,14 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentTemplateResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     incidentTemplateRequest := map[string]interface{}{
@@ -2218,8 +2176,6 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
         "customFieldSettings": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "isScopedToStatusPages": true,
@@ -2904,34 +2860,6 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3016,6 +2944,9 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3052,6 +2983,62 @@ func (r *IncidentTemplateResource) Delete(ctx context.Context, req resource.Dele
 
 func (r *IncidentTemplateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *IncidentTemplateResource) keepPlannedValues(data *IncidentTemplateResourceModel, plan *IncidentTemplateResourceModel, config *IncidentTemplateResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.Monitors.IsNull() && !plan.Monitors.IsUnknown() {
+        data.Monitors = plan.Monitors
+    }
+    if config.Hosts.IsNull() && !plan.Hosts.IsUnknown() {
+        data.Hosts = plan.Hosts
+    }
+    if config.KubernetesClusters.IsNull() && !plan.KubernetesClusters.IsUnknown() {
+        data.KubernetesClusters = plan.KubernetesClusters
+    }
+    if config.DockerHosts.IsNull() && !plan.DockerHosts.IsUnknown() {
+        data.DockerHosts = plan.DockerHosts
+    }
+    if config.PodmanHosts.IsNull() && !plan.PodmanHosts.IsUnknown() {
+        data.PodmanHosts = plan.PodmanHosts
+    }
+    if config.Services.IsNull() && !plan.Services.IsUnknown() {
+        data.Services = plan.Services
+    }
+    if config.OnCallDutyPolicies.IsNull() && !plan.OnCallDutyPolicies.IsUnknown() {
+        data.OnCallDutyPolicies = plan.OnCallDutyPolicies
+    }
+    if config.StatusPages.IsNull() && !plan.StatusPages.IsUnknown() {
+        data.StatusPages = plan.StatusPages
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.IncidentSeverityId.IsNull() && !plan.IncidentSeverityId.IsUnknown() {
+        data.IncidentSeverityId = plan.IncidentSeverityId
+    }
+    if config.ChangeMonitorStatusToId.IsNull() && !plan.ChangeMonitorStatusToId.IsUnknown() {
+        data.ChangeMonitorStatusToId = plan.ChangeMonitorStatusToId
+    }
+    if config.InitialIncidentStateId.IsNull() && !plan.InitialIncidentStateId.IsUnknown() {
+        data.InitialIncidentStateId = plan.InitialIncidentStateId
+    }
+    if config.CustomFields.IsNull() && !plan.CustomFields.IsUnknown() {
+        data.CustomFields = plan.CustomFields
+    }
+    if config.CustomFieldSettings.IsNull() && !plan.CustomFieldSettings.IsUnknown() {
+        data.CustomFieldSettings = plan.CustomFieldSettings
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

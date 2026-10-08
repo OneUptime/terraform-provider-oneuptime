@@ -13,10 +13,10 @@ Custom per-project LLM pricing. When a span carries token counts but no reported
 
 ```terraform
 resource "oneuptime_llm_model_price" "example" {
-  model_prefix = "Example short text"
-  input_price_per_million_tokens_in_usd = 42
+  model_prefix                           = "Example short text"
+  input_price_per_million_tokens_in_usd  = 42
   output_price_per_million_tokens_in_usd = 42
-  description = "This is an example of longer text content that might be stored in this field."
+  description                            = "Managed by Terraform"
 }
 ```
 
@@ -24,29 +24,35 @@ resource "oneuptime_llm_model_price" "example" {
 
 ### Required
 
-- `model_prefix` (String) Model-name prefix this price matches, e.g. gpt-4o or my-custom-finetune. Stored lowercase; the longest matching prefix wins and a project entry beats a built-in catalog entry on ties...
-- `input_price_per_million_tokens_in_usd` (Number) Price of one million input (prompt) tokens in USD. Use 0 for free input tokens...
-- `output_price_per_million_tokens_in_usd` (Number) Price of one million output (completion) tokens in USD. Use 0 for free output tokens (e.g. embeddings)...
+- `input_price_per_million_tokens_in_usd` (Number) Price of one million input (prompt) tokens in USD. Use 0 for free input tokens.
+- `model_prefix` (String) Model-name prefix this price matches, e.g. gpt-4o or my-custom-finetune. Stored lowercase; the longest matching prefix wins and a project entry beats a built-in catalog entry on ties.
+- `output_price_per_million_tokens_in_usd` (Number) Price of one million output (completion) tokens in USD. Use 0 for free output tokens (e.g. embeddings).
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Description of this price entry, e.g. which negotiated rate or self-hosted deployment it reflects...
-- `is_enabled` (Bool) Whether this price entry is used when pricing LLM spans...
+- `description` (String) Description of this price entry, e.g. which negotiated rate or self-hosted deployment it reflects.
+- `is_enabled` (Boolean) Whether this price entry is used when pricing LLM spans. Defaults to `true`.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) ID of the user who created this price entry. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of the project this LLM model price belongs to. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing llm model price by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_llm_model_price.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_llm_model_price.example <id>

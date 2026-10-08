@@ -7,27 +7,32 @@ description: |-
 
 # oneuptime_monitor_log (Data Source)
 
-API endpoints for Monitor Log Look up by `id` or by `name` (must match exactly one item).
+API endpoints for Monitor Log
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one monitor log may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_monitor_log" "by_name" {
-  name = "example-monitor_log"
+data "oneuptime_monitor_log" "example" {
+  monitor_id = "example-monitor-id"
 }
 
+# Or by id:
 data "oneuptime_monitor_log" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `project_id` (String) Project ID. Computed.
-- `monitor_id` (String) Monitor ID. Computed.
-- `time` (String) Time. Computed.
-- `log_body` (String) Log Body. Computed.
+### Optional
+
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `monitor_id` (String) Monitor ID.
+- `time` (String) Time.
+
+### Read-Only
+
+- `log_body` (String) Log Body. A JSON value: write it with `jsonencode()`.
+- `project_id` (String) Project ID.

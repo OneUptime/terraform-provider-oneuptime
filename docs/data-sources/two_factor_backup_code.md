@@ -7,23 +7,32 @@ description: |-
 
 # oneuptime_two_factor_backup_code (Data Source)
 
-Single-use backup codes that let a user sign in when their two factor authentication device is unavailable Look up by `id` or by `name` (must match exactly one item).
+Single-use backup codes that let a user sign in when their two factor authentication device is unavailable
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one two factor backup code may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_two_factor_backup_code" "by_name" {
-  name = "example-two_factor_backup_code"
+data "oneuptime_two_factor_backup_code" "example" {
+  user_id = data.oneuptime_user.example.id
 }
 
+# Or by id:
 data "oneuptime_two_factor_backup_code" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
+### Optional
+
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `user_id` (String) User ID who owns this backup code. The ID of a `oneuptime_user` (see the data source).
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `updated_at` (String) Date and Time when the object was updated.
+- `used_at` (String) When this backup code was used to sign in. Null while the code is still unused.

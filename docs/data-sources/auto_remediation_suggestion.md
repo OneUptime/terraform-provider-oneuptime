@@ -7,54 +7,57 @@ description: |-
 
 # oneuptime_auto_remediation_suggestion (Data Source)
 
-A proposed or executed remediation runbook attached to an incident or alert by an auto-remediation rule. Look up by `id` or by `name` (must match exactly one item).
+A proposed or executed remediation runbook attached to an incident or alert by an auto-remediation rule.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one auto remediation suggestion may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_auto_remediation_suggestion" "by_name" {
-  name = "example-auto_remediation_suggestion"
+data "oneuptime_auto_remediation_suggestion" "example" {
+  auto_remediation_rule_id = oneuptime_auto_remediation_rule.example.id
 }
 
+# Or by id:
 data "oneuptime_auto_remediation_suggestion" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `auto_remediation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `rule_name_snapshot` (String) Name of the rule when this suggestion was created — survives rule deletion... Computed.
-- `kubernetes_cluster_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `resource_type` (String) The kind of resource whose AI remediation mode produced this suggestion (DockerHost, PodmanHost, DockerSwarmCluster, ProxmoxCluster, VMwareVCenter, CephCluster, DatabaseServer or Host; resource-level remediation, no rule)... Computed.
-- `resource_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `runbook_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `runbook_name_snapshot` (String) Name of the proposed runbook when this suggestion was created — survives runbook deletion... Computed.
-- `status` (String) Lifecycle status: Planning, Suggested, Approved, AutoExecuted, Dismissed or NoneApplicable... Computed.
-- `execution_mode` (String) The rule's execution mode when this suggestion was created (Suggest or FullAuto)... Computed.
-- `suggestion_type` (String) Runbook suggestions propose starting a pre-authored runbook; CommandPlan suggestions carry an AI-composed command plan... Computed.
-- `command_plan` (String) The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run... Computed.
-- `rationale_markdown` (String) Why this runbook was proposed — the AI planning run's reasoning for AI rules, or a short note for deterministic rules... Computed.
-- `ai_run_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `runbook_execution_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `approved_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `approved_at` (String) A date time object.. Computed.
-- `dismissed_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `dismissed_at` (String) A date time object.. Computed.
-- `verification_status` (String) Outcome verification after execution: Pending, Verified, Failed or Skipped. Empty until a runbook is started... Computed.
-- `verification_deadline_at` (String) A date time object.. Computed.
-- `verification_completed_at` (String) A date time object.. Computed.
-- `verification_note` (String) Why verification ended the way it did... Computed.
-- `verification_window_minutes` (Number) Snapshot of the rule's verification window when this suggestion was created... Computed.
-- `auto_resolve_on_recovery` (Bool) Snapshot of the rule's auto-resolve-on-verified-recovery setting when this suggestion was created... Computed.
+### Optional
+
+- `ai_run_id` (String) The AI planning run that picked the runbook (AI rules only).
+- `alert_id` (String) ID of the alert this suggestion remediates. The ID of a `oneuptime_alert`.
+- `approved_by_user_id` (String) ID of the user who approved this suggestion. The ID of a `oneuptime_user` (see the data source).
+- `auto_remediation_rule_id` (String) ID of the rule that produced this suggestion. The ID of a `oneuptime_auto_remediation_rule`.
+- `auto_resolve_on_recovery` (Boolean) Snapshot of the rule's auto-resolve-on-verified-recovery setting when this suggestion was created.
+- `dismissed_by_user_id` (String) ID of the user who dismissed this suggestion. The ID of a `oneuptime_user` (see the data source).
+- `execution_mode` (String) The rule's execution mode when this suggestion was created (Suggest or FullAuto).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `incident_id` (String) ID of the incident this suggestion remediates. The ID of a `oneuptime_incident`.
+- `kubernetes_cluster_id` (String) ID of the cluster whose AI remediation mode produced this suggestion. The ID of a `oneuptime_kubernetes_cluster`.
+- `rationale_markdown` (String) Why this runbook was proposed — the AI planning run's reasoning for AI rules, or a short note for deterministic rules.
+- `resource_id` (String) ID of the resource whose AI remediation mode produced this suggestion, in the table its resource type names.
+- `resource_type` (String) The kind of resource whose AI remediation mode produced this suggestion (DockerHost, PodmanHost, DockerSwarmCluster, ProxmoxCluster, VMwareVCenter, CephCluster, DatabaseServer or Host; resource-level remediation, no rule).
+- `rule_name_snapshot` (String) Name of the rule when this suggestion was created — survives rule deletion.
+- `runbook_execution_id` (String) The runbook execution started when this suggestion was approved or auto-executed.
+- `runbook_id` (String) ID of the proposed runbook. The ID of a `oneuptime_runbook`.
+- `runbook_name_snapshot` (String) Name of the proposed runbook when this suggestion was created — survives runbook deletion.
+- `status` (String) Lifecycle status: Planning, Suggested, Approved, AutoExecuted, Dismissed or NoneApplicable.
+- `suggestion_type` (String) Runbook suggestions propose starting a pre-authored runbook; CommandPlan suggestions carry an AI-composed command plan.
+- `verification_note` (String) Why verification ended the way it did.
+- `verification_status` (String) Outcome verification after execution: Pending, Verified, Failed or Skipped. Empty until a runbook is started.
+- `verification_window_minutes` (Number) Snapshot of the rule's verification window when this suggestion was created.
+
+### Read-Only
+
+- `approved_at` (String) When this suggestion was approved.
+- `command_plan` (String) The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run. A JSON value: write it with `jsonencode()`.
+- `created_at` (String) Date and Time when the object was created.
+- `dismissed_at` (String) When this suggestion was dismissed.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
+- `verification_completed_at` (String) When verification reached a terminal outcome.
+- `verification_deadline_at` (String) When the verification window closes — the monitors must be operational by this time.

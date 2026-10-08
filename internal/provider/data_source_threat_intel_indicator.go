@@ -30,7 +30,6 @@ type ThreatIntelIndicatorDataSource struct {
 // ThreatIntelIndicatorDataSourceModel describes the data source data model.
 type ThreatIntelIndicatorDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     FeedId types.String `tfsdk:"feed_id"`
     FeedName types.String `tfsdk:"feed_name"`
@@ -53,74 +52,80 @@ func (d *ThreatIntelIndicatorDataSource) Metadata(ctx context.Context, req datas
 
 func (d *ThreatIntelIndicatorDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "API endpoints for Threat Intel Indicator Look up an existing threat_intel_indicator by `id` or by `name`.",
+        MarkdownDescription: "API endpoints for Threat Intel Indicator Look up an existing threat intel indicator by `id`, or by any of its other arguments (`confidence`, `feed_id`, `feed_name`, ...): each one set must match, and exactly one threat intel indicator may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Project ID",
+                MarkdownDescription: "Project ID.",
                 Computed: true,
             },
             "feed_id": schema.StringAttribute{
-                MarkdownDescription: "Feed ID",
+                MarkdownDescription: "Feed ID.",
+                Optional: true,
                 Computed: true,
             },
             "feed_name": schema.StringAttribute{
-                MarkdownDescription: "Feed",
+                MarkdownDescription: "Feed.",
+                Optional: true,
                 Computed: true,
             },
             "stix_id": schema.StringAttribute{
-                MarkdownDescription: "STIX ID",
+                MarkdownDescription: "STIX ID.",
+                Optional: true,
                 Computed: true,
             },
             "indicator_type": schema.StringAttribute{
-                MarkdownDescription: "Indicator Type",
+                MarkdownDescription: "Indicator Type.",
+                Optional: true,
                 Computed: true,
             },
             "indicator_value": schema.StringAttribute{
-                MarkdownDescription: "Indicator Value",
+                MarkdownDescription: "Indicator Value.",
+                Optional: true,
                 Computed: true,
             },
             "indicator_name": schema.StringAttribute{
-                MarkdownDescription: "Name",
+                MarkdownDescription: "Name.",
+                Optional: true,
                 Computed: true,
             },
             "confidence": schema.NumberAttribute{
-                MarkdownDescription: "Confidence",
+                MarkdownDescription: "Confidence.",
+                Optional: true,
                 Computed: true,
             },
             "stix_labels": schema.SetAttribute{
-                MarkdownDescription: "Labels",
+                MarkdownDescription: "Labels.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "valid_from": schema.StringAttribute{
-                MarkdownDescription: "Valid From",
+                MarkdownDescription: "Valid From.",
+                Optional: true,
                 Computed: true,
             },
             "valid_until": schema.StringAttribute{
-                MarkdownDescription: "Valid Until",
+                MarkdownDescription: "Valid Until.",
+                Optional: true,
                 Computed: true,
             },
             "revoked": schema.BoolAttribute{
-                MarkdownDescription: "Revoked",
+                MarkdownDescription: "Revoked.",
+                Optional: true,
                 Computed: true,
             },
             "version": schema.StringAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Version.",
+                Optional: true,
                 Computed: true,
             },
             "retention_date": schema.StringAttribute{
-                MarkdownDescription: "Retention Date",
+                MarkdownDescription: "Retention Date.",
                 Computed: true,
             },
         },
@@ -157,18 +162,72 @@ func (d *ThreatIntelIndicatorDataSource) Read(ctx context.Context, req datasourc
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.FeedId.IsNull() && !data.FeedId.IsUnknown() {
+        filters["feedId"] = data.FeedId.ValueString()
+        filterNames = append(filterNames, "feed_id = "+fmt.Sprintf("%q", data.FeedId.ValueString()))
+    }
+    if !data.FeedName.IsNull() && !data.FeedName.IsUnknown() {
+        filters["feedName"] = data.FeedName.ValueString()
+        filterNames = append(filterNames, "feed_name = "+fmt.Sprintf("%q", data.FeedName.ValueString()))
+    }
+    if !data.StixId.IsNull() && !data.StixId.IsUnknown() {
+        filters["stixId"] = data.StixId.ValueString()
+        filterNames = append(filterNames, "stix_id = "+fmt.Sprintf("%q", data.StixId.ValueString()))
+    }
+    if !data.IndicatorType.IsNull() && !data.IndicatorType.IsUnknown() {
+        filters["indicatorType"] = data.IndicatorType.ValueString()
+        filterNames = append(filterNames, "indicator_type = "+fmt.Sprintf("%q", data.IndicatorType.ValueString()))
+    }
+    if !data.IndicatorValue.IsNull() && !data.IndicatorValue.IsUnknown() {
+        filters["indicatorValue"] = data.IndicatorValue.ValueString()
+        filterNames = append(filterNames, "indicator_value = "+fmt.Sprintf("%q", data.IndicatorValue.ValueString()))
+    }
+    if !data.IndicatorName.IsNull() && !data.IndicatorName.IsUnknown() {
+        filters["indicatorName"] = data.IndicatorName.ValueString()
+        filterNames = append(filterNames, "indicator_name = "+fmt.Sprintf("%q", data.IndicatorName.ValueString()))
+    }
+    if !data.Confidence.IsNull() && !data.Confidence.IsUnknown() {
+        filters["confidence"] = lookupNumber(data.Confidence)
+        filterNames = append(filterNames, "confidence = "+data.Confidence.ValueBigFloat().String())
+    }
+    if !data.ValidFrom.IsNull() && !data.ValidFrom.IsUnknown() {
+        filters["validFrom"] = data.ValidFrom.ValueString()
+        filterNames = append(filterNames, "valid_from = "+fmt.Sprintf("%q", data.ValidFrom.ValueString()))
+    }
+    if !data.ValidUntil.IsNull() && !data.ValidUntil.IsUnknown() {
+        filters["validUntil"] = data.ValidUntil.ValueString()
+        filterNames = append(filterNames, "valid_until = "+fmt.Sprintf("%q", data.ValidUntil.ValueString()))
+    }
+    if !data.Revoked.IsNull() && !data.Revoked.IsUnknown() {
+        filters["revoked"] = data.Revoked.ValueBool()
+        filterNames = append(filterNames, "revoked = "+fmt.Sprintf("%t", data.Revoked.ValueBool()))
+    }
+    if !data.Version.IsNull() && !data.Version.IsUnknown() {
+        filters["version"] = data.Version.ValueString()
+        filterNames = append(filterNames, "version = "+fmt.Sprintf("%q", data.Version.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a threat_intel_indicator.",
+            "Look the threat intel indicator up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the threat intel indicator up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "projectId": true,
         "feedId": true,
         "feedName": true,
@@ -195,7 +254,7 @@ func (d *ThreatIntelIndicatorDataSource) Read(ctx context.Context, req datasourc
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No threat_intel_indicator found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No threat intel indicator found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -208,11 +267,10 @@ func (d *ThreatIntelIndicatorDataSource) Read(ctx context.Context, req datasourc
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -229,11 +287,11 @@ func (d *ThreatIntelIndicatorDataSource) Read(ctx context.Context, req datasourc
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No threat_intel_indicator found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No threat intel indicator matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one threat_intel_indicator matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one threat intel indicator matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -261,23 +319,6 @@ func (d *ThreatIntelIndicatorDataSource) Read(ctx context.Context, req datasourc
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -30,12 +30,10 @@ type RunbookCredentialDataSource struct {
 // RunbookCredentialDataSourceModel describes the data source data model.
 type RunbookCredentialDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     CredentialType types.String `tfsdk:"credential_type"`
     SshHostname types.String `tfsdk:"ssh_hostname"`
@@ -53,74 +51,74 @@ func (d *RunbookCredentialDataSource) Metadata(ctx context.Context, req datasour
 
 func (d *RunbookCredentialDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Access to a system a runbook needs to act on — an SSH host, or a Kubernetes cluster. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a step. Look up an existing runbook_credential by `id` or by `name`.",
+        MarkdownDescription: "Access to a system a runbook needs to act on — an SSH host, or a Kubernetes cluster. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a step. Look up an existing runbook credential by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `credential_type`, ...): each one set must match, and exactly one runbook credential may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Any friendly name of this object.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember.",
+                Optional: true,
                 Computed: true,
             },
             "credential_type": schema.StringAttribute{
-                MarkdownDescription: "SSH, or Kubernetes..",
+                MarkdownDescription: "SSH, or Kubernetes.",
+                Optional: true,
                 Computed: true,
             },
             "ssh_hostname": schema.StringAttribute{
-                MarkdownDescription: "Hostname or IP address the Runner connects to..",
+                MarkdownDescription: "Hostname or IP address the Runner connects to.",
+                Optional: true,
                 Computed: true,
             },
             "ssh_port": schema.NumberAttribute{
-                MarkdownDescription: "Defaults to 22 when unset..",
+                MarkdownDescription: "Defaults to 22 when unset.",
+                Optional: true,
                 Computed: true,
             },
             "ssh_username": schema.StringAttribute{
-                MarkdownDescription: "The user the Runner authenticates as..",
+                MarkdownDescription: "The user the Runner authenticates as.",
+                Optional: true,
                 Computed: true,
             },
             "kubernetes_api_server_url": schema.StringAttribute{
                 MarkdownDescription: "For example https://10.0.0.1:6443.",
+                Optional: true,
                 Computed: true,
             },
             "kubernetes_ca_certificate": schema.StringAttribute{
-                MarkdownDescription: "PEM certificate authority for the API server. Leave empty only if the API server presents a certificate your Runner already trusts..",
+                MarkdownDescription: "PEM certificate authority for the API server. Leave empty only if the API server presents a certificate your Runner already trusts.",
+                Optional: true,
                 Computed: true,
             },
             "runners": schema.SetAttribute{
-                MarkdownDescription: "The Runners allowed to use this credential. A step referencing it must target one of them..",
+                MarkdownDescription: "The Runners allowed to use this credential. A step referencing it must target one of them. IDs of `oneuptime_runner` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -157,23 +155,68 @@ func (d *RunbookCredentialDataSource) Read(ctx context.Context, req datasource.R
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.CredentialType.IsNull() && !data.CredentialType.IsUnknown() {
+        filters["credentialType"] = data.CredentialType.ValueString()
+        filterNames = append(filterNames, "credential_type = "+fmt.Sprintf("%q", data.CredentialType.ValueString()))
+    }
+    if !data.SshHostname.IsNull() && !data.SshHostname.IsUnknown() {
+        filters["sshHostname"] = data.SshHostname.ValueString()
+        filterNames = append(filterNames, "ssh_hostname = "+fmt.Sprintf("%q", data.SshHostname.ValueString()))
+    }
+    if !data.SshPort.IsNull() && !data.SshPort.IsUnknown() {
+        filters["sshPort"] = lookupNumber(data.SshPort)
+        filterNames = append(filterNames, "ssh_port = "+data.SshPort.ValueBigFloat().String())
+    }
+    if !data.SshUsername.IsNull() && !data.SshUsername.IsUnknown() {
+        filters["sshUsername"] = data.SshUsername.ValueString()
+        filterNames = append(filterNames, "ssh_username = "+fmt.Sprintf("%q", data.SshUsername.ValueString()))
+    }
+    if !data.KubernetesApiServerUrl.IsNull() && !data.KubernetesApiServerUrl.IsUnknown() {
+        filters["kubernetesApiServerUrl"] = data.KubernetesApiServerUrl.ValueString()
+        filterNames = append(filterNames, "kubernetes_api_server_url = "+fmt.Sprintf("%q", data.KubernetesApiServerUrl.ValueString()))
+    }
+    if !data.KubernetesCaCertificate.IsNull() && !data.KubernetesCaCertificate.IsUnknown() {
+        filters["kubernetesCaCertificate"] = data.KubernetesCaCertificate.ValueString()
+        filterNames = append(filterNames, "kubernetes_ca_certificate = "+fmt.Sprintf("%q", data.KubernetesCaCertificate.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a runbook_credential.",
+            "Look the runbook credential up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the runbook credential up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "description": true,
         "credentialType": true,
         "sshHostname": true,
@@ -195,7 +238,7 @@ func (d *RunbookCredentialDataSource) Read(ctx context.Context, req datasource.R
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook_credential found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook credential found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -208,11 +251,10 @@ func (d *RunbookCredentialDataSource) Read(ctx context.Context, req datasource.R
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -229,11 +271,11 @@ func (d *RunbookCredentialDataSource) Read(ctx context.Context, req datasource.R
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook_credential found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook credential matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one runbook_credential matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one runbook credential matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -261,23 +303,6 @@ func (d *RunbookCredentialDataSource) Read(ctx context.Context, req datasource.R
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -313,34 +338,6 @@ func (d *RunbookCredentialDataSource) Read(ctx context.Context, req datasource.R
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -357,6 +354,23 @@ func (d *RunbookCredentialDataSource) Read(ctx context.Context, req datasource.R
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

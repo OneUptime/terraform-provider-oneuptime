@@ -54,10 +54,7 @@ type OnCallDutyExecutionLogResourceModel struct {
     OnCallPolicyExecutionRepeatCount types.Number `tfsdk:"on_call_policy_execution_repeat_count"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     AcknowledgedByUserId types.String `tfsdk:"acknowledged_by_user_id"`
     ScheduleGapRetryCount types.Number `tfsdk:"schedule_gap_retry_count"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
@@ -68,30 +65,34 @@ func (r *OnCallDutyExecutionLogResource) Metadata(ctx context.Context, req resou
 }
 
 func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Logs for on-call duty policy execution.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your On-Call Policy which belongs to this execution log event. The ID of a `oneuptime_on_call_policy`.",
                 Required: true,
             },
             "triggered_by_incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the incident which triggered this on-call escalation policy. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -99,7 +100,7 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "triggered_by_alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the incident which triggered this on-call escalation policy. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -107,7 +108,7 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "triggered_by_alert_episode_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert episode which triggered this on-call escalation policy. The ID of a `oneuptime_alert_episode`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -115,7 +116,7 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "triggered_by_incident_episode_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the incident episode which triggered this on-call escalation policy. The ID of a `oneuptime_incident_episode`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -131,11 +132,11 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 Required: true,
             },
             "user_notification_event_type": schema.StringAttribute{
-                MarkdownDescription: "Type of event that triggered this on-call duty policy..",
+                MarkdownDescription: "Type of event that triggered this on-call duty policy.",
                 Required: true,
             },
             "acknowledged_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was this policy execution acknowledged?",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -144,7 +145,7 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "acknowledged_by_team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Team ID who acknowledged this object (if this object was acknowledged by a Team). The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -152,7 +153,7 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "last_executed_escalation_rule_order": schema.NumberAttribute{
-                MarkdownDescription: "Which escalation rule was executed?.",
+                MarkdownDescription: "Which escalation rule was executed?",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -160,12 +161,12 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "last_escalation_rule_executed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When was the escalation rule executed?",
                 CustomType: RFC3339Type{},
                 Optional: true,
             },
             "last_executed_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your On-Call Policy Last Executed Escalation Rule. The ID of a `oneuptime_escalation_rule`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -173,11 +174,11 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "execute_next_escalation_rule_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How many minutes should we wait before executing the next escalation rule?.",
+                MarkdownDescription: "How many minutes should we wait before executing the next escalation rule?",
                 Optional: true,
             },
             "on_call_policy_execution_repeat_count": schema.NumberAttribute{
-                MarkdownDescription: "How many times did we execute this on-call policy?.",
+                MarkdownDescription: "How many times did we execute this on-call policy?",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
@@ -186,42 +187,35 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "acknowledged_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who acknowledged this object (if this object was acknowledged by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
             "schedule_gap_retry_count": schema.NumberAttribute{
-                MarkdownDescription: "How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user..",
+                MarkdownDescription: "How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.",
                 Computed: true,
             },
             "triggered_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who triggered this on-call policy. The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
         },
@@ -258,6 +252,14 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config OnCallDutyExecutionLogResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -375,10 +377,7 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
         "onCallPolicyExecutionRepeatCount": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "acknowledgedByUserId": true,
         "scheduleGapRetryCount": true,
         "triggeredByUserId": true,
@@ -862,34 +861,6 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -926,43 +897,6 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["acknowledgedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1063,6 +997,9 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1098,10 +1035,7 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         "onCallPolicyExecutionRepeatCount": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "acknowledgedByUserId": true,
         "scheduleGapRetryCount": true,
         "triggeredByUserId": true,
@@ -1586,34 +1520,6 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1650,43 +1556,6 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["acknowledgedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1816,6 +1685,44 @@ func (r *OnCallDutyExecutionLogResource) Delete(ctx context.Context, req resourc
 
 func (r *OnCallDutyExecutionLogResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *OnCallDutyExecutionLogResource) keepPlannedValues(data *OnCallDutyExecutionLogResourceModel, plan *OnCallDutyExecutionLogResourceModel, config *OnCallDutyExecutionLogResourceModel) {
+    if config.TriggeredByIncidentId.IsNull() && !plan.TriggeredByIncidentId.IsUnknown() {
+        data.TriggeredByIncidentId = plan.TriggeredByIncidentId
+    }
+    if config.TriggeredByAlertId.IsNull() && !plan.TriggeredByAlertId.IsUnknown() {
+        data.TriggeredByAlertId = plan.TriggeredByAlertId
+    }
+    if config.TriggeredByAlertEpisodeId.IsNull() && !plan.TriggeredByAlertEpisodeId.IsUnknown() {
+        data.TriggeredByAlertEpisodeId = plan.TriggeredByAlertEpisodeId
+    }
+    if config.TriggeredByIncidentEpisodeId.IsNull() && !plan.TriggeredByIncidentEpisodeId.IsUnknown() {
+        data.TriggeredByIncidentEpisodeId = plan.TriggeredByIncidentEpisodeId
+    }
+    if config.AcknowledgedAt.IsNull() && !plan.AcknowledgedAt.IsUnknown() {
+        data.AcknowledgedAt = plan.AcknowledgedAt
+    }
+    if config.AcknowledgedByTeamId.IsNull() && !plan.AcknowledgedByTeamId.IsUnknown() {
+        data.AcknowledgedByTeamId = plan.AcknowledgedByTeamId
+    }
+    if config.LastExecutedEscalationRuleOrder.IsNull() && !plan.LastExecutedEscalationRuleOrder.IsUnknown() {
+        data.LastExecutedEscalationRuleOrder = plan.LastExecutedEscalationRuleOrder
+    }
+    if config.LastExecutedEscalationRuleId.IsNull() && !plan.LastExecutedEscalationRuleId.IsUnknown() {
+        data.LastExecutedEscalationRuleId = plan.LastExecutedEscalationRuleId
+    }
+    if config.OnCallPolicyExecutionRepeatCount.IsNull() && !plan.OnCallPolicyExecutionRepeatCount.IsUnknown() {
+        data.OnCallPolicyExecutionRepeatCount = plan.OnCallPolicyExecutionRepeatCount
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

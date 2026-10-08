@@ -28,11 +28,8 @@ type ExceptionDataSource struct {
 // ExceptionDataSourceModel describes the data source data model.
 type ExceptionDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
     PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
@@ -41,7 +38,6 @@ type ExceptionDataSourceModel struct {
     ExceptionType types.String `tfsdk:"exception_type"`
     Fingerprint types.String `tfsdk:"fingerprint"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     MarkedAsResolvedAt types.String `tfsdk:"marked_as_resolved_at"`
     MarkedAsArchivedAt types.String `tfsdk:"marked_as_archived_at"`
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
@@ -69,145 +65,149 @@ func (d *ExceptionDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "List of all Telemetry Exceptions created for the telemetry service for this OneUptime project and it's status. Look up an existing exception by `id` or by `name`.",
+        MarkdownDescription: "List of all Telemetry Exceptions created for the telemetry service for this OneUptime project and it's status. Look up an existing exception by `id`, or by any of its other arguments (`ai_classification`, `assign_to_team_id`, `assign_to_user_id`, ...): each one set must match, and exactly one exception may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "primary_entity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the resource this exception belongs to (Service / Host / DockerHost / KubernetesCluster, or the projectId for unattributed telemetry — disambiguated by primaryEntityType).",
+                Optional: true,
                 Computed: true,
             },
             "primary_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry)..",
+                MarkdownDescription: "Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry).",
+                Optional: true,
                 Computed: true,
             },
             "message": schema.StringAttribute{
                 MarkdownDescription: "Exception message that was thrown by the telemetry service.",
+                Optional: true,
                 Computed: true,
             },
             "stack_trace": schema.StringAttribute{
                 MarkdownDescription: "Stack trace of the exception that was thrown by the telemetry service.",
+                Optional: true,
                 Computed: true,
             },
             "exception_type": schema.StringAttribute{
                 MarkdownDescription: "Type of the exception that was thrown by the telemetry service.",
+                Optional: true,
                 Computed: true,
             },
             "fingerprint": schema.StringAttribute{
                 MarkdownDescription: "Finger print of the exception that was thrown by the telemetry service.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "marked_as_resolved_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When did this team member accept invitation.",
                 Computed: true,
             },
             "marked_as_archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When did this team member accept invitation.",
                 Computed: true,
             },
             "first_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When did this team member accept invitation.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When did this team member accept invitation.",
                 Computed: true,
             },
             "assign_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "assign_to_team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Team ID who this exception is assigned to. The ID of a `oneuptime_team`.",
+                Optional: true,
                 Computed: true,
             },
             "marked_as_resolved_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who marked this exception as resolved. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "marked_as_archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who marked this exception as archived. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_resolved": schema.BoolAttribute{
-                MarkdownDescription: "Is this exception resolved?.",
+                MarkdownDescription: "Is this exception resolved?",
+                Optional: true,
                 Computed: true,
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this exception archived?.",
+                MarkdownDescription: "Is this exception archived?",
+                Optional: true,
                 Computed: true,
             },
             "occurance_count": schema.NumberAttribute{
                 MarkdownDescription: "Number of times this exception has occurred.",
+                Optional: true,
                 Computed: true,
             },
             "first_seen_in_release": schema.StringAttribute{
                 MarkdownDescription: "The service version / release in which this exception was first observed.",
+                Optional: true,
                 Computed: true,
             },
             "last_seen_in_release": schema.StringAttribute{
                 MarkdownDescription: "The most recent service version / release in which this exception was observed.",
+                Optional: true,
                 Computed: true,
             },
             "environment": schema.StringAttribute{
                 MarkdownDescription: "Deployment environment from deployment.environment resource attribute.",
+                Optional: true,
                 Computed: true,
             },
             "unhandled": schema.BoolAttribute{
                 MarkdownDescription: "True when at least one occurrence of this exception escaped its span scope (was unhandled, per OTel exception.escaped).",
+                Optional: true,
                 Computed: true,
             },
             "ai_classification": schema.StringAttribute{
                 MarkdownDescription: "AI triage verdict for this exception group (code-fault, user-error, expected-denial, infrastructure).",
+                Optional: true,
                 Computed: true,
             },
             "error_class": schema.StringAttribute{
-                MarkdownDescription: "Fault domain of this exception group (code-fault, user-error, expected-denial, infrastructure, unknown). Non-actionable classes are excluded from the Issues list..",
+                MarkdownDescription: "Fault domain of this exception group (code-fault, user-error, expected-denial, infrastructure, unknown). Non-actionable classes are excluded from the Issues list.",
+                Optional: true,
                 Computed: true,
             },
             "error_class_source": schema.StringAttribute{
                 MarkdownDescription: "Where the error class came from: default (unclassified), declared (by the emitting code), ai (triage verdict) or manual (a human).",
+                Optional: true,
                 Computed: true,
             },
             "ai_fix_declined_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Set when an AI-authored fix pull request for this exception was closed without merging; suppresses further automatic fix attempts.",
                 Computed: true,
             },
         },
@@ -244,22 +244,114 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.PrimaryEntityId.IsNull() && !data.PrimaryEntityId.IsUnknown() {
+        filters["primaryEntityId"] = data.PrimaryEntityId.ValueString()
+        filterNames = append(filterNames, "primary_entity_id = "+fmt.Sprintf("%q", data.PrimaryEntityId.ValueString()))
+    }
+    if !data.PrimaryEntityType.IsNull() && !data.PrimaryEntityType.IsUnknown() {
+        filters["primaryEntityType"] = data.PrimaryEntityType.ValueString()
+        filterNames = append(filterNames, "primary_entity_type = "+fmt.Sprintf("%q", data.PrimaryEntityType.ValueString()))
+    }
+    if !data.Message.IsNull() && !data.Message.IsUnknown() {
+        filters["message"] = data.Message.ValueString()
+        filterNames = append(filterNames, "message = "+fmt.Sprintf("%q", data.Message.ValueString()))
+    }
+    if !data.StackTrace.IsNull() && !data.StackTrace.IsUnknown() {
+        filters["stackTrace"] = data.StackTrace.ValueString()
+        filterNames = append(filterNames, "stack_trace = "+fmt.Sprintf("%q", data.StackTrace.ValueString()))
+    }
+    if !data.ExceptionType.IsNull() && !data.ExceptionType.IsUnknown() {
+        filters["exceptionType"] = data.ExceptionType.ValueString()
+        filterNames = append(filterNames, "exception_type = "+fmt.Sprintf("%q", data.ExceptionType.ValueString()))
+    }
+    if !data.Fingerprint.IsNull() && !data.Fingerprint.IsUnknown() {
+        filters["fingerprint"] = data.Fingerprint.ValueString()
+        filterNames = append(filterNames, "fingerprint = "+fmt.Sprintf("%q", data.Fingerprint.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.AssignToUserId.IsNull() && !data.AssignToUserId.IsUnknown() {
+        filters["assignToUserId"] = data.AssignToUserId.ValueString()
+        filterNames = append(filterNames, "assign_to_user_id = "+fmt.Sprintf("%q", data.AssignToUserId.ValueString()))
+    }
+    if !data.AssignToTeamId.IsNull() && !data.AssignToTeamId.IsUnknown() {
+        filters["assignToTeamId"] = data.AssignToTeamId.ValueString()
+        filterNames = append(filterNames, "assign_to_team_id = "+fmt.Sprintf("%q", data.AssignToTeamId.ValueString()))
+    }
+    if !data.MarkedAsResolvedByUserId.IsNull() && !data.MarkedAsResolvedByUserId.IsUnknown() {
+        filters["markedAsResolvedByUserId"] = data.MarkedAsResolvedByUserId.ValueString()
+        filterNames = append(filterNames, "marked_as_resolved_by_user_id = "+fmt.Sprintf("%q", data.MarkedAsResolvedByUserId.ValueString()))
+    }
+    if !data.MarkedAsArchivedByUserId.IsNull() && !data.MarkedAsArchivedByUserId.IsUnknown() {
+        filters["markedAsArchivedByUserId"] = data.MarkedAsArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "marked_as_archived_by_user_id = "+fmt.Sprintf("%q", data.MarkedAsArchivedByUserId.ValueString()))
+    }
+    if !data.IsResolved.IsNull() && !data.IsResolved.IsUnknown() {
+        filters["isResolved"] = data.IsResolved.ValueBool()
+        filterNames = append(filterNames, "is_resolved = "+fmt.Sprintf("%t", data.IsResolved.ValueBool()))
+    }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.OccuranceCount.IsNull() && !data.OccuranceCount.IsUnknown() {
+        filters["occuranceCount"] = lookupNumber(data.OccuranceCount)
+        filterNames = append(filterNames, "occurance_count = "+data.OccuranceCount.ValueBigFloat().String())
+    }
+    if !data.FirstSeenInRelease.IsNull() && !data.FirstSeenInRelease.IsUnknown() {
+        filters["firstSeenInRelease"] = data.FirstSeenInRelease.ValueString()
+        filterNames = append(filterNames, "first_seen_in_release = "+fmt.Sprintf("%q", data.FirstSeenInRelease.ValueString()))
+    }
+    if !data.LastSeenInRelease.IsNull() && !data.LastSeenInRelease.IsUnknown() {
+        filters["lastSeenInRelease"] = data.LastSeenInRelease.ValueString()
+        filterNames = append(filterNames, "last_seen_in_release = "+fmt.Sprintf("%q", data.LastSeenInRelease.ValueString()))
+    }
+    if !data.Environment.IsNull() && !data.Environment.IsUnknown() {
+        filters["environment"] = data.Environment.ValueString()
+        filterNames = append(filterNames, "environment = "+fmt.Sprintf("%q", data.Environment.ValueString()))
+    }
+    if !data.Unhandled.IsNull() && !data.Unhandled.IsUnknown() {
+        filters["unhandled"] = data.Unhandled.ValueBool()
+        filterNames = append(filterNames, "unhandled = "+fmt.Sprintf("%t", data.Unhandled.ValueBool()))
+    }
+    if !data.AiClassification.IsNull() && !data.AiClassification.IsUnknown() {
+        filters["aiClassification"] = data.AiClassification.ValueString()
+        filterNames = append(filterNames, "ai_classification = "+fmt.Sprintf("%q", data.AiClassification.ValueString()))
+    }
+    if !data.ErrorClass.IsNull() && !data.ErrorClass.IsUnknown() {
+        filters["errorClass"] = data.ErrorClass.ValueString()
+        filterNames = append(filterNames, "error_class = "+fmt.Sprintf("%q", data.ErrorClass.ValueString()))
+    }
+    if !data.ErrorClassSource.IsNull() && !data.ErrorClassSource.IsUnknown() {
+        filters["errorClassSource"] = data.ErrorClassSource.ValueString()
+        filterNames = append(filterNames, "error_class_source = "+fmt.Sprintf("%q", data.ErrorClassSource.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a exception.",
+            "Look the exception up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the exception up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "primaryEntityId": true,
         "primaryEntityType": true,
@@ -268,7 +360,6 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         "exceptionType": true,
         "fingerprint": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "markedAsResolvedAt": true,
         "markedAsArchivedAt": true,
         "firstSeenAt": true,
@@ -313,11 +404,10 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -334,11 +424,11 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No exception found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No exception matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one exception matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one exception matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -366,23 +456,6 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -417,34 +490,6 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -581,23 +626,6 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if obj, ok := item["markedAsResolvedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

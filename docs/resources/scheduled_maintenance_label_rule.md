@@ -13,8 +13,8 @@ Configure rules for automatically attaching labels to scheduled maintenance even
 
 ```terraform
 resource "oneuptime_scheduled_maintenance_label_rule" "example" {
-  name = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example scheduled maintenance label rule"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -22,41 +22,48 @@ resource "oneuptime_scheduled_maintenance_label_rule" "example" {
 
 ### Required
 
-- `name` (String) Name of this scheduled maintenance label rule..
+- `name` (String) Name of this scheduled maintenance label rule.
 
 ### Optional
 
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource...
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Description of this scheduled maintenance label rule..
-- `is_enabled` (Bool) Whether this rule is enabled..
-- `monitors` (Set) Only trigger for events on these monitors. Leave empty to match events on any monitor...
-- `scheduled_maintenance_labels` (Set) Only trigger for events that already have at least one of these labels. Leave empty to match regardless of event labels...
-- `monitor_labels` (Set) Only trigger for events on monitors that have at least one of these labels. Leave empty to match regardless of monitor labels...
-- `title_pattern` (String) Regex (case-insensitive) matched against the event title. Leave empty to match any title...
-- `description_pattern` (String) Regex (case-insensitive) matched against the event description. Leave empty to match any description...
-- `monitor_name_pattern` (String) Regex (case-insensitive) matched against any of the event's monitor names. Leave empty to match any monitor...
-- `monitor_description_pattern` (String) Regex (case-insensitive) matched against any of the event's monitor descriptions. Leave empty to match any description...
-- `labels_to_add` (Set) Labels to attach to the event when this rule matches. Already-attached labels are not duplicated...
-- `inherit_labels_from_monitors` (Bool) When this rule matches, also copy every label of the event's monitors onto the event...
-- `inherit_labels_from_hosts` (Bool) When this rule matches, also copy every label of the event's affected hosts onto the event...
-- `inherit_labels_from_kubernetes_clusters` (Bool) When this rule matches, also copy every label of the event's affected Kubernetes clusters onto the event...
-- `inherit_labels_from_docker_hosts` (Bool) When this rule matches, also copy every label of the event's affected Docker hosts onto the event...
-- `inherit_labels_from_podman_hosts` (Bool) When this rule matches, also copy every label of the event's affected Podman hosts onto the event...
-- `inherit_labels_from_services` (Bool) When this rule matches, also copy every label of the event's affected services onto the event...
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `description` (String) Description of this scheduled maintenance label rule.
+- `description_pattern` (String) Regex (case-insensitive) matched against the event description. Leave empty to match any description.
+- `inherit_labels_from_docker_hosts` (Boolean) When this rule matches, also copy every label of the event's affected Docker hosts onto the event. Defaults to `false`.
+- `inherit_labels_from_hosts` (Boolean) When this rule matches, also copy every label of the event's affected hosts onto the event. Defaults to `false`.
+- `inherit_labels_from_kubernetes_clusters` (Boolean) When this rule matches, also copy every label of the event's affected Kubernetes clusters onto the event. Defaults to `false`.
+- `inherit_labels_from_monitors` (Boolean) When this rule matches, also copy every label of the event's monitors onto the event. Defaults to `false`.
+- `inherit_labels_from_podman_hosts` (Boolean) When this rule matches, also copy every label of the event's affected Podman hosts onto the event. Defaults to `false`.
+- `inherit_labels_from_services` (Boolean) When this rule matches, also copy every label of the event's affected services onto the event. Defaults to `false`.
+- `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
+- `labels_to_add` (Set of String) Labels to attach to the event when this rule matches. Already-attached labels are not duplicated. IDs of `oneuptime_label` resources.
+- `monitor_description_pattern` (String) Regex (case-insensitive) matched against any of the event's monitor descriptions. Leave empty to match any description.
+- `monitor_labels` (Set of String) Only trigger for events on monitors that have at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.
+- `monitor_name_pattern` (String) Regex (case-insensitive) matched against any of the event's monitor names. Leave empty to match any monitor.
+- `monitors` (Set of String) Only trigger for events on these monitors. Leave empty to match events on any monitor. IDs of `oneuptime_monitor` resources.
+- `scheduled_maintenance_labels` (Set of String) Only trigger for events that already have at least one of these labels. Leave empty to match regardless of event labels. IDs of `oneuptime_label` resources.
+- `title_pattern` (String) Regex (case-insensitive) matched against the event title. Leave empty to match any title.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing scheduled maintenance label rule by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_scheduled_maintenance_label_rule.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_scheduled_maintenance_label_rule.example <id>

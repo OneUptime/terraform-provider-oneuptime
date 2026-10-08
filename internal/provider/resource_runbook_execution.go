@@ -46,8 +46,6 @@ type RunbookExecutionResourceModel struct {
     FailureReason types.String `tfsdk:"failure_reason"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     Status types.String `tfsdk:"status"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
@@ -58,33 +56,37 @@ func (r *RunbookExecutionResource) Metadata(ctx context.Context, req resource.Me
 }
 
 func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *RunbookExecutionResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "A single run of a Runbook.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "runbook_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Runbook this execution belongs to. The ID of a `oneuptime_runbook`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "runbook_name_snapshot": schema.StringAttribute{
-                MarkdownDescription: "Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted)..",
+                MarkdownDescription: "Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted).",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "step_executions": schema.StringAttribute{
-                MarkdownDescription: "Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps..",
+                MarkdownDescription: "Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -97,7 +99,7 @@ func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the incident that triggered or hosts this runbook execution. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -106,7 +108,7 @@ func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert that triggered or hosts this runbook execution. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -115,7 +117,7 @@ func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "scheduled_maintenance_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the scheduled maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -124,7 +126,7 @@ func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "started_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Time at which this runbook execution started.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -133,7 +135,7 @@ func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "completed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Time at which this runbook execution completed.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -142,7 +144,7 @@ func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "failure_reason": schema.StringAttribute{
-                MarkdownDescription: "Reason this runbook execution failed (if it did)..",
+                MarkdownDescription: "Reason this runbook execution failed (if it did).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -150,34 +152,31 @@ func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Current status of this runbook execution..",
+                MarkdownDescription: "Current status of this runbook execution.",
                 Computed: true,
             },
             "triggered_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the User who triggered this runbook execution. The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
         },
@@ -214,6 +213,14 @@ func (r *RunbookExecutionResource) Create(ctx context.Context, req resource.Crea
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config RunbookExecutionResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -299,8 +306,6 @@ func (r *RunbookExecutionResource) Create(ctx context.Context, req resource.Crea
         "failureReason": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "status": true,
         "triggeredByUserId": true,
@@ -639,34 +644,6 @@ func (r *RunbookExecutionResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -760,6 +737,9 @@ func (r *RunbookExecutionResource) Create(ctx context.Context, req resource.Crea
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -790,8 +770,6 @@ func (r *RunbookExecutionResource) Read(ctx context.Context, req resource.ReadRe
         "failureReason": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "status": true,
         "triggeredByUserId": true,
@@ -1131,34 +1109,6 @@ func (r *RunbookExecutionResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1273,6 +1223,14 @@ func (r *RunbookExecutionResource) Update(ctx context.Context, req resource.Upda
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config RunbookExecutionResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     runbookExecutionRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -1322,8 +1280,6 @@ func (r *RunbookExecutionResource) Update(ctx context.Context, req resource.Upda
         "failureReason": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "status": true,
         "triggeredByUserId": true,
@@ -1657,34 +1613,6 @@ func (r *RunbookExecutionResource) Update(ctx context.Context, req resource.Upda
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1777,6 +1705,9 @@ func (r *RunbookExecutionResource) Update(ctx context.Context, req resource.Upda
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1813,6 +1744,38 @@ func (r *RunbookExecutionResource) Delete(ctx context.Context, req resource.Dele
 
 func (r *RunbookExecutionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *RunbookExecutionResource) keepPlannedValues(data *RunbookExecutionResourceModel, plan *RunbookExecutionResourceModel, config *RunbookExecutionResourceModel) {
+    if config.StepExecutions.IsNull() && !plan.StepExecutions.IsUnknown() {
+        data.StepExecutions = plan.StepExecutions
+    }
+    if config.IncidentId.IsNull() && !plan.IncidentId.IsUnknown() {
+        data.IncidentId = plan.IncidentId
+    }
+    if config.AlertId.IsNull() && !plan.AlertId.IsUnknown() {
+        data.AlertId = plan.AlertId
+    }
+    if config.ScheduledMaintenanceId.IsNull() && !plan.ScheduledMaintenanceId.IsUnknown() {
+        data.ScheduledMaintenanceId = plan.ScheduledMaintenanceId
+    }
+    if config.StartedAt.IsNull() && !plan.StartedAt.IsUnknown() {
+        data.StartedAt = plan.StartedAt
+    }
+    if config.CompletedAt.IsNull() && !plan.CompletedAt.IsUnknown() {
+        data.CompletedAt = plan.CompletedAt
+    }
+    if config.FailureReason.IsNull() && !plan.FailureReason.IsUnknown() {
+        data.FailureReason = plan.FailureReason
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

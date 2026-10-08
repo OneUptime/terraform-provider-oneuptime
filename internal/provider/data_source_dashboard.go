@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -30,16 +29,13 @@ type DashboardDataSource struct {
 // DashboardDataSourceModel describes the data source data model.
 type DashboardDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     ArchivedAt types.String `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
@@ -61,107 +57,107 @@ func (d *DashboardDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *DashboardDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Create and manage Dashboards to visualize your data in a single place Look up an existing dashboard by `id` or by `name`.",
+        MarkdownDescription: "Create and manage Dashboards to visualize your data in a single place Look up an existing dashboard by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one dashboard may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Any friendly name of this object.",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Archived dashboards are hidden from the Dashboards list and their public link stops working. Unarchiving restores them as they were..",
+                MarkdownDescription: "Archived dashboards are hidden from the Dashboards list and their public link stops working. Unarchiving restores them as they were.",
+                Optional: true,
                 Computed: true,
             },
             "archived_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When this dashboard was archived. Empty while it is not archived.",
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "dashboard_view_config": schema.StringAttribute{
-                MarkdownDescription: "Configuration of Dashboard View.",
+                MarkdownDescription: "Configuration of Dashboard View. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "page_title": schema.StringAttribute{
-                MarkdownDescription: "Title of the public dashboard page. This will be used for SEO and the browser tab..",
+                MarkdownDescription: "Title of the public dashboard page. This will be used for SEO and the browser tab.",
+                Optional: true,
                 Computed: true,
             },
             "page_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the public dashboard page. This will be used for SEO..",
+                MarkdownDescription: "Description of the public dashboard page. This will be used for SEO.",
+                Optional: true,
                 Computed: true,
             },
             "logo_file_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Dashboard Logo File ID. The ID of a `oneuptime_file`.",
+                Optional: true,
                 Computed: true,
             },
             "favicon_file_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Dashboard Favicon File ID. The ID of a `oneuptime_file`.",
+                Optional: true,
                 Computed: true,
             },
             "is_public_dashboard": schema.BoolAttribute{
-                MarkdownDescription: "Is this dashboard public?.",
+                MarkdownDescription: "Is this dashboard public?",
+                Optional: true,
                 Computed: true,
             },
             "enable_master_password": schema.BoolAttribute{
-                MarkdownDescription: "Require visitors to enter a master password before viewing a public dashboard..",
+                MarkdownDescription: "Require visitors to enter a master password before viewing a public dashboard.",
+                Optional: true,
                 Computed: true,
             },
             "master_password": schema.StringAttribute{
-                MarkdownDescription: "Password required to unlock a public dashboard. This value is stored as a secure hash..",
+                MarkdownDescription: "Password required to unlock a public dashboard. This value is stored as a secure hash.",
                 Computed: true,
                 Sensitive: true,
             },
             "ip_whitelist": schema.StringAttribute{
-                MarkdownDescription: "IP Whitelist for this dashboard. One IP per line. Only used when the dashboard is public..",
+                MarkdownDescription: "IP Whitelist for this dashboard. One IP per line. Only used when the dashboard is public.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -198,27 +194,87 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
+    if !data.PageTitle.IsNull() && !data.PageTitle.IsUnknown() {
+        filters["pageTitle"] = data.PageTitle.ValueString()
+        filterNames = append(filterNames, "page_title = "+fmt.Sprintf("%q", data.PageTitle.ValueString()))
+    }
+    if !data.PageDescription.IsNull() && !data.PageDescription.IsUnknown() {
+        filters["pageDescription"] = data.PageDescription.ValueString()
+        filterNames = append(filterNames, "page_description = "+fmt.Sprintf("%q", data.PageDescription.ValueString()))
+    }
+    if !data.LogoFileId.IsNull() && !data.LogoFileId.IsUnknown() {
+        filters["logoFileId"] = data.LogoFileId.ValueString()
+        filterNames = append(filterNames, "logo_file_id = "+fmt.Sprintf("%q", data.LogoFileId.ValueString()))
+    }
+    if !data.FaviconFileId.IsNull() && !data.FaviconFileId.IsUnknown() {
+        filters["faviconFileId"] = data.FaviconFileId.ValueString()
+        filterNames = append(filterNames, "favicon_file_id = "+fmt.Sprintf("%q", data.FaviconFileId.ValueString()))
+    }
+    if !data.IsPublicDashboard.IsNull() && !data.IsPublicDashboard.IsUnknown() {
+        filters["isPublicDashboard"] = data.IsPublicDashboard.ValueBool()
+        filterNames = append(filterNames, "is_public_dashboard = "+fmt.Sprintf("%t", data.IsPublicDashboard.ValueBool()))
+    }
+    if !data.EnableMasterPassword.IsNull() && !data.EnableMasterPassword.IsUnknown() {
+        filters["enableMasterPassword"] = data.EnableMasterPassword.ValueBool()
+        filterNames = append(filterNames, "enable_master_password = "+fmt.Sprintf("%t", data.EnableMasterPassword.ValueBool()))
+    }
+    if !data.IpWhitelist.IsNull() && !data.IpWhitelist.IsUnknown() {
+        filters["ipWhitelist"] = data.IpWhitelist.ValueString()
+        filterNames = append(filterNames, "ip_whitelist = "+fmt.Sprintf("%q", data.IpWhitelist.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a dashboard.",
+            "Look the dashboard up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the dashboard up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
+        "name": true,
         "slug": true,
         "description": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "isArchived": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -257,11 +313,10 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -278,11 +333,11 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No dashboard found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No dashboard matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one dashboard matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one dashboard matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -310,23 +365,6 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -362,34 +400,6 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -406,6 +416,23 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["slug"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -457,23 +484,6 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if val, ok := item["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)

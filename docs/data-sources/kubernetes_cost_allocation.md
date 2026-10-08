@@ -7,64 +7,69 @@ description: |-
 
 # oneuptime_kubernetes_cost_allocation (Data Source)
 
-API endpoints for Kubernetes Cost Allocation Look up by `id` or by `name` (must match exactly one item).
+API endpoints for Kubernetes Cost Allocation
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one kubernetes cost allocation may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_kubernetes_cost_allocation" "by_name" {
-  name = "example-kubernetes_cost_allocation"
+data "oneuptime_kubernetes_cost_allocation" "example" {
+  kubernetes_cluster_id = "example-kubernetes-cluster-id"
 }
 
+# Or by id:
 data "oneuptime_kubernetes_cost_allocation" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `project_id` (String) Project ID. Computed.
-- `kubernetes_cluster_id` (String) Kubernetes Cluster ID. Computed.
-- `cluster_name` (String) Cluster Name. Computed.
-- `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key. Computed.
-- `window_start` (String) Window Start. Computed.
-- `window_end` (String) Window End. Computed.
-- `namespace` (String) Namespace. Computed.
-- `controller_kind` (String) Controller Kind. Computed.
-- `controller_name` (String) Controller Name. Computed.
-- `pod_name` (String) Pod Name. Computed.
-- `container_name` (String) Container Name. Computed.
-- `node_name` (String) Node Name. Computed.
-- `provider_id` (String) Provider ID. Computed.
-- `labels` (String) Labels. Computed.
-- `label_keys` (Set) Label Keys. Computed.
-- `cpu_core_hours` (Number) CPU Core Hours. Computed.
-- `cpu_core_request_average` (Number) CPU Core Request Average. Computed.
-- `cpu_core_usage_average` (Number) CPU Core Usage Average. Computed.
-- `cpu_core_limit_average` (Number) CPU Core Limit Average. Computed.
-- `cpu_cost` (Number) CPU Cost. Computed.
-- `gpu_hours` (Number) GPU Hours. Computed.
-- `gpu_cost` (Number) GPU Cost. Computed.
-- `ram_byte_hours` (Number) RAM Byte Hours. Computed.
-- `ram_bytes_request_average` (Number) RAM Bytes Request Average. Computed.
-- `ram_bytes_usage_average` (Number) RAM Bytes Usage Average. Computed.
-- `ram_bytes_limit_average` (Number) RAM Bytes Limit Average. Computed.
-- `ram_bytes_usage_max` (Number) RAM Bytes Usage Max. Computed.
-- `ram_cost` (Number) RAM Cost. Computed.
-- `pv_byte_hours` (Number) PV Byte Hours. Computed.
-- `pv_cost` (Number) PV Cost. Computed.
-- `network_cost` (Number) Network Cost. Computed.
-- `load_balancer_cost` (Number) Load Balancer Cost. Computed.
-- `shared_cost` (Number) Shared Cost. Computed.
-- `external_cost` (Number) External Cost. Computed.
-- `total_cost` (Number) Total Cost. Computed.
-- `cpu_efficiency` (Number) CPU Efficiency. Computed.
-- `ram_efficiency` (Number) RAM Efficiency. Computed.
-- `total_efficiency` (Number) Total Efficiency. Computed.
-- `currency` (String) Currency. Computed.
-- `shipment_id` (String) Shipment ID. Computed.
-- `shipment_chunk` (Number) Shipment Chunk. Computed.
+### Optional
+
+- `cluster_name` (String) Cluster Name.
+- `container_name` (String) Container Name.
+- `controller_kind` (String) Controller Kind.
+- `controller_name` (String) Controller Name.
+- `cpu_core_hours` (Number) CPU Core Hours.
+- `cpu_core_limit_average` (Number) CPU Core Limit Average.
+- `cpu_core_request_average` (Number) CPU Core Request Average.
+- `cpu_core_usage_average` (Number) CPU Core Usage Average.
+- `cpu_cost` (Number) CPU Cost.
+- `cpu_efficiency` (Number) CPU Efficiency.
+- `currency` (String) Currency.
+- `external_cost` (Number) External Cost.
+- `gpu_cost` (Number) GPU Cost.
+- `gpu_hours` (Number) GPU Hours.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key.
+- `kubernetes_cluster_id` (String) Kubernetes Cluster ID.
+- `labels` (String) Labels.
+- `load_balancer_cost` (Number) Load Balancer Cost.
+- `namespace` (String) Namespace.
+- `network_cost` (Number) Network Cost.
+- `node_name` (String) Node Name.
+- `pod_name` (String) Pod Name.
+- `provider_id` (String) Provider ID.
+- `pv_byte_hours` (Number) PV Byte Hours.
+- `pv_cost` (Number) PV Cost.
+- `ram_byte_hours` (Number) RAM Byte Hours.
+- `ram_bytes_limit_average` (Number) RAM Bytes Limit Average.
+- `ram_bytes_request_average` (Number) RAM Bytes Request Average.
+- `ram_bytes_usage_average` (Number) RAM Bytes Usage Average.
+- `ram_bytes_usage_max` (Number) RAM Bytes Usage Max.
+- `ram_cost` (Number) RAM Cost.
+- `ram_efficiency` (Number) RAM Efficiency.
+- `shared_cost` (Number) Shared Cost.
+- `shipment_chunk` (Number) Shipment Chunk.
+- `shipment_id` (String) Shipment ID.
+- `total_cost` (Number) Total Cost.
+- `total_efficiency` (Number) Total Efficiency.
+- `window_end` (String) Window End.
+- `window_start` (String) Window Start.
+
+### Read-Only
+
+- `label_keys` (Set of String) Label Keys.
+- `project_id` (String) Project ID.

@@ -13,9 +13,9 @@ On-Call Schedule Layer Users
 
 ```terraform
 resource "oneuptime_on_call_schedule_layer_user" "example" {
-  on_call_duty_policy_schedule_id = "123e4567-e89b-12d3-a456-426614174000"
-  on_call_duty_policy_schedule_layer_id = "123e4567-e89b-12d3-a456-426614174000"
-  user_id = "123e4567-e89b-12d3-a456-426614174000"
+  on_call_duty_policy_schedule_id       = oneuptime_on_call_policy_schedule.example.id
+  on_call_duty_policy_schedule_layer_id = oneuptime_on_call_schedule_layer.example.id
+  user_id                               = data.oneuptime_user.example.id
 }
 ```
 
@@ -23,28 +23,34 @@ resource "oneuptime_on_call_schedule_layer_user" "example" {
 
 ### Required
 
-- `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID..
-- `on_call_duty_policy_schedule_layer_id` (String) A unique identifier for an object, represented as a UUID..
-- `user_id` (String) A unique identifier for an object, represented as a UUID..
+- `on_call_duty_policy_schedule_id` (String) ID of your On-Call Policy Schedule where this escalation rule belongs. The ID of a `oneuptime_on_call_policy_schedule`.
+- `on_call_duty_policy_schedule_layer_id` (String) ID of your On-Call Policy Schedule Layer where this escalation rule belongs. The ID of a `oneuptime_on_call_schedule_layer`.
+- `user_id` (String) ID of User who belongs to this team. The ID of a `oneuptime_user` (see the data source).
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority...
+- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing on call schedule layer user by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_on_call_schedule_layer_user.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_on_call_schedule_layer_user.example <id>

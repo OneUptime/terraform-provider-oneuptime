@@ -7,40 +7,43 @@ description: |-
 
 # oneuptime_monitor_template (Data Source)
 
-Reusable monitor template. Use it to create new monitors with the same configuration. Look up by `id` or by `name` (must match exactly one item).
+Reusable monitor template. Use it to create new monitors with the same configuration.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one monitor template may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_monitor_template" "by_name" {
-  name = "example-monitor_template"
+data "oneuptime_monitor_template" "example" {
+  template_name = "example-template-name"
 }
 
+# Or by id:
 data "oneuptime_monitor_template" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `template_name` (String) Name of the Monitor Template.. Computed.
-- `template_description` (String) Description of the Monitor Template.. Computed.
-- `slug` (String) Friendly globally unique name for your object.. Computed.
-- `monitor_name` (String) Default name applied to monitors created from this template. Users can override on creation. Leave it blank to name each monitor after the resource it watches... Computed.
-- `monitor_description` (String) Default description applied to monitors created from this template... Computed.
-- `monitor_type` (String) What is the type of monitor created from this template?.. Computed.
-- `monitor_steps` (Monitor_steps) MonitorSteps object. Computed.
-- `monitoring_interval` (String) Default monitoring interval for monitors created from this template. A 5-field cron expression, not a label: "*/5 * * * *" is every five minutes... Computed.
-- `labels` (Set) Default labels applied to monitors created from this template... Computed.
-- `custom_fields` (String) Custom Fields on this resource... Computed.
-- `minimum_probe_agreement` (Number) Default minimum number of probes that must agree on a status before the monitor status changes... Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `minimum_probe_agreement` (Number) Default minimum number of probes that must agree on a status before the monitor status changes.
+- `monitor_description` (String) Default description applied to monitors created from this template.
+- `monitor_name` (String) Default name applied to monitors created from this template. Users can override on creation. Leave it blank to name each monitor after the resource it watches.
+- `monitor_type` (String) What is the type of monitor created from this template?
+- `monitoring_interval` (String) Default monitoring interval for monitors created from this template. A 5-field cron expression, not a label: "*/5 * * * *" is every five minutes.
+- `slug` (String) Friendly globally unique name for your object.
+- `template_description` (String) Description of the Monitor Template.
+- `template_name` (String) Name of the Monitor Template.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `labels` (Set of String) Default labels applied to monitors created from this template. IDs of `oneuptime_label` resources.
+- `monitor_steps` (String) Monitor steps and criteria copied to monitors created from this template.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

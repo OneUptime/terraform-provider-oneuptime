@@ -30,13 +30,11 @@ type AlertGroupingRuleDataSource struct {
 // AlertGroupingRuleDataSourceModel describes the data source data model.
 type AlertGroupingRuleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Criteria types.String `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     Priority types.Number `tfsdk:"priority"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
@@ -80,189 +78,206 @@ func (d *AlertGroupingRuleDataSource) Metadata(ctx context.Context, req datasour
 
 func (d *AlertGroupingRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure rules for automatically grouping related alerts into episodes Look up an existing alert_grouping_rule by `id` or by `name`.",
+        MarkdownDescription: "Configure rules for automatically grouping related alerts into episodes Look up an existing alert grouping rule by `id`, or by any of its other arguments (`name`, `alert_description_pattern`, `alert_title_pattern`, ...): each one set must match, and exactly one alert grouping rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Name of this alert grouping rule.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Description of this alert grouping rule.",
+                Optional: true,
                 Computed: true,
             },
             "priority": schema.NumberAttribute{
-                MarkdownDescription: "Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
+                MarkdownDescription: "Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
+                Optional: true,
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether this rule is enabled.",
+                Optional: true,
                 Computed: true,
             },
             "match_criteria": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the criteria for matching alerts to this rule.",
+                MarkdownDescription: "JSON object defining the criteria for matching alerts to this rule. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only group alerts from these monitors. Leave empty to match alerts from any monitor..",
+                MarkdownDescription: "Only group alerts from these monitors. Leave empty to match alerts from any monitor. IDs of `oneuptime_monitor` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only group alerts with these severities. Leave empty to match alerts of any severity..",
+                MarkdownDescription: "Only group alerts with these severities. Leave empty to match alerts of any severity. IDs of `oneuptime_alert_severity` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group alerts that have at least one of these labels. Leave empty to match alerts regardless of alert labels..",
+                MarkdownDescription: "Only group alerts that have at least one of these labels. Leave empty to match alerts regardless of alert labels. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels..",
+                MarkdownDescription: "Only group alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match alert titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'..",
+                MarkdownDescription: "Regular expression pattern to match alert titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.",
+                Optional: true,
                 Computed: true,
             },
             "alert_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match alert descriptions. Leave empty to match any description..",
+                MarkdownDescription: "Regular expression pattern to match alert descriptions. Leave empty to match any description.",
+                Optional: true,
                 Computed: true,
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'..",
+                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.",
+                Optional: true,
                 Computed: true,
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description..",
+                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.",
+                Optional: true,
                 Computed: true,
             },
             "group_by_monitor": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, alerts from different monitors will be grouped into separate episodes. When disabled, alerts from any monitor can be grouped together..",
+                MarkdownDescription: "When enabled, alerts from different monitors will be grouped into separate episodes. When disabled, alerts from any monitor can be grouped together.",
+                Optional: true,
                 Computed: true,
             },
             "group_by_severity": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, alerts with different severities will be grouped into separate episodes. When disabled, alerts of any severity can be grouped together..",
+                MarkdownDescription: "When enabled, alerts with different severities will be grouped into separate episodes. When disabled, alerts of any severity can be grouped together.",
+                Optional: true,
                 Computed: true,
             },
             "group_by_alert_title": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, alerts with different titles will be grouped into separate episodes. When disabled, alerts with any title can be grouped together..",
+                MarkdownDescription: "When enabled, alerts with different titles will be grouped into separate episodes. When disabled, alerts with any title can be grouped together.",
+                Optional: true,
                 Computed: true,
             },
             "group_by_alert_labels": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, alerts with different sets of labels will be grouped into separate episodes (exact set match). When disabled, alert labels are ignored for grouping..",
+                MarkdownDescription: "When enabled, alerts with different sets of labels will be grouped into separate episodes (exact set match). When disabled, alert labels are ignored for grouping.",
+                Optional: true,
                 Computed: true,
             },
             "group_by_monitor_labels": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, alerts whose monitors have different sets of labels will be grouped into separate episodes (exact set match). When disabled, monitor labels are ignored for grouping..",
+                MarkdownDescription: "When enabled, alerts whose monitors have different sets of labels will be grouped into separate episodes (exact set match). When disabled, monitor labels are ignored for grouping.",
+                Optional: true,
                 Computed: true,
             },
             "enable_time_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable time-based grouping. When enabled, alerts are grouped within the specified time window. When disabled, all matching alerts are grouped into a single ongoing episode regardless of time..",
+                MarkdownDescription: "Enable time-based grouping. When enabled, alerts are grouped within the specified time window. When disabled, all matching alerts are grouped into a single ongoing episode regardless of time.",
+                Optional: true,
                 Computed: true,
             },
             "time_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Rolling time window in minutes. Alerts are grouped if they arrive within this gap from the last alert..",
+                MarkdownDescription: "Rolling time window in minutes. Alerts are grouped if they arrive within this gap from the last alert.",
+                Optional: true,
                 Computed: true,
             },
             "group_by_fields": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the fields to group alerts by (e.g., monitorId, severity).",
+                MarkdownDescription: "JSON object defining the fields to group alerts by (e.g., monitorId, severity). A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "episode_title_template": schema.StringAttribute{
                 MarkdownDescription: "Template for generating episode titles. Supports placeholders like {{alertSeverity}}, {{monitorName}}, {{alertTitle}}, {{alertDescription}}.",
+                Optional: true,
                 Computed: true,
             },
             "episode_description_template": schema.StringAttribute{
                 MarkdownDescription: "Template for generating episode descriptions. Supports placeholders like {{alertSeverity}}, {{monitorName}}, {{alertTitle}}, {{alertDescription}}.",
+                Optional: true,
                 Computed: true,
             },
             "enable_resolve_delay": schema.BoolAttribute{
-                MarkdownDescription: "Enable grace period before auto-resolving episode after all alerts resolve. Helps prevent rapid state changes during alert flapping..",
+                MarkdownDescription: "Enable grace period before auto-resolving episode after all alerts resolve. Helps prevent rapid state changes during alert flapping.",
+                Optional: true,
                 Computed: true,
             },
             "resolve_delay_minutes": schema.NumberAttribute{
                 MarkdownDescription: "Grace period in minutes before auto-resolving an episode after all alerts are resolved.",
+                Optional: true,
                 Computed: true,
             },
             "enable_reopen_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution..",
+                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution.",
+                Optional: true,
                 Computed: true,
             },
             "reopen_window_minutes": schema.NumberAttribute{
                 MarkdownDescription: "Time window in minutes to reopen a recently resolved episode instead of creating a new one.",
+                Optional: true,
                 Computed: true,
             },
             "enable_inactivity_timeout": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new alerts arrive..",
+                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new alerts arrive.",
+                Optional: true,
                 Computed: true,
             },
             "inactivity_timeout_minutes": schema.NumberAttribute{
                 MarkdownDescription: "Time in minutes after which an inactive episode will be auto-resolved.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule..",
+                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "default_assign_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "default_assign_to_team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of defaultAssignToTeam. Kept for API compatibility: OneUptime does not show it anywhere. To make a team responsible for the episodes this rule opens, use episodeOwnerTeams. The ID of a `oneuptime_team`.",
+                Optional: true,
                 Computed: true,
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Labels to automatically apply to episodes created by this rule..",
+                MarkdownDescription: "Labels to automatically apply to episodes created by this rule. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "episode_owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project..",
+                MarkdownDescription: "Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project. IDs of `oneuptime_user` records.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "episode_owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams added as owners of every episode this rule opens, and notified like any owner. Each must be a team of the project..",
+                MarkdownDescription: "Teams added as owners of every episode this rule opens, and notified like any owner. Each must be a team of the project. IDs of `oneuptime_team` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -299,24 +314,137 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.Priority.IsNull() && !data.Priority.IsUnknown() {
+        filters["priority"] = lookupNumber(data.Priority)
+        filterNames = append(filterNames, "priority = "+data.Priority.ValueBigFloat().String())
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        filters["isEnabled"] = data.IsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
+    }
+    if !data.AlertTitlePattern.IsNull() && !data.AlertTitlePattern.IsUnknown() {
+        filters["alertTitlePattern"] = data.AlertTitlePattern.ValueString()
+        filterNames = append(filterNames, "alert_title_pattern = "+fmt.Sprintf("%q", data.AlertTitlePattern.ValueString()))
+    }
+    if !data.AlertDescriptionPattern.IsNull() && !data.AlertDescriptionPattern.IsUnknown() {
+        filters["alertDescriptionPattern"] = data.AlertDescriptionPattern.ValueString()
+        filterNames = append(filterNames, "alert_description_pattern = "+fmt.Sprintf("%q", data.AlertDescriptionPattern.ValueString()))
+    }
+    if !data.MonitorNamePattern.IsNull() && !data.MonitorNamePattern.IsUnknown() {
+        filters["monitorNamePattern"] = data.MonitorNamePattern.ValueString()
+        filterNames = append(filterNames, "monitor_name_pattern = "+fmt.Sprintf("%q", data.MonitorNamePattern.ValueString()))
+    }
+    if !data.MonitorDescriptionPattern.IsNull() && !data.MonitorDescriptionPattern.IsUnknown() {
+        filters["monitorDescriptionPattern"] = data.MonitorDescriptionPattern.ValueString()
+        filterNames = append(filterNames, "monitor_description_pattern = "+fmt.Sprintf("%q", data.MonitorDescriptionPattern.ValueString()))
+    }
+    if !data.GroupByMonitor.IsNull() && !data.GroupByMonitor.IsUnknown() {
+        filters["groupByMonitor"] = data.GroupByMonitor.ValueBool()
+        filterNames = append(filterNames, "group_by_monitor = "+fmt.Sprintf("%t", data.GroupByMonitor.ValueBool()))
+    }
+    if !data.GroupBySeverity.IsNull() && !data.GroupBySeverity.IsUnknown() {
+        filters["groupBySeverity"] = data.GroupBySeverity.ValueBool()
+        filterNames = append(filterNames, "group_by_severity = "+fmt.Sprintf("%t", data.GroupBySeverity.ValueBool()))
+    }
+    if !data.GroupByAlertTitle.IsNull() && !data.GroupByAlertTitle.IsUnknown() {
+        filters["groupByAlertTitle"] = data.GroupByAlertTitle.ValueBool()
+        filterNames = append(filterNames, "group_by_alert_title = "+fmt.Sprintf("%t", data.GroupByAlertTitle.ValueBool()))
+    }
+    if !data.GroupByAlertLabels.IsNull() && !data.GroupByAlertLabels.IsUnknown() {
+        filters["groupByAlertLabels"] = data.GroupByAlertLabels.ValueBool()
+        filterNames = append(filterNames, "group_by_alert_labels = "+fmt.Sprintf("%t", data.GroupByAlertLabels.ValueBool()))
+    }
+    if !data.GroupByMonitorLabels.IsNull() && !data.GroupByMonitorLabels.IsUnknown() {
+        filters["groupByMonitorLabels"] = data.GroupByMonitorLabels.ValueBool()
+        filterNames = append(filterNames, "group_by_monitor_labels = "+fmt.Sprintf("%t", data.GroupByMonitorLabels.ValueBool()))
+    }
+    if !data.EnableTimeWindow.IsNull() && !data.EnableTimeWindow.IsUnknown() {
+        filters["enableTimeWindow"] = data.EnableTimeWindow.ValueBool()
+        filterNames = append(filterNames, "enable_time_window = "+fmt.Sprintf("%t", data.EnableTimeWindow.ValueBool()))
+    }
+    if !data.TimeWindowMinutes.IsNull() && !data.TimeWindowMinutes.IsUnknown() {
+        filters["timeWindowMinutes"] = lookupNumber(data.TimeWindowMinutes)
+        filterNames = append(filterNames, "time_window_minutes = "+data.TimeWindowMinutes.ValueBigFloat().String())
+    }
+    if !data.EpisodeTitleTemplate.IsNull() && !data.EpisodeTitleTemplate.IsUnknown() {
+        filters["episodeTitleTemplate"] = data.EpisodeTitleTemplate.ValueString()
+        filterNames = append(filterNames, "episode_title_template = "+fmt.Sprintf("%q", data.EpisodeTitleTemplate.ValueString()))
+    }
+    if !data.EpisodeDescriptionTemplate.IsNull() && !data.EpisodeDescriptionTemplate.IsUnknown() {
+        filters["episodeDescriptionTemplate"] = data.EpisodeDescriptionTemplate.ValueString()
+        filterNames = append(filterNames, "episode_description_template = "+fmt.Sprintf("%q", data.EpisodeDescriptionTemplate.ValueString()))
+    }
+    if !data.EnableResolveDelay.IsNull() && !data.EnableResolveDelay.IsUnknown() {
+        filters["enableResolveDelay"] = data.EnableResolveDelay.ValueBool()
+        filterNames = append(filterNames, "enable_resolve_delay = "+fmt.Sprintf("%t", data.EnableResolveDelay.ValueBool()))
+    }
+    if !data.ResolveDelayMinutes.IsNull() && !data.ResolveDelayMinutes.IsUnknown() {
+        filters["resolveDelayMinutes"] = lookupNumber(data.ResolveDelayMinutes)
+        filterNames = append(filterNames, "resolve_delay_minutes = "+data.ResolveDelayMinutes.ValueBigFloat().String())
+    }
+    if !data.EnableReopenWindow.IsNull() && !data.EnableReopenWindow.IsUnknown() {
+        filters["enableReopenWindow"] = data.EnableReopenWindow.ValueBool()
+        filterNames = append(filterNames, "enable_reopen_window = "+fmt.Sprintf("%t", data.EnableReopenWindow.ValueBool()))
+    }
+    if !data.ReopenWindowMinutes.IsNull() && !data.ReopenWindowMinutes.IsUnknown() {
+        filters["reopenWindowMinutes"] = lookupNumber(data.ReopenWindowMinutes)
+        filterNames = append(filterNames, "reopen_window_minutes = "+data.ReopenWindowMinutes.ValueBigFloat().String())
+    }
+    if !data.EnableInactivityTimeout.IsNull() && !data.EnableInactivityTimeout.IsUnknown() {
+        filters["enableInactivityTimeout"] = data.EnableInactivityTimeout.ValueBool()
+        filterNames = append(filterNames, "enable_inactivity_timeout = "+fmt.Sprintf("%t", data.EnableInactivityTimeout.ValueBool()))
+    }
+    if !data.InactivityTimeoutMinutes.IsNull() && !data.InactivityTimeoutMinutes.IsUnknown() {
+        filters["inactivityTimeoutMinutes"] = lookupNumber(data.InactivityTimeoutMinutes)
+        filterNames = append(filterNames, "inactivity_timeout_minutes = "+data.InactivityTimeoutMinutes.ValueBigFloat().String())
+    }
+    if !data.DefaultAssignToUserId.IsNull() && !data.DefaultAssignToUserId.IsUnknown() {
+        filters["defaultAssignToUserId"] = data.DefaultAssignToUserId.ValueString()
+        filterNames = append(filterNames, "default_assign_to_user_id = "+fmt.Sprintf("%q", data.DefaultAssignToUserId.ValueString()))
+    }
+    if !data.DefaultAssignToTeamId.IsNull() && !data.DefaultAssignToTeamId.IsUnknown() {
+        filters["defaultAssignToTeamId"] = data.DefaultAssignToTeamId.ValueString()
+        filterNames = append(filterNames, "default_assign_to_team_id = "+fmt.Sprintf("%q", data.DefaultAssignToTeamId.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a alert_grouping_rule.",
+            "Look the alert grouping rule up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the alert grouping rule up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "criteria": true,
         "projectId": true,
+        "name": true,
         "description": true,
         "priority": true,
         "isEnabled": true,
@@ -364,7 +492,7 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert_grouping_rule found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert grouping rule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -377,11 +505,10 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -398,11 +525,11 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert_grouping_rule found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert grouping rule matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert_grouping_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert grouping rule matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -430,23 +557,6 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -482,34 +592,6 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := item["criteria"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Criteria = types.StringValue(val)
@@ -543,6 +625,23 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

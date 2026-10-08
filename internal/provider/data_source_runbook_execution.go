@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,11 +27,8 @@ type RunbookExecutionDataSource struct {
 // RunbookExecutionDataSourceModel describes the data source data model.
 type RunbookExecutionDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     RunbookId types.String `tfsdk:"runbook_id"`
     RunbookNameSnapshot types.String `tfsdk:"runbook_name_snapshot"`
@@ -53,81 +49,76 @@ func (d *RunbookExecutionDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *RunbookExecutionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A single run of a Runbook. Look up an existing runbook_execution by `id` or by `name`.",
+        MarkdownDescription: "A single run of a Runbook. Look up an existing runbook execution by `id`, or by any of its other arguments (`alert_id`, `failure_reason`, `incident_id`, ...): each one set must match, and exactly one runbook execution may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "runbook_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the Runbook this execution belongs to. The ID of a `oneuptime_runbook`.",
+                Optional: true,
                 Computed: true,
             },
             "runbook_name_snapshot": schema.StringAttribute{
-                MarkdownDescription: "Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted)..",
+                MarkdownDescription: "Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted).",
+                Optional: true,
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Current status of this runbook execution..",
+                MarkdownDescription: "Current status of this runbook execution.",
+                Optional: true,
                 Computed: true,
             },
             "step_executions": schema.StringAttribute{
-                MarkdownDescription: "Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps..",
+                MarkdownDescription: "Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the incident that triggered or hosts this runbook execution. The ID of a `oneuptime_incident`.",
+                Optional: true,
                 Computed: true,
             },
             "alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the alert that triggered or hosts this runbook execution. The ID of a `oneuptime_alert`.",
+                Optional: true,
                 Computed: true,
             },
             "scheduled_maintenance_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the scheduled maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.",
+                Optional: true,
                 Computed: true,
             },
             "triggered_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the User who triggered this runbook execution. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Time at which this runbook execution started.",
                 Computed: true,
             },
             "completed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Time at which this runbook execution completed.",
                 Computed: true,
             },
             "failure_reason": schema.StringAttribute{
-                MarkdownDescription: "Reason this runbook execution failed (if it did)..",
+                MarkdownDescription: "Reason this runbook execution failed (if it did).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -164,22 +155,62 @@ func (d *RunbookExecutionDataSource) Read(ctx context.Context, req datasource.Re
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.RunbookId.IsNull() && !data.RunbookId.IsUnknown() {
+        filters["runbookId"] = data.RunbookId.ValueString()
+        filterNames = append(filterNames, "runbook_id = "+fmt.Sprintf("%q", data.RunbookId.ValueString()))
+    }
+    if !data.RunbookNameSnapshot.IsNull() && !data.RunbookNameSnapshot.IsUnknown() {
+        filters["runbookNameSnapshot"] = data.RunbookNameSnapshot.ValueString()
+        filterNames = append(filterNames, "runbook_name_snapshot = "+fmt.Sprintf("%q", data.RunbookNameSnapshot.ValueString()))
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.IncidentId.IsNull() && !data.IncidentId.IsUnknown() {
+        filters["incidentId"] = data.IncidentId.ValueString()
+        filterNames = append(filterNames, "incident_id = "+fmt.Sprintf("%q", data.IncidentId.ValueString()))
+    }
+    if !data.AlertId.IsNull() && !data.AlertId.IsUnknown() {
+        filters["alertId"] = data.AlertId.ValueString()
+        filterNames = append(filterNames, "alert_id = "+fmt.Sprintf("%q", data.AlertId.ValueString()))
+    }
+    if !data.ScheduledMaintenanceId.IsNull() && !data.ScheduledMaintenanceId.IsUnknown() {
+        filters["scheduledMaintenanceId"] = data.ScheduledMaintenanceId.ValueString()
+        filterNames = append(filterNames, "scheduled_maintenance_id = "+fmt.Sprintf("%q", data.ScheduledMaintenanceId.ValueString()))
+    }
+    if !data.TriggeredByUserId.IsNull() && !data.TriggeredByUserId.IsUnknown() {
+        filters["triggeredByUserId"] = data.TriggeredByUserId.ValueString()
+        filterNames = append(filterNames, "triggered_by_user_id = "+fmt.Sprintf("%q", data.TriggeredByUserId.ValueString()))
+    }
+    if !data.FailureReason.IsNull() && !data.FailureReason.IsUnknown() {
+        filters["failureReason"] = data.FailureReason.ValueString()
+        filterNames = append(filterNames, "failure_reason = "+fmt.Sprintf("%q", data.FailureReason.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a runbook_execution.",
+            "Look the runbook execution up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the runbook execution up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "runbookId": true,
         "runbookNameSnapshot": true,
@@ -204,7 +235,7 @@ func (d *RunbookExecutionDataSource) Read(ctx context.Context, req datasource.Re
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook_execution found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook execution found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -217,11 +248,10 @@ func (d *RunbookExecutionDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -238,11 +268,11 @@ func (d *RunbookExecutionDataSource) Read(ctx context.Context, req datasource.Re
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook_execution found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook execution matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one runbook_execution matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one runbook execution matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -270,23 +300,6 @@ func (d *RunbookExecutionDataSource) Read(ctx context.Context, req datasource.Re
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -321,34 +334,6 @@ func (d *RunbookExecutionDataSource) Read(ctx context.Context, req datasource.Re
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

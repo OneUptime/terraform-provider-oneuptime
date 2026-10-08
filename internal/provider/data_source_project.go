@@ -28,11 +28,9 @@ type ProjectDataSource struct {
 // ProjectDataSourceModel describes the data source data model.
 type ProjectDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
+    Name types.String `tfsdk:"name"`
     Slug types.String `tfsdk:"slug"`
     PaymentProviderPlanId types.String `tfsdk:"payment_provider_plan_id"`
     PaymentProviderSubscriptionId types.String `tfsdk:"payment_provider_subscription_id"`
@@ -47,7 +45,6 @@ type ProjectDataSourceModel struct {
     PaymentProviderMeteredSubscriptionStatus types.String `tfsdk:"payment_provider_metered_subscription_status"`
     PaymentProviderPromoCode types.String `tfsdk:"payment_provider_promo_code"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     IsFeatureFlagMonitorGroupsEnabled types.Bool `tfsdk:"is_feature_flag_monitor_groups_enabled"`
     WorkflowRunsInLast30Days types.Number `tfsdk:"workflow_runs_in_last30_days"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
@@ -126,363 +123,442 @@ func (d *ProjectDataSource) Metadata(ctx context.Context, req datasource.Metadat
 
 func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "OneUptime Project, and everything happens inside it Look up an existing project by `id` or by `name`.",
+        MarkdownDescription: "OneUptime Project, and everything happens inside it Look up an existing project by `id`, or by any of its other arguments (`name`, `acknowledge_linked_alerts_when_incident_acknowledged`, `ai_current_balance_in_usd_cents`, ...): each one set must match, and exactly one project may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Any friendly name of this object.",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "payment_provider_plan_id": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [Project Owner, Manage Billing]",
+                Optional: true,
                 Computed: true,
             },
             "payment_provider_subscription_id": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
                 Computed: true,
             },
             "payment_provider_metered_subscription_id": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
                 Computed: true,
             },
             "payment_provider_subscription_seats": schema.NumberAttribute{
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
                 Computed: true,
             },
             "trial_ends_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "payment_provider_customer_id": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
                 Computed: true,
             },
             "business_details": schema.StringAttribute{
-                MarkdownDescription: "Business legal name, address and any tax information to appear on invoices..",
+                MarkdownDescription: "Business legal name, address and any tax information to appear on invoices.",
+                Optional: true,
                 Computed: true,
             },
             "business_details_country": schema.StringAttribute{
-                MarkdownDescription: "Two-letter ISO country code for billing address (e.g., US, GB, DE)..",
+                MarkdownDescription: "Two-letter ISO country code for billing address (e.g., US, GB, DE).",
+                Optional: true,
                 Computed: true,
             },
             "finance_accounting_email": schema.StringAttribute{
-                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma..",
+                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma.",
+                Optional: true,
                 Computed: true,
             },
             "payment_provider_subscription_status": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
                 Computed: true,
             },
             "payment_provider_metered_subscription_status": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
                 Computed: true,
             },
             "payment_provider_promo_code": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "is_feature_flag_monitor_groups_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Is Feature Flag Monitor Groups Enabled.",
+                Optional: true,
                 Computed: true,
             },
             "workflow_runs_in_last30_days": schema.NumberAttribute{
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
                 Computed: true,
             },
             "require_sso_for_login": schema.BoolAttribute{
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
+                Optional: true,
                 Computed: true,
             },
             "require_sso_with_sso_provider_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "If set, SSO-enforced login for this project is only satisfied by an SSO token issued by this specific provider id (a Project SSO/OIDC or a Global SSO/OIDC). When null, any trusted SSO provider satisfies enforcement.",
+                Optional: true,
                 Computed: true,
             },
             "incident_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incidents that already exist..",
+                MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incidents that already exist.",
+                Optional: true,
                 Computed: true,
             },
             "alert_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for alert numbers (e.g., 'ALT-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber alerts that already exist..",
+                MarkdownDescription: "Custom prefix for alert numbers (e.g., 'ALT-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber alerts that already exist.",
+                Optional: true,
                 Computed: true,
             },
             "scheduled_maintenance_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber scheduled maintenance events that already exist..",
+                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber scheduled maintenance events that already exist.",
+                Optional: true,
                 Computed: true,
             },
             "incident_episode_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incident episodes that already exist..",
+                MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incident episodes that already exist.",
+                Optional: true,
                 Computed: true,
             },
             "alert_episode_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber alert episodes that already exist..",
+                MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber alert episodes that already exist.",
+                Optional: true,
                 Computed: true,
             },
             "sms_or_call_current_balance_in_usd_cents": schema.NumberAttribute{
                 MarkdownDescription: "Balance in USD for SMS, Call, and WhatsApp.",
+                Optional: true,
                 Computed: true,
             },
             "auto_recharge_sms_or_call_by_balance_in_usd": schema.NumberAttribute{
                 MarkdownDescription: "Auto recharge amount in USD for SMS, Call, and WhatsApp.",
+                Optional: true,
                 Computed: true,
             },
             "auto_recharge_sms_or_call_when_current_balance_falls_in_usd": schema.NumberAttribute{
                 MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for SMS, Call, and WhatsApp.",
+                Optional: true,
                 Computed: true,
             },
             "enable_sms_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable SMS notifications for this project..",
+                MarkdownDescription: "Enable SMS notifications for this project.",
+                Optional: true,
                 Computed: true,
             },
             "enable_whats_app_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable WhatsApp notifications for this project..",
+                MarkdownDescription: "Enable WhatsApp notifications for this project.",
+                Optional: true,
                 Computed: true,
             },
             "enable_telegram_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable Telegram notifications for this project..",
+                MarkdownDescription: "Enable Telegram notifications for this project.",
+                Optional: true,
                 Computed: true,
             },
             "enable_call_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable call notifications for this project..",
+                MarkdownDescription: "Enable call notifications for this project.",
+                Optional: true,
                 Computed: true,
             },
             "disable_on_call_notification_fallback": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, a page routed to a responder with no matching notification rule fails instead of falling back to their verified notification methods..",
+                MarkdownDescription: "When enabled, a page routed to a responder with no matching notification rule fails instead of falling back to their verified notification methods.",
+                Optional: true,
                 Computed: true,
             },
             "enable_auto_recharge_sms_or_call_balance": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project..",
+                MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project.",
+                Optional: true,
                 Computed: true,
             },
             "ai_current_balance_in_usd_cents": schema.NumberAttribute{
                 MarkdownDescription: "Balance in USD for AI services.",
+                Optional: true,
                 Computed: true,
             },
             "auto_ai_recharge_by_balance_in_usd": schema.NumberAttribute{
                 MarkdownDescription: "Auto recharge amount in USD for AI services.",
+                Optional: true,
                 Computed: true,
             },
             "auto_recharge_ai_when_current_balance_falls_in_usd": schema.NumberAttribute{
                 MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for AI services.",
+                Optional: true,
                 Computed: true,
             },
             "enable_ai": schema.BoolAttribute{
-                MarkdownDescription: "Master switch for AI in this project. When disabled, every AI feature stops: Ask AI, investigations, postmortem drafts, auto-remediation and AI commands on Runners..",
+                MarkdownDescription: "Master switch for AI in this project. When disabled, every AI feature stops: Ask AI, investigations, postmortem drafts, auto-remediation and AI commands on Runners.",
+                Optional: true,
                 Computed: true,
             },
             "ai_daily_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "The most tokens OneUptime AI may use in this project each UTC day, across every AI feature: Ask AI, investigations, postmortem drafts, fix pull requests, insight triage, workflows, runbooks and Slack or Microsoft Teams questions. Once it is reached, new AI work is refused until midnight UTC. The incident and alert daily limits still apply under it. Unset means no limit; a limit is a whole number of at least 1 (to turn AI off, use Enable AI)..",
+                MarkdownDescription: "The most tokens OneUptime AI may use in this project each UTC day, across every AI feature: Ask AI, investigations, postmortem drafts, fix pull requests, insight triage, workflows, runbooks and Slack or Microsoft Teams questions. Once it is reached, new AI work is refused until midnight UTC. The incident and alert daily limits still apply under it. Unset means no limit; a limit is a whole number of at least 1 (to turn AI off, use Enable AI).",
+                Optional: true,
                 Computed: true,
             },
             "ai_daily_spend_limit_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "OneUptime Cloud: the most AI credits, in whole US dollars, OneUptime AI may spend in this project each UTC day. Only calls billed to the project's AI credits count, so it never stops AI that runs on the project's own LLM provider. Once it is reached, billed AI work is refused until midnight UTC. Ignored where AI is not billed (self-hosted). Unset means no limit; a limit is at least 1 (to turn AI off, use Enable AI)..",
+                MarkdownDescription: "OneUptime Cloud: the most AI credits, in whole US dollars, OneUptime AI may spend in this project each UTC day. Only calls billed to the project's AI credits count, so it never stops AI that runs on the project's own LLM provider. Once it is reached, billed AI work is refused until midnight UTC. Ignored where AI is not billed (self-hosted). Unset means no limit; a limit is at least 1 (to turn AI off, use Enable AI).",
+                Optional: true,
                 Computed: true,
             },
             "enable_automatic_incident_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline; any auto-remediation for the incident waits until that investigation settles. On for new projects created in OneUptime; projects that existed before keep their setting. Drafting a postmortem when an incident resolves is a separate setting (Enable Automatic Postmortem Draft). Requires AI to be enabled and an LLM provider to be configured..",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline; any auto-remediation for the incident waits until that investigation settles. On for new projects created in OneUptime; projects that existed before keep their setting. Drafting a postmortem when an incident resolves is a separate setting (Enable Automatic Postmortem Draft). Requires AI to be enabled and an LLM provider to be configured.",
+                Optional: true,
                 Computed: true,
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured..",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
+                Optional: true,
                 Computed: true,
             },
             "enable_automatic_incident_remediation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime fixes new incidents automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which incidents are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the incident settles first. Requires AI to be enabled..",
+                MarkdownDescription: "When enabled, OneUptime fixes new incidents automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which incidents are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the incident settles first. Requires AI to be enabled. It also holds the incident pull-request switches, enableAutomaticIncidentCodeFixes and enableIncidentInstrumentationFixTasks: they open pull requests only while this is on. The dashboard turns them on and off with it; through the API, set them in the same request.",
+                Optional: true,
                 Computed: true,
             },
             "enable_automatic_alert_remediation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime fixes new alerts automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which alerts are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the alert settles first. Requires AI to be enabled..",
+                MarkdownDescription: "When enabled, OneUptime fixes new alerts automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which alerts are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the alert settles first. Requires AI to be enabled. It also holds the alert pull-request switches, enableAutomaticAlertCodeFixes and enableAlertInstrumentationFixTasks: they open pull requests only while this is on. The dashboard turns them on and off with it; through the API, set them in the same request.",
+                Optional: true,
                 Computed: true,
             },
             "enable_automatic_postmortem_draft": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE drafts a postmortem from the incident's timeline and telemetry when an incident is resolved, for a human to review and edit. It never overwrites a postmortem that already exists. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured..",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE drafts a postmortem from the incident's timeline and telemetry when an incident is resolved, for a human to review and edit. It never overwrites a postmortem that already exists. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
+                Optional: true,
                 Computed: true,
             },
             "acknowledge_linked_alerts_when_incident_acknowledged": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, acknowledging an incident also acknowledges every alert linked to it. This stops those alerts' on-call escalations, and their reminders only when the alert reminder rule is set to stop on Acknowledged. Alerts linked to an incident that is already acknowledged are acknowledged as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, acknowledging an incident also acknowledges every alert linked to it. This stops those alerts' on-call escalations, and their reminders only when the alert reminder rule is set to stop on Acknowledged. Alerts linked to an incident that is already acknowledged are acknowledged as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting.",
+                Optional: true,
                 Computed: true,
             },
             "resolve_linked_alerts_when_incident_resolved": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, resolving an incident also resolves every alert linked to it, except alerts that are still linked to another incident that is not resolved yet. Alerts linked to an incident that is already resolved are resolved as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, resolving an incident also resolves every alert linked to it, except alerts that are still linked to another incident that is not resolved yet. Alerts linked to an incident that is already resolved are resolved as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting.",
+                Optional: true,
                 Computed: true,
             },
             "enable_incident_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an incident AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, an incident AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticIncidentRemediation (Fix new incidents automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
+                Optional: true,
                 Computed: true,
             },
             "enable_alert_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, an alert AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticAlertRemediation (Fix new alerts automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
+                Optional: true,
                 Computed: true,
             },
             "enable_automatic_incident_code_fixes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an incident AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, an incident AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticIncidentRemediation (Fix new incidents automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
+                Optional: true,
                 Computed: true,
             },
             "enable_automatic_alert_code_fixes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, an alert AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticAlertRemediation (Fix new alerts automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
+                Optional: true,
                 Computed: true,
             },
             "enable_ai_insights": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime AI continuously watches this project's telemetry with deterministic statistical sensors (error-log spikes, exception novelty and spikes, trace-latency regressions, week-over-week metric drift) and files quiet Insights — never pages, never opens incidents. Each new insight also gets a budgeted, read-only AI triage analysis when an LLM provider is configured. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, OneUptime AI continuously watches this project's telemetry with deterministic statistical sensors (error-log spikes, exception novelty and spikes, trace-latency regressions, week-over-week metric drift) and files quiet Insights — never pages, never opens incidents. Each new insight also gets a budgeted, read-only AI triage analysis when an LLM provider is configured. On for new projects created in OneUptime; projects that existed before keep their setting.",
+                Optional: true,
                 Computed: true,
             },
             "enable_insight_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a pull request with a proposed fix, ready for review. Honors any open-PR cap set on the repository. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a pull request with a proposed fix, ready for review. Honors any open-PR cap set on the repository. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting.",
+                Optional: true,
                 Computed: true,
             },
             "auto_archive_non_actionable_exceptions": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab. On for new projects created in OneUptime; projects that existed before keep their setting.",
+                Optional: true,
                 Computed: true,
             },
             "alert_investigation_minimum_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the minimum AlertSeverity that triggers automatic investigation. The ID of a `oneuptime_alert_severity`.",
+                Optional: true,
                 Computed: true,
             },
             "ai_daily_autonomous_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "Legacy setting, no longer enforced: autonomous AI work that is not associated with an incident or alert has no daily token limit. Use the Daily Incident AI Token Limit and Daily Alert AI Token Limit instead..",
+                MarkdownDescription: "Legacy setting, no longer enforced: autonomous AI work that is not associated with an incident or alert has no daily token limit. Use the Daily Incident AI Token Limit and Daily Alert AI Token Limit instead.",
+                Optional: true,
                 Computed: true,
             },
             "incident_ai_daily_autonomous_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum tokens per UTC day that autonomous incident-linked AI work may consume for this project, including investigations, remediation, and follow-up fix tasks. When the limit is reached, new incident-linked AI work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit..",
+                MarkdownDescription: "Maximum tokens per UTC day that autonomous incident-linked AI work may consume for this project, including investigations, remediation, and follow-up fix tasks. When the limit is reached, new incident-linked AI work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit.",
+                Optional: true,
                 Computed: true,
             },
             "alert_ai_daily_autonomous_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum tokens per UTC day that autonomous alert-linked AI work may consume for this project, including investigations, remediation, and follow-up fix tasks. When the limit is reached, new alert-linked AI work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit..",
+                MarkdownDescription: "Maximum tokens per UTC day that autonomous alert-linked AI work may consume for this project, including investigations, remediation, and follow-up fix tasks. When the limit is reached, new alert-linked AI work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit.",
+                Optional: true,
                 Computed: true,
             },
             "ai_daily_fix_task_limit": schema.NumberAttribute{
-                MarkdownDescription: "Legacy setting, no longer enforced: AI fix tasks that are not associated with an incident or alert have no daily limit. Use the Daily Incident AI Fix Task Limit and Daily Alert AI Fix Task Limit instead..",
+                MarkdownDescription: "Legacy setting, no longer enforced: AI fix tasks that are not associated with an incident or alert have no daily limit. Use the Daily Incident AI Fix Task Limit and Daily Alert AI Fix Task Limit instead.",
+                Optional: true,
                 Computed: true,
             },
             "incident_ai_daily_fix_task_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum AI fix tasks derived from incidents that may be created per UTC day for this project. Unset means no limit; 0 pauses incident AI fix tasks entirely..",
+                MarkdownDescription: "Maximum AI fix tasks derived from incidents that may be created per UTC day for this project. Unset means no limit; 0 pauses incident AI fix tasks entirely.",
+                Optional: true,
                 Computed: true,
             },
             "alert_ai_daily_fix_task_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum AI fix tasks derived from alerts that may be created per UTC day for this project. Unset means no limit; 0 pauses alert AI fix tasks entirely..",
+                MarkdownDescription: "Maximum AI fix tasks derived from alerts that may be created per UTC day for this project. Unset means no limit; 0 pauses alert AI fix tasks entirely.",
+                Optional: true,
                 Computed: true,
             },
             "alert_investigation_dedupe_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by AI — the first analysis stands. Unset or 0 means no cooldown, so every alert is investigated; at most 1440 minutes (a day)..",
+                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by AI — the first analysis stands. Unset or 0 means no cooldown, so every alert is investigated; at most 1440 minutes (a day).",
+                Optional: true,
                 Computed: true,
             },
             "incident_investigation_minimum_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the minimum incident severity that is investigated automatically by AI. The ID of a `oneuptime_incident_severity`.",
+                Optional: true,
                 Computed: true,
             },
             "incident_investigation_dedupe_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Incidents affecting a monitor that AI investigated within this many minutes are not re-investigated — the first analysis stands. Unset or 0 means no cooldown, so every incident is investigated; at most 1440 minutes (a day)..",
+                MarkdownDescription: "Incidents affecting a monitor that AI investigated within this many minutes are not re-investigated — the first analysis stands. Unset or 0 means no cooldown, so every incident is investigated; at most 1440 minutes (a day).",
+                Optional: true,
                 Computed: true,
             },
             "ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "Legacy setting, no longer enforced: AI investigations that are not associated with an incident or alert have no concurrency limit. Use the Max Concurrent Incident Investigations and Max Concurrent Alert Investigations instead..",
+                MarkdownDescription: "Legacy setting, no longer enforced: AI investigations that are not associated with an incident or alert have no concurrency limit. Use the Max Concurrent Incident Investigations and Max Concurrent Alert Investigations instead.",
+                Optional: true,
                 Computed: true,
             },
             "incident_ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "How many incident AI investigations may run at the same time for this project. Unset means no limit — every incident investigation starts right away. Minimum 1 — pause incident investigations with the Enable Automatic Incident Investigation toggle or a daily token limit of 0 instead..",
+                MarkdownDescription: "How many incident AI investigations may run at the same time for this project. Unset means no limit — every incident investigation starts right away. Minimum 1 — pause incident investigations with the Enable Automatic Incident Investigation toggle or a daily token limit of 0 instead.",
+                Optional: true,
                 Computed: true,
             },
             "alert_ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "How many alert AI investigations may run at the same time for this project. Unset means no limit — every alert investigation starts right away. Minimum 1 — pause alert investigations with the Enable Automatic Alert Investigation toggle or a daily token limit of 0 instead..",
+                MarkdownDescription: "How many alert AI investigations may run at the same time for this project. Unset means no limit — every alert investigation starts right away. Minimum 1 — pause alert investigations with the Enable Automatic Alert Investigation toggle or a daily token limit of 0 instead.",
+                Optional: true,
                 Computed: true,
             },
             "incident_ai_investigation_time_limit_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Stop an incident AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done..",
+                MarkdownDescription: "Stop an incident AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done.",
+                Optional: true,
                 Computed: true,
             },
             "alert_ai_investigation_time_limit_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Stop an alert AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done..",
+                MarkdownDescription: "Stop an alert AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done.",
+                Optional: true,
                 Computed: true,
             },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto recharge for AI balance for this project..",
+                MarkdownDescription: "Enable auto recharge for AI balance for this project.",
+                Optional: true,
                 Computed: true,
             },
             "send_invoices_by_email": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated..",
+                MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated.",
+                Optional: true,
                 Computed: true,
             },
             "plan_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the plan this project is subscribed to..",
+                MarkdownDescription: "Name of the plan this project is subscribed to.",
+                Optional: true,
                 Computed: true,
             },
             "data_residency": schema.StringAttribute{
-                MarkdownDescription: "Where this project's data is hosted. Set by OneUptime staff on OneUptime Cloud..",
+                MarkdownDescription: "Where this project's data is hosted. Set by OneUptime staff on OneUptime Cloud.",
+                Optional: true,
                 Computed: true,
             },
             "reseller_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Reseller in which this object belongs.",
+                Optional: true,
                 Computed: true,
             },
             "reseller_plan_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Reseller Plan in which this object belongs.",
+                Optional: true,
                 Computed: true,
             },
             "let_customer_support_access_project": schema.BoolAttribute{
-                MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes..",
+                MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes.",
+                Optional: true,
                 Computed: true,
             },
             "do_not_add_global_probes_by_default_on_new_monitors": schema.BoolAttribute{
-                MarkdownDescription: "If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources..",
+                MarkdownDescription: "If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources.",
+                Optional: true,
                 Computed: true,
             },
             "git_hub_app_installation_id": schema.StringAttribute{
-                MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization..",
+                MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.",
+                Optional: true,
                 Computed: true,
             },
             "default_metric_cardinality_budget": schema.NumberAttribute{
-                MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value..",
+                MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value.",
+                Optional: true,
                 Computed: true,
             },
             "default_telemetry_retention_in_days": schema.NumberAttribute{
-                MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value..",
+                MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value.",
+                Optional: true,
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set..",
+                MarkdownDescription: "Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "default_metric_downsampling_retention_days": schema.StringAttribute{
-                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days..",
+                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "enable_audit_logs": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries..",
+                MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries.",
+                Optional: true,
                 Computed: true,
             },
             "is_session_replay_allowed": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, RUM applications in this project may record session replays if they are individually enabled too. On by default; switch it off here to stop session replay across the entire project in one place..",
+                MarkdownDescription: "When enabled, RUM applications in this project may record session replays if they are individually enabled too. On by default; switch it off here to stop session replay across the entire project in one place.",
+                Optional: true,
                 Computed: true,
             },
             "audit_logs_retention_in_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180..",
+                MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180.",
+                Optional: true,
                 Computed: true,
             },
             "store_system_events_in_audit_logs": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded..",
+                MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -519,22 +595,359 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.PaymentProviderPlanId.IsNull() && !data.PaymentProviderPlanId.IsUnknown() {
+        filters["paymentProviderPlanId"] = data.PaymentProviderPlanId.ValueString()
+        filterNames = append(filterNames, "payment_provider_plan_id = "+fmt.Sprintf("%q", data.PaymentProviderPlanId.ValueString()))
+    }
+    if !data.PaymentProviderSubscriptionId.IsNull() && !data.PaymentProviderSubscriptionId.IsUnknown() {
+        filters["paymentProviderSubscriptionId"] = data.PaymentProviderSubscriptionId.ValueString()
+        filterNames = append(filterNames, "payment_provider_subscription_id = "+fmt.Sprintf("%q", data.PaymentProviderSubscriptionId.ValueString()))
+    }
+    if !data.PaymentProviderMeteredSubscriptionId.IsNull() && !data.PaymentProviderMeteredSubscriptionId.IsUnknown() {
+        filters["paymentProviderMeteredSubscriptionId"] = data.PaymentProviderMeteredSubscriptionId.ValueString()
+        filterNames = append(filterNames, "payment_provider_metered_subscription_id = "+fmt.Sprintf("%q", data.PaymentProviderMeteredSubscriptionId.ValueString()))
+    }
+    if !data.PaymentProviderSubscriptionSeats.IsNull() && !data.PaymentProviderSubscriptionSeats.IsUnknown() {
+        filters["paymentProviderSubscriptionSeats"] = lookupNumber(data.PaymentProviderSubscriptionSeats)
+        filterNames = append(filterNames, "payment_provider_subscription_seats = "+data.PaymentProviderSubscriptionSeats.ValueBigFloat().String())
+    }
+    if !data.PaymentProviderCustomerId.IsNull() && !data.PaymentProviderCustomerId.IsUnknown() {
+        filters["paymentProviderCustomerId"] = data.PaymentProviderCustomerId.ValueString()
+        filterNames = append(filterNames, "payment_provider_customer_id = "+fmt.Sprintf("%q", data.PaymentProviderCustomerId.ValueString()))
+    }
+    if !data.BusinessDetails.IsNull() && !data.BusinessDetails.IsUnknown() {
+        filters["businessDetails"] = data.BusinessDetails.ValueString()
+        filterNames = append(filterNames, "business_details = "+fmt.Sprintf("%q", data.BusinessDetails.ValueString()))
+    }
+    if !data.BusinessDetailsCountry.IsNull() && !data.BusinessDetailsCountry.IsUnknown() {
+        filters["businessDetailsCountry"] = data.BusinessDetailsCountry.ValueString()
+        filterNames = append(filterNames, "business_details_country = "+fmt.Sprintf("%q", data.BusinessDetailsCountry.ValueString()))
+    }
+    if !data.FinanceAccountingEmail.IsNull() && !data.FinanceAccountingEmail.IsUnknown() {
+        filters["financeAccountingEmail"] = data.FinanceAccountingEmail.ValueString()
+        filterNames = append(filterNames, "finance_accounting_email = "+fmt.Sprintf("%q", data.FinanceAccountingEmail.ValueString()))
+    }
+    if !data.PaymentProviderSubscriptionStatus.IsNull() && !data.PaymentProviderSubscriptionStatus.IsUnknown() {
+        filters["paymentProviderSubscriptionStatus"] = data.PaymentProviderSubscriptionStatus.ValueString()
+        filterNames = append(filterNames, "payment_provider_subscription_status = "+fmt.Sprintf("%q", data.PaymentProviderSubscriptionStatus.ValueString()))
+    }
+    if !data.PaymentProviderMeteredSubscriptionStatus.IsNull() && !data.PaymentProviderMeteredSubscriptionStatus.IsUnknown() {
+        filters["paymentProviderMeteredSubscriptionStatus"] = data.PaymentProviderMeteredSubscriptionStatus.ValueString()
+        filterNames = append(filterNames, "payment_provider_metered_subscription_status = "+fmt.Sprintf("%q", data.PaymentProviderMeteredSubscriptionStatus.ValueString()))
+    }
+    if !data.PaymentProviderPromoCode.IsNull() && !data.PaymentProviderPromoCode.IsUnknown() {
+        filters["paymentProviderPromoCode"] = data.PaymentProviderPromoCode.ValueString()
+        filterNames = append(filterNames, "payment_provider_promo_code = "+fmt.Sprintf("%q", data.PaymentProviderPromoCode.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.IsFeatureFlagMonitorGroupsEnabled.IsNull() && !data.IsFeatureFlagMonitorGroupsEnabled.IsUnknown() {
+        filters["isFeatureFlagMonitorGroupsEnabled"] = data.IsFeatureFlagMonitorGroupsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_feature_flag_monitor_groups_enabled = "+fmt.Sprintf("%t", data.IsFeatureFlagMonitorGroupsEnabled.ValueBool()))
+    }
+    if !data.WorkflowRunsInLast30Days.IsNull() && !data.WorkflowRunsInLast30Days.IsUnknown() {
+        filters["workflowRunsInLast30Days"] = lookupNumber(data.WorkflowRunsInLast30Days)
+        filterNames = append(filterNames, "workflow_runs_in_last30_days = "+data.WorkflowRunsInLast30Days.ValueBigFloat().String())
+    }
+    if !data.RequireSsoForLogin.IsNull() && !data.RequireSsoForLogin.IsUnknown() {
+        filters["requireSsoForLogin"] = data.RequireSsoForLogin.ValueBool()
+        filterNames = append(filterNames, "require_sso_for_login = "+fmt.Sprintf("%t", data.RequireSsoForLogin.ValueBool()))
+    }
+    if !data.RequireSsoWithSsoProviderId.IsNull() && !data.RequireSsoWithSsoProviderId.IsUnknown() {
+        filters["requireSsoWithSsoProviderId"] = data.RequireSsoWithSsoProviderId.ValueString()
+        filterNames = append(filterNames, "require_sso_with_sso_provider_id = "+fmt.Sprintf("%q", data.RequireSsoWithSsoProviderId.ValueString()))
+    }
+    if !data.IncidentNumberPrefix.IsNull() && !data.IncidentNumberPrefix.IsUnknown() {
+        filters["incidentNumberPrefix"] = data.IncidentNumberPrefix.ValueString()
+        filterNames = append(filterNames, "incident_number_prefix = "+fmt.Sprintf("%q", data.IncidentNumberPrefix.ValueString()))
+    }
+    if !data.AlertNumberPrefix.IsNull() && !data.AlertNumberPrefix.IsUnknown() {
+        filters["alertNumberPrefix"] = data.AlertNumberPrefix.ValueString()
+        filterNames = append(filterNames, "alert_number_prefix = "+fmt.Sprintf("%q", data.AlertNumberPrefix.ValueString()))
+    }
+    if !data.ScheduledMaintenanceNumberPrefix.IsNull() && !data.ScheduledMaintenanceNumberPrefix.IsUnknown() {
+        filters["scheduledMaintenanceNumberPrefix"] = data.ScheduledMaintenanceNumberPrefix.ValueString()
+        filterNames = append(filterNames, "scheduled_maintenance_number_prefix = "+fmt.Sprintf("%q", data.ScheduledMaintenanceNumberPrefix.ValueString()))
+    }
+    if !data.IncidentEpisodeNumberPrefix.IsNull() && !data.IncidentEpisodeNumberPrefix.IsUnknown() {
+        filters["incidentEpisodeNumberPrefix"] = data.IncidentEpisodeNumberPrefix.ValueString()
+        filterNames = append(filterNames, "incident_episode_number_prefix = "+fmt.Sprintf("%q", data.IncidentEpisodeNumberPrefix.ValueString()))
+    }
+    if !data.AlertEpisodeNumberPrefix.IsNull() && !data.AlertEpisodeNumberPrefix.IsUnknown() {
+        filters["alertEpisodeNumberPrefix"] = data.AlertEpisodeNumberPrefix.ValueString()
+        filterNames = append(filterNames, "alert_episode_number_prefix = "+fmt.Sprintf("%q", data.AlertEpisodeNumberPrefix.ValueString()))
+    }
+    if !data.SmsOrCallCurrentBalanceInUsdCents.IsNull() && !data.SmsOrCallCurrentBalanceInUsdCents.IsUnknown() {
+        filters["smsOrCallCurrentBalanceInUSDCents"] = lookupNumber(data.SmsOrCallCurrentBalanceInUsdCents)
+        filterNames = append(filterNames, "sms_or_call_current_balance_in_usd_cents = "+data.SmsOrCallCurrentBalanceInUsdCents.ValueBigFloat().String())
+    }
+    if !data.AutoRechargeSmsOrCallByBalanceInUsd.IsNull() && !data.AutoRechargeSmsOrCallByBalanceInUsd.IsUnknown() {
+        filters["autoRechargeSmsOrCallByBalanceInUSD"] = lookupNumber(data.AutoRechargeSmsOrCallByBalanceInUsd)
+        filterNames = append(filterNames, "auto_recharge_sms_or_call_by_balance_in_usd = "+data.AutoRechargeSmsOrCallByBalanceInUsd.ValueBigFloat().String())
+    }
+    if !data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd.IsNull() && !data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd.IsUnknown() {
+        filters["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"] = lookupNumber(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd)
+        filterNames = append(filterNames, "auto_recharge_sms_or_call_when_current_balance_falls_in_usd = "+data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd.ValueBigFloat().String())
+    }
+    if !data.EnableSmsNotifications.IsNull() && !data.EnableSmsNotifications.IsUnknown() {
+        filters["enableSmsNotifications"] = data.EnableSmsNotifications.ValueBool()
+        filterNames = append(filterNames, "enable_sms_notifications = "+fmt.Sprintf("%t", data.EnableSmsNotifications.ValueBool()))
+    }
+    if !data.EnableWhatsAppNotifications.IsNull() && !data.EnableWhatsAppNotifications.IsUnknown() {
+        filters["enableWhatsAppNotifications"] = data.EnableWhatsAppNotifications.ValueBool()
+        filterNames = append(filterNames, "enable_whats_app_notifications = "+fmt.Sprintf("%t", data.EnableWhatsAppNotifications.ValueBool()))
+    }
+    if !data.EnableTelegramNotifications.IsNull() && !data.EnableTelegramNotifications.IsUnknown() {
+        filters["enableTelegramNotifications"] = data.EnableTelegramNotifications.ValueBool()
+        filterNames = append(filterNames, "enable_telegram_notifications = "+fmt.Sprintf("%t", data.EnableTelegramNotifications.ValueBool()))
+    }
+    if !data.EnableCallNotifications.IsNull() && !data.EnableCallNotifications.IsUnknown() {
+        filters["enableCallNotifications"] = data.EnableCallNotifications.ValueBool()
+        filterNames = append(filterNames, "enable_call_notifications = "+fmt.Sprintf("%t", data.EnableCallNotifications.ValueBool()))
+    }
+    if !data.DisableOnCallNotificationFallback.IsNull() && !data.DisableOnCallNotificationFallback.IsUnknown() {
+        filters["disableOnCallNotificationFallback"] = data.DisableOnCallNotificationFallback.ValueBool()
+        filterNames = append(filterNames, "disable_on_call_notification_fallback = "+fmt.Sprintf("%t", data.DisableOnCallNotificationFallback.ValueBool()))
+    }
+    if !data.EnableAutoRechargeSmsOrCallBalance.IsNull() && !data.EnableAutoRechargeSmsOrCallBalance.IsUnknown() {
+        filters["enableAutoRechargeSmsOrCallBalance"] = data.EnableAutoRechargeSmsOrCallBalance.ValueBool()
+        filterNames = append(filterNames, "enable_auto_recharge_sms_or_call_balance = "+fmt.Sprintf("%t", data.EnableAutoRechargeSmsOrCallBalance.ValueBool()))
+    }
+    if !data.AiCurrentBalanceInUsdCents.IsNull() && !data.AiCurrentBalanceInUsdCents.IsUnknown() {
+        filters["aiCurrentBalanceInUSDCents"] = lookupNumber(data.AiCurrentBalanceInUsdCents)
+        filterNames = append(filterNames, "ai_current_balance_in_usd_cents = "+data.AiCurrentBalanceInUsdCents.ValueBigFloat().String())
+    }
+    if !data.AutoAiRechargeByBalanceInUsd.IsNull() && !data.AutoAiRechargeByBalanceInUsd.IsUnknown() {
+        filters["autoAiRechargeByBalanceInUSD"] = lookupNumber(data.AutoAiRechargeByBalanceInUsd)
+        filterNames = append(filterNames, "auto_ai_recharge_by_balance_in_usd = "+data.AutoAiRechargeByBalanceInUsd.ValueBigFloat().String())
+    }
+    if !data.AutoRechargeAiWhenCurrentBalanceFallsInUsd.IsNull() && !data.AutoRechargeAiWhenCurrentBalanceFallsInUsd.IsUnknown() {
+        filters["autoRechargeAiWhenCurrentBalanceFallsInUSD"] = lookupNumber(data.AutoRechargeAiWhenCurrentBalanceFallsInUsd)
+        filterNames = append(filterNames, "auto_recharge_ai_when_current_balance_falls_in_usd = "+data.AutoRechargeAiWhenCurrentBalanceFallsInUsd.ValueBigFloat().String())
+    }
+    if !data.EnableAi.IsNull() && !data.EnableAi.IsUnknown() {
+        filters["enableAi"] = data.EnableAi.ValueBool()
+        filterNames = append(filterNames, "enable_ai = "+fmt.Sprintf("%t", data.EnableAi.ValueBool()))
+    }
+    if !data.AiDailyTokenLimit.IsNull() && !data.AiDailyTokenLimit.IsUnknown() {
+        filters["aiDailyTokenLimit"] = lookupNumber(data.AiDailyTokenLimit)
+        filterNames = append(filterNames, "ai_daily_token_limit = "+data.AiDailyTokenLimit.ValueBigFloat().String())
+    }
+    if !data.AiDailySpendLimitInUsd.IsNull() && !data.AiDailySpendLimitInUsd.IsUnknown() {
+        filters["aiDailySpendLimitInUSD"] = lookupNumber(data.AiDailySpendLimitInUsd)
+        filterNames = append(filterNames, "ai_daily_spend_limit_in_usd = "+data.AiDailySpendLimitInUsd.ValueBigFloat().String())
+    }
+    if !data.EnableAutomaticIncidentInvestigation.IsNull() && !data.EnableAutomaticIncidentInvestigation.IsUnknown() {
+        filters["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_incident_investigation = "+fmt.Sprintf("%t", data.EnableAutomaticIncidentInvestigation.ValueBool()))
+    }
+    if !data.EnableAutomaticAlertInvestigation.IsNull() && !data.EnableAutomaticAlertInvestigation.IsUnknown() {
+        filters["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_alert_investigation = "+fmt.Sprintf("%t", data.EnableAutomaticAlertInvestigation.ValueBool()))
+    }
+    if !data.EnableAutomaticIncidentRemediation.IsNull() && !data.EnableAutomaticIncidentRemediation.IsUnknown() {
+        filters["enableAutomaticIncidentRemediation"] = data.EnableAutomaticIncidentRemediation.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_incident_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticIncidentRemediation.ValueBool()))
+    }
+    if !data.EnableAutomaticAlertRemediation.IsNull() && !data.EnableAutomaticAlertRemediation.IsUnknown() {
+        filters["enableAutomaticAlertRemediation"] = data.EnableAutomaticAlertRemediation.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_alert_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticAlertRemediation.ValueBool()))
+    }
+    if !data.EnableAutomaticPostmortemDraft.IsNull() && !data.EnableAutomaticPostmortemDraft.IsUnknown() {
+        filters["enableAutomaticPostmortemDraft"] = data.EnableAutomaticPostmortemDraft.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_postmortem_draft = "+fmt.Sprintf("%t", data.EnableAutomaticPostmortemDraft.ValueBool()))
+    }
+    if !data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.IsNull() && !data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.IsUnknown() {
+        filters["acknowledgeLinkedAlertsWhenIncidentAcknowledged"] = data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.ValueBool()
+        filterNames = append(filterNames, "acknowledge_linked_alerts_when_incident_acknowledged = "+fmt.Sprintf("%t", data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.ValueBool()))
+    }
+    if !data.ResolveLinkedAlertsWhenIncidentResolved.IsNull() && !data.ResolveLinkedAlertsWhenIncidentResolved.IsUnknown() {
+        filters["resolveLinkedAlertsWhenIncidentResolved"] = data.ResolveLinkedAlertsWhenIncidentResolved.ValueBool()
+        filterNames = append(filterNames, "resolve_linked_alerts_when_incident_resolved = "+fmt.Sprintf("%t", data.ResolveLinkedAlertsWhenIncidentResolved.ValueBool()))
+    }
+    if !data.EnableIncidentInstrumentationFixTasks.IsNull() && !data.EnableIncidentInstrumentationFixTasks.IsUnknown() {
+        filters["enableIncidentInstrumentationFixTasks"] = data.EnableIncidentInstrumentationFixTasks.ValueBool()
+        filterNames = append(filterNames, "enable_incident_instrumentation_fix_tasks = "+fmt.Sprintf("%t", data.EnableIncidentInstrumentationFixTasks.ValueBool()))
+    }
+    if !data.EnableAlertInstrumentationFixTasks.IsNull() && !data.EnableAlertInstrumentationFixTasks.IsUnknown() {
+        filters["enableAlertInstrumentationFixTasks"] = data.EnableAlertInstrumentationFixTasks.ValueBool()
+        filterNames = append(filterNames, "enable_alert_instrumentation_fix_tasks = "+fmt.Sprintf("%t", data.EnableAlertInstrumentationFixTasks.ValueBool()))
+    }
+    if !data.EnableAutomaticIncidentCodeFixes.IsNull() && !data.EnableAutomaticIncidentCodeFixes.IsUnknown() {
+        filters["enableAutomaticIncidentCodeFixes"] = data.EnableAutomaticIncidentCodeFixes.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_incident_code_fixes = "+fmt.Sprintf("%t", data.EnableAutomaticIncidentCodeFixes.ValueBool()))
+    }
+    if !data.EnableAutomaticAlertCodeFixes.IsNull() && !data.EnableAutomaticAlertCodeFixes.IsUnknown() {
+        filters["enableAutomaticAlertCodeFixes"] = data.EnableAutomaticAlertCodeFixes.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_alert_code_fixes = "+fmt.Sprintf("%t", data.EnableAutomaticAlertCodeFixes.ValueBool()))
+    }
+    if !data.EnableAiInsights.IsNull() && !data.EnableAiInsights.IsUnknown() {
+        filters["enableAiInsights"] = data.EnableAiInsights.ValueBool()
+        filterNames = append(filterNames, "enable_ai_insights = "+fmt.Sprintf("%t", data.EnableAiInsights.ValueBool()))
+    }
+    if !data.EnableInsightFixTasks.IsNull() && !data.EnableInsightFixTasks.IsUnknown() {
+        filters["enableInsightFixTasks"] = data.EnableInsightFixTasks.ValueBool()
+        filterNames = append(filterNames, "enable_insight_fix_tasks = "+fmt.Sprintf("%t", data.EnableInsightFixTasks.ValueBool()))
+    }
+    if !data.AutoArchiveNonActionableExceptions.IsNull() && !data.AutoArchiveNonActionableExceptions.IsUnknown() {
+        filters["autoArchiveNonActionableExceptions"] = data.AutoArchiveNonActionableExceptions.ValueBool()
+        filterNames = append(filterNames, "auto_archive_non_actionable_exceptions = "+fmt.Sprintf("%t", data.AutoArchiveNonActionableExceptions.ValueBool()))
+    }
+    if !data.AlertInvestigationMinimumSeverityId.IsNull() && !data.AlertInvestigationMinimumSeverityId.IsUnknown() {
+        filters["alertInvestigationMinimumSeverityId"] = data.AlertInvestigationMinimumSeverityId.ValueString()
+        filterNames = append(filterNames, "alert_investigation_minimum_severity_id = "+fmt.Sprintf("%q", data.AlertInvestigationMinimumSeverityId.ValueString()))
+    }
+    if !data.AiDailyAutonomousTokenLimit.IsNull() && !data.AiDailyAutonomousTokenLimit.IsUnknown() {
+        filters["aiDailyAutonomousTokenLimit"] = lookupNumber(data.AiDailyAutonomousTokenLimit)
+        filterNames = append(filterNames, "ai_daily_autonomous_token_limit = "+data.AiDailyAutonomousTokenLimit.ValueBigFloat().String())
+    }
+    if !data.IncidentAiDailyAutonomousTokenLimit.IsNull() && !data.IncidentAiDailyAutonomousTokenLimit.IsUnknown() {
+        filters["incidentAiDailyAutonomousTokenLimit"] = lookupNumber(data.IncidentAiDailyAutonomousTokenLimit)
+        filterNames = append(filterNames, "incident_ai_daily_autonomous_token_limit = "+data.IncidentAiDailyAutonomousTokenLimit.ValueBigFloat().String())
+    }
+    if !data.AlertAiDailyAutonomousTokenLimit.IsNull() && !data.AlertAiDailyAutonomousTokenLimit.IsUnknown() {
+        filters["alertAiDailyAutonomousTokenLimit"] = lookupNumber(data.AlertAiDailyAutonomousTokenLimit)
+        filterNames = append(filterNames, "alert_ai_daily_autonomous_token_limit = "+data.AlertAiDailyAutonomousTokenLimit.ValueBigFloat().String())
+    }
+    if !data.AiDailyFixTaskLimit.IsNull() && !data.AiDailyFixTaskLimit.IsUnknown() {
+        filters["aiDailyFixTaskLimit"] = lookupNumber(data.AiDailyFixTaskLimit)
+        filterNames = append(filterNames, "ai_daily_fix_task_limit = "+data.AiDailyFixTaskLimit.ValueBigFloat().String())
+    }
+    if !data.IncidentAiDailyFixTaskLimit.IsNull() && !data.IncidentAiDailyFixTaskLimit.IsUnknown() {
+        filters["incidentAiDailyFixTaskLimit"] = lookupNumber(data.IncidentAiDailyFixTaskLimit)
+        filterNames = append(filterNames, "incident_ai_daily_fix_task_limit = "+data.IncidentAiDailyFixTaskLimit.ValueBigFloat().String())
+    }
+    if !data.AlertAiDailyFixTaskLimit.IsNull() && !data.AlertAiDailyFixTaskLimit.IsUnknown() {
+        filters["alertAiDailyFixTaskLimit"] = lookupNumber(data.AlertAiDailyFixTaskLimit)
+        filterNames = append(filterNames, "alert_ai_daily_fix_task_limit = "+data.AlertAiDailyFixTaskLimit.ValueBigFloat().String())
+    }
+    if !data.AlertInvestigationDedupeWindowMinutes.IsNull() && !data.AlertInvestigationDedupeWindowMinutes.IsUnknown() {
+        filters["alertInvestigationDedupeWindowMinutes"] = lookupNumber(data.AlertInvestigationDedupeWindowMinutes)
+        filterNames = append(filterNames, "alert_investigation_dedupe_window_minutes = "+data.AlertInvestigationDedupeWindowMinutes.ValueBigFloat().String())
+    }
+    if !data.IncidentInvestigationMinimumSeverityId.IsNull() && !data.IncidentInvestigationMinimumSeverityId.IsUnknown() {
+        filters["incidentInvestigationMinimumSeverityId"] = data.IncidentInvestigationMinimumSeverityId.ValueString()
+        filterNames = append(filterNames, "incident_investigation_minimum_severity_id = "+fmt.Sprintf("%q", data.IncidentInvestigationMinimumSeverityId.ValueString()))
+    }
+    if !data.IncidentInvestigationDedupeWindowMinutes.IsNull() && !data.IncidentInvestigationDedupeWindowMinutes.IsUnknown() {
+        filters["incidentInvestigationDedupeWindowMinutes"] = lookupNumber(data.IncidentInvestigationDedupeWindowMinutes)
+        filterNames = append(filterNames, "incident_investigation_dedupe_window_minutes = "+data.IncidentInvestigationDedupeWindowMinutes.ValueBigFloat().String())
+    }
+    if !data.AiMaxConcurrentInvestigations.IsNull() && !data.AiMaxConcurrentInvestigations.IsUnknown() {
+        filters["aiMaxConcurrentInvestigations"] = lookupNumber(data.AiMaxConcurrentInvestigations)
+        filterNames = append(filterNames, "ai_max_concurrent_investigations = "+data.AiMaxConcurrentInvestigations.ValueBigFloat().String())
+    }
+    if !data.IncidentAiMaxConcurrentInvestigations.IsNull() && !data.IncidentAiMaxConcurrentInvestigations.IsUnknown() {
+        filters["incidentAiMaxConcurrentInvestigations"] = lookupNumber(data.IncidentAiMaxConcurrentInvestigations)
+        filterNames = append(filterNames, "incident_ai_max_concurrent_investigations = "+data.IncidentAiMaxConcurrentInvestigations.ValueBigFloat().String())
+    }
+    if !data.AlertAiMaxConcurrentInvestigations.IsNull() && !data.AlertAiMaxConcurrentInvestigations.IsUnknown() {
+        filters["alertAiMaxConcurrentInvestigations"] = lookupNumber(data.AlertAiMaxConcurrentInvestigations)
+        filterNames = append(filterNames, "alert_ai_max_concurrent_investigations = "+data.AlertAiMaxConcurrentInvestigations.ValueBigFloat().String())
+    }
+    if !data.IncidentAiInvestigationTimeLimitInMinutes.IsNull() && !data.IncidentAiInvestigationTimeLimitInMinutes.IsUnknown() {
+        filters["incidentAiInvestigationTimeLimitInMinutes"] = lookupNumber(data.IncidentAiInvestigationTimeLimitInMinutes)
+        filterNames = append(filterNames, "incident_ai_investigation_time_limit_in_minutes = "+data.IncidentAiInvestigationTimeLimitInMinutes.ValueBigFloat().String())
+    }
+    if !data.AlertAiInvestigationTimeLimitInMinutes.IsNull() && !data.AlertAiInvestigationTimeLimitInMinutes.IsUnknown() {
+        filters["alertAiInvestigationTimeLimitInMinutes"] = lookupNumber(data.AlertAiInvestigationTimeLimitInMinutes)
+        filterNames = append(filterNames, "alert_ai_investigation_time_limit_in_minutes = "+data.AlertAiInvestigationTimeLimitInMinutes.ValueBigFloat().String())
+    }
+    if !data.EnableAutoRechargeAiBalance.IsNull() && !data.EnableAutoRechargeAiBalance.IsUnknown() {
+        filters["enableAutoRechargeAiBalance"] = data.EnableAutoRechargeAiBalance.ValueBool()
+        filterNames = append(filterNames, "enable_auto_recharge_ai_balance = "+fmt.Sprintf("%t", data.EnableAutoRechargeAiBalance.ValueBool()))
+    }
+    if !data.SendInvoicesByEmail.IsNull() && !data.SendInvoicesByEmail.IsUnknown() {
+        filters["sendInvoicesByEmail"] = data.SendInvoicesByEmail.ValueBool()
+        filterNames = append(filterNames, "send_invoices_by_email = "+fmt.Sprintf("%t", data.SendInvoicesByEmail.ValueBool()))
+    }
+    if !data.PlanName.IsNull() && !data.PlanName.IsUnknown() {
+        filters["planName"] = data.PlanName.ValueString()
+        filterNames = append(filterNames, "plan_name = "+fmt.Sprintf("%q", data.PlanName.ValueString()))
+    }
+    if !data.DataResidency.IsNull() && !data.DataResidency.IsUnknown() {
+        filters["dataResidency"] = data.DataResidency.ValueString()
+        filterNames = append(filterNames, "data_residency = "+fmt.Sprintf("%q", data.DataResidency.ValueString()))
+    }
+    if !data.ResellerId.IsNull() && !data.ResellerId.IsUnknown() {
+        filters["resellerId"] = data.ResellerId.ValueString()
+        filterNames = append(filterNames, "reseller_id = "+fmt.Sprintf("%q", data.ResellerId.ValueString()))
+    }
+    if !data.ResellerPlanId.IsNull() && !data.ResellerPlanId.IsUnknown() {
+        filters["resellerPlanId"] = data.ResellerPlanId.ValueString()
+        filterNames = append(filterNames, "reseller_plan_id = "+fmt.Sprintf("%q", data.ResellerPlanId.ValueString()))
+    }
+    if !data.LetCustomerSupportAccessProject.IsNull() && !data.LetCustomerSupportAccessProject.IsUnknown() {
+        filters["letCustomerSupportAccessProject"] = data.LetCustomerSupportAccessProject.ValueBool()
+        filterNames = append(filterNames, "let_customer_support_access_project = "+fmt.Sprintf("%t", data.LetCustomerSupportAccessProject.ValueBool()))
+    }
+    if !data.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsNull() && !data.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() {
+        filters["doNotAddGlobalProbesByDefaultOnNewMonitors"] = data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool()
+        filterNames = append(filterNames, "do_not_add_global_probes_by_default_on_new_monitors = "+fmt.Sprintf("%t", data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool()))
+    }
+    if !data.GitHubAppInstallationId.IsNull() && !data.GitHubAppInstallationId.IsUnknown() {
+        filters["gitHubAppInstallationId"] = data.GitHubAppInstallationId.ValueString()
+        filterNames = append(filterNames, "git_hub_app_installation_id = "+fmt.Sprintf("%q", data.GitHubAppInstallationId.ValueString()))
+    }
+    if !data.DefaultMetricCardinalityBudget.IsNull() && !data.DefaultMetricCardinalityBudget.IsUnknown() {
+        filters["defaultMetricCardinalityBudget"] = lookupNumber(data.DefaultMetricCardinalityBudget)
+        filterNames = append(filterNames, "default_metric_cardinality_budget = "+data.DefaultMetricCardinalityBudget.ValueBigFloat().String())
+    }
+    if !data.DefaultTelemetryRetentionInDays.IsNull() && !data.DefaultTelemetryRetentionInDays.IsUnknown() {
+        filters["defaultTelemetryRetentionInDays"] = lookupNumber(data.DefaultTelemetryRetentionInDays)
+        filterNames = append(filterNames, "default_telemetry_retention_in_days = "+data.DefaultTelemetryRetentionInDays.ValueBigFloat().String())
+    }
+    if !data.EnableAuditLogs.IsNull() && !data.EnableAuditLogs.IsUnknown() {
+        filters["enableAuditLogs"] = data.EnableAuditLogs.ValueBool()
+        filterNames = append(filterNames, "enable_audit_logs = "+fmt.Sprintf("%t", data.EnableAuditLogs.ValueBool()))
+    }
+    if !data.IsSessionReplayAllowed.IsNull() && !data.IsSessionReplayAllowed.IsUnknown() {
+        filters["isSessionReplayAllowed"] = data.IsSessionReplayAllowed.ValueBool()
+        filterNames = append(filterNames, "is_session_replay_allowed = "+fmt.Sprintf("%t", data.IsSessionReplayAllowed.ValueBool()))
+    }
+    if !data.AuditLogsRetentionInDays.IsNull() && !data.AuditLogsRetentionInDays.IsUnknown() {
+        filters["auditLogsRetentionInDays"] = lookupNumber(data.AuditLogsRetentionInDays)
+        filterNames = append(filterNames, "audit_logs_retention_in_days = "+data.AuditLogsRetentionInDays.ValueBigFloat().String())
+    }
+    if !data.StoreSystemEventsInAuditLogs.IsNull() && !data.StoreSystemEventsInAuditLogs.IsUnknown() {
+        filters["storeSystemEventsInAuditLogs"] = data.StoreSystemEventsInAuditLogs.ValueBool()
+        filterNames = append(filterNames, "store_system_events_in_audit_logs = "+fmt.Sprintf("%t", data.StoreSystemEventsInAuditLogs.ValueBool()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a project.",
+            "Look the project up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the project up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
+        "name": true,
         "slug": true,
         "paymentProviderPlanId": true,
         "paymentProviderSubscriptionId": true,
@@ -549,7 +962,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "paymentProviderMeteredSubscriptionStatus": true,
         "paymentProviderPromoCode": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "isFeatureFlagMonitorGroupsEnabled": true,
         "workflowRunsInLast30Days": true,
         "requireSsoForLogin": true,
@@ -645,11 +1057,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -666,11 +1077,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No project found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No project matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one project matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one project matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -698,23 +1109,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -750,33 +1144,22 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.UpdatedAt = types.StringNull()
     }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
+    if obj, ok := item["name"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
+            data.Name = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
+            data.Name = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
+            data.Name = types.StringValue(string(jsonBytes))
         } else {
-            data.DeletedAt = types.StringNull()
+            data.Name = types.StringNull()
         }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
     } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
+        data.Name = types.StringNull()
     }
     if obj, ok := item["slug"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1009,23 +1392,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
     if val, ok := item["isFeatureFlagMonitorGroupsEnabled"].(bool); ok {
         data.IsFeatureFlagMonitorGroupsEnabled = types.BoolValue(val)

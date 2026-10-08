@@ -73,8 +73,6 @@ type ScheduledMaintenanceEventResourceModel struct {
     EnableReminders types.Bool `tfsdk:"enable_reminders"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     SubscriberNotificationStatusOnEventScheduled types.String `tfsdk:"subscriber_notification_status_on_event_scheduled"`
@@ -91,30 +89,34 @@ func (r *ScheduledMaintenanceEventResource) Metadata(ctx context.Context, req re
 }
 
 func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Manage scheduled maintenance event for your project",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this scheduled event..",
+                MarkdownDescription: "Title of this scheduled event.",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is in markdown..",
+                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is in markdown.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -122,7 +124,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors attached to this event.",
+                MarkdownDescription: "List of monitors attached to this event. IDs of `oneuptime_monitor` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -131,7 +133,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts affected by this event..",
+                MarkdownDescription: "List of hosts affected by this event. IDs of `oneuptime_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -140,7 +142,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes clusters affected by this event..",
+                MarkdownDescription: "List of Kubernetes clusters affected by this event. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -149,7 +151,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Docker hosts affected by this event..",
+                MarkdownDescription: "List of Docker hosts affected by this event. IDs of `oneuptime_docker_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -158,7 +160,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Podman hosts affected by this event..",
+                MarkdownDescription: "List of Podman hosts affected by this event. IDs of `oneuptime_podman_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -167,7 +169,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "proxmox_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Proxmox clusters affected by this event..",
+                MarkdownDescription: "List of Proxmox clusters affected by this event. IDs of `oneuptime_proxmox_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -176,7 +178,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "vmware_v_centers": schema.SetAttribute{
-                MarkdownDescription: "List of vCenters affected by this event..",
+                MarkdownDescription: "List of vCenters affected by this event. IDs of `oneuptime_vcenter` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -185,7 +187,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "iot_fleets": schema.SetAttribute{
-                MarkdownDescription: "List of IoT fleets affected by this event..",
+                MarkdownDescription: "List of IoT fleets affected by this event. IDs of `oneuptime_iot_fleet` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -194,7 +196,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "network_sites": schema.SetAttribute{
-                MarkdownDescription: "List of network sites affected by this event. Their descendants are covered too..",
+                MarkdownDescription: "List of network sites affected by this event. Their descendants are covered too. IDs of `oneuptime_network_site` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -203,7 +205,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "docker_swarm_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Docker Swarm clusters affected by this event..",
+                MarkdownDescription: "List of Docker Swarm clusters affected by this event. IDs of `oneuptime_docker_swarm_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -212,7 +214,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "ceph_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Ceph clusters affected by this event..",
+                MarkdownDescription: "List of Ceph clusters affected by this event. IDs of `oneuptime_ceph_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -221,7 +223,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "storage_arrays": schema.SetAttribute{
-                MarkdownDescription: "List of storage arrays affected by this event..",
+                MarkdownDescription: "List of storage arrays affected by this event. IDs of `oneuptime_storage_array` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -230,7 +232,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "database_servers": schema.SetAttribute{
-                MarkdownDescription: "List of databases affected by this event..",
+                MarkdownDescription: "List of databases affected by this event. IDs of `oneuptime_database` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -239,7 +241,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services affected by this event..",
+                MarkdownDescription: "List of services affected by this event. IDs of `oneuptime_service` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -248,7 +250,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "List of status pages to show this event on.",
+                MarkdownDescription: "List of status pages to show this event on. IDs of `oneuptime_status_page` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -257,7 +259,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -266,7 +268,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "current_scheduled_maintenance_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Scheduled Maintenance State ID. The state the event currently is in. The ID of a `oneuptime_scheduled_maintenance_state`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -274,7 +276,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "change_monitor_status_to_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Monitor Status Object ID. The monitors attached to this event change to this status when the event starts, and back to operational when it ends. It can be changed until the event starts. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -282,17 +284,17 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "starts_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When does this event start?",
                 CustomType: RFC3339Type{},
                 Required: true,
             },
             "ends_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When does this event end?",
                 CustomType: RFC3339Type{},
                 Required: true,
             },
             "should_status_page_subscribers_be_notified_on_event_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event creation?.",
+                MarkdownDescription: "Should subscribers be notified about this event creation?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -302,7 +304,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ongoing": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?.",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -312,7 +314,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ended": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?.",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -322,7 +324,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -334,7 +336,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "send_subscriber_notifications_on_before_the_event": schema.StringAttribute{
-                MarkdownDescription: "Should subscribers be notified before the event?.",
+                MarkdownDescription: "Should subscribers be notified before the event? A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -346,7 +348,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "next_subscriber_notification_before_the_event_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When will the next notification to subscribers be sent out?",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -355,7 +357,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "is_visible_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should this incident be visible on the status page?.",
+                MarkdownDescription: "Should this incident be visible on the status page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -364,7 +366,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "enable_reminders": schema.BoolAttribute{
-                MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project..",
+                MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -373,22 +375,16 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -396,8 +392,11 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "subscriber_notification_status_on_event_scheduled": schema.StringAttribute{
                 MarkdownDescription: "Status of notification sent to subscribers when event was scheduled.",
@@ -408,7 +407,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?.",
+                MarkdownDescription: "Are owners notified of when this resource is created?",
                 Computed: true,
             },
             "scheduled_maintenance_number": schema.NumberAttribute{
@@ -420,12 +419,12 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 Computed: true,
             },
             "next_reminder_notification_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When will the next reminder notification be sent to owners of this scheduled maintenance event? This is set automatically based on the reminder rules configured for this project.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "reminder_notification_sent_count": schema.NumberAttribute{
-                MarkdownDescription: "How many reminder notifications have been sent to owners of this scheduled maintenance event so far..",
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this scheduled maintenance event so far.",
                 Computed: true,
             },
         },
@@ -462,6 +461,14 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ScheduledMaintenanceEventResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -641,8 +648,6 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnEventScheduled": true,
@@ -1499,34 +1504,6 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1768,6 +1745,9 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1820,8 +1800,6 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnEventScheduled": true,
@@ -2679,34 +2657,6 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2969,6 +2919,14 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ScheduledMaintenanceEventResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     scheduledMaintenanceEventRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -3122,8 +3080,6 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnEventScheduled": true,
@@ -3975,34 +3931,6 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4243,6 +4171,9 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -4279,6 +4210,98 @@ func (r *ScheduledMaintenanceEventResource) Delete(ctx context.Context, req reso
 
 func (r *ScheduledMaintenanceEventResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *ScheduledMaintenanceEventResource) keepPlannedValues(data *ScheduledMaintenanceEventResourceModel, plan *ScheduledMaintenanceEventResourceModel, config *ScheduledMaintenanceEventResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.Monitors.IsNull() && !plan.Monitors.IsUnknown() {
+        data.Monitors = plan.Monitors
+    }
+    if config.Hosts.IsNull() && !plan.Hosts.IsUnknown() {
+        data.Hosts = plan.Hosts
+    }
+    if config.KubernetesClusters.IsNull() && !plan.KubernetesClusters.IsUnknown() {
+        data.KubernetesClusters = plan.KubernetesClusters
+    }
+    if config.DockerHosts.IsNull() && !plan.DockerHosts.IsUnknown() {
+        data.DockerHosts = plan.DockerHosts
+    }
+    if config.PodmanHosts.IsNull() && !plan.PodmanHosts.IsUnknown() {
+        data.PodmanHosts = plan.PodmanHosts
+    }
+    if config.ProxmoxClusters.IsNull() && !plan.ProxmoxClusters.IsUnknown() {
+        data.ProxmoxClusters = plan.ProxmoxClusters
+    }
+    if config.VmwareVCenters.IsNull() && !plan.VmwareVCenters.IsUnknown() {
+        data.VmwareVCenters = plan.VmwareVCenters
+    }
+    if config.IotFleets.IsNull() && !plan.IotFleets.IsUnknown() {
+        data.IotFleets = plan.IotFleets
+    }
+    if config.NetworkSites.IsNull() && !plan.NetworkSites.IsUnknown() {
+        data.NetworkSites = plan.NetworkSites
+    }
+    if config.DockerSwarmClusters.IsNull() && !plan.DockerSwarmClusters.IsUnknown() {
+        data.DockerSwarmClusters = plan.DockerSwarmClusters
+    }
+    if config.CephClusters.IsNull() && !plan.CephClusters.IsUnknown() {
+        data.CephClusters = plan.CephClusters
+    }
+    if config.StorageArrays.IsNull() && !plan.StorageArrays.IsUnknown() {
+        data.StorageArrays = plan.StorageArrays
+    }
+    if config.DatabaseServers.IsNull() && !plan.DatabaseServers.IsUnknown() {
+        data.DatabaseServers = plan.DatabaseServers
+    }
+    if config.Services.IsNull() && !plan.Services.IsUnknown() {
+        data.Services = plan.Services
+    }
+    if config.StatusPages.IsNull() && !plan.StatusPages.IsUnknown() {
+        data.StatusPages = plan.StatusPages
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.CurrentScheduledMaintenanceStateId.IsNull() && !plan.CurrentScheduledMaintenanceStateId.IsUnknown() {
+        data.CurrentScheduledMaintenanceStateId = plan.CurrentScheduledMaintenanceStateId
+    }
+    if config.ChangeMonitorStatusToId.IsNull() && !plan.ChangeMonitorStatusToId.IsUnknown() {
+        data.ChangeMonitorStatusToId = plan.ChangeMonitorStatusToId
+    }
+    if config.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.IsNull() && !plan.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.IsUnknown() {
+        data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated = plan.ShouldStatusPageSubscribersBeNotifiedOnEventCreated
+    }
+    if config.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.IsNull() && !plan.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.IsUnknown() {
+        data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing = plan.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing
+    }
+    if config.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.IsNull() && !plan.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.IsUnknown() {
+        data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded = plan.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded
+    }
+    if config.CustomFields.IsNull() && !plan.CustomFields.IsUnknown() {
+        data.CustomFields = plan.CustomFields
+    }
+    if config.SendSubscriberNotificationsOnBeforeTheEvent.IsNull() && !plan.SendSubscriberNotificationsOnBeforeTheEvent.IsUnknown() {
+        data.SendSubscriberNotificationsOnBeforeTheEvent = plan.SendSubscriberNotificationsOnBeforeTheEvent
+    }
+    if config.NextSubscriberNotificationBeforeTheEventAt.IsNull() && !plan.NextSubscriberNotificationBeforeTheEventAt.IsUnknown() {
+        data.NextSubscriberNotificationBeforeTheEventAt = plan.NextSubscriberNotificationBeforeTheEventAt
+    }
+    if config.IsVisibleOnStatusPage.IsNull() && !plan.IsVisibleOnStatusPage.IsUnknown() {
+        data.IsVisibleOnStatusPage = plan.IsVisibleOnStatusPage
+    }
+    if config.EnableReminders.IsNull() && !plan.EnableReminders.IsUnknown() {
+        data.EnableReminders = plan.EnableReminders
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

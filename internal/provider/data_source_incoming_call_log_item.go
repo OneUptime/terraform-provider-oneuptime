@@ -28,11 +28,8 @@ type IncomingCallLogItemDataSource struct {
 // IncomingCallLogItemDataSourceModel describes the data source data model.
 type IncomingCallLogItemDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     IncomingCallLogId types.String `tfsdk:"incoming_call_log_id"`
     IncomingCallPolicyEscalationRuleId types.String `tfsdk:"incoming_call_policy_escalation_rule_id"`
@@ -53,81 +50,76 @@ func (d *IncomingCallLogItemDataSource) Metadata(ctx context.Context, req dataso
 
 func (d *IncomingCallLogItemDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Child log for each escalation attempt / user ring within a call. Look up an existing incoming_call_log_item by `id` or by `name`.",
+        MarkdownDescription: "Child log for each escalation attempt / user ring within a call. Look up an existing incoming call log item by `id`, or by any of its other arguments (`call_cost_in_usd_cents`, `dial_duration_in_seconds`, `incoming_call_log_id`, ...): each one set must match, and exactly one incoming call log item may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "incoming_call_log_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the parent Incoming Call Log. The ID of a `oneuptime_incoming_call_log` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "incoming_call_policy_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the escalation rule used. The ID of a `oneuptime_incoming_call_policy_escalation_rule`.",
+                Optional: true,
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who was called. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "user_phone_number": schema.StringAttribute{
-                MarkdownDescription: "Phone object",
+                MarkdownDescription: "Phone number that was dialed.",
                 Computed: true,
             },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Status of this dial attempt.",
+                Optional: true,
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Additional status information.",
+                Optional: true,
                 Computed: true,
             },
             "dial_duration_in_seconds": schema.NumberAttribute{
                 MarkdownDescription: "How long this dial lasted in seconds.",
+                Optional: true,
                 Computed: true,
             },
             "call_cost_in_usd_cents": schema.NumberAttribute{
                 MarkdownDescription: "Cost for this dial attempt in USD cents.",
+                Optional: true,
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When dial started.",
                 Computed: true,
             },
             "ended_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When dial ended.",
                 Computed: true,
             },
             "is_answered": schema.BoolAttribute{
                 MarkdownDescription: "Whether this user answered the call.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -164,22 +156,62 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.IncomingCallLogId.IsNull() && !data.IncomingCallLogId.IsUnknown() {
+        filters["incomingCallLogId"] = data.IncomingCallLogId.ValueString()
+        filterNames = append(filterNames, "incoming_call_log_id = "+fmt.Sprintf("%q", data.IncomingCallLogId.ValueString()))
+    }
+    if !data.IncomingCallPolicyEscalationRuleId.IsNull() && !data.IncomingCallPolicyEscalationRuleId.IsUnknown() {
+        filters["incomingCallPolicyEscalationRuleId"] = data.IncomingCallPolicyEscalationRuleId.ValueString()
+        filterNames = append(filterNames, "incoming_call_policy_escalation_rule_id = "+fmt.Sprintf("%q", data.IncomingCallPolicyEscalationRuleId.ValueString()))
+    }
+    if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
+        filters["userId"] = data.UserId.ValueString()
+        filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.StatusMessage.IsNull() && !data.StatusMessage.IsUnknown() {
+        filters["statusMessage"] = data.StatusMessage.ValueString()
+        filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
+    }
+    if !data.DialDurationInSeconds.IsNull() && !data.DialDurationInSeconds.IsUnknown() {
+        filters["dialDurationInSeconds"] = lookupNumber(data.DialDurationInSeconds)
+        filterNames = append(filterNames, "dial_duration_in_seconds = "+data.DialDurationInSeconds.ValueBigFloat().String())
+    }
+    if !data.CallCostInUsdCents.IsNull() && !data.CallCostInUsdCents.IsUnknown() {
+        filters["callCostInUSDCents"] = lookupNumber(data.CallCostInUsdCents)
+        filterNames = append(filterNames, "call_cost_in_usd_cents = "+data.CallCostInUsdCents.ValueBigFloat().String())
+    }
+    if !data.IsAnswered.IsNull() && !data.IsAnswered.IsUnknown() {
+        filters["isAnswered"] = data.IsAnswered.ValueBool()
+        filterNames = append(filterNames, "is_answered = "+fmt.Sprintf("%t", data.IsAnswered.ValueBool()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a incoming_call_log_item.",
+            "Look the incoming call log item up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the incoming call log item up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "incomingCallLogId": true,
         "incomingCallPolicyEscalationRuleId": true,
@@ -204,7 +236,7 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incoming_call_log_item found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incoming call log item found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -217,11 +249,10 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -238,11 +269,11 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incoming_call_log_item found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incoming call log item matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incoming_call_log_item matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incoming call log item matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -270,23 +301,6 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -321,34 +335,6 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

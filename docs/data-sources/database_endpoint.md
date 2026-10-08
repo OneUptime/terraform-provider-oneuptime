@@ -7,35 +7,37 @@ description: |-
 
 # oneuptime_database_endpoint (Data Source)
 
-Endpoints (host:port) a database is reached at. Telemetry that names one of these endpoints is shown on that database. Each endpoint belongs to at most one database in a project. Look up by `id` or by `name` (must match exactly one item).
+Endpoints (host:port) a database is reached at. Telemetry that names one of these endpoints is shown on that database. Each endpoint belongs to at most one database in a project.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one database endpoint may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_database_endpoint" "by_name" {
-  name = "example-database_endpoint"
+data "oneuptime_database_endpoint" "example" {
+  database_server_id = oneuptime_database.example.id
 }
 
+# Or by id:
 data "oneuptime_database_endpoint" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `database_server_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `endpoint` (String) Canonical endpoint of the database: host:port, with an @cluster qualifier for Kubernetes-internal names and private IPs (e.g. orders-db.data.svc.cluster.local:5432@prod-cluster). What you type is canonicalized; the default port of the engine is filled in... Computed.
-- `is_primary` (Bool) Is this the endpoint the database was created from? The primary endpoint cannot be removed... Computed.
-- `source` (String) Who added this endpoint: auto (found in telemetry), workload (a Service name of the Kubernetes workload the database runs as) or user (added as an alias by a person)... Computed.
-- `last_matched_at` (String) A date time object.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `database_server_id` (String) ID of the database this endpoint belongs to. The ID of a `oneuptime_database`.
+- `endpoint` (String) Canonical endpoint of the database: host:port, with an @cluster qualifier for Kubernetes-internal names and private IPs (e.g. orders-db.data.svc.cluster.local:5432@prod-cluster). What you type is canonicalized; the default port of the engine is filled in.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_primary` (Boolean) Is this the endpoint the database was created from? The primary endpoint cannot be removed.
+- `source` (String) Who added this endpoint: auto (found in telemetry), workload (a Service name of the Kubernetes workload the database runs as) or user (added as an alias by a person).
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `last_matched_at` (String) When telemetry or discovery last matched this endpoint to its database, refreshed at most once an hour. For a workload endpoint, when the workload last produced it.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

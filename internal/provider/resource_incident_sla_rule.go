@@ -63,8 +63,6 @@ type IncidentSlaRuleResourceModel struct {
     IncidentDescriptionPattern types.String `tfsdk:"incident_description_pattern"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -73,19 +71,23 @@ func (r *IncidentSlaRuleResource) Metadata(ctx context.Context, req resource.Met
 }
 
 func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *IncidentSlaRuleResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Configure SLA rules to define response and resolution time targets for incidents",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -97,7 +99,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -116,7 +118,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
+                MarkdownDescription: "Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -133,7 +135,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "response_time_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Target response time in minutes. This is the maximum time allowed before the incident must be acknowledged..",
+                MarkdownDescription: "Target response time in minutes. This is the maximum time allowed before the incident must be acknowledged.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -141,7 +143,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "resolution_time_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Target resolution time in minutes. This is the maximum time allowed before the incident must be resolved..",
+                MarkdownDescription: "Target resolution time in minutes. This is the maximum time allowed before the incident must be resolved.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -149,7 +151,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "at_risk_threshold_in_percentage": schema.NumberAttribute{
-                MarkdownDescription: "Percentage of the deadline at which the SLA status changes to At Risk. For example, 80 means the status becomes At Risk when 80% of the time has elapsed..",
+                MarkdownDescription: "Percentage of the deadline at which the SLA status changes to At Risk. For example, 80 means the status becomes At Risk when 80% of the time has elapsed.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(80)),
@@ -158,7 +160,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "internal_note_reminder_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often (in minutes) to automatically post internal notes to unresolved incidents. Internal notes are only visible to your team. For example, set to 30 to remind your team every 30 minutes to provide an update. Leave empty to disable..",
+                MarkdownDescription: "How often (in minutes) to automatically post internal notes to unresolved incidents. Internal notes are only visible to your team. For example, set to 30 to remind your team every 30 minutes to provide an update. Leave empty to disable.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -166,7 +168,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "public_note_reminder_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often (in minutes) to automatically post public notes to unresolved incidents. Public notes are visible to external stakeholders on your status page. For example, set to 60 to post a status update every hour. Leave empty to disable..",
+                MarkdownDescription: "How often (in minutes) to automatically post public notes to unresolved incidents. Public notes are visible to external stakeholders on your status page. For example, set to 60 to post a status update every hour. Leave empty to disable.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -174,7 +176,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "internal_note_reminder_template": schema.StringAttribute{
-                MarkdownDescription: "The content of the automatic internal note posted to your team. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used..",
+                MarkdownDescription: "The content of the automatic internal note posted to your team. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -182,7 +184,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "public_note_reminder_template": schema.StringAttribute{
-                MarkdownDescription: "The content of the automatic public note shown on your status page. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used..",
+                MarkdownDescription: "The content of the automatic public note shown on your status page. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -190,7 +192,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents affecting these monitors. Leave empty to match incidents from any monitor..",
+                MarkdownDescription: "Only apply this SLA rule to incidents affecting these monitors. Leave empty to match incidents from any monitor. IDs of `oneuptime_monitor` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -199,7 +201,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents with these severities. Leave empty to match incidents of any severity..",
+                MarkdownDescription: "Only apply this SLA rule to incidents with these severities. Leave empty to match incidents of any severity. IDs of `oneuptime_incident_severity` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -208,7 +210,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents that have at least one of these labels. Leave empty to match incidents regardless of labels..",
+                MarkdownDescription: "Only apply this SLA rule to incidents that have at least one of these labels. Leave empty to match incidents regardless of labels. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -217,7 +219,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels..",
+                MarkdownDescription: "Only apply this SLA rule to incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -226,7 +228,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'..",
+                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -234,7 +236,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description..",
+                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -242,27 +244,24 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -298,6 +297,14 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentSlaRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -429,8 +436,6 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
         "incidentDescriptionPattern": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -989,34 +994,6 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1062,6 +1039,9 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -1102,8 +1082,6 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
         "incidentDescriptionPattern": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1663,34 +1641,6 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1756,6 +1706,14 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentSlaRuleResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     incidentSlaRuleRequest := map[string]interface{}{
@@ -1866,8 +1824,6 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
         "incidentDescriptionPattern": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -2421,34 +2377,6 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2493,6 +2421,9 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2529,6 +2460,68 @@ func (r *IncidentSlaRuleResource) Delete(ctx context.Context, req resource.Delet
 
 func (r *IncidentSlaRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *IncidentSlaRuleResource) keepPlannedValues(data *IncidentSlaRuleResourceModel, plan *IncidentSlaRuleResourceModel, config *IncidentSlaRuleResourceModel) {
+    if config.Criteria.IsNull() && !plan.Criteria.IsUnknown() {
+        data.Criteria = plan.Criteria
+    }
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.Order.IsNull() && !plan.Order.IsUnknown() {
+        data.Order = plan.Order
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.ResponseTimeInMinutes.IsNull() && !plan.ResponseTimeInMinutes.IsUnknown() {
+        data.ResponseTimeInMinutes = plan.ResponseTimeInMinutes
+    }
+    if config.ResolutionTimeInMinutes.IsNull() && !plan.ResolutionTimeInMinutes.IsUnknown() {
+        data.ResolutionTimeInMinutes = plan.ResolutionTimeInMinutes
+    }
+    if config.AtRiskThresholdInPercentage.IsNull() && !plan.AtRiskThresholdInPercentage.IsUnknown() {
+        data.AtRiskThresholdInPercentage = plan.AtRiskThresholdInPercentage
+    }
+    if config.InternalNoteReminderIntervalInMinutes.IsNull() && !plan.InternalNoteReminderIntervalInMinutes.IsUnknown() {
+        data.InternalNoteReminderIntervalInMinutes = plan.InternalNoteReminderIntervalInMinutes
+    }
+    if config.PublicNoteReminderIntervalInMinutes.IsNull() && !plan.PublicNoteReminderIntervalInMinutes.IsUnknown() {
+        data.PublicNoteReminderIntervalInMinutes = plan.PublicNoteReminderIntervalInMinutes
+    }
+    if config.InternalNoteReminderTemplate.IsNull() && !plan.InternalNoteReminderTemplate.IsUnknown() {
+        data.InternalNoteReminderTemplate = plan.InternalNoteReminderTemplate
+    }
+    if config.PublicNoteReminderTemplate.IsNull() && !plan.PublicNoteReminderTemplate.IsUnknown() {
+        data.PublicNoteReminderTemplate = plan.PublicNoteReminderTemplate
+    }
+    if config.Monitors.IsNull() && !plan.Monitors.IsUnknown() {
+        data.Monitors = plan.Monitors
+    }
+    if config.IncidentSeverities.IsNull() && !plan.IncidentSeverities.IsUnknown() {
+        data.IncidentSeverities = plan.IncidentSeverities
+    }
+    if config.IncidentLabels.IsNull() && !plan.IncidentLabels.IsUnknown() {
+        data.IncidentLabels = plan.IncidentLabels
+    }
+    if config.MonitorLabels.IsNull() && !plan.MonitorLabels.IsUnknown() {
+        data.MonitorLabels = plan.MonitorLabels
+    }
+    if config.IncidentTitlePattern.IsNull() && !plan.IncidentTitlePattern.IsUnknown() {
+        data.IncidentTitlePattern = plan.IncidentTitlePattern
+    }
+    if config.IncidentDescriptionPattern.IsNull() && !plan.IncidentDescriptionPattern.IsUnknown() {
+        data.IncidentDescriptionPattern = plan.IncidentDescriptionPattern
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

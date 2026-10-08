@@ -13,8 +13,8 @@ Manage on-call duty escalation rule for the on-call policy.
 
 ```terraform
 resource "oneuptime_users_on_call_duty_escalation_rule" "example" {
-  on_call_duty_policy_id = "123e4567-e89b-12d3-a456-426614174000"
-  on_call_duty_policy_escalation_rule_id = "123e4567-e89b-12d3-a456-426614174000"
+  on_call_duty_policy_id                 = oneuptime_on_call_policy.example.id
+  on_call_duty_policy_escalation_rule_id = oneuptime_escalation_rule.example.id
 }
 ```
 
@@ -22,26 +22,33 @@ resource "oneuptime_users_on_call_duty_escalation_rule" "example" {
 
 ### Required
 
-- `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID..
-- `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID..
+- `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule where this user belongs. The ID of a `oneuptime_escalation_rule`.
+- `on_call_duty_policy_id` (String) ID of your On-Call Policy where this escalation rule belongs. The ID of a `oneuptime_on_call_policy`.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `user_id` (String) A unique identifier for an object, represented as a UUID..
+- `user_id` (String) ID of the user who is in this escalation rule. The ID of a `oneuptime_user` (see the data source).
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing users on call duty escalation rule by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_users_on_call_duty_escalation_rule.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_users_on_call_duty_escalation_rule.example <id>

@@ -28,11 +28,8 @@ type WebhookLogDataSource struct {
 // WebhookLogDataSourceModel describes the data source data model.
 type WebhookLogDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     WebhookUrl types.String `tfsdk:"webhook_url"`
     RequestBody types.String `tfsdk:"request_body"`
@@ -59,105 +56,109 @@ func (d *WebhookLogDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *WebhookLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Logs of all the outbound Webhook requests sent for this project. Look up an existing webhook_log by `id` or by `name`.",
+        MarkdownDescription: "Logs of all the outbound Webhook requests sent for this project. Look up an existing webhook log by `id`, or by any of its other arguments (`alert_id`, `incident_id`, `monitor_id`, ...): each one set must match, and exactly one webhook log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "webhook_url": schema.StringAttribute{
                 MarkdownDescription: "URL the request was sent to.",
+                Optional: true,
                 Computed: true,
             },
             "request_body": schema.StringAttribute{
                 MarkdownDescription: "JSON body that was POSTed to the webhook URL.",
+                Optional: true,
                 Computed: true,
             },
             "response_status_code": schema.NumberAttribute{
                 MarkdownDescription: "HTTP status code returned by the webhook endpoint.",
+                Optional: true,
                 Computed: true,
             },
             "response_body": schema.StringAttribute{
                 MarkdownDescription: "Response body returned by the webhook endpoint (truncated).",
+                Optional: true,
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Status Message (if any).",
+                Optional: true,
                 Computed: true,
             },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Status of the Webhook request.",
+                Optional: true,
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Incident associated with this request (if any). The ID of a `oneuptime_incident`.",
+                Optional: true,
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of User who initiated this request (if any). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Alert associated with this request (if any). The ID of a `oneuptime_alert`.",
+                Optional: true,
                 Computed: true,
             },
             "monitor_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Monitor associated with this request (if any). The ID of a `oneuptime_monitor`.",
+                Optional: true,
                 Computed: true,
             },
             "scheduled_maintenance_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Scheduled Maintenance associated with this request (if any). The ID of a `oneuptime_scheduled_maintenance_event`.",
+                Optional: true,
                 Computed: true,
             },
             "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Status Page associated with this request (if any). The ID of a `oneuptime_status_page`.",
+                Optional: true,
                 Computed: true,
             },
             "status_page_announcement_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Status Page Announcement associated with this request (if any). The ID of a `oneuptime_status_page_announcement`.",
+                Optional: true,
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of Team associated with this request (if any). The ID of a `oneuptime_team`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of On-Call Duty Policy associated with this request (if any). The ID of a `oneuptime_on_call_policy`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of On-Call Duty Policy Escalation Rule associated with this request (if any). The ID of a `oneuptime_escalation_rule`.",
+                Optional: true,
                 Computed: true,
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of On-Call Duty Policy Schedule associated with this request (if any). The ID of a `oneuptime_on_call_policy_schedule`.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -194,22 +195,98 @@ func (d *WebhookLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.WebhookUrl.IsNull() && !data.WebhookUrl.IsUnknown() {
+        filters["webhookUrl"] = data.WebhookUrl.ValueString()
+        filterNames = append(filterNames, "webhook_url = "+fmt.Sprintf("%q", data.WebhookUrl.ValueString()))
+    }
+    if !data.RequestBody.IsNull() && !data.RequestBody.IsUnknown() {
+        filters["requestBody"] = data.RequestBody.ValueString()
+        filterNames = append(filterNames, "request_body = "+fmt.Sprintf("%q", data.RequestBody.ValueString()))
+    }
+    if !data.ResponseStatusCode.IsNull() && !data.ResponseStatusCode.IsUnknown() {
+        filters["responseStatusCode"] = lookupNumber(data.ResponseStatusCode)
+        filterNames = append(filterNames, "response_status_code = "+data.ResponseStatusCode.ValueBigFloat().String())
+    }
+    if !data.ResponseBody.IsNull() && !data.ResponseBody.IsUnknown() {
+        filters["responseBody"] = data.ResponseBody.ValueString()
+        filterNames = append(filterNames, "response_body = "+fmt.Sprintf("%q", data.ResponseBody.ValueString()))
+    }
+    if !data.StatusMessage.IsNull() && !data.StatusMessage.IsUnknown() {
+        filters["statusMessage"] = data.StatusMessage.ValueString()
+        filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
+    }
+    if !data.Status.IsNull() && !data.Status.IsUnknown() {
+        filters["status"] = data.Status.ValueString()
+        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    }
+    if !data.IncidentId.IsNull() && !data.IncidentId.IsUnknown() {
+        filters["incidentId"] = data.IncidentId.ValueString()
+        filterNames = append(filterNames, "incident_id = "+fmt.Sprintf("%q", data.IncidentId.ValueString()))
+    }
+    if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
+        filters["userId"] = data.UserId.ValueString()
+        filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
+    if !data.AlertId.IsNull() && !data.AlertId.IsUnknown() {
+        filters["alertId"] = data.AlertId.ValueString()
+        filterNames = append(filterNames, "alert_id = "+fmt.Sprintf("%q", data.AlertId.ValueString()))
+    }
+    if !data.MonitorId.IsNull() && !data.MonitorId.IsUnknown() {
+        filters["monitorId"] = data.MonitorId.ValueString()
+        filterNames = append(filterNames, "monitor_id = "+fmt.Sprintf("%q", data.MonitorId.ValueString()))
+    }
+    if !data.ScheduledMaintenanceId.IsNull() && !data.ScheduledMaintenanceId.IsUnknown() {
+        filters["scheduledMaintenanceId"] = data.ScheduledMaintenanceId.ValueString()
+        filterNames = append(filterNames, "scheduled_maintenance_id = "+fmt.Sprintf("%q", data.ScheduledMaintenanceId.ValueString()))
+    }
+    if !data.StatusPageId.IsNull() && !data.StatusPageId.IsUnknown() {
+        filters["statusPageId"] = data.StatusPageId.ValueString()
+        filterNames = append(filterNames, "status_page_id = "+fmt.Sprintf("%q", data.StatusPageId.ValueString()))
+    }
+    if !data.StatusPageAnnouncementId.IsNull() && !data.StatusPageAnnouncementId.IsUnknown() {
+        filters["statusPageAnnouncementId"] = data.StatusPageAnnouncementId.ValueString()
+        filterNames = append(filterNames, "status_page_announcement_id = "+fmt.Sprintf("%q", data.StatusPageAnnouncementId.ValueString()))
+    }
+    if !data.TeamId.IsNull() && !data.TeamId.IsUnknown() {
+        filters["teamId"] = data.TeamId.ValueString()
+        filterNames = append(filterNames, "team_id = "+fmt.Sprintf("%q", data.TeamId.ValueString()))
+    }
+    if !data.OnCallDutyPolicyId.IsNull() && !data.OnCallDutyPolicyId.IsUnknown() {
+        filters["onCallDutyPolicyId"] = data.OnCallDutyPolicyId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyId.ValueString()))
+    }
+    if !data.OnCallDutyPolicyEscalationRuleId.IsNull() && !data.OnCallDutyPolicyEscalationRuleId.IsUnknown() {
+        filters["onCallDutyPolicyEscalationRuleId"] = data.OnCallDutyPolicyEscalationRuleId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_escalation_rule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyEscalationRuleId.ValueString()))
+    }
+    if !data.OnCallDutyPolicyScheduleId.IsNull() && !data.OnCallDutyPolicyScheduleId.IsUnknown() {
+        filters["onCallDutyPolicyScheduleId"] = data.OnCallDutyPolicyScheduleId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_schedule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyScheduleId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a webhook_log.",
+            "Look the webhook log up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the webhook log up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "webhookUrl": true,
         "requestBody": true,
@@ -240,7 +317,7 @@ func (d *WebhookLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No webhook_log found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No webhook log found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -253,11 +330,10 @@ func (d *WebhookLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -274,11 +350,11 @@ func (d *WebhookLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No webhook_log found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No webhook log matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one webhook_log matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one webhook log matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -306,23 +382,6 @@ func (d *WebhookLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -357,34 +416,6 @@ func (d *WebhookLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

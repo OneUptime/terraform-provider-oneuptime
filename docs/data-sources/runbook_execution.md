@@ -7,39 +7,42 @@ description: |-
 
 # oneuptime_runbook_execution (Data Source)
 
-A single run of a Runbook. Look up by `id` or by `name` (must match exactly one item).
+A single run of a Runbook.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one runbook execution may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_runbook_execution" "by_name" {
-  name = "example-runbook_execution"
+data "oneuptime_runbook_execution" "example" {
+  runbook_id = oneuptime_runbook.example.id
 }
 
+# Or by id:
 data "oneuptime_runbook_execution" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `runbook_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `runbook_name_snapshot` (String) Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted)... Computed.
-- `status` (String) Current status of this runbook execution... Computed.
-- `step_executions` (String) Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps... Computed.
-- `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `scheduled_maintenance_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `triggered_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `started_at` (String) A date time object.. Computed.
-- `completed_at` (String) A date time object.. Computed.
-- `failure_reason` (String) Reason this runbook execution failed (if it did)... Computed.
+### Optional
+
+- `alert_id` (String) ID of the alert that triggered or hosts this runbook execution. The ID of a `oneuptime_alert`.
+- `failure_reason` (String) Reason this runbook execution failed (if it did).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `incident_id` (String) ID of the incident that triggered or hosts this runbook execution. The ID of a `oneuptime_incident`.
+- `runbook_id` (String) ID of the Runbook this execution belongs to. The ID of a `oneuptime_runbook`.
+- `runbook_name_snapshot` (String) Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted).
+- `scheduled_maintenance_id` (String) ID of the scheduled maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `status` (String) Current status of this runbook execution.
+- `triggered_by_user_id` (String) ID of the User who triggered this runbook execution. The ID of a `oneuptime_user` (see the data source).
+
+### Read-Only
+
+- `completed_at` (String) Time at which this runbook execution completed.
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `started_at` (String) Time at which this runbook execution started.
+- `step_executions` (String) Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps. A JSON value: write it with `jsonencode()`.
+- `updated_at` (String) Date and Time when the object was updated.

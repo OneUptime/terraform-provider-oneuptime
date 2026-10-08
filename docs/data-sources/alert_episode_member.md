@@ -7,37 +7,39 @@ description: |-
 
 # oneuptime_alert_episode_member (Data Source)
 
-Link between alerts and episodes Look up by `id` or by `name` (must match exactly one item).
+Link between alerts and episodes
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one alert episode member may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_alert_episode_member" "by_name" {
-  name = "example-alert_episode_member"
+data "oneuptime_alert_episode_member" "example" {
+  alert_episode_id = oneuptime_alert_episode.example.id
 }
 
+# Or by id:
 data "oneuptime_alert_episode_member" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `alert_episode_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `added_at` (String) A date time object.. Computed.
-- `added_by` (String) How this alert was added to the episode (rule, manual, or api).. Computed.
-- `added_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `matched_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_owner_notified_of_alert_added` (Bool) Has the owner been notified that this alert was added to the episode?.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `added_by` (String) How this alert was added to the episode (rule, manual, or api).
+- `added_by_user_id` (String) User ID who manually added this alert to the episode. The ID of a `oneuptime_user` (see the data source).
+- `alert_episode_id` (String) ID of the Alert Episode that this alert belongs to. The ID of a `oneuptime_alert_episode`.
+- `alert_id` (String) ID of the Alert that is a member of this episode. The ID of a `oneuptime_alert`.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_owner_notified_of_alert_added` (Boolean) Has the owner been notified that this alert was added to the episode?
+- `matched_rule_id` (String) ID of the grouping rule that matched this alert. The ID of a `oneuptime_alert_grouping_rule`.
+
+### Read-Only
+
+- `added_at` (String) When this alert was added to the episode.
+- `created_at` (String) Date and Time when the object was created.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

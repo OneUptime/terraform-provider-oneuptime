@@ -111,8 +111,6 @@ type ProjectResourceModel struct {
     DefaultMetricDownsamplingRetentionDays JSONSubsetValue `tfsdk:"default_metric_downsampling_retention_days"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     PaymentProviderSubscriptionId types.String `tfsdk:"payment_provider_subscription_id"`
     PaymentProviderMeteredSubscriptionId types.String `tfsdk:"payment_provider_metered_subscription_id"`
@@ -122,7 +120,6 @@ type ProjectResourceModel struct {
     PaymentProviderSubscriptionStatus types.String `tfsdk:"payment_provider_subscription_status"`
     PaymentProviderMeteredSubscriptionStatus types.String `tfsdk:"payment_provider_metered_subscription_status"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     WorkflowRunsInLast30Days types.Number `tfsdk:"workflow_runs_in_last30_days"`
     SmsOrCallCurrentBalanceInUsdCents types.Number `tfsdk:"sms_or_call_current_balance_in_usd_cents"`
     AiCurrentBalanceInUsdCents types.Number `tfsdk:"ai_current_balance_in_usd_cents"`
@@ -139,12 +136,16 @@ func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataReq
 }
 
 func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *ProjectResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "OneUptime Project, and everything happens inside it",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -162,7 +163,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "business_details": schema.StringAttribute{
-                MarkdownDescription: "Business legal name, address and any tax information to appear on invoices..",
+                MarkdownDescription: "Business legal name, address and any tax information to appear on invoices.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -170,7 +171,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "business_details_country": schema.StringAttribute{
-                MarkdownDescription: "Two-letter ISO country code for billing address (e.g., US, GB, DE)..",
+                MarkdownDescription: "Two-letter ISO country code for billing address (e.g., US, GB, DE).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -178,7 +179,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "finance_accounting_email": schema.StringAttribute{
-                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma..",
+                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -215,7 +216,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incident_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incidents that already exist..",
+                MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incidents that already exist.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -223,7 +224,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for alert numbers (e.g., 'ALT-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber alerts that already exist..",
+                MarkdownDescription: "Custom prefix for alert numbers (e.g., 'ALT-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber alerts that already exist.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -231,7 +232,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "scheduled_maintenance_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber scheduled maintenance events that already exist..",
+                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber scheduled maintenance events that already exist.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -239,7 +240,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incident_episode_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incident episodes that already exist..",
+                MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incident episodes that already exist.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -247,7 +248,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_episode_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber alert episodes that already exist..",
+                MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber alert episodes that already exist.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -255,7 +256,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_automatic_incident_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline; any auto-remediation for the incident waits until that investigation settles. On for new projects created in OneUptime; projects that existed before keep their setting. Drafting a postmortem when an incident resolves is a separate setting (Enable Automatic Postmortem Draft). Requires AI to be enabled and an LLM provider to be configured..",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline; any auto-remediation for the incident waits until that investigation settles. On for new projects created in OneUptime; projects that existed before keep their setting. Drafting a postmortem when an incident resolves is a separate setting (Enable Automatic Postmortem Draft). Requires AI to be enabled and an LLM provider to be configured.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -264,7 +265,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured..",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -273,7 +274,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_automatic_incident_remediation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime fixes new incidents automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which incidents are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the incident settles first. Requires AI to be enabled..",
+                MarkdownDescription: "When enabled, OneUptime fixes new incidents automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which incidents are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the incident settles first. Requires AI to be enabled. It also holds the incident pull-request switches, enableAutomaticIncidentCodeFixes and enableIncidentInstrumentationFixTasks: they open pull requests only while this is on. The dashboard turns them on and off with it; through the API, set them in the same request.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -282,7 +283,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_automatic_alert_remediation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime fixes new alerts automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which alerts are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the alert settles first. Requires AI to be enabled..",
+                MarkdownDescription: "When enabled, OneUptime fixes new alerts automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which alerts are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the alert settles first. Requires AI to be enabled. It also holds the alert pull-request switches, enableAutomaticAlertCodeFixes and enableAlertInstrumentationFixTasks: they open pull requests only while this is on. The dashboard turns them on and off with it; through the API, set them in the same request.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -291,7 +292,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_automatic_postmortem_draft": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE drafts a postmortem from the incident's timeline and telemetry when an incident is resolved, for a human to review and edit. It never overwrites a postmortem that already exists. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured..",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE drafts a postmortem from the incident's timeline and telemetry when an incident is resolved, for a human to review and edit. It never overwrites a postmortem that already exists. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -300,7 +301,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_incident_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an incident AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, an incident AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticIncidentRemediation (Fix new incidents automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -309,7 +310,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_alert_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, an alert AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticAlertRemediation (Fix new alerts automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -318,7 +319,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_automatic_incident_code_fixes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an incident AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, an incident AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticIncidentRemediation (Fix new incidents automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -327,7 +328,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_automatic_alert_code_fixes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, an alert AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticAlertRemediation (Fix new alerts automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -336,7 +337,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_ai_insights": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime AI continuously watches this project's telemetry with deterministic statistical sensors (error-log spikes, exception novelty and spikes, trace-latency regressions, week-over-week metric drift) and files quiet Insights — never pages, never opens incidents. Each new insight also gets a budgeted, read-only AI triage analysis when an LLM provider is configured. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, OneUptime AI continuously watches this project's telemetry with deterministic statistical sensors (error-log spikes, exception novelty and spikes, trace-latency regressions, week-over-week metric drift) and files quiet Insights — never pages, never opens incidents. Each new insight also gets a budgeted, read-only AI triage analysis when an LLM provider is configured. On for new projects created in OneUptime; projects that existed before keep their setting.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -345,7 +346,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_insight_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a pull request with a proposed fix, ready for review. Honors any open-PR cap set on the repository. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a pull request with a proposed fix, ready for review. Honors any open-PR cap set on the repository. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -354,7 +355,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "auto_archive_non_actionable_exceptions": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab. On for new projects created in OneUptime; projects that existed before keep their setting.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -363,7 +364,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "send_invoices_by_email": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated..",
+                MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -378,7 +379,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_audit_logs": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries..",
+                MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -387,7 +388,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "is_session_replay_allowed": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, RUM applications in this project may record session replays if they are individually enabled too. On by default; switch it off here to stop session replay across the entire project in one place..",
+                MarkdownDescription: "When enabled, RUM applications in this project may record session replays if they are individually enabled too. On by default; switch it off here to stop session replay across the entire project in one place.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -396,7 +397,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "audit_logs_retention_in_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180..",
+                MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(7)),
@@ -405,7 +406,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "store_system_events_in_audit_logs": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded..",
+                MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -422,7 +423,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "require_sso_with_sso_provider_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "If set, SSO-enforced login for this project is only satisfied by an SSO token issued by this specific provider id (a Project SSO/OIDC or a Global SSO/OIDC). When null, any trusted SSO provider satisfies enforcement.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -448,7 +449,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_sms_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable SMS notifications for this project..",
+                MarkdownDescription: "Enable SMS notifications for this project.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -457,7 +458,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_whats_app_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable WhatsApp notifications for this project..",
+                MarkdownDescription: "Enable WhatsApp notifications for this project.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -466,7 +467,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_telegram_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable Telegram notifications for this project..",
+                MarkdownDescription: "Enable Telegram notifications for this project.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -475,7 +476,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_call_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable call notifications for this project..",
+                MarkdownDescription: "Enable call notifications for this project.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -484,7 +485,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "disable_on_call_notification_fallback": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, a page routed to a responder with no matching notification rule fails instead of falling back to their verified notification methods..",
+                MarkdownDescription: "When enabled, a page routed to a responder with no matching notification rule fails instead of falling back to their verified notification methods.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -493,7 +494,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_auto_recharge_sms_or_call_balance": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project..",
+                MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -520,7 +521,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_ai": schema.BoolAttribute{
-                MarkdownDescription: "Master switch for AI in this project. When disabled, every AI feature stops: Ask AI, investigations, postmortem drafts, auto-remediation and AI commands on Runners..",
+                MarkdownDescription: "Master switch for AI in this project. When disabled, every AI feature stops: Ask AI, investigations, postmortem drafts, auto-remediation and AI commands on Runners.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -529,7 +530,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ai_daily_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "The most tokens OneUptime AI may use in this project each UTC day, across every AI feature: Ask AI, investigations, postmortem drafts, fix pull requests, insight triage, workflows, runbooks and Slack or Microsoft Teams questions. Once it is reached, new AI work is refused until midnight UTC. The incident and alert daily limits still apply under it. Unset means no limit; a limit is a whole number of at least 1 (to turn AI off, use Enable AI)..",
+                MarkdownDescription: "The most tokens OneUptime AI may use in this project each UTC day, across every AI feature: Ask AI, investigations, postmortem drafts, fix pull requests, insight triage, workflows, runbooks and Slack or Microsoft Teams questions. Once it is reached, new AI work is refused until midnight UTC. The incident and alert daily limits still apply under it. Unset means no limit; a limit is a whole number of at least 1 (to turn AI off, use Enable AI).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -537,7 +538,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ai_daily_spend_limit_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "OneUptime Cloud: the most AI credits, in whole US dollars, OneUptime AI may spend in this project each UTC day. Only calls billed to the project's AI credits count, so it never stops AI that runs on the project's own LLM provider. Once it is reached, billed AI work is refused until midnight UTC. Ignored where AI is not billed (self-hosted). Unset means no limit; a limit is at least 1 (to turn AI off, use Enable AI)..",
+                MarkdownDescription: "OneUptime Cloud: the most AI credits, in whole US dollars, OneUptime AI may spend in this project each UTC day. Only calls billed to the project's AI credits count, so it never stops AI that runs on the project's own LLM provider. Once it is reached, billed AI work is refused until midnight UTC. Ignored where AI is not billed (self-hosted). Unset means no limit; a limit is at least 1 (to turn AI off, use Enable AI).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -545,7 +546,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "acknowledge_linked_alerts_when_incident_acknowledged": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, acknowledging an incident also acknowledges every alert linked to it. This stops those alerts' on-call escalations, and their reminders only when the alert reminder rule is set to stop on Acknowledged. Alerts linked to an incident that is already acknowledged are acknowledged as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, acknowledging an incident also acknowledges every alert linked to it. This stops those alerts' on-call escalations, and their reminders only when the alert reminder rule is set to stop on Acknowledged. Alerts linked to an incident that is already acknowledged are acknowledged as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -554,7 +555,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "resolve_linked_alerts_when_incident_resolved": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, resolving an incident also resolves every alert linked to it, except alerts that are still linked to another incident that is not resolved yet. Alerts linked to an incident that is already resolved are resolved as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting..",
+                MarkdownDescription: "When enabled, resolving an incident also resolves every alert linked to it, except alerts that are still linked to another incident that is not resolved yet. Alerts linked to an incident that is already resolved are resolved as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -563,7 +564,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_investigation_minimum_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the minimum AlertSeverity that triggers automatic investigation. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -571,7 +572,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ai_daily_autonomous_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "Legacy setting, no longer enforced: autonomous AI work that is not associated with an incident or alert has no daily token limit. Use the Daily Incident AI Token Limit and Daily Alert AI Token Limit instead..",
+                MarkdownDescription: "Legacy setting, no longer enforced: autonomous AI work that is not associated with an incident or alert has no daily token limit. Use the Daily Incident AI Token Limit and Daily Alert AI Token Limit instead.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -579,7 +580,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incident_ai_daily_autonomous_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum tokens per UTC day that autonomous incident-linked AI work may consume for this project, including investigations, remediation, and follow-up fix tasks. When the limit is reached, new incident-linked AI work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit..",
+                MarkdownDescription: "Maximum tokens per UTC day that autonomous incident-linked AI work may consume for this project, including investigations, remediation, and follow-up fix tasks. When the limit is reached, new incident-linked AI work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -587,7 +588,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_ai_daily_autonomous_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum tokens per UTC day that autonomous alert-linked AI work may consume for this project, including investigations, remediation, and follow-up fix tasks. When the limit is reached, new alert-linked AI work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit..",
+                MarkdownDescription: "Maximum tokens per UTC day that autonomous alert-linked AI work may consume for this project, including investigations, remediation, and follow-up fix tasks. When the limit is reached, new alert-linked AI work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -595,7 +596,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ai_daily_fix_task_limit": schema.NumberAttribute{
-                MarkdownDescription: "Legacy setting, no longer enforced: AI fix tasks that are not associated with an incident or alert have no daily limit. Use the Daily Incident AI Fix Task Limit and Daily Alert AI Fix Task Limit instead..",
+                MarkdownDescription: "Legacy setting, no longer enforced: AI fix tasks that are not associated with an incident or alert have no daily limit. Use the Daily Incident AI Fix Task Limit and Daily Alert AI Fix Task Limit instead.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -603,7 +604,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incident_ai_daily_fix_task_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum AI fix tasks derived from incidents that may be created per UTC day for this project. Unset means no limit; 0 pauses incident AI fix tasks entirely..",
+                MarkdownDescription: "Maximum AI fix tasks derived from incidents that may be created per UTC day for this project. Unset means no limit; 0 pauses incident AI fix tasks entirely.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -611,7 +612,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_ai_daily_fix_task_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum AI fix tasks derived from alerts that may be created per UTC day for this project. Unset means no limit; 0 pauses alert AI fix tasks entirely..",
+                MarkdownDescription: "Maximum AI fix tasks derived from alerts that may be created per UTC day for this project. Unset means no limit; 0 pauses alert AI fix tasks entirely.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -619,7 +620,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_investigation_dedupe_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by AI — the first analysis stands. Unset or 0 means no cooldown, so every alert is investigated; at most 1440 minutes (a day)..",
+                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by AI — the first analysis stands. Unset or 0 means no cooldown, so every alert is investigated; at most 1440 minutes (a day).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -627,7 +628,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incident_investigation_minimum_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the minimum incident severity that is investigated automatically by AI. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -635,7 +636,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incident_investigation_dedupe_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Incidents affecting a monitor that AI investigated within this many minutes are not re-investigated — the first analysis stands. Unset or 0 means no cooldown, so every incident is investigated; at most 1440 minutes (a day)..",
+                MarkdownDescription: "Incidents affecting a monitor that AI investigated within this many minutes are not re-investigated — the first analysis stands. Unset or 0 means no cooldown, so every incident is investigated; at most 1440 minutes (a day).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -643,7 +644,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "Legacy setting, no longer enforced: AI investigations that are not associated with an incident or alert have no concurrency limit. Use the Max Concurrent Incident Investigations and Max Concurrent Alert Investigations instead..",
+                MarkdownDescription: "Legacy setting, no longer enforced: AI investigations that are not associated with an incident or alert have no concurrency limit. Use the Max Concurrent Incident Investigations and Max Concurrent Alert Investigations instead.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -651,7 +652,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incident_ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "How many incident AI investigations may run at the same time for this project. Unset means no limit — every incident investigation starts right away. Minimum 1 — pause incident investigations with the Enable Automatic Incident Investigation toggle or a daily token limit of 0 instead..",
+                MarkdownDescription: "How many incident AI investigations may run at the same time for this project. Unset means no limit — every incident investigation starts right away. Minimum 1 — pause incident investigations with the Enable Automatic Incident Investigation toggle or a daily token limit of 0 instead.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -659,7 +660,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "How many alert AI investigations may run at the same time for this project. Unset means no limit — every alert investigation starts right away. Minimum 1 — pause alert investigations with the Enable Automatic Alert Investigation toggle or a daily token limit of 0 instead..",
+                MarkdownDescription: "How many alert AI investigations may run at the same time for this project. Unset means no limit — every alert investigation starts right away. Minimum 1 — pause alert investigations with the Enable Automatic Alert Investigation toggle or a daily token limit of 0 instead.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -667,7 +668,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incident_ai_investigation_time_limit_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Stop an incident AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done..",
+                MarkdownDescription: "Stop an incident AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -675,7 +676,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_ai_investigation_time_limit_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Stop an alert AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done..",
+                MarkdownDescription: "Stop an alert AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -683,7 +684,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto recharge for AI balance for this project..",
+                MarkdownDescription: "Enable auto recharge for AI balance for this project.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -692,7 +693,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "do_not_add_global_probes_by_default_on_new_monitors": schema.BoolAttribute{
-                MarkdownDescription: "If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources..",
+                MarkdownDescription: "If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -701,7 +702,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "default_metric_cardinality_budget": schema.NumberAttribute{
-                MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value..",
+                MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -709,7 +710,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "default_telemetry_retention_in_days": schema.NumberAttribute{
-                MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value..",
+                MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -717,7 +718,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set..",
+                MarkdownDescription: "Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -729,7 +730,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "default_metric_downsampling_retention_days": schema.StringAttribute{
-                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days..",
+                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -741,22 +742,16 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -776,7 +771,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "trial_ends_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -793,12 +788,11 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "workflow_runs_in_last30_days": schema.NumberAttribute{
                 MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
@@ -813,27 +807,27 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "plan_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the plan this project is subscribed to..",
+                MarkdownDescription: "Name of the plan this project is subscribed to.",
                 Computed: true,
             },
             "data_residency": schema.StringAttribute{
-                MarkdownDescription: "Where this project's data is hosted. Set by OneUptime staff on OneUptime Cloud..",
+                MarkdownDescription: "Where this project's data is hosted. Set by OneUptime staff on OneUptime Cloud.",
                 Computed: true,
             },
             "reseller_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Reseller in which this object belongs.",
                 Computed: true,
             },
             "reseller_plan_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Reseller Plan in which this object belongs.",
                 Computed: true,
             },
             "let_customer_support_access_project": schema.BoolAttribute{
-                MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes..",
+                MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes.",
                 Computed: true,
             },
             "git_hub_app_installation_id": schema.StringAttribute{
-                MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization..",
+                MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.",
                 Computed: true,
             },
         },
@@ -870,6 +864,14 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ProjectResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -1091,8 +1093,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "defaultMetricDownsamplingRetentionDays": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "paymentProviderSubscriptionId": true,
         "paymentProviderMeteredSubscriptionId": true,
@@ -1102,7 +1102,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "paymentProviderSubscriptionStatus": true,
         "paymentProviderMeteredSubscriptionStatus": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "workflowRunsInLast30Days": true,
         "smsOrCallCurrentBalanceInUSDCents": true,
         "aiCurrentBalanceInUSDCents": true,
@@ -2219,34 +2218,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2534,43 +2505,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["workflowRunsInLast30Days"].(float64); ok {
         data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["workflowRunsInLast30Days"].(int); ok {
@@ -2818,6 +2752,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -2906,8 +2843,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "defaultMetricDownsamplingRetentionDays": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "paymentProviderSubscriptionId": true,
         "paymentProviderMeteredSubscriptionId": true,
@@ -2917,7 +2852,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "paymentProviderSubscriptionStatus": true,
         "paymentProviderMeteredSubscriptionStatus": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "workflowRunsInLast30Days": true,
         "smsOrCallCurrentBalanceInUSDCents": true,
         "aiCurrentBalanceInUSDCents": true,
@@ -4035,34 +3969,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4350,43 +4256,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["workflowRunsInLast30Days"].(float64); ok {
         data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["workflowRunsInLast30Days"].(int); ok {
@@ -4654,6 +4523,14 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ProjectResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     projectRequest := map[string]interface{}{
@@ -4961,8 +4838,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "defaultMetricDownsamplingRetentionDays": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "paymentProviderSubscriptionId": true,
         "paymentProviderMeteredSubscriptionId": true,
@@ -4972,7 +4847,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "paymentProviderSubscriptionStatus": true,
         "paymentProviderMeteredSubscriptionStatus": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "workflowRunsInLast30Days": true,
         "smsOrCallCurrentBalanceInUSDCents": true,
         "aiCurrentBalanceInUSDCents": true,
@@ -6084,34 +5958,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6399,43 +6245,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["workflowRunsInLast30Days"].(float64); ok {
         data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["workflowRunsInLast30Days"].(int); ok {
@@ -6682,6 +6491,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -6718,6 +6530,215 @@ func (r *ProjectResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 func (r *ProjectResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *ProjectResourceModel, config *ProjectResourceModel) {
+    if config.PaymentProviderPlanId.IsNull() && !plan.PaymentProviderPlanId.IsUnknown() {
+        data.PaymentProviderPlanId = plan.PaymentProviderPlanId
+    }
+    if config.BusinessDetails.IsNull() && !plan.BusinessDetails.IsUnknown() {
+        data.BusinessDetails = plan.BusinessDetails
+    }
+    if config.BusinessDetailsCountry.IsNull() && !plan.BusinessDetailsCountry.IsUnknown() {
+        data.BusinessDetailsCountry = plan.BusinessDetailsCountry
+    }
+    if config.FinanceAccountingEmail.IsNull() && !plan.FinanceAccountingEmail.IsUnknown() {
+        data.FinanceAccountingEmail = plan.FinanceAccountingEmail
+    }
+    if config.PaymentProviderPromoCode.IsNull() && !plan.PaymentProviderPromoCode.IsUnknown() {
+        data.PaymentProviderPromoCode = plan.PaymentProviderPromoCode
+    }
+    if config.IsFeatureFlagMonitorGroupsEnabled.IsNull() && !plan.IsFeatureFlagMonitorGroupsEnabled.IsUnknown() {
+        data.IsFeatureFlagMonitorGroupsEnabled = plan.IsFeatureFlagMonitorGroupsEnabled
+    }
+    if config.IncidentNumberPrefix.IsNull() && !plan.IncidentNumberPrefix.IsUnknown() {
+        data.IncidentNumberPrefix = plan.IncidentNumberPrefix
+    }
+    if config.AlertNumberPrefix.IsNull() && !plan.AlertNumberPrefix.IsUnknown() {
+        data.AlertNumberPrefix = plan.AlertNumberPrefix
+    }
+    if config.ScheduledMaintenanceNumberPrefix.IsNull() && !plan.ScheduledMaintenanceNumberPrefix.IsUnknown() {
+        data.ScheduledMaintenanceNumberPrefix = plan.ScheduledMaintenanceNumberPrefix
+    }
+    if config.IncidentEpisodeNumberPrefix.IsNull() && !plan.IncidentEpisodeNumberPrefix.IsUnknown() {
+        data.IncidentEpisodeNumberPrefix = plan.IncidentEpisodeNumberPrefix
+    }
+    if config.AlertEpisodeNumberPrefix.IsNull() && !plan.AlertEpisodeNumberPrefix.IsUnknown() {
+        data.AlertEpisodeNumberPrefix = plan.AlertEpisodeNumberPrefix
+    }
+    if config.EnableAutomaticIncidentInvestigation.IsNull() && !plan.EnableAutomaticIncidentInvestigation.IsUnknown() {
+        data.EnableAutomaticIncidentInvestigation = plan.EnableAutomaticIncidentInvestigation
+    }
+    if config.EnableAutomaticAlertInvestigation.IsNull() && !plan.EnableAutomaticAlertInvestigation.IsUnknown() {
+        data.EnableAutomaticAlertInvestigation = plan.EnableAutomaticAlertInvestigation
+    }
+    if config.EnableAutomaticIncidentRemediation.IsNull() && !plan.EnableAutomaticIncidentRemediation.IsUnknown() {
+        data.EnableAutomaticIncidentRemediation = plan.EnableAutomaticIncidentRemediation
+    }
+    if config.EnableAutomaticAlertRemediation.IsNull() && !plan.EnableAutomaticAlertRemediation.IsUnknown() {
+        data.EnableAutomaticAlertRemediation = plan.EnableAutomaticAlertRemediation
+    }
+    if config.EnableAutomaticPostmortemDraft.IsNull() && !plan.EnableAutomaticPostmortemDraft.IsUnknown() {
+        data.EnableAutomaticPostmortemDraft = plan.EnableAutomaticPostmortemDraft
+    }
+    if config.EnableIncidentInstrumentationFixTasks.IsNull() && !plan.EnableIncidentInstrumentationFixTasks.IsUnknown() {
+        data.EnableIncidentInstrumentationFixTasks = plan.EnableIncidentInstrumentationFixTasks
+    }
+    if config.EnableAlertInstrumentationFixTasks.IsNull() && !plan.EnableAlertInstrumentationFixTasks.IsUnknown() {
+        data.EnableAlertInstrumentationFixTasks = plan.EnableAlertInstrumentationFixTasks
+    }
+    if config.EnableAutomaticIncidentCodeFixes.IsNull() && !plan.EnableAutomaticIncidentCodeFixes.IsUnknown() {
+        data.EnableAutomaticIncidentCodeFixes = plan.EnableAutomaticIncidentCodeFixes
+    }
+    if config.EnableAutomaticAlertCodeFixes.IsNull() && !plan.EnableAutomaticAlertCodeFixes.IsUnknown() {
+        data.EnableAutomaticAlertCodeFixes = plan.EnableAutomaticAlertCodeFixes
+    }
+    if config.EnableAiInsights.IsNull() && !plan.EnableAiInsights.IsUnknown() {
+        data.EnableAiInsights = plan.EnableAiInsights
+    }
+    if config.EnableInsightFixTasks.IsNull() && !plan.EnableInsightFixTasks.IsUnknown() {
+        data.EnableInsightFixTasks = plan.EnableInsightFixTasks
+    }
+    if config.AutoArchiveNonActionableExceptions.IsNull() && !plan.AutoArchiveNonActionableExceptions.IsUnknown() {
+        data.AutoArchiveNonActionableExceptions = plan.AutoArchiveNonActionableExceptions
+    }
+    if config.SendInvoicesByEmail.IsNull() && !plan.SendInvoicesByEmail.IsUnknown() {
+        data.SendInvoicesByEmail = plan.SendInvoicesByEmail
+    }
+    if config.EnableAuditLogs.IsNull() && !plan.EnableAuditLogs.IsUnknown() {
+        data.EnableAuditLogs = plan.EnableAuditLogs
+    }
+    if config.IsSessionReplayAllowed.IsNull() && !plan.IsSessionReplayAllowed.IsUnknown() {
+        data.IsSessionReplayAllowed = plan.IsSessionReplayAllowed
+    }
+    if config.AuditLogsRetentionInDays.IsNull() && !plan.AuditLogsRetentionInDays.IsUnknown() {
+        data.AuditLogsRetentionInDays = plan.AuditLogsRetentionInDays
+    }
+    if config.StoreSystemEventsInAuditLogs.IsNull() && !plan.StoreSystemEventsInAuditLogs.IsUnknown() {
+        data.StoreSystemEventsInAuditLogs = plan.StoreSystemEventsInAuditLogs
+    }
+    if config.RequireSsoForLogin.IsNull() && !plan.RequireSsoForLogin.IsUnknown() {
+        data.RequireSsoForLogin = plan.RequireSsoForLogin
+    }
+    if config.RequireSsoWithSsoProviderId.IsNull() && !plan.RequireSsoWithSsoProviderId.IsUnknown() {
+        data.RequireSsoWithSsoProviderId = plan.RequireSsoWithSsoProviderId
+    }
+    if config.AutoRechargeSmsOrCallByBalanceInUsd.IsNull() && !plan.AutoRechargeSmsOrCallByBalanceInUsd.IsUnknown() {
+        data.AutoRechargeSmsOrCallByBalanceInUsd = plan.AutoRechargeSmsOrCallByBalanceInUsd
+    }
+    if config.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd.IsNull() && !plan.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd.IsUnknown() {
+        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = plan.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd
+    }
+    if config.EnableSmsNotifications.IsNull() && !plan.EnableSmsNotifications.IsUnknown() {
+        data.EnableSmsNotifications = plan.EnableSmsNotifications
+    }
+    if config.EnableWhatsAppNotifications.IsNull() && !plan.EnableWhatsAppNotifications.IsUnknown() {
+        data.EnableWhatsAppNotifications = plan.EnableWhatsAppNotifications
+    }
+    if config.EnableTelegramNotifications.IsNull() && !plan.EnableTelegramNotifications.IsUnknown() {
+        data.EnableTelegramNotifications = plan.EnableTelegramNotifications
+    }
+    if config.EnableCallNotifications.IsNull() && !plan.EnableCallNotifications.IsUnknown() {
+        data.EnableCallNotifications = plan.EnableCallNotifications
+    }
+    if config.DisableOnCallNotificationFallback.IsNull() && !plan.DisableOnCallNotificationFallback.IsUnknown() {
+        data.DisableOnCallNotificationFallback = plan.DisableOnCallNotificationFallback
+    }
+    if config.EnableAutoRechargeSmsOrCallBalance.IsNull() && !plan.EnableAutoRechargeSmsOrCallBalance.IsUnknown() {
+        data.EnableAutoRechargeSmsOrCallBalance = plan.EnableAutoRechargeSmsOrCallBalance
+    }
+    if config.AutoAiRechargeByBalanceInUsd.IsNull() && !plan.AutoAiRechargeByBalanceInUsd.IsUnknown() {
+        data.AutoAiRechargeByBalanceInUsd = plan.AutoAiRechargeByBalanceInUsd
+    }
+    if config.AutoRechargeAiWhenCurrentBalanceFallsInUsd.IsNull() && !plan.AutoRechargeAiWhenCurrentBalanceFallsInUsd.IsUnknown() {
+        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = plan.AutoRechargeAiWhenCurrentBalanceFallsInUsd
+    }
+    if config.EnableAi.IsNull() && !plan.EnableAi.IsUnknown() {
+        data.EnableAi = plan.EnableAi
+    }
+    if config.AiDailyTokenLimit.IsNull() && !plan.AiDailyTokenLimit.IsUnknown() {
+        data.AiDailyTokenLimit = plan.AiDailyTokenLimit
+    }
+    if config.AiDailySpendLimitInUsd.IsNull() && !plan.AiDailySpendLimitInUsd.IsUnknown() {
+        data.AiDailySpendLimitInUsd = plan.AiDailySpendLimitInUsd
+    }
+    if config.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.IsNull() && !plan.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.IsUnknown() {
+        data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = plan.AcknowledgeLinkedAlertsWhenIncidentAcknowledged
+    }
+    if config.ResolveLinkedAlertsWhenIncidentResolved.IsNull() && !plan.ResolveLinkedAlertsWhenIncidentResolved.IsUnknown() {
+        data.ResolveLinkedAlertsWhenIncidentResolved = plan.ResolveLinkedAlertsWhenIncidentResolved
+    }
+    if config.AlertInvestigationMinimumSeverityId.IsNull() && !plan.AlertInvestigationMinimumSeverityId.IsUnknown() {
+        data.AlertInvestigationMinimumSeverityId = plan.AlertInvestigationMinimumSeverityId
+    }
+    if config.AiDailyAutonomousTokenLimit.IsNull() && !plan.AiDailyAutonomousTokenLimit.IsUnknown() {
+        data.AiDailyAutonomousTokenLimit = plan.AiDailyAutonomousTokenLimit
+    }
+    if config.IncidentAiDailyAutonomousTokenLimit.IsNull() && !plan.IncidentAiDailyAutonomousTokenLimit.IsUnknown() {
+        data.IncidentAiDailyAutonomousTokenLimit = plan.IncidentAiDailyAutonomousTokenLimit
+    }
+    if config.AlertAiDailyAutonomousTokenLimit.IsNull() && !plan.AlertAiDailyAutonomousTokenLimit.IsUnknown() {
+        data.AlertAiDailyAutonomousTokenLimit = plan.AlertAiDailyAutonomousTokenLimit
+    }
+    if config.AiDailyFixTaskLimit.IsNull() && !plan.AiDailyFixTaskLimit.IsUnknown() {
+        data.AiDailyFixTaskLimit = plan.AiDailyFixTaskLimit
+    }
+    if config.IncidentAiDailyFixTaskLimit.IsNull() && !plan.IncidentAiDailyFixTaskLimit.IsUnknown() {
+        data.IncidentAiDailyFixTaskLimit = plan.IncidentAiDailyFixTaskLimit
+    }
+    if config.AlertAiDailyFixTaskLimit.IsNull() && !plan.AlertAiDailyFixTaskLimit.IsUnknown() {
+        data.AlertAiDailyFixTaskLimit = plan.AlertAiDailyFixTaskLimit
+    }
+    if config.AlertInvestigationDedupeWindowMinutes.IsNull() && !plan.AlertInvestigationDedupeWindowMinutes.IsUnknown() {
+        data.AlertInvestigationDedupeWindowMinutes = plan.AlertInvestigationDedupeWindowMinutes
+    }
+    if config.IncidentInvestigationMinimumSeverityId.IsNull() && !plan.IncidentInvestigationMinimumSeverityId.IsUnknown() {
+        data.IncidentInvestigationMinimumSeverityId = plan.IncidentInvestigationMinimumSeverityId
+    }
+    if config.IncidentInvestigationDedupeWindowMinutes.IsNull() && !plan.IncidentInvestigationDedupeWindowMinutes.IsUnknown() {
+        data.IncidentInvestigationDedupeWindowMinutes = plan.IncidentInvestigationDedupeWindowMinutes
+    }
+    if config.AiMaxConcurrentInvestigations.IsNull() && !plan.AiMaxConcurrentInvestigations.IsUnknown() {
+        data.AiMaxConcurrentInvestigations = plan.AiMaxConcurrentInvestigations
+    }
+    if config.IncidentAiMaxConcurrentInvestigations.IsNull() && !plan.IncidentAiMaxConcurrentInvestigations.IsUnknown() {
+        data.IncidentAiMaxConcurrentInvestigations = plan.IncidentAiMaxConcurrentInvestigations
+    }
+    if config.AlertAiMaxConcurrentInvestigations.IsNull() && !plan.AlertAiMaxConcurrentInvestigations.IsUnknown() {
+        data.AlertAiMaxConcurrentInvestigations = plan.AlertAiMaxConcurrentInvestigations
+    }
+    if config.IncidentAiInvestigationTimeLimitInMinutes.IsNull() && !plan.IncidentAiInvestigationTimeLimitInMinutes.IsUnknown() {
+        data.IncidentAiInvestigationTimeLimitInMinutes = plan.IncidentAiInvestigationTimeLimitInMinutes
+    }
+    if config.AlertAiInvestigationTimeLimitInMinutes.IsNull() && !plan.AlertAiInvestigationTimeLimitInMinutes.IsUnknown() {
+        data.AlertAiInvestigationTimeLimitInMinutes = plan.AlertAiInvestigationTimeLimitInMinutes
+    }
+    if config.EnableAutoRechargeAiBalance.IsNull() && !plan.EnableAutoRechargeAiBalance.IsUnknown() {
+        data.EnableAutoRechargeAiBalance = plan.EnableAutoRechargeAiBalance
+    }
+    if config.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsNull() && !plan.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() {
+        data.DoNotAddGlobalProbesByDefaultOnNewMonitors = plan.DoNotAddGlobalProbesByDefaultOnNewMonitors
+    }
+    if config.DefaultMetricCardinalityBudget.IsNull() && !plan.DefaultMetricCardinalityBudget.IsUnknown() {
+        data.DefaultMetricCardinalityBudget = plan.DefaultMetricCardinalityBudget
+    }
+    if config.DefaultTelemetryRetentionInDays.IsNull() && !plan.DefaultTelemetryRetentionInDays.IsUnknown() {
+        data.DefaultTelemetryRetentionInDays = plan.DefaultTelemetryRetentionInDays
+    }
+    if config.TelemetryRetentionConfig.IsNull() && !plan.TelemetryRetentionConfig.IsUnknown() {
+        data.TelemetryRetentionConfig = plan.TelemetryRetentionConfig
+    }
+    if config.DefaultMetricDownsamplingRetentionDays.IsNull() && !plan.DefaultMetricDownsamplingRetentionDays.IsUnknown() {
+        data.DefaultMetricDownsamplingRetentionDays = plan.DefaultMetricDownsamplingRetentionDays
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

@@ -13,9 +13,9 @@ Manage API Keys for your project
 
 ```terraform
 resource "oneuptime_api_key" "example" {
-  name = "Example short text"
-  expires_at = "2030-01-01T00:00:00Z"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example api key"
+  expires_at  = "2030-01-01T00:00:00Z"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -23,28 +23,35 @@ resource "oneuptime_api_key" "example" {
 
 ### Required
 
-- `name` (String) Any friendly name of this object..
-- `expires_at` (String) A date time object..
+- `expires_at` (String) Date and Time when this API Key expires.
+- `name` (String) Any friendly name of this object.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Friendly description that will help you remember..
+- `description` (String) Friendly description that will help you remember.
 
 ### Read-Only
 
+- `api_key` (String) Secret API Key.
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `slug` (String) Friendly globally unique name for your object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `api_key` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `slug` (String) Friendly globally unique name for your object.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing api key by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_api_key.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_api_key.example <id>

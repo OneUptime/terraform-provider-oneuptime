@@ -2,38 +2,41 @@
 page_title: "oneuptime_status_page_private_user Data Source - oneuptime"
 subcategory: "Status Pages"
 description: |-
-   Manage private users on your status page
+  Manage private users on your status page
 ---
 
 # oneuptime_status_page_private_user (Data Source)
 
- Manage private users on your status page Look up by `id` or by `name` (must match exactly one item).
+Manage private users on your status page
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one status page private user may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_status_page_private_user" "by_name" {
-  name = "example-status_page_private_user"
+data "oneuptime_status_page_private_user" "example" {
+  status_page_id = oneuptime_status_page.example.id
 }
 
+# Or by id:
 data "oneuptime_status_page_private_user" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `email` (String) Email object. Computed.
-- `password` (String, Sensitive) Password.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_sso_user` (Bool) Did this user sign up via SSO?.. Computed.
+### Optional
+
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_sso_user` (Boolean) Did this user sign up via SSO?
+- `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `email` (String) Email.
+- `password` (String, Sensitive) Password.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

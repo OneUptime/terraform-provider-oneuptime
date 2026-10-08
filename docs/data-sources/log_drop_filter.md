@@ -7,38 +7,41 @@ description: |-
 
 # oneuptime_log_drop_filter (Data Source)
 
-Configure rules to drop or sample logs before storage to reduce volume and cost. Look up by `id` or by `name` (must match exactly one item).
+Configure rules to drop or sample logs before storage to reduce volume and cost.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one log drop filter may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_log_drop_filter" "by_name" {
-  name = "example-log_drop_filter"
+data "oneuptime_log_drop_filter" "example" {
+  name = "Example log drop filter"
 }
 
+# Or by id:
 data "oneuptime_log_drop_filter" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Description of what this drop filter does... Computed.
-- `filter_query` (String) Filter expression that identifies which logs to drop or sample... Computed.
-- `action` (String) What to do with matching logs: 'drop' to discard entirely, 'sample' to keep a percentage... Computed.
-- `sample_percentage` (Number) When action is 'sample', the percentage of matching logs to keep (1-99)... Computed.
-- `is_enabled` (Bool) Whether this drop filter is active... Computed.
-- `sort_order` (Number) Where this filter is evaluated among the project's log drop filters, lowest number first. A new filter is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
-- `dropped_count` (Number) Total number of logs this filter has discarded since it was created... Computed.
-- `last_dropped_at` (String) A date time object.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `action` (String) What to do with matching logs: 'drop' to discard entirely, 'sample' to keep a percentage.
+- `created_by_user_id` (String) ID of the user who created this log drop filter. The ID of a `oneuptime_user` (see the data source).
+- `description` (String) Description of what this drop filter does.
+- `dropped_count` (Number) Total number of logs this filter has discarded since it was created.
+- `filter_query` (String) Filter expression that identifies which logs to drop or sample.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_enabled` (Boolean) Whether this drop filter is active.
+- `name` (String) Friendly name for this drop filter.
+- `sample_percentage` (Number) When action is 'sample', the percentage of matching logs to keep (1-99).
+- `sort_order` (Number) Where this filter is evaluated among the project's log drop filters, lowest number first. A new filter is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `last_dropped_at` (String) When this filter most recently discarded a log. Null means it has never matched anything.
+- `project_id` (String) ID of the project this log drop filter belongs to. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

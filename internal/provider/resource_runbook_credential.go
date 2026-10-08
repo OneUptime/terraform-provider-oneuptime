@@ -54,8 +54,6 @@ type RunbookCredentialResourceModel struct {
     Runners types.Set `tfsdk:"runners"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -64,19 +62,23 @@ func (r *RunbookCredentialResource) Metadata(ctx context.Context, req resource.M
 }
 
 func (r *RunbookCredentialResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *RunbookCredentialResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Access to a system a runbook needs to act on — an SSH host, or a Kubernetes cluster. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a step.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -95,14 +97,14 @@ func (r *RunbookCredentialResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "credential_type": schema.StringAttribute{
-                MarkdownDescription: "SSH, or Kubernetes..",
+                MarkdownDescription: "SSH, or Kubernetes.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "ssh_hostname": schema.StringAttribute{
-                MarkdownDescription: "Hostname or IP address the Runner connects to..",
+                MarkdownDescription: "Hostname or IP address the Runner connects to.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -110,7 +112,7 @@ func (r *RunbookCredentialResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "ssh_port": schema.NumberAttribute{
-                MarkdownDescription: "Defaults to 22 when unset..",
+                MarkdownDescription: "Defaults to 22 when unset.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -118,7 +120,7 @@ func (r *RunbookCredentialResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "ssh_username": schema.StringAttribute{
-                MarkdownDescription: "The user the Runner authenticates as..",
+                MarkdownDescription: "The user the Runner authenticates as.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -126,15 +128,15 @@ func (r *RunbookCredentialResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "ssh_private_key": schema.StringAttribute{
-                MarkdownDescription: "PEM private key used to authenticate. Encrypted at rest and never returned by the API..",
+                MarkdownDescription: "PEM private key used to authenticate. Encrypted at rest and never returned by the API.",
                 Optional: true,
             },
             "ssh_passphrase": schema.StringAttribute{
-                MarkdownDescription: "Passphrase protecting the private key, when it has one. Encrypted at rest and never returned by the API..",
+                MarkdownDescription: "Passphrase protecting the private key, when it has one. Encrypted at rest and never returned by the API.",
                 Optional: true,
             },
             "ssh_password": schema.StringAttribute{
-                MarkdownDescription: "Password authentication, for hosts without key access. Encrypted at rest and never returned by the API..",
+                MarkdownDescription: "Password authentication, for hosts without key access. Encrypted at rest and never returned by the API.",
                 Optional: true,
             },
             "kubernetes_api_server_url": schema.StringAttribute{
@@ -146,11 +148,11 @@ func (r *RunbookCredentialResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "kubernetes_service_account_token": schema.StringAttribute{
-                MarkdownDescription: "Bearer token of a service account bound to a role that permits only the actions your runbooks need. Encrypted at rest and never returned by the API..",
+                MarkdownDescription: "Bearer token of a service account bound to a role that permits only the actions your runbooks need. Encrypted at rest and never returned by the API.",
                 Optional: true,
             },
             "kubernetes_ca_certificate": schema.StringAttribute{
-                MarkdownDescription: "PEM certificate authority for the API server. Leave empty only if the API server presents a certificate your Runner already trusts..",
+                MarkdownDescription: "PEM certificate authority for the API server. Leave empty only if the API server presents a certificate your Runner already trusts.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -158,7 +160,7 @@ func (r *RunbookCredentialResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "runners": schema.SetAttribute{
-                MarkdownDescription: "The Runners allowed to use this credential. A step referencing it must target one of them..",
+                MarkdownDescription: "The Runners allowed to use this credential. A step referencing it must target one of them. IDs of `oneuptime_runner` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -167,27 +169,24 @@ func (r *RunbookCredentialResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -223,6 +222,14 @@ func (r *RunbookCredentialResource) Create(ctx context.Context, req resource.Cre
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config RunbookCredentialResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -330,8 +337,6 @@ func (r *RunbookCredentialResource) Create(ctx context.Context, req resource.Cre
         "runners": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -706,34 +711,6 @@ func (r *RunbookCredentialResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -779,6 +756,9 @@ func (r *RunbookCredentialResource) Create(ctx context.Context, req resource.Cre
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -810,8 +790,6 @@ func (r *RunbookCredentialResource) Read(ctx context.Context, req resource.ReadR
         "runners": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1187,34 +1165,6 @@ func (r *RunbookCredentialResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1280,6 +1230,14 @@ func (r *RunbookCredentialResource) Update(ctx context.Context, req resource.Upd
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config RunbookCredentialResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
     // Create API request body
     runbookCredentialRequest := map[string]interface{}{
@@ -1358,8 +1316,6 @@ func (r *RunbookCredentialResource) Update(ctx context.Context, req resource.Upd
         "runners": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1729,34 +1685,6 @@ func (r *RunbookCredentialResource) Update(ctx context.Context, req resource.Upd
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1801,6 +1729,9 @@ func (r *RunbookCredentialResource) Update(ctx context.Context, req resource.Upd
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1837,6 +1768,38 @@ func (r *RunbookCredentialResource) Delete(ctx context.Context, req resource.Del
 
 func (r *RunbookCredentialResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *RunbookCredentialResource) keepPlannedValues(data *RunbookCredentialResourceModel, plan *RunbookCredentialResourceModel, config *RunbookCredentialResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.SshHostname.IsNull() && !plan.SshHostname.IsUnknown() {
+        data.SshHostname = plan.SshHostname
+    }
+    if config.SshPort.IsNull() && !plan.SshPort.IsUnknown() {
+        data.SshPort = plan.SshPort
+    }
+    if config.SshUsername.IsNull() && !plan.SshUsername.IsUnknown() {
+        data.SshUsername = plan.SshUsername
+    }
+    if config.KubernetesApiServerUrl.IsNull() && !plan.KubernetesApiServerUrl.IsUnknown() {
+        data.KubernetesApiServerUrl = plan.KubernetesApiServerUrl
+    }
+    if config.KubernetesCaCertificate.IsNull() && !plan.KubernetesCaCertificate.IsUnknown() {
+        data.KubernetesCaCertificate = plan.KubernetesCaCertificate
+    }
+    if config.Runners.IsNull() && !plan.Runners.IsUnknown() {
+        data.Runners = plan.Runners
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

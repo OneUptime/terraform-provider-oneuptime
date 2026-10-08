@@ -13,8 +13,8 @@ Manage on-call duty, schedules and roster for your project
 
 ```terraform
 resource "oneuptime_on_call_policy" "example" {
-  name = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example on call policy"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -22,33 +22,40 @@ resource "oneuptime_on_call_policy" "example" {
 
 ### Required
 
-- `name` (String) Any friendly name of this object..
+- `name` (String) Any friendly name of this object.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `labels` (Set) Relation to Labels Array where this object is categorized in...
-- `description` (String) Friendly description that will help you remember..
-- `is_archived` (Bool) Archived on-call policies are hidden from the On-Call Policies list and page no one: incidents and alerts that use them skip them. Unarchiving puts them back in service...
-- `repeat_policy_if_no_one_acknowledges` (Bool) Repeat the policy if no one acknowledges the alert..
-- `repeat_policy_if_no_one_acknowledges_no_of_times` (Number) Repeat the policy X number of times if no one acknowledges the alert..
-- `custom_fields` (String) Custom Fields on this resource...
+- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `description` (String) Friendly description that will help you remember.
+- `is_archived` (Boolean) Archived on-call policies are hidden from the On-Call Policies list and page no one: incidents and alerts that use them skip them. Unarchiving puts them back in service. Defaults to `false`.
+- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `repeat_policy_if_no_one_acknowledges` (Boolean) Repeat the policy if no one acknowledges the alert. Defaults to `false`.
+- `repeat_policy_if_no_one_acknowledges_no_of_times` (Number) Repeat the policy X number of times if no one acknowledges the alert. Defaults to `0`.
 
 ### Read-Only
 
+- `archived_at` (String) When this on-call policy was archived. Empty while it is not archived.
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `slug` (String) Friendly globally unique name for your object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `archived_at` (String) A date time object..
-- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `slug` (String) Friendly globally unique name for your object.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing on call policy by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_on_call_policy.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_on_call_policy.example <id>

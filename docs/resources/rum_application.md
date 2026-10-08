@@ -13,9 +13,9 @@ Browser & mobile applications auto-discovered from OpenTelemetry RUM telemetry (
 
 ```terraform
 resource "oneuptime_rum_application" "example" {
-  name = "Example short text"
+  name           = "Example rum application"
   app_identifier = "Example short text"
-  description = "This is an example of longer text content that might be stored in this field."
+  description    = "Managed by Terraform"
 }
 ```
 
@@ -23,60 +23,66 @@ resource "oneuptime_rum_application" "example" {
 
 ### Required
 
-- `name` (String) Friendly name for this application..
-- `app_identifier` (String) Stable identifier for this application from the service.name OpenTelemetry resource attribute. Identity key for this RUM application...
+- `app_identifier` (String) Stable identifier for this application from the service.name OpenTelemetry resource attribute. Identity key for this RUM application.
+- `name` (String) Friendly name for this application.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Friendly description that will help you remember..
-- `labels` (Set) Relation to Labels Array where this object is categorized in...
-- `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this application. Leave blank to use the project-wide default...
-- `telemetry_retention_config` (String) Per-pillar retention overrides for this application. Unset fields fall back to the application default, then the project's retention settings...
-- `is_session_replay_enabled` (Bool) When enabled, the browser recorder may record and upload session replays for this application. On by default; Project.isSessionReplayAllowed must also be on. Turn it off here to stop recording for one application without affecting the rest of the project...
-- `session_replay_masking_mode` (String) How aggressively the recorder masks page content before it leaves the end user's device. MaskSensitiveInputsOnly (default) masks passwords and card / one-time-code fields and records everything else verbatim. MaskInputsOnly additionally masks every other input value. MaskAllText masks static page text too, producing a wireframe...
-- `session_replay_mask_selectors` (String) CSS selectors whose text content the recorder masks, in addition to whatever the masking mode already covers...
-- `session_replay_block_selectors` (String) CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked...
-- `session_replay_ignore_error_patterns` (String) Regex patterns matched against an uncaught error's message and source URL. Matching errors are still recorded in the session but no longer trigger an upload — the remedy for a chronically-throwing third-party tag that would otherwise convert error-triggered capture into always-on recording...
-- `session_replay_trace_propagation_origins` (String) APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id...
-- `session_replay_same_origin_trace_propagation` (Bool) When enabled, the recorder adds a W3C traceparent and a tracestate member carrying the replay session id (oneuptime=sid:<session id>) to the fetch and XHR requests the page makes to its own origin while a session is uploading, so the backend spans, logs and exceptions those requests cause link to the recording automatically, with no code in your frontend or backend. Nothing is added before consent, after consent is revoked, or before an on-error trigger fires, and a request that already carries a traceparent or tracestate keeps its own. A traceparent the recorder generates is marked sampled, so ParentBased samplers in your backend keep every browser-originated trace (to keep ratio sampling, set a remoteParentSampled ratio delegate only on the service(s) your pages call directly, never on the services they call: ratio decisions differ between language SDKs; for one rate across services, use tail sampling in an OpenTelemetry Collector). Your backend's OpenTelemetry forwards the tracestate, and with it the session id, to every service it calls, third parties included; the visitor id is never sent. On by default. Narrower create/update ACL than the other replay settings: it links recordings to backend telemetry that may name the user...
-- `session_replay_lcp_budget_ms` (Number) Largest Contentful Paint budget in milliseconds. A session whose LCP exceeds it uploads with the Performance trigger. 0 disables the trigger...
-- `session_replay_long_task_budget_ms` (Number) Main-thread long-task budget in milliseconds. A single task blocking longer than this uploads the session with the Performance trigger. 0 disables the trigger...
-- `session_replay_slow_request_budget_ms` (Number) Request duration budget in milliseconds. An instrumented request slower than this uploads the session with the Performance trigger. 0 disables the trigger...
-- `session_replay_allowed_origins` (String) Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity...
-- `session_replay_consent_mode` (String) NotRequired (default) uploads immediately, asserting a lawful basis that does not need a per-session grant. RequireExplicit buffers in memory and uploads nothing until the host page calls grantConsent(); set it if you need a per-session consent handshake, which most EU deployments will...
-- `session_replay_capture_trigger` (String) Always (default) uploads every sampled session from its first event, so an ordinary session is just as watchable as a broken one. OnErrorOrFrustration keeps a rolling in-memory buffer and uploads only when something actually went wrong, which costs roughly 15x less and stores far less end-user data...
-- `session_replay_sample_percentage` (Number) Percentage of sessions (0 to 100) eligible for recording. 100 by default, so with the default Always trigger every session is recorded. Lower it to cut storage and end-user data at rest; the decision is made once per session from a hash of the session id, so a session is never half-recorded...
-- `session_replay_capture_user_identity` (Bool) When enabled, the end-user reference supplied by the host page is stored alongside the recording - as a one-way per-project HMAC for lookup and erasure, plus the raw reference behind its own narrower column ACL - so a support engineer can find the session a named customer is complaining about. When off, the reference is never attached to a recording and neither column is stored. (It is still sent once on the policy request, which is how targeted capture matches a named user; it is not persisted.) The reference must be supplied at load time - identify() called later reaches the server only on the session's final chunk, which the header is not rebuilt from. On by default. Narrower create/update ACL than the other replay settings: this is the switch that turns a pseudonymous recording into an identified one...
-- `session_replay_capture_geo` (Bool) When enabled, a country code is derived from the request and stored on the session. On by default. The end user's IP address is never stored either way - the country is the only geographic fact this keeps...
-- `session_replay_record_canvas` (Bool) When enabled, canvas contents are recorded. Off by default because canvas capture is expensive on the end user's device and canvases routinely render content the text masking cannot reach...
-- `session_replay_retention_in_days` (Number) How long session recordings are kept for this application. Clamped to 1, 7, 14, 30 or 90 days. Defaults to 7 rather than the 15 the other telemetry pillars use, because a short retention is itself a privacy control...
-- `session_replay_monthly_budget_in_gb` (Number) Optional ceiling on replay bytes ingested per calendar month for this application. Once exceeded, live recorders are told to stop. Leave blank for no application-level ceiling...
-- `is_archived` (Bool) Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry...
+- `description` (String) Friendly description that will help you remember.
+- `is_archived` (Boolean) Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry. Defaults to `false`.
+- `is_session_replay_enabled` (Boolean) When enabled, the browser recorder may record and upload session replays for this application. On by default; Project.isSessionReplayAllowed must also be on. Turn it off here to stop recording for one application without affecting the rest of the project. Defaults to `true`.
+- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this application. Leave blank to use the project-wide default.
+- `session_replay_allowed_origins` (String) Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity. A JSON value: write it with `jsonencode()`.
+- `session_replay_block_selectors` (String) CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked. A JSON value: write it with `jsonencode()`.
+- `session_replay_capture_geo` (Boolean) When enabled, a country code is derived from the request and stored on the session. On by default. The end user's IP address is never stored either way - the country is the only geographic fact this keeps. Defaults to `true`.
+- `session_replay_capture_trigger` (String) Always (default) uploads every sampled session from its first event, so an ordinary session is just as watchable as a broken one. OnErrorOrFrustration keeps a rolling in-memory buffer and uploads only when something actually went wrong, which costs roughly 15x less and stores far less end-user data. Defaults to `Always`.
+- `session_replay_capture_user_identity` (Boolean) When enabled, the end-user reference supplied by the host page is stored alongside the recording - as a one-way per-project HMAC for lookup and erasure, plus the raw reference behind its own narrower column ACL - so a support engineer can find the session a named customer is complaining about. When off, the reference is never attached to a recording and neither column is stored. (It is still sent once on the policy request, which is how targeted capture matches a named user; it is not persisted.) The reference must be supplied at load time - identify() called later reaches the server only on the session's final chunk, which the header is not rebuilt from. On by default. Narrower create/update ACL than the other replay settings: this is the switch that turns a pseudonymous recording into an identified one. Defaults to `true`.
+- `session_replay_consent_mode` (String) NotRequired (default) uploads immediately, asserting a lawful basis that does not need a per-session grant. RequireExplicit buffers in memory and uploads nothing until the host page calls grantConsent(); set it if you need a per-session consent handshake, which most EU deployments will. Defaults to `NotRequired`.
+- `session_replay_ignore_error_patterns` (String) Regex patterns matched against an uncaught error's message and source URL. Matching errors are still recorded in the session but no longer trigger an upload — the remedy for a chronically-throwing third-party tag that would otherwise convert error-triggered capture into always-on recording. A JSON value: write it with `jsonencode()`.
+- `session_replay_lcp_budget_ms` (Number) Largest Contentful Paint budget in milliseconds. A session whose LCP exceeds it uploads with the Performance trigger. 0 disables the trigger. Defaults to `0`.
+- `session_replay_long_task_budget_ms` (Number) Main-thread long-task budget in milliseconds. A single task blocking longer than this uploads the session with the Performance trigger. 0 disables the trigger. Defaults to `0`.
+- `session_replay_mask_selectors` (String) CSS selectors whose text content the recorder masks, in addition to whatever the masking mode already covers. A JSON value: write it with `jsonencode()`.
+- `session_replay_masking_mode` (String) How aggressively the recorder masks page content before it leaves the end user's device. MaskSensitiveInputsOnly (default) masks passwords and card / one-time-code fields and records everything else verbatim. MaskInputsOnly additionally masks every other input value. MaskAllText masks static page text too, producing a wireframe. Defaults to `MaskSensitiveInputsOnly`.
+- `session_replay_monthly_budget_in_gb` (Number) Optional ceiling on replay bytes ingested per calendar month for this application. Once exceeded, live recorders are told to stop. Leave blank for no application-level ceiling.
+- `session_replay_record_canvas` (Boolean) When enabled, canvas contents are recorded. Off by default because canvas capture is expensive on the end user's device and canvases routinely render content the text masking cannot reach. Defaults to `false`.
+- `session_replay_retention_in_days` (Number) How long session recordings are kept for this application. Clamped to 1, 7, 14, 30 or 90 days. Defaults to 7 rather than the 15 the other telemetry pillars use, because a short retention is itself a privacy control. Defaults to `7`.
+- `session_replay_same_origin_trace_propagation` (Boolean) When enabled, the recorder adds a W3C traceparent and a tracestate member carrying the replay session id (oneuptime=sid:<session id>) to the fetch and XHR requests the page makes to its own origin while a session is uploading, so the backend spans, logs and exceptions those requests cause link to the recording automatically, with no code in your frontend or backend. Nothing is added before consent, after consent is revoked, or before an on-error trigger fires, and a request that already carries a traceparent or tracestate keeps its own. A traceparent the recorder generates is marked sampled, so ParentBased samplers in your backend keep every browser-originated trace (to keep ratio sampling, set a remoteParentSampled ratio delegate only on the service(s) your pages call directly, never on the services they call: ratio decisions differ between language SDKs; for one rate across services, use tail sampling in an OpenTelemetry Collector). Your backend's OpenTelemetry forwards the tracestate, and with it the session id, to every service it calls, third parties included; the visitor id is never sent. On by default. Narrower create/update ACL than the other replay settings: it links recordings to backend telemetry that may name the user. Defaults to `true`.
+- `session_replay_sample_percentage` (Number) Percentage of sessions (0 to 100) eligible for recording. 100 by default, so with the default Always trigger every session is recorded. Lower it to cut storage and end-user data at rest; the decision is made once per session from a hash of the session id, so a session is never half-recorded. Defaults to `100`.
+- `session_replay_slow_request_budget_ms` (Number) Request duration budget in milliseconds. An instrumented request slower than this uploads the session with the Performance trigger. 0 disables the trigger. Defaults to `0`.
+- `session_replay_trace_propagation_origins` (String) APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id. A JSON value: write it with `jsonencode()`.
+- `telemetry_retention_config` (String) Per-pillar retention overrides for this application. Unset fields fall back to the application default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
 
 ### Read-Only
 
+- `agent_version` (String) Version of the OpenTelemetry SDK reporting this application.
+- `archived_at` (String) When was this RUM application archived?
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
+- `client_type` (String) Whether this application's clients are browsers or mobile devices (browser / mobile), derived from browser.* / device.* attributes.
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `slug` (String) Friendly globally unique name for your object..
-- `client_type` (String) Whether this application's clients are browsers or mobile devices (browser / mobile), derived from browser.* / device.* attributes...
-- `sdk_language` (String) Last-seen telemetry.sdk.language resource attribute (e.g. webjs, swift, android). Used to scope this application's client telemetry apart from a same-named backend service...
-- `otel_collector_status` (String) Whether telemetry is currently being received (connected) or has gone stale (disconnected)...
-- `agent_version` (String) Version of the OpenTelemetry SDK reporting this application...
-- `last_seen_at` (String) A date time object..
-- `session_replay_last_chunk_received_at` (String) A date time object..
-- `session_replay_budget_exceeded_at` (String) A date time object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `archived_at` (String) A date time object..
-- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `last_seen_at` (String) When telemetry was last received for this application.
+- `otel_collector_status` (String) Whether telemetry is currently being received (connected) or has gone stale (disconnected).
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `sdk_language` (String) Last-seen telemetry.sdk.language resource attribute (e.g. webjs, swift, android). Used to scope this application's client telemetry apart from a same-named backend service.
+- `session_replay_budget_exceeded_at` (String) When the session replay byte budget was last hit for this application. Non-null means recorders are currently being told to stop.
+- `session_replay_last_chunk_received_at` (String) When a session replay chunk was last accepted for this application.
+- `slug` (String) Friendly globally unique name for your object.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing rum application by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_rum_application.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_rum_application.example <id>

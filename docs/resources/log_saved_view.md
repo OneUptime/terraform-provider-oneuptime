@@ -13,10 +13,7 @@ Save and reuse log explorer views, including the current filters, columns, sorti
 
 ```terraform
 resource "oneuptime_log_saved_view" "example" {
-  name = jsonencode({
-    "_type": "Name",
-    "value": "John Doe"
-  })
+  name = "Example log saved view"
 }
 ```
 
@@ -24,32 +21,38 @@ resource "oneuptime_log_saved_view" "example" {
 
 ### Required
 
-- `name` (String) Name object.
+- `name` (String) Friendly name for this saved log view.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `query` (String) Serialized log query for this saved view...
-- `columns` (String) Selected log table columns for this saved view...
-- `sort_field` (String) Active sort field for this saved log view...
-- `sort_order` (String) Sort order for this saved log view...
-- `page_size` (Number) Number of logs per page for this saved view...
-- `time_range` (String) Time selection for this saved view — the rolling range token (e.g. Past 1 Hour), or an absolute window when the range is Custom...
-- `is_default` (Bool) Whether this saved log view should be applied by default...
+- `columns` (String) Selected log table columns for this saved view. A JSON value: write it with `jsonencode()`.
+- `is_default` (Boolean) Whether this saved log view should be applied by default. Defaults to `false`.
+- `page_size` (Number) Number of logs per page for this saved view. Defaults to `100`.
+- `query` (String) Serialized log query for this saved view. A JSON value: write it with `jsonencode()`.
+- `sort_field` (String) Active sort field for this saved log view.
+- `sort_order` (String) Sort order for this saved log view.
+- `time_range` (String) Time selection for this saved view — the rolling range token (e.g. Past 1 Hour), or an absolute window when the range is Custom. A JSON value: write it with `jsonencode()`.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) ID of the user who created this saved log view. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of the project this saved log view belongs to. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing log saved view by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_log_saved_view.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_log_saved_view.example <id>

@@ -7,37 +7,41 @@ description: |-
 
 # oneuptime_alert_episode_label_rule (Data Source)
 
-Configure rules for automatically attaching labels to alert episodes when matching episodes are created Look up by `id` or by `name` (must match exactly one item).
+Configure rules for automatically attaching labels to alert episodes when matching episodes are created
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one alert episode label rule may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_alert_episode_label_rule" "by_name" {
-  name = "example-alert_episode_label_rule"
+data "oneuptime_alert_episode_label_rule" "example" {
+  name = "Example alert episode label rule"
 }
 
+# Or by id:
 data "oneuptime_alert_episode_label_rule" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource... Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Description of this alert episode label rule.. Computed.
-- `is_enabled` (Bool) Whether this rule is enabled.. Computed.
-- `alert_severities` (Set) Only trigger for episodes with these severities. Leave empty to match any severity... Computed.
-- `episode_labels` (Set) Only trigger for episodes that already have at least one of these labels... Computed.
-- `episode_title_pattern` (String) Regex (case-insensitive) matched against the episode title... Computed.
-- `episode_description_pattern` (String) Regex (case-insensitive) matched against the episode description... Computed.
-- `labels_to_add` (Set) Labels to attach to the episode when this rule matches. Already-attached labels are not duplicated... Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+### Optional
+
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `description` (String) Description of this alert episode label rule.
+- `episode_description_pattern` (String) Regex (case-insensitive) matched against the episode description.
+- `episode_title_pattern` (String) Regex (case-insensitive) matched against the episode title.
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_enabled` (Boolean) Whether this rule is enabled.
+- `name` (String) Name of this alert episode label rule.
+
+### Read-Only
+
+- `alert_severities` (Set of String) Only trigger for episodes with these severities. Leave empty to match any severity. IDs of `oneuptime_alert_severity` resources.
+- `created_at` (String) Date and Time when the object was created.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `episode_labels` (Set of String) Only trigger for episodes that already have at least one of these labels. IDs of `oneuptime_label` resources.
+- `labels_to_add` (Set of String) Labels to attach to the episode when this rule matches. Already-attached labels are not duplicated. IDs of `oneuptime_label` resources.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

@@ -7,36 +7,38 @@ description: |-
 
 # oneuptime_monitor_probe (Data Source)
 
-Add probes to monitor your resource from multiple locations around the world. Look up by `id` or by `name` (must match exactly one item).
+Add probes to monitor your resource from multiple locations around the world.
+
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one monitor probe may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
 ## Example Usage
 
-Look up by `name` (must match exactly one item) or by `id`:
-
 ```terraform
-data "oneuptime_monitor_probe" "by_name" {
-  name = "example-monitor_probe"
+data "oneuptime_monitor_probe" "example" {
+  probe_id = oneuptime_probe.example.id
 }
 
+# Or by id:
 data "oneuptime_monitor_probe" "by_id" {
-  id = "123e4567-e89b-12d3-a456-426614174000"
+  id = "<id>"
 }
 ```
 
 ## Schema
 
-- `id` (String) Look up by unique identifier. Exactly one of `id` or `name` must be set.. Computed.
-- `name` (String) Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `probe_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `last_ping_at` (String) A date time object.. Computed.
-- `next_ping_at` (String) A date time object.. Computed.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_enabled` (Bool) Monitor probe is_enabled. Computed.
-- `last_monitoring_log` (String) Monitor probe last_monitoring_log. Computed.
+### Optional
+
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_enabled` (Boolean) Permissions - Create: [Project Owner, Project Admin, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Probe], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Probe]
+- `monitor_id` (String) ID of your OneUptime Monitor in which this object belongs. The ID of a `oneuptime_monitor`.
+- `probe_id` (String) ID of your OneUptime Probe in which this object belongs. The ID of a `oneuptime_probe`.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `last_monitoring_log` (String) A JSON value: write it with `jsonencode()`.
+- `last_ping_at` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Probe], Update: [No access - you don't have permission for this operation]
+- `next_ping_at` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Probe], Update: [No access - you don't have permission for this operation]
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.

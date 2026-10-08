@@ -84,8 +84,6 @@ type IncidentResourceModel struct {
     EnableReminders types.Bool `tfsdk:"enable_reminders"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     SubscriberNotificationStatusOnIncidentCreated types.String `tfsdk:"subscriber_notification_status_on_incident_created"`
@@ -116,19 +114,23 @@ func (r *IncidentResource) Metadata(ctx context.Context, req resource.MetadataRe
 }
 
 func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-    resp.Schema = schema.Schema{
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *IncidentResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
         MarkdownDescription: "Manage incidents for your project",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the resource",
+                MarkdownDescription: "Unique identifier for the resource.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -139,7 +141,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Short description of this incident. This is in markdown and will be visible on the status page..",
+                MarkdownDescription: "Short description of this incident. This is in markdown and will be visible on the status page.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -147,7 +149,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "declared_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and time when this incident was declared.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -156,7 +158,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "impact_started_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When customer impact actually began. Left blank until someone records it - never inferred, because a guessed value is worse than no value.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -165,7 +167,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors affected by this incident.",
+                MarkdownDescription: "List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -174,7 +176,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts affected by this incident..",
+                MarkdownDescription: "List of hosts affected by this incident. IDs of `oneuptime_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -183,7 +185,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes clusters affected by this incident..",
+                MarkdownDescription: "List of Kubernetes clusters affected by this incident. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -192,7 +194,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "kubernetes_resources": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this incident..",
+                MarkdownDescription: "List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this incident.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -201,7 +203,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "kubernetes_containers": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes containers affected by this incident..",
+                MarkdownDescription: "List of Kubernetes containers affected by this incident.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -210,7 +212,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Docker hosts affected by this incident..",
+                MarkdownDescription: "List of Docker hosts affected by this incident. IDs of `oneuptime_docker_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -219,7 +221,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Podman hosts affected by this incident..",
+                MarkdownDescription: "List of Podman hosts affected by this incident. IDs of `oneuptime_podman_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -228,7 +230,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "proxmox_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Proxmox clusters affected by this incident..",
+                MarkdownDescription: "List of Proxmox clusters affected by this incident. IDs of `oneuptime_proxmox_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -237,7 +239,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "vmware_v_centers": schema.SetAttribute{
-                MarkdownDescription: "List of vCenters affected by this incident..",
+                MarkdownDescription: "List of vCenters affected by this incident. IDs of `oneuptime_vcenter` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -246,7 +248,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "iot_fleets": schema.SetAttribute{
-                MarkdownDescription: "List of IoT fleets affected by this incident..",
+                MarkdownDescription: "List of IoT fleets affected by this incident. IDs of `oneuptime_iot_fleet` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -255,7 +257,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "docker_swarm_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Docker Swarm clusters affected by this incident..",
+                MarkdownDescription: "List of Docker Swarm clusters affected by this incident. IDs of `oneuptime_docker_swarm_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -264,7 +266,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "ceph_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Ceph clusters affected by this incident..",
+                MarkdownDescription: "List of Ceph clusters affected by this incident. IDs of `oneuptime_ceph_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -273,7 +275,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "storage_arrays": schema.SetAttribute{
-                MarkdownDescription: "List of storage arrays affected by this incident..",
+                MarkdownDescription: "List of storage arrays affected by this incident. IDs of `oneuptime_storage_array` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -282,7 +284,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "database_servers": schema.SetAttribute{
-                MarkdownDescription: "List of databases affected by this incident..",
+                MarkdownDescription: "List of databases affected by this incident. IDs of `oneuptime_database` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -291,7 +293,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "docker_resources": schema.SetAttribute{
-                MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this incident..",
+                MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this incident.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -300,7 +302,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "podman_resources": schema.SetAttribute{
-                MarkdownDescription: "List of Podman resources (containers, images, networks, volumes) affected by this incident..",
+                MarkdownDescription: "List of Podman resources (containers, images, networks, volumes) affected by this incident.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -309,7 +311,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services affected by this incident..",
+                MarkdownDescription: "List of services affected by this incident. IDs of `oneuptime_service` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -318,7 +320,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "service_level_objectives": schema.SetAttribute{
-                MarkdownDescription: "List of Service Level Objectives (SLOs) affected by this incident..",
+                MarkdownDescription: "List of Service Level Objectives (SLOs) affected by this incident. IDs of `oneuptime_service_level_objective` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -327,7 +329,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies affected by this incident..",
+                MarkdownDescription: "List of on-call duty policies affected by this incident. IDs of `oneuptime_on_call_policy` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -336,7 +338,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -345,7 +347,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "current_incident_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Current Incident State ID. The ID of a `oneuptime_incident_state`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -353,11 +355,11 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "incident_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Incident Severity ID. The ID of a `oneuptime_incident_severity`.",
                 Required: true,
             },
             "change_monitor_status_to_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the incident is created. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -365,7 +367,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "should_status_page_subscribers_be_notified_on_incident_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this incident?.",
+                MarkdownDescription: "Should subscribers be notified about this incident?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -375,7 +377,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only..",
+                MarkdownDescription: "The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -387,7 +389,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "What is the root cause of this incident?.",
+                MarkdownDescription: "What is the root cause of this incident?",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -395,7 +397,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "postmortem_note": schema.StringAttribute{
-                MarkdownDescription: "Document the postmortem summary for this incident..",
+                MarkdownDescription: "Document the postmortem summary for this incident.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -403,7 +405,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "show_postmortem_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should the postmortem note and attachments be visible on the status page once published?.",
+                MarkdownDescription: "Should the postmortem note and attachments be visible on the status page once published?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -412,7 +414,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "notify_subscribers_on_postmortem_published": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified when the postmortem is published?.",
+                MarkdownDescription: "Should subscribers be notified when the postmortem is published?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -421,7 +423,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "postmortem_posted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Timestamp that will be shown alongside the published postmortem on the status page.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -430,7 +432,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "postmortem_attachments": schema.SetAttribute{
-                MarkdownDescription: "Files that accompany the postmortem note and can be shared publicly when enabled..",
+                MarkdownDescription: "Files that accompany the postmortem note and can be shared publicly when enabled. IDs of `oneuptime_file` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -439,7 +441,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "remediation_notes": schema.StringAttribute{
-                MarkdownDescription: "Notes on how to remediate this incident. This is in markdown..",
+                MarkdownDescription: "Notes on how to remediate this incident. This is in markdown.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -447,7 +449,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "telemetry_query": schema.StringAttribute{
-                MarkdownDescription: "Telemetry query for this incident.",
+                MarkdownDescription: "Telemetry query for this incident. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -459,7 +461,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "is_visible_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should this incident be visible on the status page?.",
+                MarkdownDescription: "Should this incident be visible on the status page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -468,7 +470,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "Limit this incident to these status pages. When set, the incident is shown on, and notifies the subscribers of, only these pages among the status pages that list its monitors. Leave empty to reach every status page that lists its monitors..",
+                MarkdownDescription: "Limit this incident to these status pages. When set, the incident is shown on, and notifies the subscribers of, only these pages among the status pages that list its monitors. Leave empty to reach every status page that lists its monitors. IDs of `oneuptime_status_page` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -477,7 +479,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages..",
+                MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -486,7 +488,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "enable_reminders": schema.BoolAttribute{
-                MarkdownDescription: "Should reminder notifications be sent to owners while this incident is still open? Reminders are sent based on the reminder rules configured for this project..",
+                MarkdownDescription: "Should reminder notifications be sent to owners while this incident is still open? Reminders are sent based on the reminder rules configured for this project.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -495,22 +497,16 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -518,8 +514,11 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "subscriber_notification_status_on_incident_created": schema.StringAttribute{
                 MarkdownDescription: "Status of notification sent to subscribers about this incident.",
@@ -538,46 +537,46 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?.",
+                MarkdownDescription: "Are owners notified of when this resource is created?",
                 Computed: true,
             },
             "created_state_log": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "created_criteria_id": schema.StringAttribute{
-                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the criteria that created it..",
+                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the criteria that created it.",
                 Computed: true,
             },
             "created_incident_template_id": schema.StringAttribute{
-                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the incident template that was used for creation..",
+                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the incident template that was used for creation.",
                 Computed: true,
             },
             "series_fingerprint": schema.StringAttribute{
-                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one incident is created per affected series..",
+                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one incident is created per affected series.",
                 Computed: true,
             },
             "series_labels": schema.StringAttribute{
-                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach..",
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "monitor_summary": schema.StringAttribute{
-                MarkdownDescription: "The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out..",
+                MarkdownDescription: "The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "created_by_probe_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the probe that created it. The ID of a `oneuptime_probe`.",
                 Computed: true,
             },
             "is_created_automatically": schema.BoolAttribute{
-                MarkdownDescription: "Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?.",
+                MarkdownDescription: "Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?",
                 Computed: true,
             },
             "holds_monitors": schema.BoolAttribute{
-                MarkdownDescription: "Whether this incident is holding its monitors - keeping them in its monitor status, or their monitoring paused - so that resolving it gives them back: their monitoring resumes and their status returns to operational. True from when the incident is declared open, or from when an edit while it is open puts its monitors in its monitor status. False for an incident declared already resolved, which never held them, and once a resolve has given them back. Empty for incidents from before it was recorded, which give their monitors back when they are resolved. Set by OneUptime; it cannot be written..",
+                MarkdownDescription: "Whether this incident is holding its monitors - keeping them in its monitor status, or their monitoring paused - so that resolving it gives them back: their monitoring resumes and their status returns to operational. True from when the incident is declared open, or from when an edit while it is open puts its monitors in its monitor status. False for an incident declared already resolved, which never held them, and once a resolve has given them back. Empty for incidents from before it was recorded, which give their monitors back when they are resolved. Set by OneUptime; it cannot be written.",
                 Computed: true,
             },
             "incident_number": schema.NumberAttribute{
@@ -589,25 +588,25 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 Computed: true,
             },
             "is_scoped_to_status_pages": schema.BoolAttribute{
-                MarkdownDescription: "Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored..",
+                MarkdownDescription: "Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored.",
                 Computed: true,
             },
             "status_pages_notified_on_creation": schema.StringAttribute{
-                MarkdownDescription: "IDs of the status pages whose subscribers were sent the notification that this incident was created..",
+                MarkdownDescription: "IDs of the status pages whose subscribers were sent the notification that this incident was created. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "next_reminder_notification_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When will the next reminder notification be sent to owners of this incident? This is set automatically based on the reminder rules configured for this project.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "reminder_notification_sent_count": schema.NumberAttribute{
-                MarkdownDescription: "How many reminder notifications have been sent to owners of this incident so far..",
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this incident so far.",
                 Computed: true,
             },
             "incident_episode_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of the latest Incident Episode this incident is a member of. Read-only: set by OneUptime when the incident is added to or removed from an episode's members (Incident Episode Member). The ID of a `oneuptime_incident_episode`.",
                 Computed: true,
             },
         },
@@ -644,6 +643,14 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
 
 
 
@@ -867,8 +874,6 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnIncidentCreated": true,
@@ -2082,34 +2087,6 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2769,6 +2746,9 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
@@ -2832,8 +2812,6 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnIncidentCreated": true,
@@ -4048,34 +4026,6 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4756,6 +4706,14 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config IncidentResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     incidentRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -4959,8 +4917,6 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "slug": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnIncidentCreated": true,
@@ -6169,34 +6125,6 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.DeletedAt = NewRFC3339Value(val)
-        } else {
-            data.DeletedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewRFC3339Value(val)
-    } else {
-        data.DeletedAt = NewRFC3339Null()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6855,6 +6783,9 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -6891,6 +6822,134 @@ func (r *IncidentResource) Delete(ctx context.Context, req resource.DeleteReques
 
 func (r *IncidentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *IncidentResource) keepPlannedValues(data *IncidentResourceModel, plan *IncidentResourceModel, config *IncidentResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.DeclaredAt.IsNull() && !plan.DeclaredAt.IsUnknown() {
+        data.DeclaredAt = plan.DeclaredAt
+    }
+    if config.ImpactStartedAt.IsNull() && !plan.ImpactStartedAt.IsUnknown() {
+        data.ImpactStartedAt = plan.ImpactStartedAt
+    }
+    if config.Monitors.IsNull() && !plan.Monitors.IsUnknown() {
+        data.Monitors = plan.Monitors
+    }
+    if config.Hosts.IsNull() && !plan.Hosts.IsUnknown() {
+        data.Hosts = plan.Hosts
+    }
+    if config.KubernetesClusters.IsNull() && !plan.KubernetesClusters.IsUnknown() {
+        data.KubernetesClusters = plan.KubernetesClusters
+    }
+    if config.KubernetesResources.IsNull() && !plan.KubernetesResources.IsUnknown() {
+        data.KubernetesResources = plan.KubernetesResources
+    }
+    if config.KubernetesContainers.IsNull() && !plan.KubernetesContainers.IsUnknown() {
+        data.KubernetesContainers = plan.KubernetesContainers
+    }
+    if config.DockerHosts.IsNull() && !plan.DockerHosts.IsUnknown() {
+        data.DockerHosts = plan.DockerHosts
+    }
+    if config.PodmanHosts.IsNull() && !plan.PodmanHosts.IsUnknown() {
+        data.PodmanHosts = plan.PodmanHosts
+    }
+    if config.ProxmoxClusters.IsNull() && !plan.ProxmoxClusters.IsUnknown() {
+        data.ProxmoxClusters = plan.ProxmoxClusters
+    }
+    if config.VmwareVCenters.IsNull() && !plan.VmwareVCenters.IsUnknown() {
+        data.VmwareVCenters = plan.VmwareVCenters
+    }
+    if config.IotFleets.IsNull() && !plan.IotFleets.IsUnknown() {
+        data.IotFleets = plan.IotFleets
+    }
+    if config.DockerSwarmClusters.IsNull() && !plan.DockerSwarmClusters.IsUnknown() {
+        data.DockerSwarmClusters = plan.DockerSwarmClusters
+    }
+    if config.CephClusters.IsNull() && !plan.CephClusters.IsUnknown() {
+        data.CephClusters = plan.CephClusters
+    }
+    if config.StorageArrays.IsNull() && !plan.StorageArrays.IsUnknown() {
+        data.StorageArrays = plan.StorageArrays
+    }
+    if config.DatabaseServers.IsNull() && !plan.DatabaseServers.IsUnknown() {
+        data.DatabaseServers = plan.DatabaseServers
+    }
+    if config.DockerResources.IsNull() && !plan.DockerResources.IsUnknown() {
+        data.DockerResources = plan.DockerResources
+    }
+    if config.PodmanResources.IsNull() && !plan.PodmanResources.IsUnknown() {
+        data.PodmanResources = plan.PodmanResources
+    }
+    if config.Services.IsNull() && !plan.Services.IsUnknown() {
+        data.Services = plan.Services
+    }
+    if config.ServiceLevelObjectives.IsNull() && !plan.ServiceLevelObjectives.IsUnknown() {
+        data.ServiceLevelObjectives = plan.ServiceLevelObjectives
+    }
+    if config.OnCallDutyPolicies.IsNull() && !plan.OnCallDutyPolicies.IsUnknown() {
+        data.OnCallDutyPolicies = plan.OnCallDutyPolicies
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.CurrentIncidentStateId.IsNull() && !plan.CurrentIncidentStateId.IsUnknown() {
+        data.CurrentIncidentStateId = plan.CurrentIncidentStateId
+    }
+    if config.ChangeMonitorStatusToId.IsNull() && !plan.ChangeMonitorStatusToId.IsUnknown() {
+        data.ChangeMonitorStatusToId = plan.ChangeMonitorStatusToId
+    }
+    if config.ShouldStatusPageSubscribersBeNotifiedOnIncidentCreated.IsNull() && !plan.ShouldStatusPageSubscribersBeNotifiedOnIncidentCreated.IsUnknown() {
+        data.ShouldStatusPageSubscribersBeNotifiedOnIncidentCreated = plan.ShouldStatusPageSubscribersBeNotifiedOnIncidentCreated
+    }
+    if config.CustomFields.IsNull() && !plan.CustomFields.IsUnknown() {
+        data.CustomFields = plan.CustomFields
+    }
+    if config.RootCause.IsNull() && !plan.RootCause.IsUnknown() {
+        data.RootCause = plan.RootCause
+    }
+    if config.PostmortemNote.IsNull() && !plan.PostmortemNote.IsUnknown() {
+        data.PostmortemNote = plan.PostmortemNote
+    }
+    if config.ShowPostmortemOnStatusPage.IsNull() && !plan.ShowPostmortemOnStatusPage.IsUnknown() {
+        data.ShowPostmortemOnStatusPage = plan.ShowPostmortemOnStatusPage
+    }
+    if config.NotifySubscribersOnPostmortemPublished.IsNull() && !plan.NotifySubscribersOnPostmortemPublished.IsUnknown() {
+        data.NotifySubscribersOnPostmortemPublished = plan.NotifySubscribersOnPostmortemPublished
+    }
+    if config.PostmortemPostedAt.IsNull() && !plan.PostmortemPostedAt.IsUnknown() {
+        data.PostmortemPostedAt = plan.PostmortemPostedAt
+    }
+    if config.PostmortemAttachments.IsNull() && !plan.PostmortemAttachments.IsUnknown() {
+        data.PostmortemAttachments = plan.PostmortemAttachments
+    }
+    if config.RemediationNotes.IsNull() && !plan.RemediationNotes.IsUnknown() {
+        data.RemediationNotes = plan.RemediationNotes
+    }
+    if config.TelemetryQuery.IsNull() && !plan.TelemetryQuery.IsUnknown() {
+        data.TelemetryQuery = plan.TelemetryQuery
+    }
+    if config.IsVisibleOnStatusPage.IsNull() && !plan.IsVisibleOnStatusPage.IsUnknown() {
+        data.IsVisibleOnStatusPage = plan.IsVisibleOnStatusPage
+    }
+    if config.StatusPages.IsNull() && !plan.StatusPages.IsUnknown() {
+        data.StatusPages = plan.StatusPages
+    }
+    if config.IsPrivate.IsNull() && !plan.IsPrivate.IsUnknown() {
+        data.IsPrivate = plan.IsPrivate
+    }
+    if config.EnableReminders.IsNull() && !plan.EnableReminders.IsUnknown() {
+        data.EnableReminders = plan.EnableReminders
+    }
 }
 
 // Helper method to convert Terraform map to Go interface{}

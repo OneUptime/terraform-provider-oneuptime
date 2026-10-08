@@ -13,12 +13,9 @@ Manage alert states for your project (Created, Acknowledged for example). Add / 
 
 ```terraform
 resource "oneuptime_alert_state" "example" {
-  name = "Example short text"
-  color = jsonencode({
-    "_type": "Color",
-    "value": "#ff0000"
-  })
-  description = "This is an example of longer text content that might be stored in this field."
+  name        = "Example alert state"
+  color       = "#ff0000"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -26,31 +23,37 @@ resource "oneuptime_alert_state" "example" {
 
 ### Required
 
-- `name` (String) Any friendly name of this object..
-- `color` (String) Color object.
+- `color` (String) Color of this resource in Hex (#32a852 for example).
+- `name` (String) Any friendly name of this object.
 
 ### Optional
 
-- `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `description` (String) Friendly description that will help you remember..
-- `is_created_state` (Bool) Is it the created state of the alert?..
-- `is_acknowledged_state` (Bool) Is it the acknowledged state of the alert?..
-- `is_resolved_state` (Bool) Is it the resolved state of the alert?..
-- `order` (Number) Where this state sits in the project's list of alert states: 1 is the top. Alerts only ever move down the list, and an alert in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them...
+- `description` (String) Friendly description that will help you remember.
+- `is_acknowledged_state` (Boolean) Is it the acknowledged state of the alert?
+- `is_created_state` (Boolean) Is it the created state of the alert?
+- `is_resolved_state` (Boolean) Is it the resolved state of the alert?
+- `order` (Number) Where this state sits in the project's list of alert states: 1 is the top. Alerts only ever move down the list, and an alert in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
 
 ### Read-Only
 
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `created_at` (String) A date time object..
-- `updated_at` (String) A date time object..
-- `deleted_at` (String) A date time object..
-- `version` (Number) Object version.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
 
 ## Import
 
-Import is supported using the following syntax:
+Import an existing alert state by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_alert_state.example
+  id = "<id>"
+}
+```
+
+or on the command line:
 
 ```shell
 terraform import oneuptime_alert_state.example <id>

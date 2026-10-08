@@ -30,11 +30,8 @@ type ScheduledMaintenanceEventDataSource struct {
 // ScheduledMaintenanceEventDataSourceModel describes the data source data model.
 type ScheduledMaintenanceEventDataSourceModel struct {
     Id types.String `tfsdk:"id"`
-    Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
@@ -83,209 +80,213 @@ func (d *ScheduledMaintenanceEventDataSource) Metadata(ctx context.Context, req 
 
 func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage scheduled maintenance event for your project Look up an existing scheduled_maintenance_event by `id` or by `name`.",
+        MarkdownDescription: "Manage scheduled maintenance event for your project Look up an existing scheduled maintenance event by `id`, or by any of its other arguments (`change_monitor_status_to_id`, `created_by_user_id`, `current_scheduled_maintenance_state_id`, ...): each one set must match, and exactly one scheduled maintenance event may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
-                Optional: true,
-                Computed: true,
-            },
-            "name": schema.StringAttribute{
-                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
                 Optional: true,
                 Computed: true,
             },
             "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "Date and Time when the object was created.",
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
+                MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this scheduled event..",
+                MarkdownDescription: "Title of this scheduled event.",
+                Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is in markdown..",
+                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is in markdown.",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors attached to this event.",
+                MarkdownDescription: "List of monitors attached to this event. IDs of `oneuptime_monitor` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts affected by this event..",
+                MarkdownDescription: "List of hosts affected by this event. IDs of `oneuptime_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes clusters affected by this event..",
+                MarkdownDescription: "List of Kubernetes clusters affected by this event. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Docker hosts affected by this event..",
+                MarkdownDescription: "List of Docker hosts affected by this event. IDs of `oneuptime_docker_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Podman hosts affected by this event..",
+                MarkdownDescription: "List of Podman hosts affected by this event. IDs of `oneuptime_podman_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "proxmox_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Proxmox clusters affected by this event..",
+                MarkdownDescription: "List of Proxmox clusters affected by this event. IDs of `oneuptime_proxmox_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "vmware_v_centers": schema.SetAttribute{
-                MarkdownDescription: "List of vCenters affected by this event..",
+                MarkdownDescription: "List of vCenters affected by this event. IDs of `oneuptime_vcenter` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "iot_fleets": schema.SetAttribute{
-                MarkdownDescription: "List of IoT fleets affected by this event..",
+                MarkdownDescription: "List of IoT fleets affected by this event. IDs of `oneuptime_iot_fleet` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "network_sites": schema.SetAttribute{
-                MarkdownDescription: "List of network sites affected by this event. Their descendants are covered too..",
+                MarkdownDescription: "List of network sites affected by this event. Their descendants are covered too. IDs of `oneuptime_network_site` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_swarm_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Docker Swarm clusters affected by this event..",
+                MarkdownDescription: "List of Docker Swarm clusters affected by this event. IDs of `oneuptime_docker_swarm_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "ceph_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Ceph clusters affected by this event..",
+                MarkdownDescription: "List of Ceph clusters affected by this event. IDs of `oneuptime_ceph_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "storage_arrays": schema.SetAttribute{
-                MarkdownDescription: "List of storage arrays affected by this event..",
+                MarkdownDescription: "List of storage arrays affected by this event. IDs of `oneuptime_storage_array` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "database_servers": schema.SetAttribute{
-                MarkdownDescription: "List of databases affected by this event..",
+                MarkdownDescription: "List of databases affected by this event. IDs of `oneuptime_database` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services affected by this event..",
+                MarkdownDescription: "List of services affected by this event. IDs of `oneuptime_service` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "List of status pages to show this event on.",
+                MarkdownDescription: "List of status pages to show this event on. IDs of `oneuptime_status_page` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "current_scheduled_maintenance_state_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Scheduled Maintenance State ID. The state the event currently is in. The ID of a `oneuptime_scheduled_maintenance_state`.",
+                Optional: true,
                 Computed: true,
             },
             "change_monitor_status_to_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Relation to Monitor Status Object ID. The monitors attached to this event change to this status when the event starts, and back to operational when it ends. It can be changed until the event starts. The ID of a `oneuptime_monitor_status`.",
+                Optional: true,
                 Computed: true,
             },
             "starts_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When does this event start?",
                 Computed: true,
             },
             "ends_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When does this event end?",
                 Computed: true,
             },
             "subscriber_notification_status_on_event_scheduled": schema.StringAttribute{
                 MarkdownDescription: "Status of notification sent to subscribers when event was scheduled.",
+                Optional: true,
                 Computed: true,
             },
             "subscriber_notification_status_message": schema.StringAttribute{
                 MarkdownDescription: "Status message for subscriber notifications when event is scheduled - includes success messages, failure reasons, or skip reasons.",
+                Optional: true,
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_on_event_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event creation?.",
+                MarkdownDescription: "Should subscribers be notified about this event creation?",
+                Optional: true,
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ongoing": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?.",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?",
+                Optional: true,
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ended": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?.",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?",
+                Optional: true,
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?.",
+                MarkdownDescription: "Are owners notified of when this resource is created?",
+                Optional: true,
                 Computed: true,
             },
             "send_subscriber_notifications_on_before_the_event": schema.StringAttribute{
-                MarkdownDescription: "Should subscribers be notified before the event?.",
+                MarkdownDescription: "Should subscribers be notified before the event? A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "next_subscriber_notification_before_the_event_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When will the next notification to subscribers be sent out?",
                 Computed: true,
             },
             "scheduled_maintenance_number": schema.NumberAttribute{
                 MarkdownDescription: "Scheduled Maintenance Number.",
+                Optional: true,
                 Computed: true,
             },
             "scheduled_maintenance_number_with_prefix": schema.StringAttribute{
                 MarkdownDescription: "Scheduled maintenance number with prefix (e.g., 'SM-42' or '#42').",
+                Optional: true,
                 Computed: true,
             },
             "is_visible_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should this incident be visible on the status page?.",
+                MarkdownDescription: "Should this incident be visible on the status page?",
+                Optional: true,
                 Computed: true,
             },
             "enable_reminders": schema.BoolAttribute{
-                MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project..",
+                MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project.",
+                Optional: true,
                 Computed: true,
             },
             "next_reminder_notification_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+                MarkdownDescription: "When will the next reminder notification be sent to owners of this scheduled maintenance event? This is set automatically based on the reminder rules configured for this project.",
                 Computed: true,
             },
             "reminder_notification_sent_count": schema.NumberAttribute{
-                MarkdownDescription: "How many reminder notifications have been sent to owners of this scheduled maintenance event so far..",
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this scheduled maintenance event so far.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -322,22 +323,98 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         return
     }
 
-    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
-    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
-    if hasId == hasName {
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Title.IsNull() && !data.Title.IsUnknown() {
+        filters["title"] = data.Title.ValueString()
+        filterNames = append(filterNames, "title = "+fmt.Sprintf("%q", data.Title.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.CurrentScheduledMaintenanceStateId.IsNull() && !data.CurrentScheduledMaintenanceStateId.IsUnknown() {
+        filters["currentScheduledMaintenanceStateId"] = data.CurrentScheduledMaintenanceStateId.ValueString()
+        filterNames = append(filterNames, "current_scheduled_maintenance_state_id = "+fmt.Sprintf("%q", data.CurrentScheduledMaintenanceStateId.ValueString()))
+    }
+    if !data.ChangeMonitorStatusToId.IsNull() && !data.ChangeMonitorStatusToId.IsUnknown() {
+        filters["changeMonitorStatusToId"] = data.ChangeMonitorStatusToId.ValueString()
+        filterNames = append(filterNames, "change_monitor_status_to_id = "+fmt.Sprintf("%q", data.ChangeMonitorStatusToId.ValueString()))
+    }
+    if !data.SubscriberNotificationStatusOnEventScheduled.IsNull() && !data.SubscriberNotificationStatusOnEventScheduled.IsUnknown() {
+        filters["subscriberNotificationStatusOnEventScheduled"] = data.SubscriberNotificationStatusOnEventScheduled.ValueString()
+        filterNames = append(filterNames, "subscriber_notification_status_on_event_scheduled = "+fmt.Sprintf("%q", data.SubscriberNotificationStatusOnEventScheduled.ValueString()))
+    }
+    if !data.SubscriberNotificationStatusMessage.IsNull() && !data.SubscriberNotificationStatusMessage.IsUnknown() {
+        filters["subscriberNotificationStatusMessage"] = data.SubscriberNotificationStatusMessage.ValueString()
+        filterNames = append(filterNames, "subscriber_notification_status_message = "+fmt.Sprintf("%q", data.SubscriberNotificationStatusMessage.ValueString()))
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.IsUnknown() {
+        filters["shouldStatusPageSubscribersBeNotifiedOnEventCreated"] = data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.ValueBool()
+        filterNames = append(filterNames, "should_status_page_subscribers_be_notified_on_event_created = "+fmt.Sprintf("%t", data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.ValueBool()))
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.IsUnknown() {
+        filters["shouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing"] = data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.ValueBool()
+        filterNames = append(filterNames, "should_status_page_subscribers_be_notified_when_event_changed_to_ongoing = "+fmt.Sprintf("%t", data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.ValueBool()))
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.IsUnknown() {
+        filters["shouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded"] = data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.ValueBool()
+        filterNames = append(filterNames, "should_status_page_subscribers_be_notified_when_event_changed_to_ended = "+fmt.Sprintf("%t", data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.ValueBool()))
+    }
+    if !data.IsOwnerNotifiedOfResourceCreation.IsNull() && !data.IsOwnerNotifiedOfResourceCreation.IsUnknown() {
+        filters["isOwnerNotifiedOfResourceCreation"] = data.IsOwnerNotifiedOfResourceCreation.ValueBool()
+        filterNames = append(filterNames, "is_owner_notified_of_resource_creation = "+fmt.Sprintf("%t", data.IsOwnerNotifiedOfResourceCreation.ValueBool()))
+    }
+    if !data.ScheduledMaintenanceNumber.IsNull() && !data.ScheduledMaintenanceNumber.IsUnknown() {
+        filters["scheduledMaintenanceNumber"] = lookupNumber(data.ScheduledMaintenanceNumber)
+        filterNames = append(filterNames, "scheduled_maintenance_number = "+data.ScheduledMaintenanceNumber.ValueBigFloat().String())
+    }
+    if !data.ScheduledMaintenanceNumberWithPrefix.IsNull() && !data.ScheduledMaintenanceNumberWithPrefix.IsUnknown() {
+        filters["scheduledMaintenanceNumberWithPrefix"] = data.ScheduledMaintenanceNumberWithPrefix.ValueString()
+        filterNames = append(filterNames, "scheduled_maintenance_number_with_prefix = "+fmt.Sprintf("%q", data.ScheduledMaintenanceNumberWithPrefix.ValueString()))
+    }
+    if !data.IsVisibleOnStatusPage.IsNull() && !data.IsVisibleOnStatusPage.IsUnknown() {
+        filters["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
+        filterNames = append(filterNames, "is_visible_on_status_page = "+fmt.Sprintf("%t", data.IsVisibleOnStatusPage.ValueBool()))
+    }
+    if !data.EnableReminders.IsNull() && !data.EnableReminders.IsUnknown() {
+        filters["enableReminders"] = data.EnableReminders.ValueBool()
+        filterNames = append(filterNames, "enable_reminders = "+fmt.Sprintf("%t", data.EnableReminders.ValueBool()))
+    }
+    if !data.ReminderNotificationSentCount.IsNull() && !data.ReminderNotificationSentCount.IsUnknown() {
+        filters["reminderNotificationSentCount"] = lookupNumber(data.ReminderNotificationSentCount)
+        filterNames = append(filterNames, "reminder_notification_sent_count = "+data.ReminderNotificationSentCount.ValueBigFloat().String())
+    }
+
+    if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a scheduled_maintenance_event.",
+            "Look the scheduled maintenance event up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the scheduled maintenance event up by.",
         )
         return
     }
 
     selectParam := map[string]interface{}{
-        "name": true,
         "createdAt": true,
         "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
         "projectId": true,
         "title": true,
         "description": true,
@@ -390,7 +467,7 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scheduled_maintenance_event found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scheduled maintenance event found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
@@ -403,11 +480,10 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             item = itemResponse
         }
-    } else {
+    }
+    if !hasId {
         listBody := map[string]interface{}{
-            "query": map[string]interface{}{
-                "name": data.Name.ValueString(),
-            },
+            "query":  filters,
             "select": selectParam,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
@@ -424,11 +500,11 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scheduled_maintenance_event found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No scheduled maintenance event matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one scheduled_maintenance_event matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one scheduled maintenance event matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
@@ -456,23 +532,6 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
-    }
-    if obj, ok := item["name"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Name = types.StringValue(string(jsonBytes))
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := item["name"].(string); ok {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
     }
     if obj, ok := item["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -507,34 +566,6 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
-    }
-    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := item["deletedAt"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := item["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["version"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Version = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Version = types.NumberNull()
-        }
-    } else {
-        data.Version = types.NumberNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
