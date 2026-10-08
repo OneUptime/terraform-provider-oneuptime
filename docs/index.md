@@ -16,7 +16,7 @@ terraform {
   required_providers {
     oneuptime = {
       source = "oneuptime/oneuptime"
-      version = "14.0.20"
+      version = "14.0.21"
     }
   }
 }
