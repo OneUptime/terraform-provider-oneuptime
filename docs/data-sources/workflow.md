@@ -35,6 +35,7 @@ data "oneuptime_workflow" "by_id" {
 - `incoming_email_secret_key` (String) The secret part of the Incoming Email trigger's address (workflow-<key>@<inbound email domain>). Anyone who has the address can start the workflow, so only people who can edit the workflow can read the key. Given to the workflow when its graph first has an Incoming Email trigger; set a new UUID to reset the address. Unique across all workflows.
 - `is_archived` (Boolean) Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were.
 - `is_enabled` (Boolean) Is this workflow enabled?
+- `last_saved_by_user_id` (String) ID of the User who last saved this workflow's steps, or created it (empty when they were last saved without a user, such as with an API key). The ID of a `oneuptime_user` (see the data source).
 - `name` (String) Any friendly name of this object.
 - `slug` (String) Friendly globally unique name for your object.
 - `webhook_secret_key` (String) The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL.

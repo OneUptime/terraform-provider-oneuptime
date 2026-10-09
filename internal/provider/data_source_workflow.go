@@ -39,6 +39,7 @@ type WorkflowDataSourceModel struct {
     IsArchived types.Bool `tfsdk:"is_archived"`
     ArchivedAt types.String `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
+    LastSavedByUserId types.String `tfsdk:"last_saved_by_user_id"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Graph types.String `tfsdk:"graph"`
     Labels types.Set `tfsdk:"labels"`
@@ -103,6 +104,11 @@ func (d *WorkflowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "archived_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+            },
+            "last_saved_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the User who last saved this workflow's steps, or created it (empty when they were last saved without a user, such as with an API key). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
             },
@@ -193,6 +199,10 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
         filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
     }
+    if !data.LastSavedByUserId.IsNull() && !data.LastSavedByUserId.IsUnknown() {
+        filters["lastSavedByUserId"] = data.LastSavedByUserId.ValueString()
+        filterNames = append(filterNames, "last_saved_by_user_id = "+fmt.Sprintf("%q", data.LastSavedByUserId.ValueString()))
+    }
     if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
         filters["isEnabled"] = data.IsEnabled.ValueBool()
         filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
@@ -232,6 +242,7 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         "isArchived": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "lastSavedByUserId": true,
         "isEnabled": true,
         "graph": true,
         "labels": true,
@@ -472,6 +483,23 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
+    }
+    if obj, ok := item["lastSavedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSavedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastSavedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastSavedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSavedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSavedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["lastSavedByUserId"].(string); ok {
+        data.LastSavedByUserId = types.StringValue(val)
+    } else {
+        data.LastSavedByUserId = types.StringNull()
     }
     if val, ok := item["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)

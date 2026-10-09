@@ -82,6 +82,7 @@ type NetworkDeviceDataSourceModel struct {
     CdpNeighbors types.String `tfsdk:"cdp_neighbors"`
     LldpNeighbors types.String `tfsdk:"lldp_neighbors"`
     SnmpTableSnapshot types.String `tfsdk:"snmp_table_snapshot"`
+    TransceiverSnapshot types.String `tfsdk:"transceiver_snapshot"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     LastPolledAt types.String `tfsdk:"last_polled_at"`
     IsReachable types.Bool `tfsdk:"is_reachable"`
@@ -357,6 +358,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "snmp_table_snapshot": schema.StringAttribute{
                 MarkdownDescription: "The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "transceiver_snapshot": schema.StringAttribute{
+                MarkdownDescription: "The transceivers (SFP, SFP+, QSFP and similar optics) in this device's ports: who made each one, its temperature, supply voltage, bias current and transmit and receive power against the device's own warning and alarm thresholds, its health, whether it is still detected, and a month of daily received power averages. Managed by the probe. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -720,6 +725,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "cdpNeighbors": true,
         "lldpNeighbors": true,
         "snmpTableSnapshot": true,
+        "transceiverSnapshot": true,
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
@@ -1622,6 +1628,23 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.SnmpTableSnapshot = types.StringValue(val)
     } else {
         data.SnmpTableSnapshot = types.StringNull()
+    }
+    if obj, ok := item["transceiverSnapshot"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TransceiverSnapshot = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TransceiverSnapshot = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TransceiverSnapshot = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TransceiverSnapshot = types.StringValue(string(jsonBytes))
+        } else {
+            data.TransceiverSnapshot = types.StringNull()
+        }
+    } else if val, ok := item["transceiverSnapshot"].(string); ok {
+        data.TransceiverSnapshot = types.StringValue(val)
+    } else {
+        data.TransceiverSnapshot = types.StringNull()
     }
     if obj, ok := item["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

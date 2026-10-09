@@ -55,6 +55,7 @@ type WorkflowResourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
+    LastSavedByUserId types.String `tfsdk:"last_saved_by_user_id"`
 }
 
 func (r *WorkflowResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -182,6 +183,10 @@ func (r *WorkflowResource) schemaDefinition() schema.Schema {
             },
             "archived_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Computed: true,
+            },
+            "last_saved_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the User who last saved this workflow's steps, or created it (empty when they were last saved without a user, such as with an API key). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
         },
@@ -315,6 +320,7 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "lastSavedByUserId": true,
         "_id": true,
     }
 
@@ -725,6 +731,43 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["lastSavedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSavedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastSavedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastSavedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastSavedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSavedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastSavedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSavedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastSavedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSavedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastSavedByUserId"].(string); ok {
+        data.LastSavedByUserId = types.StringValue(val)
+    } else {
+        data.LastSavedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -770,6 +813,7 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "lastSavedByUserId": true,
         "_id": true,
     }
 
@@ -1181,6 +1225,43 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["lastSavedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSavedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastSavedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastSavedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastSavedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSavedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastSavedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSavedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastSavedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSavedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastSavedByUserId"].(string); ok {
+        data.LastSavedByUserId = types.StringValue(val)
+    } else {
+        data.LastSavedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1291,6 +1372,7 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "lastSavedByUserId": true,
         "_id": true,
     }
 
@@ -1695,6 +1777,43 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["lastSavedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSavedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastSavedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastSavedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastSavedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSavedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastSavedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSavedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastSavedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSavedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastSavedByUserId"].(string); ok {
+        data.LastSavedByUserId = types.StringValue(val)
+    } else {
+        data.LastSavedByUserId = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

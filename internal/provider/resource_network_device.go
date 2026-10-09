@@ -91,6 +91,7 @@ type NetworkDeviceResourceModel struct {
     CdpNeighbors JSONSubsetValue `tfsdk:"cdp_neighbors"`
     LldpNeighbors JSONSubsetValue `tfsdk:"lldp_neighbors"`
     SnmpTableSnapshot JSONSubsetValue `tfsdk:"snmp_table_snapshot"`
+    TransceiverSnapshot JSONSubsetValue `tfsdk:"transceiver_snapshot"`
     LastSeenAt RFC3339Value `tfsdk:"last_seen_at"`
     LastPolledAt RFC3339Value `tfsdk:"last_polled_at"`
     IsReachable types.Bool `tfsdk:"is_reachable"`
@@ -552,6 +553,18 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                     JSONEnvelopeValidator(),
                 },
             },
+            "transceiver_snapshot": schema.StringAttribute{
+                MarkdownDescription: "The transceivers (SFP, SFP+, QSFP and similar optics) in this device's ports: who made each one, its temperature, supply voltage, bias current and transmit and receive power against the device's own warning and alarm thresholds, its health, whether it is still detected, and a month of daily received power averages. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
             "last_seen_at": schema.StringAttribute{
                 MarkdownDescription: "When SNMP data was last received from this device.",
                 CustomType: RFC3339Type{},
@@ -904,6 +917,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "cdpNeighbors": true,
         "lldpNeighbors": true,
         "snmpTableSnapshot": true,
+        "transceiverSnapshot": true,
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
@@ -2474,6 +2488,43 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.SnmpTableSnapshot = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["transceiverSnapshot"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TransceiverSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TransceiverSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TransceiverSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TransceiverSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TransceiverSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TransceiverSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TransceiverSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TransceiverSnapshot = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TransceiverSnapshot = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["transceiverSnapshot"].(string); ok {
+        data.TransceiverSnapshot = NewJSONSubsetValue(val)
+    } else {
+        data.TransceiverSnapshot = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastSeenAt = NewRFC3339Value(val)
@@ -2829,6 +2880,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "cdpNeighbors": true,
         "lldpNeighbors": true,
         "snmpTableSnapshot": true,
+        "transceiverSnapshot": true,
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
@@ -4400,6 +4452,43 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.SnmpTableSnapshot = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["transceiverSnapshot"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TransceiverSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TransceiverSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TransceiverSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TransceiverSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TransceiverSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TransceiverSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TransceiverSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TransceiverSnapshot = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TransceiverSnapshot = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["transceiverSnapshot"].(string); ok {
+        data.TransceiverSnapshot = NewJSONSubsetValue(val)
+    } else {
+        data.TransceiverSnapshot = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastSeenAt = NewRFC3339Value(val)
@@ -4889,6 +4978,14 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
             requestDataMap["snmpTableSnapshot"] = data.SnmpTableSnapshot.ValueString()
         }
     }
+    if !data.TransceiverSnapshot.IsUnknown() && !state.TransceiverSnapshot.IsUnknown() && !data.TransceiverSnapshot.Equal(state.TransceiverSnapshot) {
+        var transceiversnapshotData interface{}
+        if err := json.Unmarshal([]byte(data.TransceiverSnapshot.ValueString()), &transceiversnapshotData); err == nil {
+            requestDataMap["transceiverSnapshot"] = transceiversnapshotData
+        } else {
+            requestDataMap["transceiverSnapshot"] = data.TransceiverSnapshot.ValueString()
+        }
+    }
     if !data.LastSeenAt.IsUnknown() && !state.LastSeenAt.IsUnknown() && !data.LastSeenAt.Equal(state.LastSeenAt) {
         requestDataMap["lastSeenAt"] = data.LastSeenAt.ValueString()
     }
@@ -4992,6 +5089,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "cdpNeighbors": true,
         "lldpNeighbors": true,
         "snmpTableSnapshot": true,
+        "transceiverSnapshot": true,
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
@@ -6557,6 +6655,43 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.SnmpTableSnapshot = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["transceiverSnapshot"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TransceiverSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TransceiverSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TransceiverSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TransceiverSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TransceiverSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TransceiverSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TransceiverSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TransceiverSnapshot = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TransceiverSnapshot = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["transceiverSnapshot"].(string); ok {
+        data.TransceiverSnapshot = NewJSONSubsetValue(val)
+    } else {
+        data.TransceiverSnapshot = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastSeenAt = NewRFC3339Value(val)
@@ -7029,6 +7164,9 @@ func (r *NetworkDeviceResource) keepPlannedValues(data *NetworkDeviceResourceMod
     }
     if config.SnmpTableSnapshot.IsNull() && !plan.SnmpTableSnapshot.IsUnknown() {
         data.SnmpTableSnapshot = plan.SnmpTableSnapshot
+    }
+    if config.TransceiverSnapshot.IsNull() && !plan.TransceiverSnapshot.IsUnknown() {
+        data.TransceiverSnapshot = plan.TransceiverSnapshot
     }
     if config.LastSeenAt.IsNull() && !plan.LastSeenAt.IsUnknown() {
         data.LastSeenAt = plan.LastSeenAt

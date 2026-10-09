@@ -96,4 +96,5 @@ data "oneuptime_network_device" "by_id" {
 - `snmp_table_snapshot` (String) The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe. A JSON value: write it with `jsonencode()`.
 - `snmp_tables` (String) SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device. A JSON value: write it with `jsonencode()`.
 - `snmp_v3_auth` (String) Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. A JSON value: write it with `jsonencode()`.
+- `transceiver_snapshot` (String) The transceivers (SFP, SFP+, QSFP and similar optics) in this device's ports: who made each one, its temperature, supply voltage, bias current and transmit and receive power against the device's own warning and alarm thresholds, its health, whether it is still detected, and a month of daily received power averages. Managed by the probe. A JSON value: write it with `jsonencode()`.
 - `updated_at` (String) Date and Time when the object was updated.

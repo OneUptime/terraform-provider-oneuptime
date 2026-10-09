@@ -81,6 +81,7 @@ resource "oneuptime_network_device" "example" {
 - `sys_location` (String) System location (sysLocation) enriched from SNMP walks of this device.
 - `sys_name` (String) System name (sysName) enriched from SNMP walks of this device.
 - `sys_object_id` (String) sysObjectID — the vendor's registered OID for this device model, enriched from SNMP walks. Used to fingerprint the vendor and suggest an OID template.
+- `transceiver_snapshot` (String) The transceivers (SFP, SFP+, QSFP and similar optics) in this device's ports: who made each one, its temperature, supply voltage, bias current and transmit and receive power against the device's own warning and alarm thresholds, its health, whether it is still detected, and a month of daily received power averages. Managed by the probe. A JSON value: write it with `jsonencode()`.
 - `vendor` (String) Hardware vendor, from ENTITY-MIB or derived from sysObjectID. Managed by the probe.
 - `walk_interfaces` (Boolean) Walk the IF-MIB interface tables on each poll to inventory interfaces, bandwidth, and errors. Also collects LLDP/CDP neighbors for the topology graph. Defaults to `true`.
 

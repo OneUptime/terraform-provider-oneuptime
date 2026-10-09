@@ -41,6 +41,7 @@ resource "oneuptime_workflow" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
+- `last_saved_by_user_id` (String) ID of the User who last saved this workflow's steps, or created it (empty when they were last saved without a user, such as with an API key). The ID of a `oneuptime_user` (see the data source).
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.
