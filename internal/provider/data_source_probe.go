@@ -42,6 +42,7 @@ type ProbeDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ShouldAutoEnableProbeOnNewMonitors types.Bool `tfsdk:"should_auto_enable_probe_on_new_monitors"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
+    PacketCaptureCapability types.String `tfsdk:"packet_capture_capability"`
     Labels types.Set `tfsdk:"labels"`
 }
 
@@ -116,6 +117,10 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             "connection_status": schema.StringAttribute{
                 MarkdownDescription: "Connection Status of the Probe.",
                 Optional: true,
+                Computed: true,
+            },
+            "packet_capture_capability": schema.StringAttribute{
+                MarkdownDescription: "What the probe last reported about packet capture: whether it is turned on (PROBE_PACKET_CAPTURE_ENABLED on the probe), whether tcpdump is installed, the network interfaces it can capture on, and the limits its operator set. Managed by the probe. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
@@ -220,6 +225,7 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "createdByUserId": true,
         "shouldAutoEnableProbeOnNewMonitors": true,
         "connectionStatus": true,
+        "packetCaptureCapability": true,
         "labels": true,
         "_id": true,
     }
@@ -507,6 +513,23 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.ConnectionStatus = types.StringValue(val)
     } else {
         data.ConnectionStatus = types.StringNull()
+    }
+    if obj, ok := item["packetCaptureCapability"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PacketCaptureCapability = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PacketCaptureCapability = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PacketCaptureCapability = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PacketCaptureCapability = types.StringValue(string(jsonBytes))
+        } else {
+            data.PacketCaptureCapability = types.StringNull()
+        }
+    } else if val, ok := item["packetCaptureCapability"].(string); ok {
+        data.PacketCaptureCapability = types.StringValue(val)
+    } else {
+        data.PacketCaptureCapability = types.StringNull()
     }
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value

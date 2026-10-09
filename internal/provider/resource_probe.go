@@ -53,6 +53,7 @@ type ProbeResourceModel struct {
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
+    PacketCaptureCapability JSONSubsetValue `tfsdk:"packet_capture_capability"`
 }
 
 func (r *ProbeResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -169,6 +170,11 @@ func (r *ProbeResource) schemaDefinition() schema.Schema {
             },
             "connection_status": schema.StringAttribute{
                 MarkdownDescription: "Connection Status of the Probe.",
+                Computed: true,
+            },
+            "packet_capture_capability": schema.StringAttribute{
+                MarkdownDescription: "What the probe last reported about packet capture: whether it is turned on (PROBE_PACKET_CAPTURE_ENABLED on the probe), whether tcpdump is installed, the network interfaces it can capture on, and the limits its operator set. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
         },
@@ -307,6 +313,7 @@ func (r *ProbeResource) Create(ctx context.Context, req resource.CreateRequest, 
         "slug": true,
         "createdByUserId": true,
         "connectionStatus": true,
+        "packetCaptureCapability": true,
         "_id": true,
     }
 
@@ -716,6 +723,43 @@ func (r *ProbeResource) Create(ctx context.Context, req resource.CreateRequest, 
     } else {
         data.ConnectionStatus = types.StringNull()
     }
+    if obj, ok := dataMap["packetCaptureCapability"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PacketCaptureCapability = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PacketCaptureCapability = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PacketCaptureCapability = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PacketCaptureCapability = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PacketCaptureCapability = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PacketCaptureCapability = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PacketCaptureCapability = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PacketCaptureCapability = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PacketCaptureCapability = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["packetCaptureCapability"].(string); ok {
+        data.PacketCaptureCapability = NewJSONSubsetValue(val)
+    } else {
+        data.PacketCaptureCapability = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -760,6 +804,7 @@ func (r *ProbeResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "slug": true,
         "createdByUserId": true,
         "connectionStatus": true,
+        "packetCaptureCapability": true,
         "_id": true,
     }
 
@@ -1170,6 +1215,43 @@ func (r *ProbeResource) Read(ctx context.Context, req resource.ReadRequest, resp
     } else {
         data.ConnectionStatus = types.StringNull()
     }
+    if obj, ok := dataMap["packetCaptureCapability"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PacketCaptureCapability = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PacketCaptureCapability = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PacketCaptureCapability = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PacketCaptureCapability = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PacketCaptureCapability = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PacketCaptureCapability = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PacketCaptureCapability = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PacketCaptureCapability = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PacketCaptureCapability = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["packetCaptureCapability"].(string); ok {
+        data.PacketCaptureCapability = NewJSONSubsetValue(val)
+    } else {
+        data.PacketCaptureCapability = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1286,6 +1368,7 @@ func (r *ProbeResource) Update(ctx context.Context, req resource.UpdateRequest, 
         "slug": true,
         "createdByUserId": true,
         "connectionStatus": true,
+        "packetCaptureCapability": true,
         "_id": true,
     }
 
@@ -1689,6 +1772,43 @@ func (r *ProbeResource) Update(ctx context.Context, req resource.UpdateRequest, 
         data.ConnectionStatus = types.StringValue(val)
     } else {
         data.ConnectionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["packetCaptureCapability"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PacketCaptureCapability = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PacketCaptureCapability = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PacketCaptureCapability = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PacketCaptureCapability = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PacketCaptureCapability = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PacketCaptureCapability = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PacketCaptureCapability = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PacketCaptureCapability = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PacketCaptureCapability = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["packetCaptureCapability"].(string); ok {
+        data.PacketCaptureCapability = NewJSONSubsetValue(val)
+    } else {
+        data.PacketCaptureCapability = NewJSONSubsetNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
