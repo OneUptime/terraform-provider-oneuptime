@@ -75,6 +75,9 @@ type SpanDataSourceModel struct {
     LlmUserId types.String `tfsdk:"llm_user_id"`
     LlmUserEmail types.String `tfsdk:"llm_user_email"`
     LlmTeam types.String `tfsdk:"llm_team"`
+    LlmCallKind types.String `tfsdk:"llm_call_kind"`
+    LlmIssues types.Set `tfsdk:"llm_issues"`
+    LlmUserMessagePreview types.String `tfsdk:"llm_user_message_preview"`
 }
 
 func (d *SpanDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -314,6 +317,21 @@ func (d *SpanDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Optional: true,
                 Computed: true,
             },
+            "llm_call_kind": schema.StringAttribute{
+                MarkdownDescription: "LLM Call Kind.",
+                Optional: true,
+                Computed: true,
+            },
+            "llm_issues": schema.SetAttribute{
+                MarkdownDescription: "LLM Answer Issues.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "llm_user_message_preview": schema.StringAttribute{
+                MarkdownDescription: "LLM User Message Preview.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -513,6 +531,14 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         filters["llmTeam"] = data.LlmTeam.ValueString()
         filterNames = append(filterNames, "llm_team = "+fmt.Sprintf("%q", data.LlmTeam.ValueString()))
     }
+    if !data.LlmCallKind.IsNull() && !data.LlmCallKind.IsUnknown() {
+        filters["llmCallKind"] = data.LlmCallKind.ValueString()
+        filterNames = append(filterNames, "llm_call_kind = "+fmt.Sprintf("%q", data.LlmCallKind.ValueString()))
+    }
+    if !data.LlmUserMessagePreview.IsNull() && !data.LlmUserMessagePreview.IsUnknown() {
+        filters["llmUserMessagePreview"] = data.LlmUserMessagePreview.ValueString()
+        filterNames = append(filterNames, "llm_user_message_preview = "+fmt.Sprintf("%q", data.LlmUserMessagePreview.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -575,6 +601,9 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "llmUserId": true,
         "llmUserEmail": true,
         "llmTeam": true,
+        "llmCallKind": true,
+        "llmIssues": true,
+        "llmUserMessagePreview": true,
         "_id": true,
     }
 
@@ -1366,6 +1395,64 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.LlmTeam = types.StringValue(val)
     } else {
         data.LlmTeam = types.StringNull()
+    }
+    if obj, ok := item["llmCallKind"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmCallKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LlmCallKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LlmCallKind = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LlmCallKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmCallKind = types.StringNull()
+        }
+    } else if val, ok := item["llmCallKind"].(string); ok {
+        data.LlmCallKind = types.StringValue(val)
+    } else {
+        data.LlmCallKind = types.StringNull()
+    }
+    if val, ok := item["llmIssues"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.LlmIssues = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.LlmIssues = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["llmUserMessagePreview"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmUserMessagePreview = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LlmUserMessagePreview = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LlmUserMessagePreview = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LlmUserMessagePreview = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmUserMessagePreview = types.StringNull()
+        }
+    } else if val, ok := item["llmUserMessagePreview"].(string); ok {
+        data.LlmUserMessagePreview = types.StringValue(val)
+    } else {
+        data.LlmUserMessagePreview = types.StringNull()
     }
 
     // Write logs using the tflog package

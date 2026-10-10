@@ -43,6 +43,7 @@ data "oneuptime_span" "by_id" {
 - `k8s_pod_entity_key` (String) Kubernetes Pod Entity Key.
 - `kind` (String) Kind.
 - `llm_agent_name` (String) LLM Agent Name.
+- `llm_call_kind` (String) LLM Call Kind.
 - `llm_conversation_id` (String) LLM Conversation ID.
 - `llm_cost` (Number) LLM Cost (USD).
 - `llm_input_tokens` (Number) LLM Input Tokens.
@@ -56,6 +57,7 @@ data "oneuptime_span" "by_id" {
 - `llm_total_tokens` (Number) LLM Total Tokens.
 - `llm_user_email` (String) LLM User Email.
 - `llm_user_id` (String) LLM User ID.
+- `llm_user_message_preview` (String) LLM User Message Preview.
 - `name` (String) Name.
 - `parent_span_id` (String) Parent Span ID.
 - `primary_entity_id` (String) Service ID.
@@ -76,4 +78,5 @@ data "oneuptime_span" "by_id" {
 - `entity_keys` (Set of String) Entity Keys.
 - `events` (Set of String) Events.
 - `links` (String) Links. A JSON value: write it with `jsonencode()`.
+- `llm_issues` (Set of String) LLM Answer Issues.
 - `project_id` (String) Project ID.
