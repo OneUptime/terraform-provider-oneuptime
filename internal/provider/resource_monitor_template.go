@@ -115,7 +115,7 @@ func (r *MonitorTemplateResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
                 Validators: []validator.String{
-                    stringvalidator.OneOf("Manual", "Website", "API", "Ping", "Kubernetes", "Docker", "Host", "Podman", "Docker Swarm", "Proxmox", "VMware", "Ceph", "Storage Array", "IoT Device", "IP", "Incoming Request", "Incoming Email", "Port", "Server", "SSL Certificate", "SQL Query", "Database", "Synthetic Monitor", "Custom JavaScript Code", "Logs", "Metrics", "Traces", "Exceptions", "Profiles", "Security Events", "Network Device", "DNS", "DNSSEC", "Domain", "External Status Page"),
+                    stringvalidator.OneOf("Manual", "Website", "API", "Ping", "Kubernetes", "Docker", "Host", "Podman", "Docker Swarm", "Proxmox", "VMware", "Ceph", "Storage Array", "IoT Device", "IP", "Incoming Request", "Incoming Email", "Port", "Server", "SSL Certificate", "SQL Query", "Database", "Synthetic Monitor", "Custom JavaScript Code", "Logs", "Metrics", "Traces", "Exceptions", "Profiles", "Security Events", "Network Device", "DNS", "DNSSEC", "NTP", "Domain", "External Status Page"),
                 },
             },
             "monitor_steps": MonitorStepsSchemaAttribute("Monitor steps and criteria copied to monitors created from this template."),

@@ -74,12 +74,12 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe, Create Monitor, Edit Monitor, Read Monitor, Create All Operational Resources, Edit All Operational Resources, Read All Operational Resources, Create Monitor Probe, Edit Monitor Probe, Read Monitor Probe, Create Network Device, Edit Network Device, Read Network Device, Create Network Device Discovery Scan, Edit Network Device Discovery Scan, Read Network Device Discovery Scan, Create Network Site, Edit Network Site, Read Network Site], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
                 Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe, Create Monitor, Edit Monitor, Read Monitor, Create All Operational Resources, Edit All Operational Resources, Read All Operational Resources, Create Monitor Probe, Edit Monitor Probe, Read Monitor Probe, Create Network Device, Edit Network Device, Read Network Device, Create Network Device Discovery Scan, Edit Network Device Discovery Scan, Read Network Device Discovery Scan, Create Network Site, Edit Network Site, Read Network Site], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -88,11 +88,11 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "probe_version": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
                 Computed: true,
             },
             "last_alive": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe, Create Monitor, Edit Monitor, Read Monitor, Create All Operational Resources, Edit All Operational Resources, Read All Operational Resources, Create Monitor Probe, Edit Monitor Probe, Read Monitor Probe, Create Network Device, Edit Network Device, Read Network Device, Create Network Device Discovery Scan, Edit Network Device Discovery Scan, Read Network Device Discovery Scan, Create Network Site, Edit Network Site, Read Network Site], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "icon_file_id": schema.StringAttribute{
@@ -101,7 +101,7 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Public], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe, Create Monitor, Edit Monitor, Read Monitor, Create All Operational Resources, Edit All Operational Resources, Read All Operational Resources, Create Monitor Probe, Edit Monitor Probe, Read Monitor Probe, Create Network Device, Edit Network Device, Read Network Device, Create Network Device Discovery Scan, Edit Network Device Discovery Scan, Read Network Device Discovery Scan, Create Network Site, Edit Network Site, Read Network Site], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

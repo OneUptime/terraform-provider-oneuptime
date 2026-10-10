@@ -49,6 +49,7 @@ type LlmProviderResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
+    HasAdditionalParams types.Bool `tfsdk:"has_additional_params"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CostPerMillionTokensInUsdCents types.Number `tfsdk:"cost_per_million_tokens_in_usd_cents"`
 }
@@ -110,7 +111,7 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
                 },
             },
             "base_url": schema.StringAttribute{
-                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others.",
+                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others. The API key and the Additional Parameters are sent to it, so only project owners and admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -118,7 +119,7 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
                 },
             },
             "additional_params": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. Read only by project owners and admins, like the API key. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -160,6 +161,10 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Computed: true,
+            },
+            "has_additional_params": schema.BoolAttribute{
+                MarkdownDescription: "Whether Additional Parameters are saved. Worked out from the parameters on every read.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -307,6 +312,7 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "hasAdditionalParams": true,
         "createdByUserId": true,
         "costPerMillionTokensInUSDCents": true,
         "_id": true,
@@ -673,6 +679,11 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
     } else {
         data.Slug = types.StringNull()
     }
+    if val, ok := dataMap["hasAdditionalParams"].(bool); ok {
+        data.HasAdditionalParams = types.BoolValue(val)
+    } else {
+        data.HasAdditionalParams = types.BoolNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -769,6 +780,7 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "hasAdditionalParams": true,
         "createdByUserId": true,
         "costPerMillionTokensInUSDCents": true,
         "_id": true,
@@ -1136,6 +1148,11 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
     } else {
         data.Slug = types.StringNull()
     }
+    if val, ok := dataMap["hasAdditionalParams"].(bool); ok {
+        data.HasAdditionalParams = types.BoolValue(val)
+    } else {
+        data.HasAdditionalParams = types.BoolNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1302,6 +1319,7 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "hasAdditionalParams": true,
         "createdByUserId": true,
         "costPerMillionTokensInUSDCents": true,
         "_id": true,
@@ -1662,6 +1680,11 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if val, ok := dataMap["hasAdditionalParams"].(bool); ok {
+        data.HasAdditionalParams = types.BoolValue(val)
+    } else {
+        data.HasAdditionalParams = types.BoolNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

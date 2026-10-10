@@ -38,6 +38,7 @@ type LlmProviderDataSourceModel struct {
     ModelName types.String `tfsdk:"model_name"`
     BaseUrl types.String `tfsdk:"base_url"`
     AdditionalParams types.String `tfsdk:"additional_params"`
+    HasAdditionalParams types.Bool `tfsdk:"has_additional_params"`
     ProjectId types.String `tfsdk:"project_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsDefault types.Bool `tfsdk:"is_default"`
@@ -97,12 +98,17 @@ func (d *LlmProviderDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "base_url": schema.StringAttribute{
-                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others.",
+                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others. The API key and the Additional Parameters are sent to it, so only project owners and admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.",
                 Optional: true,
                 Computed: true,
             },
             "additional_params": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. Read only by project owners and admins, like the API key. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "has_additional_params": schema.BoolAttribute{
+                MarkdownDescription: "Whether Additional Parameters are saved. Worked out from the parameters on every read.",
+                Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -191,6 +197,10 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["baseUrl"] = data.BaseUrl.ValueString()
         filterNames = append(filterNames, "base_url = "+fmt.Sprintf("%q", data.BaseUrl.ValueString()))
     }
+    if !data.HasAdditionalParams.IsNull() && !data.HasAdditionalParams.IsUnknown() {
+        filters["hasAdditionalParams"] = data.HasAdditionalParams.ValueBool()
+        filterNames = append(filterNames, "has_additional_params = "+fmt.Sprintf("%t", data.HasAdditionalParams.ValueBool()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -230,6 +240,7 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         "modelName": true,
         "baseUrl": true,
         "additionalParams": true,
+        "hasAdditionalParams": true,
         "projectId": true,
         "createdByUserId": true,
         "isDefault": true,
@@ -481,6 +492,11 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.AdditionalParams = types.StringValue(val)
     } else {
         data.AdditionalParams = types.StringNull()
+    }
+    if val, ok := item["hasAdditionalParams"].(bool); ok {
+        data.HasAdditionalParams = types.BoolValue(val)
+    } else {
+        data.HasAdditionalParams = types.BoolNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

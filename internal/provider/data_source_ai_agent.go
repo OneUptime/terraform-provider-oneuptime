@@ -73,12 +73,12 @@ func (d *AiAgentDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]",
                 Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]",
                 Optional: true,
                 Computed: true,
             },
@@ -88,7 +88,7 @@ func (d *AiAgentDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "ai_agent_version": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]",
                 Computed: true,
             },
             "last_alive": schema.StringAttribute{
@@ -101,7 +101,7 @@ func (d *AiAgentDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Public], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
