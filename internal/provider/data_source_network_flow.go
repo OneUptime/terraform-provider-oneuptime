@@ -43,6 +43,10 @@ type NetworkFlowDataSourceModel struct {
     FlowStartAt types.String `tfsdk:"flow_start_at"`
     FlowEndAt types.String `tfsdk:"flow_end_at"`
     IngestedAt types.String `tfsdk:"ingested_at"`
+    FlowFormat types.String `tfsdk:"flow_format"`
+    SamplingRate types.Number `tfsdk:"sampling_rate"`
+    FlowCount types.Number `tfsdk:"flow_count"`
+    ProbeId types.String `tfsdk:"probe_id"`
 }
 
 func (d *NetworkFlowDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -130,6 +134,26 @@ func (d *NetworkFlowDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "ingested_at": schema.StringAttribute{
                 MarkdownDescription: "Ingested At.",
+                Optional: true,
+                Computed: true,
+            },
+            "flow_format": schema.StringAttribute{
+                MarkdownDescription: "Flow Format.",
+                Optional: true,
+                Computed: true,
+            },
+            "sampling_rate": schema.NumberAttribute{
+                MarkdownDescription: "Sampling Rate.",
+                Optional: true,
+                Computed: true,
+            },
+            "flow_count": schema.NumberAttribute{
+                MarkdownDescription: "Flow Count.",
+                Optional: true,
+                Computed: true,
+            },
+            "probe_id": schema.StringAttribute{
+                MarkdownDescription: "Probe ID.",
                 Optional: true,
                 Computed: true,
             },
@@ -228,6 +252,22 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["ingestedAt"] = data.IngestedAt.ValueString()
         filterNames = append(filterNames, "ingested_at = "+fmt.Sprintf("%q", data.IngestedAt.ValueString()))
     }
+    if !data.FlowFormat.IsNull() && !data.FlowFormat.IsUnknown() {
+        filters["flowFormat"] = data.FlowFormat.ValueString()
+        filterNames = append(filterNames, "flow_format = "+fmt.Sprintf("%q", data.FlowFormat.ValueString()))
+    }
+    if !data.SamplingRate.IsNull() && !data.SamplingRate.IsUnknown() {
+        filters["samplingRate"] = lookupNumber(data.SamplingRate)
+        filterNames = append(filterNames, "sampling_rate = "+data.SamplingRate.ValueBigFloat().String())
+    }
+    if !data.FlowCount.IsNull() && !data.FlowCount.IsUnknown() {
+        filters["flowCount"] = lookupNumber(data.FlowCount)
+        filterNames = append(filterNames, "flow_count = "+data.FlowCount.ValueBigFloat().String())
+    }
+    if !data.ProbeId.IsNull() && !data.ProbeId.IsUnknown() {
+        filters["probeId"] = data.ProbeId.ValueString()
+        filterNames = append(filterNames, "probe_id = "+fmt.Sprintf("%q", data.ProbeId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -260,6 +300,10 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         "flowStartAt": true,
         "flowEndAt": true,
         "ingestedAt": true,
+        "flowFormat": true,
+        "samplingRate": true,
+        "flowCount": true,
+        "probeId": true,
         "_id": true,
     }
 
@@ -562,6 +606,62 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.IngestedAt = types.StringValue(val)
     } else {
         data.IngestedAt = types.StringNull()
+    }
+    if obj, ok := item["flowFormat"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FlowFormat = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FlowFormat = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FlowFormat = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FlowFormat = types.StringValue(string(jsonBytes))
+        } else {
+            data.FlowFormat = types.StringNull()
+        }
+    } else if val, ok := item["flowFormat"].(string); ok {
+        data.FlowFormat = types.StringValue(val)
+    } else {
+        data.FlowFormat = types.StringNull()
+    }
+    if val, ok := item["samplingRate"].(float64); ok {
+        data.SamplingRate = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["samplingRate"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.SamplingRate = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.SamplingRate = types.NumberNull()
+        }
+    } else {
+        data.SamplingRate = types.NumberNull()
+    }
+    if val, ok := item["flowCount"].(float64); ok {
+        data.FlowCount = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["flowCount"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.FlowCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.FlowCount = types.NumberNull()
+        }
+    } else {
+        data.FlowCount = types.NumberNull()
+    }
+    if obj, ok := item["probeId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProbeId = types.StringNull()
+        }
+    } else if val, ok := item["probeId"].(string); ok {
+        data.ProbeId = types.StringValue(val)
+    } else {
+        data.ProbeId = types.StringNull()
     }
 
     // Write logs using the tflog package

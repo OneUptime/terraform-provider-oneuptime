@@ -56,6 +56,7 @@ data "oneuptime_network_device" "by_id" {
 - `name` (String) Friendly name for this network device.
 - `network_device_role_id` (String) ID of the Network Device Role this device is assigned. The ID of a `oneuptime_network_device_role`.
 - `oid_template_id` (String) ID of the OID Collection Template this device collects. The ID of a `oneuptime_oid_collection_template`.
+- `other_addresses` (String) Other IP addresses this device sends traps, syslog and flow records from - a loopback or another interface - separated by commas. Records from its hostname always match; these match too.
 - `polling_interval_in_minutes` (Number) How often, in minutes, the assigned probe polls this device via SNMP.
 - `probe_id` (String) ID of the Probe that polls this network device. The ID of a `oneuptime_probe`.
 - `serial_number` (String) Chassis serial number from ENTITY-MIB (entPhysicalSerialNum). Managed by the probe.

@@ -59,6 +59,7 @@ resource "oneuptime_network_device" "example" {
 - `network_device_role_id` (String) ID of the Network Device Role this device is assigned. The ID of a `oneuptime_network_device_role`.
 - `next_poll_at` (String) When the assigned probe should next poll this device. Advanced by the claim cycle; a device created now is due immediately.
 - `oid_template_id` (String) ID of the OID Collection Template this device collects. The ID of a `oneuptime_oid_collection_template`.
+- `other_addresses` (String) Other IP addresses this device sends traps, syslog and flow records from - a loopback or another interface - separated by commas. Records from its hostname always match; these match too.
 - `polling_interval_in_minutes` (Number) How often, in minutes, the assigned probe polls this device via SNMP.
 - `probe_id` (String) ID of the Probe that polls this network device. The ID of a `oneuptime_probe`.
 - `serial_number` (String) Chassis serial number from ENTITY-MIB (entPhysicalSerialNum). Managed by the probe.

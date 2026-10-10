@@ -31,7 +31,9 @@ data "oneuptime_network_flow" "by_id" {
 - `dst_ip` (String) Destination IP.
 - `dst_port` (Number) Destination Port.
 - `exporter_ip` (String) Exporter IP.
+- `flow_count` (Number) Flow Count.
 - `flow_end_at` (String) Flow End.
+- `flow_format` (String) Flow Format.
 - `flow_start_at` (String) Flow Start.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `ingested_at` (String) Ingested At.
@@ -40,7 +42,9 @@ data "oneuptime_network_flow" "by_id" {
 - `octets` (String) Octets.
 - `output_interface_index` (Number) Output Interface Index.
 - `packets` (String) Packets.
+- `probe_id` (String) Probe ID.
 - `protocol` (Number) Protocol.
+- `sampling_rate` (Number) Sampling Rate.
 - `src_ip` (String) Source IP.
 - `src_port` (Number) Source Port.
 
