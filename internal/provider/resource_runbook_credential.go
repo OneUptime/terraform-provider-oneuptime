@@ -130,14 +130,17 @@ func (r *RunbookCredentialResource) schemaDefinition() schema.Schema {
             "ssh_private_key": schema.StringAttribute{
                 MarkdownDescription: "PEM private key used to authenticate. Encrypted at rest and never returned by the API.",
                 Optional: true,
+                Sensitive: true,
             },
             "ssh_passphrase": schema.StringAttribute{
                 MarkdownDescription: "Passphrase protecting the private key, when it has one. Encrypted at rest and never returned by the API.",
                 Optional: true,
+                Sensitive: true,
             },
             "ssh_password": schema.StringAttribute{
                 MarkdownDescription: "Password authentication, for hosts without key access. Encrypted at rest and never returned by the API.",
                 Optional: true,
+                Sensitive: true,
             },
             "kubernetes_api_server_url": schema.StringAttribute{
                 MarkdownDescription: "For example https://10.0.0.1:6443.",
@@ -150,6 +153,7 @@ func (r *RunbookCredentialResource) schemaDefinition() schema.Schema {
             "kubernetes_service_account_token": schema.StringAttribute{
                 MarkdownDescription: "Bearer token of a service account bound to a role that permits only the actions your runbooks need. Encrypted at rest and never returned by the API.",
                 Optional: true,
+                Sensitive: true,
             },
             "kubernetes_ca_certificate": schema.StringAttribute{
                 MarkdownDescription: "PEM certificate authority for the API server. Leave empty only if the API server presents a certificate your Runner already trusts.",

@@ -15,6 +15,7 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
@@ -60,6 +61,13 @@ type VcenterResourceModel struct {
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig JSONSubsetValue `tfsdk:"telemetry_retention_config"`
+    CollectionMethod types.String `tfsdk:"collection_method"`
+    VcenterUrl types.String `tfsdk:"vcenter_url"`
+    VcenterUsername types.String `tfsdk:"vcenter_username"`
+    VcenterPassword types.String `tfsdk:"vcenter_password"`
+    CollectionProbeId types.String `tfsdk:"collection_probe_id"`
+    TrustedCertificateFingerprint types.String `tfsdk:"trusted_certificate_fingerprint"`
+    CollectionIntervalInMinutes types.Number `tfsdk:"collection_interval_in_minutes"`
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
     AgentVersion types.String `tfsdk:"agent_version"`
     LastSeenAt RFC3339Value `tfsdk:"last_seen_at"`
@@ -84,6 +92,17 @@ type VcenterResourceModel struct {
     AiAccessLastVerifiedAt RFC3339Value `tfsdk:"ai_access_last_verified_at"`
     AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
     AiAccessConfiguredAt RFC3339Value `tfsdk:"ai_access_configured_at"`
+    IsVCenterPasswordSet types.Bool `tfsdk:"is_v_center_password_set"`
+    VcenterCredentialsUpdatedAt RFC3339Value `tfsdk:"vcenter_credentials_updated_at"`
+    CollectionStatus types.String `tfsdk:"collection_status"`
+    CollectionErrorCode types.String `tfsdk:"collection_error_code"`
+    CollectionError types.String `tfsdk:"collection_error"`
+    PresentedCertificate JSONSubsetValue `tfsdk:"presented_certificate"`
+    CollectionSummary JSONSubsetValue `tfsdk:"collection_summary"`
+    NextCollectionAt RFC3339Value `tfsdk:"next_collection_at"`
+    LastCollectionAt RFC3339Value `tfsdk:"last_collection_at"`
+    LastSuccessfulCollectionAt RFC3339Value `tfsdk:"last_successful_collection_at"`
+    CollectionSettingsVersion types.Number `tfsdk:"collection_settings_version"`
 }
 
 func (r *VcenterResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -103,7 +122,7 @@ func (r *VcenterResource) Schema(ctx context.Context, req resource.SchemaRequest
 
 func (r *VcenterResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "vSphere endpoints (a vCenter Server, or a standalone ESXi host) that are being monitored in this project. Each vCenter is auto-discovered when the OneUptime VMware Agent sends metrics, or can be manually registered.",
+        MarkdownDescription: "vSphere endpoints (a vCenter Server, or a standalone ESXi host) that are being monitored in this project. A vCenter is collected by one of your OneUptime probes with a read-only account saved on it (no agent to run), or auto-discovered when the OneUptime VMware Agent sends its metrics.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -168,6 +187,61 @@ func (r *VcenterResource) schemaDefinition() schema.Schema {
                 },
                 Validators: []validator.String{
                     JSONEnvelopeValidator(),
+                },
+            },
+            "collection_method": schema.StringAttribute{
+                MarkdownDescription: "How this vCenter's data reaches OneUptime. Probe: one of your OneUptime probes logs in to vCenter with the read-only account saved here and collects it - no agent to install. Agent: the OneUptime VMware Agent you run sends it. Switching to Agent forgets the saved password.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("Agent"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "vcenter_url": schema.StringAttribute{
+                MarkdownDescription: "The HTTPS address of vCenter Server (or a standalone ESXi host) the probe connects to, such as https://vcsa.example.com. Stored as https://host[:port]; a path such as /ui or /sdk is dropped. Changing it asks for the password again.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "vcenter_username": schema.StringAttribute{
+                MarkdownDescription: "The vSphere user the probe logs in as, with its domain - such as oneuptime@vsphere.local. Give it the built-in Read-Only role on the top-level vCenter object, propagated to children.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "vcenter_password": schema.StringAttribute{
+                MarkdownDescription: "The password of the vCenter user. Write-only: encrypted at rest, never returned by the API, and sent only to the probe that collects this vCenter. Leave it out of an update to keep the saved one; changing the address, the probe or the trusted certificate needs it again.",
+                Optional: true,
+                Sensitive: true,
+            },
+            "collection_probe_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the OneUptime probe that collects this vCenter. Changing it asks for the password again. The ID of a `oneuptime_probe`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "trusted_certificate_fingerprint": schema.StringAttribute{
+                MarkdownDescription: "The SHA-256 fingerprint of the one certificate the probe accepts from this vCenter, for a vCenter whose certificate is not from a public authority (vCenter's own VMCA certificate, by default). Empty: the certificate must be signed by an authority the probe's machine trusts. Verification is never skipped. Trusting a different certificate asks for the password again.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "collection_interval_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How often the probe collects this vCenter, in whole minutes from 1 to 60. Two minutes is the VMware agent's own default; collect large vCenters less often to go easier on vCenter.",
+                Optional: true,
+                Computed: true,
+                Default: numberdefault.StaticBigFloat(big.NewFloat(2)),
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "otel_collector_status": schema.StringAttribute{
@@ -344,6 +418,56 @@ func (r *VcenterResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "is_v_center_password_set": schema.BoolAttribute{
+                MarkdownDescription: "Whether a vCenter password is saved. Set by the server from the password itself.",
+                Computed: true,
+            },
+            "vcenter_credentials_updated_at": schema.StringAttribute{
+                MarkdownDescription: "When the vCenter user name or password was last changed. Set by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "collection_status": schema.StringAttribute{
+                MarkdownDescription: "Where probe collection stands: Pending (the probe has not tried the current settings yet), Succeeded or Failed. Written by the server and the probe.",
+                Computed: true,
+            },
+            "collection_error_code": schema.StringAttribute{
+                MarkdownDescription: "Why the last collection failed, as a code the dashboard turns into a next step (InvalidLogin, UntrustedCertificate, ConnectionTimedOut, ...). Written by the probe.",
+                Computed: true,
+            },
+            "collection_error": schema.StringAttribute{
+                MarkdownDescription: "What went wrong in the last collection, in words. Written by the probe.",
+                Computed: true,
+            },
+            "presented_certificate": schema.StringAttribute{
+                MarkdownDescription: "The certificate vCenter presented when the last collection did not trust it: its SHA-256 fingerprint, subject, issuer and validity, so a person can check it and trust exactly that certificate. Written by the probe. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "collection_summary": schema.StringAttribute{
+                MarkdownDescription: "What the last successful collection found: vCenter's product and version, and how many datacenters, clusters, hosts, virtual machines, datastores and resource pools it reported. Written by the probe. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "next_collection_at": schema.StringAttribute{
+                MarkdownDescription: "When the probe collects this vCenter next. Written by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_collection_at": schema.StringAttribute{
+                MarkdownDescription: "When the probe last tried to collect this vCenter, whether it worked or not. Written by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_successful_collection_at": schema.StringAttribute{
+                MarkdownDescription: "When the probe last collected this vCenter successfully. Written by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "collection_settings_version": schema.NumberAttribute{
+                MarkdownDescription: "Counts changes to the probe collection settings, so a report from a collection that started before a change is not shown as the current status. Written by the server.",
+                Computed: true,
+            },
         },
     }
 }
@@ -431,6 +555,27 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
     if parsedTelemetryRetentionConfig := r.parseJSONField(data.TelemetryRetentionConfig); parsedTelemetryRetentionConfig != nil {
         requestDataMap["telemetryRetentionConfig"] = parsedTelemetryRetentionConfig
     }
+    if !data.CollectionMethod.IsNull() && !data.CollectionMethod.IsUnknown() {
+        requestDataMap["collectionMethod"] = data.CollectionMethod.ValueString()
+    }
+    if !data.VcenterUrl.IsNull() && !data.VcenterUrl.IsUnknown() {
+        requestDataMap["vcenterUrl"] = data.VcenterUrl.ValueString()
+    }
+    if !data.VcenterUsername.IsNull() && !data.VcenterUsername.IsUnknown() {
+        requestDataMap["vcenterUsername"] = data.VcenterUsername.ValueString()
+    }
+    if !data.VcenterPassword.IsNull() && !data.VcenterPassword.IsUnknown() {
+        requestDataMap["vcenterPassword"] = data.VcenterPassword.ValueString()
+    }
+    if !data.CollectionProbeId.IsNull() && !data.CollectionProbeId.IsUnknown() {
+        requestDataMap["collectionProbeId"] = data.CollectionProbeId.ValueString()
+    }
+    if !data.TrustedCertificateFingerprint.IsNull() && !data.TrustedCertificateFingerprint.IsUnknown() {
+        requestDataMap["trustedCertificateFingerprint"] = data.TrustedCertificateFingerprint.ValueString()
+    }
+    if !data.CollectionIntervalInMinutes.IsNull() && !data.CollectionIntervalInMinutes.IsUnknown() {
+        requestDataMap["collectionIntervalInMinutes"] = r.bigFloatToFloat64(data.CollectionIntervalInMinutes.ValueBigFloat())
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/vmware-vcenter", vcenterRequest)
@@ -483,6 +628,12 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
+        "collectionMethod": true,
+        "vcenterUrl": true,
+        "vcenterUsername": true,
+        "collectionProbeId": true,
+        "trustedCertificateFingerprint": true,
+        "collectionIntervalInMinutes": true,
         "otelCollectorStatus": true,
         "agentVersion": true,
         "lastSeenAt": true,
@@ -507,6 +658,17 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "isVCenterPasswordSet": true,
+        "vcenterCredentialsUpdatedAt": true,
+        "collectionStatus": true,
+        "collectionErrorCode": true,
+        "collectionError": true,
+        "presentedCertificate": true,
+        "collectionSummary": true,
+        "nextCollectionAt": true,
+        "lastCollectionAt": true,
+        "lastSuccessfulCollectionAt": true,
+        "collectionSettingsVersion": true,
         "_id": true,
     }
 
@@ -712,6 +874,208 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["collectionMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionMethod"].(string); ok {
+        data.CollectionMethod = types.StringValue(val)
+    } else {
+        data.CollectionMethod = types.StringNull()
+    }
+    if obj, ok := dataMap["vcenterUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VcenterUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VcenterUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VcenterUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VcenterUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VcenterUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VcenterUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["vcenterUrl"].(string); ok {
+        data.VcenterUrl = types.StringValue(val)
+    } else {
+        data.VcenterUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["vcenterUsername"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VcenterUsername = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VcenterUsername = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VcenterUsername = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VcenterUsername = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUsername = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VcenterUsername = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUsername = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VcenterUsername = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUsername = types.StringNull()
+        }
+    } else if val, ok := dataMap["vcenterUsername"].(string); ok {
+        data.VcenterUsername = types.StringValue(val)
+    } else {
+        data.VcenterUsername = types.StringNull()
+    }
+    if obj, ok := dataMap["collectionProbeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionProbeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionProbeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionProbeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionProbeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionProbeId"].(string); ok {
+        data.CollectionProbeId = types.StringValue(val)
+    } else {
+        data.CollectionProbeId = types.StringNull()
+    }
+    if obj, ok := dataMap["trustedCertificateFingerprint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TrustedCertificateFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TrustedCertificateFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TrustedCertificateFingerprint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.TrustedCertificateFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.TrustedCertificateFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.TrustedCertificateFingerprint = types.StringNull()
+        }
+    } else if val, ok := dataMap["trustedCertificateFingerprint"].(string); ok {
+        data.TrustedCertificateFingerprint = types.StringValue(val)
+    } else {
+        data.TrustedCertificateFingerprint = types.StringNull()
+    }
+    if val, ok := dataMap["collectionIntervalInMinutes"].(float64); ok {
+        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["collectionIntervalInMinutes"].(int); ok {
+        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["collectionIntervalInMinutes"].(int64); ok {
+        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["collectionIntervalInMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CollectionIntervalInMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.CollectionIntervalInMinutes = types.NumberNull()
     }
     if obj, ok := dataMap["otelCollectorStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1231,6 +1595,255 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.AiAccessConfiguredAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["isVCenterPasswordSet"].(bool); ok {
+        data.IsVCenterPasswordSet = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["vcenterCredentialsUpdatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.VcenterCredentialsUpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.VcenterCredentialsUpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["vcenterCredentialsUpdatedAt"].(string); ok && val != "" {
+        data.VcenterCredentialsUpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.VcenterCredentialsUpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["collectionStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionStatus"].(string); ok {
+        data.CollectionStatus = types.StringValue(val)
+    } else {
+        data.CollectionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["collectionErrorCode"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionErrorCode = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionErrorCode"].(string); ok {
+        data.CollectionErrorCode = types.StringValue(val)
+    } else {
+        data.CollectionErrorCode = types.StringNull()
+    }
+    if obj, ok := dataMap["collectionError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionError = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionError = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionError = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionError = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionError"].(string); ok {
+        data.CollectionError = types.StringValue(val)
+    } else {
+        data.CollectionError = types.StringNull()
+    }
+    if obj, ok := dataMap["presentedCertificate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PresentedCertificate = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PresentedCertificate = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PresentedCertificate = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PresentedCertificate = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PresentedCertificate = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PresentedCertificate = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["presentedCertificate"].(string); ok {
+        data.PresentedCertificate = NewJSONSubsetValue(val)
+    } else {
+        data.PresentedCertificate = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["collectionSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CollectionSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CollectionSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CollectionSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["collectionSummary"].(string); ok {
+        data.CollectionSummary = NewJSONSubsetValue(val)
+    } else {
+        data.CollectionSummary = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["nextCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextCollectionAt = NewRFC3339Value(val)
+        } else {
+            data.NextCollectionAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextCollectionAt"].(string); ok && val != "" {
+        data.NextCollectionAt = NewRFC3339Value(val)
+    } else {
+        data.NextCollectionAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastCollectionAt = NewRFC3339Value(val)
+        } else {
+            data.LastCollectionAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastCollectionAt"].(string); ok && val != "" {
+        data.LastCollectionAt = NewRFC3339Value(val)
+    } else {
+        data.LastCollectionAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastSuccessfulCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSuccessfulCollectionAt = NewRFC3339Value(val)
+        } else {
+            data.LastSuccessfulCollectionAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSuccessfulCollectionAt"].(string); ok && val != "" {
+        data.LastSuccessfulCollectionAt = NewRFC3339Value(val)
+    } else {
+        data.LastSuccessfulCollectionAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["collectionSettingsVersion"].(float64); ok {
+        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["collectionSettingsVersion"].(int); ok {
+        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["collectionSettingsVersion"].(int64); ok {
+        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["collectionSettingsVersion"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CollectionSettingsVersion = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.CollectionSettingsVersion = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1268,6 +1881,12 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
+        "collectionMethod": true,
+        "vcenterUrl": true,
+        "vcenterUsername": true,
+        "collectionProbeId": true,
+        "trustedCertificateFingerprint": true,
+        "collectionIntervalInMinutes": true,
         "otelCollectorStatus": true,
         "agentVersion": true,
         "lastSeenAt": true,
@@ -1292,6 +1911,17 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "isVCenterPasswordSet": true,
+        "vcenterCredentialsUpdatedAt": true,
+        "collectionStatus": true,
+        "collectionErrorCode": true,
+        "collectionError": true,
+        "presentedCertificate": true,
+        "collectionSummary": true,
+        "nextCollectionAt": true,
+        "lastCollectionAt": true,
+        "lastSuccessfulCollectionAt": true,
+        "collectionSettingsVersion": true,
         "_id": true,
     }
 
@@ -1499,6 +2129,208 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["collectionMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionMethod"].(string); ok {
+        data.CollectionMethod = types.StringValue(val)
+    } else {
+        data.CollectionMethod = types.StringNull()
+    }
+    if obj, ok := dataMap["vcenterUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VcenterUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VcenterUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VcenterUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VcenterUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VcenterUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VcenterUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["vcenterUrl"].(string); ok {
+        data.VcenterUrl = types.StringValue(val)
+    } else {
+        data.VcenterUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["vcenterUsername"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VcenterUsername = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VcenterUsername = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VcenterUsername = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VcenterUsername = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUsername = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VcenterUsername = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUsername = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VcenterUsername = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUsername = types.StringNull()
+        }
+    } else if val, ok := dataMap["vcenterUsername"].(string); ok {
+        data.VcenterUsername = types.StringValue(val)
+    } else {
+        data.VcenterUsername = types.StringNull()
+    }
+    if obj, ok := dataMap["collectionProbeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionProbeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionProbeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionProbeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionProbeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionProbeId"].(string); ok {
+        data.CollectionProbeId = types.StringValue(val)
+    } else {
+        data.CollectionProbeId = types.StringNull()
+    }
+    if obj, ok := dataMap["trustedCertificateFingerprint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TrustedCertificateFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TrustedCertificateFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TrustedCertificateFingerprint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.TrustedCertificateFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.TrustedCertificateFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.TrustedCertificateFingerprint = types.StringNull()
+        }
+    } else if val, ok := dataMap["trustedCertificateFingerprint"].(string); ok {
+        data.TrustedCertificateFingerprint = types.StringValue(val)
+    } else {
+        data.TrustedCertificateFingerprint = types.StringNull()
+    }
+    if val, ok := dataMap["collectionIntervalInMinutes"].(float64); ok {
+        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["collectionIntervalInMinutes"].(int); ok {
+        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["collectionIntervalInMinutes"].(int64); ok {
+        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["collectionIntervalInMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CollectionIntervalInMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.CollectionIntervalInMinutes = types.NumberNull()
+    }
     if obj, ok := dataMap["otelCollectorStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2017,6 +2849,255 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.AiAccessConfiguredAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["isVCenterPasswordSet"].(bool); ok {
+        data.IsVCenterPasswordSet = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["vcenterCredentialsUpdatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.VcenterCredentialsUpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.VcenterCredentialsUpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["vcenterCredentialsUpdatedAt"].(string); ok && val != "" {
+        data.VcenterCredentialsUpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.VcenterCredentialsUpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["collectionStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionStatus"].(string); ok {
+        data.CollectionStatus = types.StringValue(val)
+    } else {
+        data.CollectionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["collectionErrorCode"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionErrorCode = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionErrorCode"].(string); ok {
+        data.CollectionErrorCode = types.StringValue(val)
+    } else {
+        data.CollectionErrorCode = types.StringNull()
+    }
+    if obj, ok := dataMap["collectionError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionError = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionError = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionError = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionError = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionError"].(string); ok {
+        data.CollectionError = types.StringValue(val)
+    } else {
+        data.CollectionError = types.StringNull()
+    }
+    if obj, ok := dataMap["presentedCertificate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PresentedCertificate = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PresentedCertificate = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PresentedCertificate = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PresentedCertificate = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PresentedCertificate = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PresentedCertificate = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["presentedCertificate"].(string); ok {
+        data.PresentedCertificate = NewJSONSubsetValue(val)
+    } else {
+        data.PresentedCertificate = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["collectionSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CollectionSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CollectionSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CollectionSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["collectionSummary"].(string); ok {
+        data.CollectionSummary = NewJSONSubsetValue(val)
+    } else {
+        data.CollectionSummary = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["nextCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextCollectionAt = NewRFC3339Value(val)
+        } else {
+            data.NextCollectionAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextCollectionAt"].(string); ok && val != "" {
+        data.NextCollectionAt = NewRFC3339Value(val)
+    } else {
+        data.NextCollectionAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastCollectionAt = NewRFC3339Value(val)
+        } else {
+            data.LastCollectionAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastCollectionAt"].(string); ok && val != "" {
+        data.LastCollectionAt = NewRFC3339Value(val)
+    } else {
+        data.LastCollectionAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastSuccessfulCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSuccessfulCollectionAt = NewRFC3339Value(val)
+        } else {
+            data.LastSuccessfulCollectionAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSuccessfulCollectionAt"].(string); ok && val != "" {
+        data.LastSuccessfulCollectionAt = NewRFC3339Value(val)
+    } else {
+        data.LastSuccessfulCollectionAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["collectionSettingsVersion"].(float64); ok {
+        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["collectionSettingsVersion"].(int); ok {
+        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["collectionSettingsVersion"].(int64); ok {
+        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["collectionSettingsVersion"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CollectionSettingsVersion = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.CollectionSettingsVersion = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2133,6 +3214,27 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
             requestDataMap["aiCommandAllowlist"] = data.AiCommandAllowlist.ValueString()
         }
     }
+    if !data.CollectionMethod.IsUnknown() && !state.CollectionMethod.IsUnknown() && !data.CollectionMethod.Equal(state.CollectionMethod) {
+        requestDataMap["collectionMethod"] = data.CollectionMethod.ValueString()
+    }
+    if !data.VcenterUrl.IsUnknown() && !state.VcenterUrl.IsUnknown() && !data.VcenterUrl.Equal(state.VcenterUrl) {
+        requestDataMap["vcenterUrl"] = data.VcenterUrl.ValueString()
+    }
+    if !data.VcenterUsername.IsUnknown() && !state.VcenterUsername.IsUnknown() && !data.VcenterUsername.Equal(state.VcenterUsername) {
+        requestDataMap["vcenterUsername"] = data.VcenterUsername.ValueString()
+    }
+    if !data.VcenterPassword.IsUnknown() && !state.VcenterPassword.IsUnknown() && !data.VcenterPassword.Equal(state.VcenterPassword) {
+        requestDataMap["vcenterPassword"] = data.VcenterPassword.ValueString()
+    }
+    if !data.CollectionProbeId.IsUnknown() && !state.CollectionProbeId.IsUnknown() && !data.CollectionProbeId.Equal(state.CollectionProbeId) {
+        requestDataMap["collectionProbeId"] = data.CollectionProbeId.ValueString()
+    }
+    if !data.TrustedCertificateFingerprint.IsUnknown() && !state.TrustedCertificateFingerprint.IsUnknown() && !data.TrustedCertificateFingerprint.Equal(state.TrustedCertificateFingerprint) {
+        requestDataMap["trustedCertificateFingerprint"] = data.TrustedCertificateFingerprint.ValueString()
+    }
+    if !data.CollectionIntervalInMinutes.IsUnknown() && !state.CollectionIntervalInMinutes.IsUnknown() && !data.CollectionIntervalInMinutes.Equal(state.CollectionIntervalInMinutes) {
+        requestDataMap["collectionIntervalInMinutes"] = r.bigFloatToFloat64(data.CollectionIntervalInMinutes.ValueBigFloat())
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -2163,6 +3265,12 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
+        "collectionMethod": true,
+        "vcenterUrl": true,
+        "vcenterUsername": true,
+        "collectionProbeId": true,
+        "trustedCertificateFingerprint": true,
+        "collectionIntervalInMinutes": true,
         "otelCollectorStatus": true,
         "agentVersion": true,
         "lastSeenAt": true,
@@ -2187,6 +3295,17 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "isVCenterPasswordSet": true,
+        "vcenterCredentialsUpdatedAt": true,
+        "collectionStatus": true,
+        "collectionErrorCode": true,
+        "collectionError": true,
+        "presentedCertificate": true,
+        "collectionSummary": true,
+        "nextCollectionAt": true,
+        "lastCollectionAt": true,
+        "lastSuccessfulCollectionAt": true,
+        "collectionSettingsVersion": true,
         "_id": true,
     }
 
@@ -2388,6 +3507,208 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["collectionMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionMethod"].(string); ok {
+        data.CollectionMethod = types.StringValue(val)
+    } else {
+        data.CollectionMethod = types.StringNull()
+    }
+    if obj, ok := dataMap["vcenterUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VcenterUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VcenterUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VcenterUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VcenterUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VcenterUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VcenterUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["vcenterUrl"].(string); ok {
+        data.VcenterUrl = types.StringValue(val)
+    } else {
+        data.VcenterUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["vcenterUsername"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VcenterUsername = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VcenterUsername = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VcenterUsername = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VcenterUsername = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUsername = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VcenterUsername = types.StringValue(string(jsonBytes))
+            } else {
+                data.VcenterUsername = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VcenterUsername = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUsername = types.StringNull()
+        }
+    } else if val, ok := dataMap["vcenterUsername"].(string); ok {
+        data.VcenterUsername = types.StringValue(val)
+    } else {
+        data.VcenterUsername = types.StringNull()
+    }
+    if obj, ok := dataMap["collectionProbeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionProbeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionProbeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionProbeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionProbeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionProbeId"].(string); ok {
+        data.CollectionProbeId = types.StringValue(val)
+    } else {
+        data.CollectionProbeId = types.StringNull()
+    }
+    if obj, ok := dataMap["trustedCertificateFingerprint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TrustedCertificateFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TrustedCertificateFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TrustedCertificateFingerprint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.TrustedCertificateFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.TrustedCertificateFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.TrustedCertificateFingerprint = types.StringNull()
+        }
+    } else if val, ok := dataMap["trustedCertificateFingerprint"].(string); ok {
+        data.TrustedCertificateFingerprint = types.StringValue(val)
+    } else {
+        data.TrustedCertificateFingerprint = types.StringNull()
+    }
+    if val, ok := dataMap["collectionIntervalInMinutes"].(float64); ok {
+        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["collectionIntervalInMinutes"].(int); ok {
+        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["collectionIntervalInMinutes"].(int64); ok {
+        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["collectionIntervalInMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CollectionIntervalInMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.CollectionIntervalInMinutes = types.NumberNull()
+    }
     if obj, ok := dataMap["otelCollectorStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2906,6 +4227,255 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.AiAccessConfiguredAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["isVCenterPasswordSet"].(bool); ok {
+        data.IsVCenterPasswordSet = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["vcenterCredentialsUpdatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.VcenterCredentialsUpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.VcenterCredentialsUpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["vcenterCredentialsUpdatedAt"].(string); ok && val != "" {
+        data.VcenterCredentialsUpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.VcenterCredentialsUpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["collectionStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionStatus"].(string); ok {
+        data.CollectionStatus = types.StringValue(val)
+    } else {
+        data.CollectionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["collectionErrorCode"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionErrorCode = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionErrorCode"].(string); ok {
+        data.CollectionErrorCode = types.StringValue(val)
+    } else {
+        data.CollectionErrorCode = types.StringNull()
+    }
+    if obj, ok := dataMap["collectionError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionError = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionError = types.StringValue(string(jsonBytes))
+            } else {
+                data.CollectionError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionError = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionError = types.StringNull()
+        }
+    } else if val, ok := dataMap["collectionError"].(string); ok {
+        data.CollectionError = types.StringValue(val)
+    } else {
+        data.CollectionError = types.StringNull()
+    }
+    if obj, ok := dataMap["presentedCertificate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PresentedCertificate = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PresentedCertificate = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PresentedCertificate = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PresentedCertificate = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PresentedCertificate = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PresentedCertificate = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["presentedCertificate"].(string); ok {
+        data.PresentedCertificate = NewJSONSubsetValue(val)
+    } else {
+        data.PresentedCertificate = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["collectionSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CollectionSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CollectionSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CollectionSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CollectionSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CollectionSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["collectionSummary"].(string); ok {
+        data.CollectionSummary = NewJSONSubsetValue(val)
+    } else {
+        data.CollectionSummary = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["nextCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextCollectionAt = NewRFC3339Value(val)
+        } else {
+            data.NextCollectionAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextCollectionAt"].(string); ok && val != "" {
+        data.NextCollectionAt = NewRFC3339Value(val)
+    } else {
+        data.NextCollectionAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastCollectionAt = NewRFC3339Value(val)
+        } else {
+            data.LastCollectionAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastCollectionAt"].(string); ok && val != "" {
+        data.LastCollectionAt = NewRFC3339Value(val)
+    } else {
+        data.LastCollectionAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastSuccessfulCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSuccessfulCollectionAt = NewRFC3339Value(val)
+        } else {
+            data.LastSuccessfulCollectionAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSuccessfulCollectionAt"].(string); ok && val != "" {
+        data.LastSuccessfulCollectionAt = NewRFC3339Value(val)
+    } else {
+        data.LastSuccessfulCollectionAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["collectionSettingsVersion"].(float64); ok {
+        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["collectionSettingsVersion"].(int); ok {
+        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["collectionSettingsVersion"].(int64); ok {
+        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["collectionSettingsVersion"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CollectionSettingsVersion = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.CollectionSettingsVersion = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2977,6 +4547,24 @@ func (r *VcenterResource) keepPlannedValues(data *VcenterResourceModel, plan *Vc
     }
     if config.TelemetryRetentionConfig.IsNull() && !plan.TelemetryRetentionConfig.IsUnknown() {
         data.TelemetryRetentionConfig = plan.TelemetryRetentionConfig
+    }
+    if config.CollectionMethod.IsNull() && !plan.CollectionMethod.IsUnknown() {
+        data.CollectionMethod = plan.CollectionMethod
+    }
+    if config.VcenterUrl.IsNull() && !plan.VcenterUrl.IsUnknown() {
+        data.VcenterUrl = plan.VcenterUrl
+    }
+    if config.VcenterUsername.IsNull() && !plan.VcenterUsername.IsUnknown() {
+        data.VcenterUsername = plan.VcenterUsername
+    }
+    if config.CollectionProbeId.IsNull() && !plan.CollectionProbeId.IsUnknown() {
+        data.CollectionProbeId = plan.CollectionProbeId
+    }
+    if config.TrustedCertificateFingerprint.IsNull() && !plan.TrustedCertificateFingerprint.IsUnknown() {
+        data.TrustedCertificateFingerprint = plan.TrustedCertificateFingerprint
+    }
+    if config.CollectionIntervalInMinutes.IsNull() && !plan.CollectionIntervalInMinutes.IsUnknown() {
+        data.CollectionIntervalInMinutes = plan.CollectionIntervalInMinutes
     }
     if config.OtelCollectorStatus.IsNull() && !plan.OtelCollectorStatus.IsUnknown() {
         data.OtelCollectorStatus = plan.OtelCollectorStatus

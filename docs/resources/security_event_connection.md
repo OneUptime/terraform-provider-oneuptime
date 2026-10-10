@@ -26,7 +26,7 @@ resource "oneuptime_security_event_connection" "example" {
 
 - `name` (String) Friendly name for this connection.
 - `provider_value` (String) Which security product this connection polls, e.g. 'microsoft-sentinel' or 'crowdstrike-falcon'. Fixed once created.
-- `secrets` (String) Provider-specific secrets (client secret, API token, secret access key) as a JSON object. Encrypted at rest and never returned by the API.
+- `secrets` (String, Sensitive) Provider-specific secrets (client secret, API token, secret access key) as a JSON object. Encrypted at rest and never returned by the API.
 
 ### Optional
 

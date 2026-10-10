@@ -88,8 +88,8 @@ func (d *SnmpCredentialProfileDataSource) Schema(ctx context.Context, req dataso
             },
             "snmp_community_string": schema.StringAttribute{
                 MarkdownDescription: "Community string used for SNMP v1/v2c polling.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "snmp_port": schema.NumberAttribute{
                 MarkdownDescription: "UDP port used for SNMP polling.",
@@ -113,8 +113,8 @@ func (d *SnmpCredentialProfileDataSource) Schema(ctx context.Context, req dataso
             },
             "snmp_v3_auth_key": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 authentication passphrase.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "snmp_v3_priv_protocol": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256.",
@@ -123,8 +123,8 @@ func (d *SnmpCredentialProfileDataSource) Schema(ctx context.Context, req dataso
             },
             "snmp_v3_priv_key": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 privacy (encryption) passphrase.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -182,10 +182,6 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         filters["snmpVersion"] = data.SnmpVersion.ValueString()
         filterNames = append(filterNames, "snmp_version = "+fmt.Sprintf("%q", data.SnmpVersion.ValueString()))
     }
-    if !data.SnmpCommunityString.IsNull() && !data.SnmpCommunityString.IsUnknown() {
-        filters["snmpCommunityString"] = data.SnmpCommunityString.ValueString()
-        filterNames = append(filterNames, "snmp_community_string = "+fmt.Sprintf("%q", data.SnmpCommunityString.ValueString()))
-    }
     if !data.SnmpPort.IsNull() && !data.SnmpPort.IsUnknown() {
         filters["snmpPort"] = lookupNumber(data.SnmpPort)
         filterNames = append(filterNames, "snmp_port = "+data.SnmpPort.ValueBigFloat().String())
@@ -202,17 +198,9 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         filters["snmpV3AuthProtocol"] = data.SnmpV3AuthProtocol.ValueString()
         filterNames = append(filterNames, "snmp_v3_auth_protocol = "+fmt.Sprintf("%q", data.SnmpV3AuthProtocol.ValueString()))
     }
-    if !data.SnmpV3AuthKey.IsNull() && !data.SnmpV3AuthKey.IsUnknown() {
-        filters["snmpV3AuthKey"] = data.SnmpV3AuthKey.ValueString()
-        filterNames = append(filterNames, "snmp_v3_auth_key = "+fmt.Sprintf("%q", data.SnmpV3AuthKey.ValueString()))
-    }
     if !data.SnmpV3PrivProtocol.IsNull() && !data.SnmpV3PrivProtocol.IsUnknown() {
         filters["snmpV3PrivProtocol"] = data.SnmpV3PrivProtocol.ValueString()
         filterNames = append(filterNames, "snmp_v3_priv_protocol = "+fmt.Sprintf("%q", data.SnmpV3PrivProtocol.ValueString()))
-    }
-    if !data.SnmpV3PrivKey.IsNull() && !data.SnmpV3PrivKey.IsUnknown() {
-        filters["snmpV3PrivKey"] = data.SnmpV3PrivKey.ValueString()
-        filterNames = append(filterNames, "snmp_v3_priv_key = "+fmt.Sprintf("%q", data.SnmpV3PrivKey.ValueString()))
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()

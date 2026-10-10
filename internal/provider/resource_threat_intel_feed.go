@@ -122,6 +122,7 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
             "api_token": schema.StringAttribute{
                 MarkdownDescription: "Bearer token for token-authenticated collections. Encrypted at rest and never returned by the API. Leave empty for anonymous or basic-auth collections.",
                 Optional: true,
+                Sensitive: true,
             },
             "basic_auth_username": schema.StringAttribute{
                 MarkdownDescription: "Username for basic-auth collections. Leave empty for anonymous or token-authenticated collections.",
@@ -134,6 +135,7 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
             "basic_auth_password": schema.StringAttribute{
                 MarkdownDescription: "Password for basic-auth collections. Encrypted at rest and never returned by the API.",
                 Optional: true,
+                Sensitive: true,
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether this feed is polled and matched.",

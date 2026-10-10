@@ -28,7 +28,7 @@ resource "oneuptime_runbook_secret" "example" {
 
 - `description` (String) Friendly description that will help you remember.
 - `runners` (Set of String) List of runbook agents that can access this secret. IDs of `oneuptime_runner` resources.
-- `secret_value` (String) Secret value that you want to store in this object. This value will be encrypted and only accessible by the assigned runbook agent.
+- `secret_value` (String, Sensitive) Secret value that you want to store in this object. This value will be encrypted and only accessible by the assigned runbook agent.
 
 ### Read-Only
 

@@ -51,7 +51,7 @@ func (d *LlmProviderDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *LlmProviderDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage LLM Provider configurations. Connect to OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAI-compatible servers (e.g. vLLM, LocalAI), or other LLM providers to enable AI features. Look up an existing llm provider by `id`, or by any of its other arguments (`name`, `api_key`, `base_url`, ...): each one set must match, and exactly one llm provider may match them all.",
+        MarkdownDescription: "Manage LLM Provider configurations. Connect to OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAI-compatible servers (e.g. vLLM, LocalAI), or other LLM providers to enable AI features. Look up an existing llm provider by `id`, or by any of its other arguments (`name`, `base_url`, `cost_per_million_tokens_in_usd_cents`, ...): each one set must match, and exactly one llm provider may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -88,17 +88,17 @@ func (d *LlmProviderDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "api_key": schema.StringAttribute{
-                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI, Azure OpenAI, Anthropic, Groq, and Mistral.",
-                Optional: true,
+                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI, Azure OpenAI / Microsoft Foundry (one of the resource's keys), Anthropic, Groq, and Mistral.",
                 Computed: true,
+                Sensitive: true,
             },
             "model_name": schema.StringAttribute{
-                MarkdownDescription: "The name of the model to use (e.g., gpt-4, claude-3-opus, llama2).",
+                MarkdownDescription: "The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name.",
                 Optional: true,
                 Computed: true,
             },
             "base_url": schema.StringAttribute{
-                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others. The API key and the Additional Parameters are sent to it, so only project owners and admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.",
+                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI / Microsoft Foundry (the resource's endpoint, such as https://<resource>.openai.azure.com/openai/v1), Ollama and OpenAI-compatible servers, optional for others. The API key and the Additional Parameters are sent to it, so only project owners and admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.",
                 Optional: true,
                 Computed: true,
             },
@@ -184,10 +184,6 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
     if !data.LlmType.IsNull() && !data.LlmType.IsUnknown() {
         filters["llmType"] = data.LlmType.ValueString()
         filterNames = append(filterNames, "llm_type = "+fmt.Sprintf("%q", data.LlmType.ValueString()))
-    }
-    if !data.ApiKey.IsNull() && !data.ApiKey.IsUnknown() {
-        filters["apiKey"] = data.ApiKey.ValueString()
-        filterNames = append(filterNames, "api_key = "+fmt.Sprintf("%q", data.ApiKey.ValueString()))
     }
     if !data.ModelName.IsNull() && !data.ModelName.IsUnknown() {
         filters["modelName"] = data.ModelName.ValueString()

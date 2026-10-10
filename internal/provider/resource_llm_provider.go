@@ -95,15 +95,16 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
                 Required: true,
             },
             "api_key": schema.StringAttribute{
-                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI, Azure OpenAI, Anthropic, Groq, and Mistral.",
+                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI, Azure OpenAI / Microsoft Foundry (one of the resource's keys), Anthropic, Groq, and Mistral.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "model_name": schema.StringAttribute{
-                MarkdownDescription: "The name of the model to use (e.g., gpt-4, claude-3-opus, llama2).",
+                MarkdownDescription: "The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -111,7 +112,7 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
                 },
             },
             "base_url": schema.StringAttribute{
-                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others. The API key and the Additional Parameters are sent to it, so only project owners and admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.",
+                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI / Microsoft Foundry (the resource's endpoint, such as https://<resource>.openai.azure.com/openai/v1), Ollama and OpenAI-compatible servers, optional for others. The API key and the Additional Parameters are sent to it, so only project owners and admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

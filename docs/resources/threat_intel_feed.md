@@ -31,8 +31,8 @@ resource "oneuptime_threat_intel_feed" "example" {
 ### Optional
 
 - `alert_severity_id` (String) ID of the alert severity for alerts opened by this feed. The ID of a `oneuptime_alert_severity`.
-- `api_token` (String) Bearer token for token-authenticated collections. Encrypted at rest and never returned by the API. Leave empty for anonymous or basic-auth collections.
-- `basic_auth_password` (String) Password for basic-auth collections. Encrypted at rest and never returned by the API.
+- `api_token` (String, Sensitive) Bearer token for token-authenticated collections. Encrypted at rest and never returned by the API. Leave empty for anonymous or basic-auth collections.
+- `basic_auth_password` (String, Sensitive) Password for basic-auth collections. Encrypted at rest and never returned by the API.
 - `basic_auth_username` (String) Username for basic-auth collections. Leave empty for anonymous or token-authenticated collections.
 - `description` (String) What this feed carries and why it is subscribed.
 - `incident_severity_id` (String) ID of the incident severity for incidents opened by this feed. The ID of a `oneuptime_incident_severity`.

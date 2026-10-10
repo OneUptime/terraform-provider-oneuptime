@@ -29,7 +29,6 @@ data "oneuptime_status_page_oidc" "by_id" {
 ### Optional
 
 - `client_id` (String) OIDC client ID issued by the identity provider.
-- `client_secret` (String) OIDC client secret issued by the identity provider. Stored encrypted at rest.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Permissions - Create: [Project Owner, Project Admin, Create Status Page OIDC], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page OIDC], Update: [Project Owner, Project Admin, Edit Status Page OIDC]
 - `discovery_url` (String) OIDC discovery URL (typically ends in /.well-known/openid-configuration). Used to discover authorization, token, JWKS and userinfo endpoints.
@@ -45,6 +44,7 @@ data "oneuptime_status_page_oidc" "by_id" {
 
 ### Read-Only
 
+- `client_secret` (String, Sensitive) OIDC client secret issued by the identity provider. Stored encrypted at rest.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

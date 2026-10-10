@@ -30,7 +30,7 @@ resource "oneuptime_monitor_secret" "example" {
 - `labels` (Set of String) When Monitor Access is Monitors With Labels, monitors that carry at least one of these labels can use this secret. Ignored otherwise. IDs of `oneuptime_label` resources.
 - `monitor_access` (String) Which monitors can use this secret. All Monitors: every monitor in this project, including monitors created later. Specific Monitors: only the monitors in Monitors. Monitors With Labels: monitors that carry at least one of the labels in Labels. Setting this empties whichever of Monitors and Labels it does not use. Defaults to `Specific Monitors`.
 - `monitors` (Set of String) The monitors that can use this secret when Monitor Access is Specific Monitors. Ignored otherwise. IDs of `oneuptime_monitor` resources.
-- `secret_value` (String) Secret value that you want to store in this object. This value will be encrypted and only accessible by the probe.
+- `secret_value` (String, Sensitive) Secret value that you want to store in this object. This value will be encrypted and only accessible by the probe.
 
 ### Read-Only
 

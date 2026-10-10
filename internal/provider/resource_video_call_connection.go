@@ -126,6 +126,7 @@ func (r *VideoCallConnectionResource) schemaDefinition() schema.Schema {
             "secrets": schema.StringAttribute{
                 MarkdownDescription: "Provider-specific secrets (a client secret or a service account key) as a JSON object. Encrypted at rest and never returned by the API. A connection made by signing in keeps its sign-in's tokens here, which only OneUptime writes.",
                 Optional: true,
+                Sensitive: true,
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",

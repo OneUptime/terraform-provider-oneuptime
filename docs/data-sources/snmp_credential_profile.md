@@ -32,11 +32,8 @@ data "oneuptime_snmp_credential_profile" "by_id" {
 - `description` (String) Friendly description that will help you remember.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `name` (String) Any friendly name of this object.
-- `snmp_community_string` (String) Community string used for SNMP v1/v2c polling.
 - `snmp_port` (Number) UDP port used for SNMP polling.
-- `snmp_v3_auth_key` (String) SNMP v3 authentication passphrase.
 - `snmp_v3_auth_protocol` (String) SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512.
-- `snmp_v3_priv_key` (String) SNMP v3 privacy (encryption) passphrase.
 - `snmp_v3_priv_protocol` (String) SNMP v3 privacy (encryption) protocol: DES, AES, or AES256.
 - `snmp_v3_security_level` (String) SNMP v3 security level: noAuthNoPriv, authNoPriv, or authPriv.
 - `snmp_v3_username` (String) Security name (username) used for SNMP v3 polling.
@@ -46,4 +43,7 @@ data "oneuptime_snmp_credential_profile" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `snmp_community_string` (String, Sensitive) Community string used for SNMP v1/v2c polling.
+- `snmp_v3_auth_key` (String, Sensitive) SNMP v3 authentication passphrase.
+- `snmp_v3_priv_key` (String, Sensitive) SNMP v3 privacy (encryption) passphrase.
 - `updated_at` (String) Date and Time when the object was updated.

@@ -29,11 +29,11 @@ resource "oneuptime_llm_provider" "example" {
 ### Optional
 
 - `additional_params` (String) Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. Read only by project owners and admins, like the API key. A JSON value: write it with `jsonencode()`.
-- `api_key` (String) The API key for the LLM provider. Required for OpenAI, Azure OpenAI, Anthropic, Groq, and Mistral.
-- `base_url` (String) The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others. The API key and the Additional Parameters are sent to it, so only project owners and admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.
+- `api_key` (String, Sensitive) The API key for the LLM provider. Required for OpenAI, Azure OpenAI / Microsoft Foundry (one of the resource's keys), Anthropic, Groq, and Mistral.
+- `base_url` (String) The base URL for the LLM API. Required for Azure OpenAI / Microsoft Foundry (the resource's endpoint, such as https://<resource>.openai.azure.com/openai/v1), Ollama and OpenAI-compatible servers, optional for others. The API key and the Additional Parameters are sent to it, so only project owners and admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.
 - `description` (String) Description of this LLM configuration.
 - `is_default` (Boolean) Is this the default LLM provider for the project? When set, the global LLM provider will not be used. Defaults to `false`.
-- `model_name` (String) The name of the model to use (e.g., gpt-4, claude-3-opus, llama2).
+- `model_name` (String) The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name.
 
 ### Read-Only
 

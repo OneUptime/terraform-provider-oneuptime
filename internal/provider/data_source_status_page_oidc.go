@@ -51,7 +51,7 @@ func (d *StatusPageOidcDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *StatusPageOidcDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage OpenID Connect (OIDC) authentication for your status page Look up an existing status page oidc by `id`, or by any of its other arguments (`name`, `client_id`, `client_secret`, ...): each one set must match, and exactly one status page oidc may match them all.",
+        MarkdownDescription: "Manage OpenID Connect (OIDC) authentication for your status page Look up an existing status page oidc by `id`, or by any of its other arguments (`name`, `client_id`, `created_by_user_id`, ...): each one set must match, and exactly one status page oidc may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -103,8 +103,8 @@ func (d *StatusPageOidcDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "client_secret": schema.StringAttribute{
                 MarkdownDescription: "OIDC client secret issued by the identity provider. Stored encrypted at rest.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "scopes": schema.StringAttribute{
                 MarkdownDescription: "Space-separated list of OIDC scopes to request. Must include 'openid'.",
@@ -198,10 +198,6 @@ func (d *StatusPageOidcDataSource) Read(ctx context.Context, req datasource.Read
     if !data.ClientId.IsNull() && !data.ClientId.IsUnknown() {
         filters["clientId"] = data.ClientId.ValueString()
         filterNames = append(filterNames, "client_id = "+fmt.Sprintf("%q", data.ClientId.ValueString()))
-    }
-    if !data.ClientSecret.IsNull() && !data.ClientSecret.IsUnknown() {
-        filters["clientSecret"] = data.ClientSecret.ValueString()
-        filterNames = append(filterNames, "client_secret = "+fmt.Sprintf("%q", data.ClientSecret.ValueString()))
     }
     if !data.Scopes.IsNull() && !data.Scopes.IsUnknown() {
         filters["scopes"] = data.Scopes.ValueString()

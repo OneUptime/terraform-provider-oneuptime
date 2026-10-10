@@ -30,7 +30,7 @@ resource "oneuptime_status_page_oidc" "example" {
 ### Required
 
 - `client_id` (String) OIDC client ID issued by the identity provider.
-- `client_secret` (String) OIDC client secret issued by the identity provider. Stored encrypted at rest.
+- `client_secret` (String, Sensitive) OIDC client secret issued by the identity provider. Stored encrypted at rest.
 - `description` (String)
 - `discovery_url` (String) OIDC discovery URL (typically ends in /.well-known/openid-configuration). Used to discover authorization, token, JWKS and userinfo endpoints.
 - `email_claim_name` (String) Claim name in the ID token (or userinfo response) that contains the user's email address.

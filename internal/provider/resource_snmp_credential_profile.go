@@ -103,6 +103,7 @@ func (r *SnmpCredentialProfileResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Community string used for SNMP v1/v2c polling.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -143,6 +144,7 @@ func (r *SnmpCredentialProfileResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "SNMP v3 authentication passphrase.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -159,6 +161,7 @@ func (r *SnmpCredentialProfileResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "SNMP v3 privacy (encryption) passphrase.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },

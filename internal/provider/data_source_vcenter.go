@@ -70,6 +70,23 @@ type VcenterDataSourceModel struct {
     AiAccessLastVerifiedAt types.String `tfsdk:"ai_access_last_verified_at"`
     AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
     AiAccessConfiguredAt types.String `tfsdk:"ai_access_configured_at"`
+    CollectionMethod types.String `tfsdk:"collection_method"`
+    VcenterUrl types.String `tfsdk:"vcenter_url"`
+    VcenterUsername types.String `tfsdk:"vcenter_username"`
+    IsVCenterPasswordSet types.Bool `tfsdk:"is_v_center_password_set"`
+    VcenterCredentialsUpdatedAt types.String `tfsdk:"vcenter_credentials_updated_at"`
+    CollectionProbeId types.String `tfsdk:"collection_probe_id"`
+    TrustedCertificateFingerprint types.String `tfsdk:"trusted_certificate_fingerprint"`
+    CollectionIntervalInMinutes types.Number `tfsdk:"collection_interval_in_minutes"`
+    CollectionStatus types.String `tfsdk:"collection_status"`
+    CollectionErrorCode types.String `tfsdk:"collection_error_code"`
+    CollectionError types.String `tfsdk:"collection_error"`
+    PresentedCertificate types.String `tfsdk:"presented_certificate"`
+    CollectionSummary types.String `tfsdk:"collection_summary"`
+    NextCollectionAt types.String `tfsdk:"next_collection_at"`
+    LastCollectionAt types.String `tfsdk:"last_collection_at"`
+    LastSuccessfulCollectionAt types.String `tfsdk:"last_successful_collection_at"`
+    CollectionSettingsVersion types.Number `tfsdk:"collection_settings_version"`
 }
 
 func (d *VcenterDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -82,7 +99,7 @@ func (d *VcenterDataSource) Metadata(ctx context.Context, req datasource.Metadat
 
 func (d *VcenterDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "vSphere endpoints (a vCenter Server, or a standalone ESXi host) that are being monitored in this project. Each vCenter is auto-discovered when the OneUptime VMware Agent sends metrics, or can be manually registered. Look up an existing vcenter by `id`, or by any of its other arguments (`name`, `agent_version`, `ai_access_last_error`, ...): each one set must match, and exactly one vcenter may match them all.",
+        MarkdownDescription: "vSphere endpoints (a vCenter Server, or a standalone ESXi host) that are being monitored in this project. A vCenter is collected by one of your OneUptime probes with a read-only account saved on it (no agent to run), or auto-discovered when the OneUptime VMware Agent sends its metrics. Look up an existing vcenter by `id`, or by any of its other arguments (`name`, `agent_version`, `ai_access_last_error`, ...): each one set must match, and exactly one vcenter may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -236,6 +253,85 @@ func (d *VcenterDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "When OneUptime AI access to this vCenter was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a VMware AI agent that registers later never overwrites a setting an operator chose.",
                 Computed: true,
             },
+            "collection_method": schema.StringAttribute{
+                MarkdownDescription: "How this vCenter's data reaches OneUptime. Probe: one of your OneUptime probes logs in to vCenter with the read-only account saved here and collects it - no agent to install. Agent: the OneUptime VMware Agent you run sends it. Switching to Agent forgets the saved password.",
+                Optional: true,
+                Computed: true,
+            },
+            "vcenter_url": schema.StringAttribute{
+                MarkdownDescription: "The HTTPS address of vCenter Server (or a standalone ESXi host) the probe connects to, such as https://vcsa.example.com. Stored as https://host[:port]; a path such as /ui or /sdk is dropped. Changing it asks for the password again.",
+                Optional: true,
+                Computed: true,
+            },
+            "vcenter_username": schema.StringAttribute{
+                MarkdownDescription: "The vSphere user the probe logs in as, with its domain - such as oneuptime@vsphere.local. Give it the built-in Read-Only role on the top-level vCenter object, propagated to children.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_v_center_password_set": schema.BoolAttribute{
+                MarkdownDescription: "Whether a vCenter password is saved. Set by the server from the password itself.",
+                Optional: true,
+                Computed: true,
+            },
+            "vcenter_credentials_updated_at": schema.StringAttribute{
+                MarkdownDescription: "When the vCenter user name or password was last changed. Set by the server.",
+                Computed: true,
+            },
+            "collection_probe_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the OneUptime probe that collects this vCenter. Changing it asks for the password again. The ID of a `oneuptime_probe`.",
+                Optional: true,
+                Computed: true,
+            },
+            "trusted_certificate_fingerprint": schema.StringAttribute{
+                MarkdownDescription: "The SHA-256 fingerprint of the one certificate the probe accepts from this vCenter, for a vCenter whose certificate is not from a public authority (vCenter's own VMCA certificate, by default). Empty: the certificate must be signed by an authority the probe's machine trusts. Verification is never skipped. Trusting a different certificate asks for the password again.",
+                Optional: true,
+                Computed: true,
+            },
+            "collection_interval_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How often the probe collects this vCenter, in whole minutes from 1 to 60. Two minutes is the VMware agent's own default; collect large vCenters less often to go easier on vCenter.",
+                Optional: true,
+                Computed: true,
+            },
+            "collection_status": schema.StringAttribute{
+                MarkdownDescription: "Where probe collection stands: Pending (the probe has not tried the current settings yet), Succeeded or Failed. Written by the server and the probe.",
+                Optional: true,
+                Computed: true,
+            },
+            "collection_error_code": schema.StringAttribute{
+                MarkdownDescription: "Why the last collection failed, as a code the dashboard turns into a next step (InvalidLogin, UntrustedCertificate, ConnectionTimedOut, ...). Written by the probe.",
+                Optional: true,
+                Computed: true,
+            },
+            "collection_error": schema.StringAttribute{
+                MarkdownDescription: "What went wrong in the last collection, in words. Written by the probe.",
+                Optional: true,
+                Computed: true,
+            },
+            "presented_certificate": schema.StringAttribute{
+                MarkdownDescription: "The certificate vCenter presented when the last collection did not trust it: its SHA-256 fingerprint, subject, issuer and validity, so a person can check it and trust exactly that certificate. Written by the probe. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "collection_summary": schema.StringAttribute{
+                MarkdownDescription: "What the last successful collection found: vCenter's product and version, and how many datacenters, clusters, hosts, virtual machines, datastores and resource pools it reported. Written by the probe. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "next_collection_at": schema.StringAttribute{
+                MarkdownDescription: "When the probe collects this vCenter next. Written by the server.",
+                Computed: true,
+            },
+            "last_collection_at": schema.StringAttribute{
+                MarkdownDescription: "When the probe last tried to collect this vCenter, whether it worked or not. Written by the server.",
+                Computed: true,
+            },
+            "last_successful_collection_at": schema.StringAttribute{
+                MarkdownDescription: "When the probe last collected this vCenter successfully. Written by the server.",
+                Computed: true,
+            },
+            "collection_settings_version": schema.NumberAttribute{
+                MarkdownDescription: "Counts changes to the probe collection settings, so a report from a collection that started before a change is not shown as the current status. Written by the server.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
     if d.isLegacyAlias {
@@ -362,6 +458,50 @@ func (d *VcenterDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["aiAccessLastError"] = data.AiAccessLastError.ValueString()
         filterNames = append(filterNames, "ai_access_last_error = "+fmt.Sprintf("%q", data.AiAccessLastError.ValueString()))
     }
+    if !data.CollectionMethod.IsNull() && !data.CollectionMethod.IsUnknown() {
+        filters["collectionMethod"] = data.CollectionMethod.ValueString()
+        filterNames = append(filterNames, "collection_method = "+fmt.Sprintf("%q", data.CollectionMethod.ValueString()))
+    }
+    if !data.VcenterUrl.IsNull() && !data.VcenterUrl.IsUnknown() {
+        filters["vcenterUrl"] = data.VcenterUrl.ValueString()
+        filterNames = append(filterNames, "vcenter_url = "+fmt.Sprintf("%q", data.VcenterUrl.ValueString()))
+    }
+    if !data.VcenterUsername.IsNull() && !data.VcenterUsername.IsUnknown() {
+        filters["vcenterUsername"] = data.VcenterUsername.ValueString()
+        filterNames = append(filterNames, "vcenter_username = "+fmt.Sprintf("%q", data.VcenterUsername.ValueString()))
+    }
+    if !data.IsVCenterPasswordSet.IsNull() && !data.IsVCenterPasswordSet.IsUnknown() {
+        filters["isVCenterPasswordSet"] = data.IsVCenterPasswordSet.ValueBool()
+        filterNames = append(filterNames, "is_v_center_password_set = "+fmt.Sprintf("%t", data.IsVCenterPasswordSet.ValueBool()))
+    }
+    if !data.CollectionProbeId.IsNull() && !data.CollectionProbeId.IsUnknown() {
+        filters["collectionProbeId"] = data.CollectionProbeId.ValueString()
+        filterNames = append(filterNames, "collection_probe_id = "+fmt.Sprintf("%q", data.CollectionProbeId.ValueString()))
+    }
+    if !data.TrustedCertificateFingerprint.IsNull() && !data.TrustedCertificateFingerprint.IsUnknown() {
+        filters["trustedCertificateFingerprint"] = data.TrustedCertificateFingerprint.ValueString()
+        filterNames = append(filterNames, "trusted_certificate_fingerprint = "+fmt.Sprintf("%q", data.TrustedCertificateFingerprint.ValueString()))
+    }
+    if !data.CollectionIntervalInMinutes.IsNull() && !data.CollectionIntervalInMinutes.IsUnknown() {
+        filters["collectionIntervalInMinutes"] = lookupNumber(data.CollectionIntervalInMinutes)
+        filterNames = append(filterNames, "collection_interval_in_minutes = "+data.CollectionIntervalInMinutes.ValueBigFloat().String())
+    }
+    if !data.CollectionStatus.IsNull() && !data.CollectionStatus.IsUnknown() {
+        filters["collectionStatus"] = data.CollectionStatus.ValueString()
+        filterNames = append(filterNames, "collection_status = "+fmt.Sprintf("%q", data.CollectionStatus.ValueString()))
+    }
+    if !data.CollectionErrorCode.IsNull() && !data.CollectionErrorCode.IsUnknown() {
+        filters["collectionErrorCode"] = data.CollectionErrorCode.ValueString()
+        filterNames = append(filterNames, "collection_error_code = "+fmt.Sprintf("%q", data.CollectionErrorCode.ValueString()))
+    }
+    if !data.CollectionError.IsNull() && !data.CollectionError.IsUnknown() {
+        filters["collectionError"] = data.CollectionError.ValueString()
+        filterNames = append(filterNames, "collection_error = "+fmt.Sprintf("%q", data.CollectionError.ValueString()))
+    }
+    if !data.CollectionSettingsVersion.IsNull() && !data.CollectionSettingsVersion.IsUnknown() {
+        filters["collectionSettingsVersion"] = lookupNumber(data.CollectionSettingsVersion)
+        filterNames = append(filterNames, "collection_settings_version = "+data.CollectionSettingsVersion.ValueBigFloat().String())
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -410,6 +550,23 @@ func (d *VcenterDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "collectionMethod": true,
+        "vcenterUrl": true,
+        "vcenterUsername": true,
+        "isVCenterPasswordSet": true,
+        "vcenterCredentialsUpdatedAt": true,
+        "collectionProbeId": true,
+        "trustedCertificateFingerprint": true,
+        "collectionIntervalInMinutes": true,
+        "collectionStatus": true,
+        "collectionErrorCode": true,
+        "collectionError": true,
+        "presentedCertificate": true,
+        "collectionSummary": true,
+        "nextCollectionAt": true,
+        "lastCollectionAt": true,
+        "lastSuccessfulCollectionAt": true,
+        "collectionSettingsVersion": true,
         "_id": true,
     }
 
@@ -937,6 +1094,271 @@ func (d *VcenterDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.AiAccessConfiguredAt = types.StringValue(val)
     } else {
         data.AiAccessConfiguredAt = types.StringNull()
+    }
+    if obj, ok := item["collectionMethod"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectionMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectionMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionMethod = types.StringNull()
+        }
+    } else if val, ok := item["collectionMethod"].(string); ok {
+        data.CollectionMethod = types.StringValue(val)
+    } else {
+        data.CollectionMethod = types.StringNull()
+    }
+    if obj, ok := item["vcenterUrl"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VcenterUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.VcenterUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.VcenterUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.VcenterUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUrl = types.StringNull()
+        }
+    } else if val, ok := item["vcenterUrl"].(string); ok {
+        data.VcenterUrl = types.StringValue(val)
+    } else {
+        data.VcenterUrl = types.StringNull()
+    }
+    if obj, ok := item["vcenterUsername"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VcenterUsername = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.VcenterUsername = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.VcenterUsername = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.VcenterUsername = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUsername = types.StringNull()
+        }
+    } else if val, ok := item["vcenterUsername"].(string); ok {
+        data.VcenterUsername = types.StringValue(val)
+    } else {
+        data.VcenterUsername = types.StringNull()
+    }
+    if val, ok := item["isVCenterPasswordSet"].(bool); ok {
+        data.IsVCenterPasswordSet = types.BoolValue(val)
+    } else {
+        data.IsVCenterPasswordSet = types.BoolNull()
+    }
+    if obj, ok := item["vcenterCredentialsUpdatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VcenterCredentialsUpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.VcenterCredentialsUpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.VcenterCredentialsUpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.VcenterCredentialsUpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterCredentialsUpdatedAt = types.StringNull()
+        }
+    } else if val, ok := item["vcenterCredentialsUpdatedAt"].(string); ok {
+        data.VcenterCredentialsUpdatedAt = types.StringValue(val)
+    } else {
+        data.VcenterCredentialsUpdatedAt = types.StringNull()
+    }
+    if obj, ok := item["collectionProbeId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectionProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectionProbeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectionProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionProbeId = types.StringNull()
+        }
+    } else if val, ok := item["collectionProbeId"].(string); ok {
+        data.CollectionProbeId = types.StringValue(val)
+    } else {
+        data.CollectionProbeId = types.StringNull()
+    }
+    if obj, ok := item["trustedCertificateFingerprint"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TrustedCertificateFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TrustedCertificateFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TrustedCertificateFingerprint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.TrustedCertificateFingerprint = types.StringNull()
+        }
+    } else if val, ok := item["trustedCertificateFingerprint"].(string); ok {
+        data.TrustedCertificateFingerprint = types.StringValue(val)
+    } else {
+        data.TrustedCertificateFingerprint = types.StringNull()
+    }
+    if val, ok := item["collectionIntervalInMinutes"].(float64); ok {
+        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["collectionIntervalInMinutes"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CollectionIntervalInMinutes = types.NumberNull()
+        }
+    } else {
+        data.CollectionIntervalInMinutes = types.NumberNull()
+    }
+    if obj, ok := item["collectionStatus"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionStatus = types.StringNull()
+        }
+    } else if val, ok := item["collectionStatus"].(string); ok {
+        data.CollectionStatus = types.StringValue(val)
+    } else {
+        data.CollectionStatus = types.StringNull()
+    }
+    if obj, ok := item["collectionErrorCode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectionErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionErrorCode = types.StringNull()
+        }
+    } else if val, ok := item["collectionErrorCode"].(string); ok {
+        data.CollectionErrorCode = types.StringValue(val)
+    } else {
+        data.CollectionErrorCode = types.StringNull()
+    }
+    if obj, ok := item["collectionError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectionError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectionError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectionError = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionError = types.StringNull()
+        }
+    } else if val, ok := item["collectionError"].(string); ok {
+        data.CollectionError = types.StringValue(val)
+    } else {
+        data.CollectionError = types.StringNull()
+    }
+    if obj, ok := item["presentedCertificate"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PresentedCertificate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PresentedCertificate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PresentedCertificate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PresentedCertificate = types.StringValue(string(jsonBytes))
+        } else {
+            data.PresentedCertificate = types.StringNull()
+        }
+    } else if val, ok := item["presentedCertificate"].(string); ok {
+        data.PresentedCertificate = types.StringValue(val)
+    } else {
+        data.PresentedCertificate = types.StringNull()
+    }
+    if obj, ok := item["collectionSummary"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectionSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectionSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectionSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectionSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionSummary = types.StringNull()
+        }
+    } else if val, ok := item["collectionSummary"].(string); ok {
+        data.CollectionSummary = types.StringValue(val)
+    } else {
+        data.CollectionSummary = types.StringNull()
+    }
+    if obj, ok := item["nextCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextCollectionAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NextCollectionAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NextCollectionAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NextCollectionAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextCollectionAt = types.StringNull()
+        }
+    } else if val, ok := item["nextCollectionAt"].(string); ok {
+        data.NextCollectionAt = types.StringValue(val)
+    } else {
+        data.NextCollectionAt = types.StringNull()
+    }
+    if obj, ok := item["lastCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastCollectionAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastCollectionAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastCollectionAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastCollectionAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastCollectionAt = types.StringNull()
+        }
+    } else if val, ok := item["lastCollectionAt"].(string); ok {
+        data.LastCollectionAt = types.StringValue(val)
+    } else {
+        data.LastCollectionAt = types.StringNull()
+    }
+    if obj, ok := item["lastSuccessfulCollectionAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSuccessfulCollectionAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastSuccessfulCollectionAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastSuccessfulCollectionAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSuccessfulCollectionAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSuccessfulCollectionAt = types.StringNull()
+        }
+    } else if val, ok := item["lastSuccessfulCollectionAt"].(string); ok {
+        data.LastSuccessfulCollectionAt = types.StringValue(val)
+    } else {
+        data.LastSuccessfulCollectionAt = types.StringNull()
+    }
+    if val, ok := item["collectionSettingsVersion"].(float64); ok {
+        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["collectionSettingsVersion"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CollectionSettingsVersion = types.NumberNull()
+        }
+    } else {
+        data.CollectionSettingsVersion = types.NumberNull()
     }
 
     // Write logs using the tflog package

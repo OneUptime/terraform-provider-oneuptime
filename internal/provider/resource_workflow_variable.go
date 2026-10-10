@@ -161,10 +161,12 @@ func (r *WorkflowVariableResource) schemaDefinition() schema.Schema {
             "oauth_client_secret": schema.StringAttribute{
                 MarkdownDescription: "OAuth 2.0 variables only. The client secret of the application. Required for the Client Credentials grant; optional for the Refresh Token grant (public clients have none). Encrypted, and never readable through the API.",
                 Optional: true,
+                Sensitive: true,
             },
             "oauth_refresh_token": schema.StringAttribute{
                 MarkdownDescription: "OAuth 2.0 variables using the Refresh Token grant only. OneUptime exchanges it for access tokens and stores the replacement when your identity provider rotates it. Encrypted, and never readable through the API.",
                 Optional: true,
+                Sensitive: true,
             },
             "oauth_scope": schema.StringAttribute{
                 MarkdownDescription: "OAuth 2.0 variables only. Space-separated scopes to request. Leave empty to use the scopes your identity provider grants by default.",

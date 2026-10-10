@@ -29,13 +29,13 @@ resource "oneuptime_data_source" "example" {
 ### Optional
 
 - `additional_options` (String) Per-type options that are not secrets — e.g. { "sslEnabled": true, "elasticsearchIndex": "logs-*" }. A JSON value: write it with `jsonencode()`.
-- `api_token` (String) Bearer token for HTTP sources (Prometheus behind an auth proxy, Elasticsearch API key, REST APIs). Encrypted at rest and never returned by the API.
+- `api_token` (String, Sensitive) Bearer token for HTTP sources (Prometheus behind an auth proxy, Elasticsearch API key, REST APIs). Encrypted at rest and never returned by the API.
 - `custom_headers` (String) Extra HTTP headers sent to HTTP-based sources (e.g. auth headers for a proxy). Values are encrypted at rest and never returned by the API. A JSON value: write it with `jsonencode()`.
 - `database_host` (String) Hostname or IP address for database sources (PostgreSQL, MySQL, SQL Server, ClickHouse).
 - `database_name` (String) Database (or ClickHouse database) to connect to.
 - `database_port` (Number) Port for database sources. Defaults per engine: PostgreSQL 5432, MySQL 3306, SQL Server 1433, ClickHouse 8123.
 - `description` (String) Friendly description that will help you remember.
-- `password` (String) Password for database sources, or HTTP basic-auth password. Encrypted at rest and never returned by the API.
+- `password` (String, Sensitive) Password for database sources, or HTTP basic-auth password. Encrypted at rest and never returned by the API.
 - `url` (String) Base URL for HTTP-based sources (Prometheus, Loki, Elasticsearch, REST API) — e.g. https://prometheus.example.com.
 - `username` (String) Username for database sources, or HTTP basic-auth username for HTTP sources. Use a READ-ONLY account — dashboards only ever read.
 

@@ -100,6 +100,7 @@ func (r *HuntressConnectionResource) schemaDefinition() schema.Schema {
             "signing_secret": schema.StringAttribute{
                 MarkdownDescription: "The endpoint's signing secret from Huntress (whsec_...), used to verify that a request really came from Huntress. Encrypted at rest and never returned by the API.",
                 Optional: true,
+                Sensitive: true,
             },
             "is_signing_secret_set": schema.BoolAttribute{
                 MarkdownDescription: "Whether a signing secret is saved. Requests are only accepted once it is. Set from the signing secret itself; a value sent for it is ignored.",

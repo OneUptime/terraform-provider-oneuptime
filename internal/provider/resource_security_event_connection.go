@@ -124,6 +124,7 @@ func (r *SecurityEventConnectionResource) schemaDefinition() schema.Schema {
             "secrets": schema.StringAttribute{
                 MarkdownDescription: "Provider-specific secrets (client secret, API token, secret access key) as a JSON object. Encrypted at rest and never returned by the API.",
                 Required: true,
+                Sensitive: true,
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether this connection is polled on its schedule.",

@@ -33,7 +33,7 @@ resource "oneuptime_huntress_connection" "example" {
 - `on_call_duty_policies` (Set of String) The on-call policies paged for an incident report at or above the Page On-Call For severity. IDs of `oneuptime_on_call_policy` resources.
 - `page_on_call_for` (String) The lowest Huntress severity that pages the on-call policies: critical (critical reports only), high (high and critical reports) or low (every report). Every report opens an incident either way. Defaults to `high`.
 - `resolve_incident_when_report_closes` (Boolean) Resolve the incident when the report is closed or dismissed in Huntress. When off, a note on the incident says so instead. Defaults to `true`.
-- `signing_secret` (String) The endpoint's signing secret from Huntress (whsec_...), used to verify that a request really came from Huntress. Encrypted at rest and never returned by the API.
+- `signing_secret` (String, Sensitive) The endpoint's signing secret from Huntress (whsec_...), used to verify that a request really came from Huntress. Encrypted at rest and never returned by the API.
 - `watched_organizations` (String) The Huntress organizations this connection opens incidents for, one per line, by name or by id. Empty watches every organization.
 
 ### Read-Only

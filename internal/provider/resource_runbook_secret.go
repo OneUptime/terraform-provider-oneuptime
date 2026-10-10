@@ -89,6 +89,7 @@ func (r *RunbookSecretResource) schemaDefinition() schema.Schema {
             "secret_value": schema.StringAttribute{
                 MarkdownDescription: "Secret value that you want to store in this object. This value will be encrypted and only accessible by the assigned runbook agent.",
                 Optional: true,
+                Sensitive: true,
             },
             "runners": schema.SetAttribute{
                 MarkdownDescription: "List of runbook agents that can access this secret. IDs of `oneuptime_runner` resources.",

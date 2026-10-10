@@ -141,10 +141,12 @@ func (r *DataSourceResource) schemaDefinition() schema.Schema {
             "password": schema.StringAttribute{
                 MarkdownDescription: "Password for database sources, or HTTP basic-auth password. Encrypted at rest and never returned by the API.",
                 Optional: true,
+                Sensitive: true,
             },
             "api_token": schema.StringAttribute{
                 MarkdownDescription: "Bearer token for HTTP sources (Prometheus behind an auth proxy, Elasticsearch API key, REST APIs). Encrypted at rest and never returned by the API.",
                 Optional: true,
+                Sensitive: true,
             },
             "custom_headers": schema.StringAttribute{
                 MarkdownDescription: "Extra HTTP headers sent to HTTP-based sources (e.g. auth headers for a proxy). Values are encrypted at rest and never returned by the API. A JSON value: write it with `jsonencode()`.",

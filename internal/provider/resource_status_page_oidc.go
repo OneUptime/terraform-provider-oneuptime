@@ -110,6 +110,7 @@ func (r *StatusPageOidcResource) schemaDefinition() schema.Schema {
             "client_secret": schema.StringAttribute{
                 MarkdownDescription: "OIDC client secret issued by the identity provider. Stored encrypted at rest.",
                 Required: true,
+                Sensitive: true,
             },
             "scopes": schema.StringAttribute{
                 MarkdownDescription: "Space-separated list of OIDC scopes to request. Must include 'openid'.",

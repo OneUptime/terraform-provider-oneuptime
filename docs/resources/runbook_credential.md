@@ -31,13 +31,13 @@ resource "oneuptime_runbook_credential" "example" {
 - `description` (String) Friendly description that will help you remember.
 - `kubernetes_api_server_url` (String) For example https://10.0.0.1:6443.
 - `kubernetes_ca_certificate` (String) PEM certificate authority for the API server. Leave empty only if the API server presents a certificate your Runner already trusts.
-- `kubernetes_service_account_token` (String) Bearer token of a service account bound to a role that permits only the actions your runbooks need. Encrypted at rest and never returned by the API.
+- `kubernetes_service_account_token` (String, Sensitive) Bearer token of a service account bound to a role that permits only the actions your runbooks need. Encrypted at rest and never returned by the API.
 - `runners` (Set of String) The Runners allowed to use this credential. A step referencing it must target one of them. IDs of `oneuptime_runner` resources.
 - `ssh_hostname` (String) Hostname or IP address the Runner connects to.
-- `ssh_passphrase` (String) Passphrase protecting the private key, when it has one. Encrypted at rest and never returned by the API.
-- `ssh_password` (String) Password authentication, for hosts without key access. Encrypted at rest and never returned by the API.
+- `ssh_passphrase` (String, Sensitive) Passphrase protecting the private key, when it has one. Encrypted at rest and never returned by the API.
+- `ssh_password` (String, Sensitive) Password authentication, for hosts without key access. Encrypted at rest and never returned by the API.
 - `ssh_port` (Number) Defaults to 22 when unset.
-- `ssh_private_key` (String) PEM private key used to authenticate. Encrypted at rest and never returned by the API.
+- `ssh_private_key` (String, Sensitive) PEM private key used to authenticate. Encrypted at rest and never returned by the API.
 - `ssh_username` (String) The user the Runner authenticates as.
 
 ### Read-Only
