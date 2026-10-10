@@ -28,12 +28,15 @@ resource "oneuptime_video_call_connection" "example" {
 
 ### Optional
 
+- `auth_method` (String) How this connection signs in to its provider: OAuth when someone connected it by signing in to Zoom, Google or Microsoft (Connect in Project Settings > Video Calls), AppCredentials when it uses the project's own app - a Zoom Server-to-Server OAuth app, a Google service account or a Microsoft Entra app registration. Empty for a meeting link. Fixed once created. A connection made by signing in is created by signing in, never through the API.
 - `config` (String) Provider-specific, non-secret settings such as the Zoom account and meeting host, the Google Workspace user or the Microsoft Entra tenant and organizer. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.
 - `description` (String) What this connection is for.
-- `secrets` (String) Provider-specific secrets (a client secret or a service account key) as a JSON object. Encrypted at rest and never returned by the API.
+- `secrets` (String) Provider-specific secrets (a client secret or a service account key) as a JSON object. Encrypted at rest and never returned by the API. A connection made by signing in keeps its sign-in's tokens here, which only OneUptime writes.
 
 ### Read-Only
 
+- `connected_account` (String) For a connection made by signing in: the Zoom, Google or Microsoft account that signed in, which every meeting is created as. Set by OneUptime when someone connects or reconnects, and cleared when the account removes OneUptime.
+- `connected_account_id` (String) For a connection made by signing in: the provider's id of the account that signed in (a Zoom user ID, a Google account ID, a Microsoft Entra object ID). Connections signed in as the same account share one sign-in, because Zoom keeps only one per account.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) ID of the user who created this connection. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.

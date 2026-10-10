@@ -28,6 +28,9 @@ data "oneuptime_video_call_connection" "by_id" {
 
 ### Optional
 
+- `auth_method` (String) How this connection signs in to its provider: OAuth when someone connected it by signing in to Zoom, Google or Microsoft (Connect in Project Settings > Video Calls), AppCredentials when it uses the project's own app - a Zoom Server-to-Server OAuth app, a Google service account or a Microsoft Entra app registration. Empty for a meeting link. Fixed once created. A connection made by signing in is created by signing in, never through the API.
+- `connected_account` (String) For a connection made by signing in: the Zoom, Google or Microsoft account that signed in, which every meeting is created as. Set by OneUptime when someone connects or reconnects, and cleared when the account removes OneUptime.
+- `connected_account_id` (String) For a connection made by signing in: the provider's id of the account that signed in (a Zoom user ID, a Google account ID, a Microsoft Entra object ID). Connections signed in as the same account share one sign-in, because Zoom keeps only one per account.
 - `created_by_user_id` (String) ID of the user who created this connection. The ID of a `oneuptime_user` (see the data source).
 - `description` (String) What this connection is for.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.

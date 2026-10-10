@@ -33,6 +33,9 @@ type VideoCallConnectionDataSourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     ProviderValue types.String `tfsdk:"provider_value"`
+    AuthMethod types.String `tfsdk:"auth_method"`
+    ConnectedAccount types.String `tfsdk:"connected_account"`
+    ConnectedAccountId types.String `tfsdk:"connected_account_id"`
     Config types.String `tfsdk:"config"`
     LastCallStartedAt types.String `tfsdk:"last_call_started_at"`
     LastError types.String `tfsdk:"last_error"`
@@ -46,7 +49,7 @@ func (d *VideoCallConnectionDataSource) Metadata(ctx context.Context, req dataso
 
 func (d *VideoCallConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Zoom, Google Meet, Microsoft Teams or a standing meeting link, used to start a dedicated video call for incidents and alerts. Look up an existing video call connection by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one video call connection may match them all.",
+        MarkdownDescription: "Zoom, Google Meet, Microsoft Teams or a standing meeting link, used to start a dedicated video call for incidents and alerts. Look up an existing video call connection by `id`, or by any of its other arguments (`name`, `auth_method`, `connected_account`, ...): each one set must match, and exactly one video call connection may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -78,6 +81,21 @@ func (d *VideoCallConnectionDataSource) Schema(ctx context.Context, req datasour
             },
             "provider_value": schema.StringAttribute{
                 MarkdownDescription: "Which provider this connection starts calls with: Zoom, GoogleMeet, MicrosoftTeams or CustomLink. Fixed once created.",
+                Optional: true,
+                Computed: true,
+            },
+            "auth_method": schema.StringAttribute{
+                MarkdownDescription: "How this connection signs in to its provider: OAuth when someone connected it by signing in to Zoom, Google or Microsoft (Connect in Project Settings > Video Calls), AppCredentials when it uses the project's own app - a Zoom Server-to-Server OAuth app, a Google service account or a Microsoft Entra app registration. Empty for a meeting link. Fixed once created. A connection made by signing in is created by signing in, never through the API.",
+                Optional: true,
+                Computed: true,
+            },
+            "connected_account": schema.StringAttribute{
+                MarkdownDescription: "For a connection made by signing in: the Zoom, Google or Microsoft account that signed in, which every meeting is created as. Set by OneUptime when someone connects or reconnects, and cleared when the account removes OneUptime.",
+                Optional: true,
+                Computed: true,
+            },
+            "connected_account_id": schema.StringAttribute{
+                MarkdownDescription: "For a connection made by signing in: the provider's id of the account that signed in (a Zoom user ID, a Google account ID, a Microsoft Entra object ID). Connections signed in as the same account share one sign-in, because Zoom keeps only one per account.",
                 Optional: true,
                 Computed: true,
             },
@@ -154,6 +172,18 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         filters["provider"] = data.ProviderValue.ValueString()
         filterNames = append(filterNames, "provider_value = "+fmt.Sprintf("%q", data.ProviderValue.ValueString()))
     }
+    if !data.AuthMethod.IsNull() && !data.AuthMethod.IsUnknown() {
+        filters["authMethod"] = data.AuthMethod.ValueString()
+        filterNames = append(filterNames, "auth_method = "+fmt.Sprintf("%q", data.AuthMethod.ValueString()))
+    }
+    if !data.ConnectedAccount.IsNull() && !data.ConnectedAccount.IsUnknown() {
+        filters["connectedAccount"] = data.ConnectedAccount.ValueString()
+        filterNames = append(filterNames, "connected_account = "+fmt.Sprintf("%q", data.ConnectedAccount.ValueString()))
+    }
+    if !data.ConnectedAccountId.IsNull() && !data.ConnectedAccountId.IsUnknown() {
+        filters["connectedAccountId"] = data.ConnectedAccountId.ValueString()
+        filterNames = append(filterNames, "connected_account_id = "+fmt.Sprintf("%q", data.ConnectedAccountId.ValueString()))
+    }
     if !data.LastError.IsNull() && !data.LastError.IsUnknown() {
         filters["lastError"] = data.LastError.ValueString()
         filterNames = append(filterNames, "last_error = "+fmt.Sprintf("%q", data.LastError.ValueString()))
@@ -185,6 +215,9 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         "name": true,
         "description": true,
         "provider": true,
+        "authMethod": true,
+        "connectedAccount": true,
+        "connectedAccountId": true,
         "config": true,
         "lastCallStartedAt": true,
         "lastError": true,
@@ -369,6 +402,57 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         data.ProviderValue = types.StringValue(val)
     } else {
         data.ProviderValue = types.StringNull()
+    }
+    if obj, ok := item["authMethod"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AuthMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AuthMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AuthMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AuthMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.AuthMethod = types.StringNull()
+        }
+    } else if val, ok := item["authMethod"].(string); ok {
+        data.AuthMethod = types.StringValue(val)
+    } else {
+        data.AuthMethod = types.StringNull()
+    }
+    if obj, ok := item["connectedAccount"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectedAccount = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ConnectedAccount = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ConnectedAccount = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ConnectedAccount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccount = types.StringNull()
+        }
+    } else if val, ok := item["connectedAccount"].(string); ok {
+        data.ConnectedAccount = types.StringValue(val)
+    } else {
+        data.ConnectedAccount = types.StringNull()
+    }
+    if obj, ok := item["connectedAccountId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectedAccountId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ConnectedAccountId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccountId = types.StringNull()
+        }
+    } else if val, ok := item["connectedAccountId"].(string); ok {
+        data.ConnectedAccountId = types.StringValue(val)
+    } else {
+        data.ConnectedAccountId = types.StringNull()
     }
     if obj, ok := item["config"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

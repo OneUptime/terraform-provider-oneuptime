@@ -31,7 +31,7 @@ data "oneuptime_network_device_discovery_scan" "by_id" {
 - `cidr` (String) Address space to scan, either in CIDR notation (192.168.1.0/24) or octet-range notation where any octet may be an inclusive low-high range (10.16-22.0-255.51-66).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `is_netbios_lookup_enabled` (Boolean) Whether hosts with no SNMP name and no reverse DNS record are asked for their NetBIOS name over UDP 137. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes.
+- `is_netbios_lookup_enabled` (Boolean) Whether hosts with no SNMP name are asked for their NetBIOS name over UDP 137, including hosts reverse DNS already named. A NetBIOS name is the name the host reports for itself, so it names the device ahead of its reverse DNS name. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes.
 - `is_recurring` (Boolean) Re-run this scan automatically every Rescan Interval minutes to keep discovery continuous.
 - `is_snmp_enabled` (Boolean) Whether hosts that answer the ping sweep are then queried over SNMP. Turn it off for an ICMP-only scan, which reports every host that answers ping and asks nothing else of them.
 - `name` (String) Optional name for this scan, so it can be told apart from other scans at a glance. Falls back to the scan target when empty.

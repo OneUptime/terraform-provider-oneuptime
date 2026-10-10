@@ -38,6 +38,8 @@ type NetworkDeviceDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     Hostname types.String `tfsdk:"hostname"`
     DnsName types.String `tfsdk:"dns_name"`
+    DiscoveredName types.String `tfsdk:"discovered_name"`
+    DiscoveredNameSource types.String `tfsdk:"discovered_name_source"`
     MacAddress types.String `tfsdk:"mac_address"`
     IsMacAddressLearned types.Bool `tfsdk:"is_mac_address_learned"`
     ProbeId types.String `tfsdk:"probe_id"`
@@ -146,6 +148,16 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "dns_name": schema.StringAttribute{
                 MarkdownDescription: "Fully qualified DNS name of this device, from its reverse-DNS (PTR) record when it was discovered, or its previous full name when its name was shortened to the hostname. Kept so the device can still be found, and matched by site-assignment hostname patterns, by the name DNS gives it.",
+                Optional: true,
+                Computed: true,
+            },
+            "discovered_name": schema.StringAttribute{
+                MarkdownDescription: "The name a discovery scan gave this device. While the device is still called exactly this, a later scan that finds a better name for it (its own name instead of its DNS name or IP address) renames it. Rename the device yourself and discovery never changes its name again.",
+                Optional: true,
+                Computed: true,
+            },
+            "discovered_name_source": schema.StringAttribute{
+                MarkdownDescription: "Where the discovered name came from: system-name (the name the device reports over SNMP), netbios-name (the computer name a Windows or Samba host reports over NetBIOS), dns-name (its reverse-DNS record) or address (its IP address). Empty for devices discovery did not name.",
                 Optional: true,
                 Computed: true,
             },
@@ -484,6 +496,14 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["dnsName"] = data.DnsName.ValueString()
         filterNames = append(filterNames, "dns_name = "+fmt.Sprintf("%q", data.DnsName.ValueString()))
     }
+    if !data.DiscoveredName.IsNull() && !data.DiscoveredName.IsUnknown() {
+        filters["discoveredName"] = data.DiscoveredName.ValueString()
+        filterNames = append(filterNames, "discovered_name = "+fmt.Sprintf("%q", data.DiscoveredName.ValueString()))
+    }
+    if !data.DiscoveredNameSource.IsNull() && !data.DiscoveredNameSource.IsUnknown() {
+        filters["discoveredNameSource"] = data.DiscoveredNameSource.ValueString()
+        filterNames = append(filterNames, "discovered_name_source = "+fmt.Sprintf("%q", data.DiscoveredNameSource.ValueString()))
+    }
     if !data.MacAddress.IsNull() && !data.MacAddress.IsUnknown() {
         filters["macAddress"] = data.MacAddress.ValueString()
         filterNames = append(filterNames, "mac_address = "+fmt.Sprintf("%q", data.MacAddress.ValueString()))
@@ -681,6 +701,8 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "description": true,
         "hostname": true,
         "dnsName": true,
+        "discoveredName": true,
+        "discoveredNameSource": true,
         "macAddress": true,
         "isMacAddressLearned": true,
         "probeId": true,
@@ -952,6 +974,40 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.DnsName = types.StringValue(val)
     } else {
         data.DnsName = types.StringNull()
+    }
+    if obj, ok := item["discoveredName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DiscoveredName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DiscoveredName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DiscoveredName = types.StringValue(string(jsonBytes))
+        } else {
+            data.DiscoveredName = types.StringNull()
+        }
+    } else if val, ok := item["discoveredName"].(string); ok {
+        data.DiscoveredName = types.StringValue(val)
+    } else {
+        data.DiscoveredName = types.StringNull()
+    }
+    if obj, ok := item["discoveredNameSource"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredNameSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DiscoveredNameSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DiscoveredNameSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DiscoveredNameSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.DiscoveredNameSource = types.StringNull()
+        }
+    } else if val, ok := item["discoveredNameSource"].(string); ok {
+        data.DiscoveredNameSource = types.StringValue(val)
+    } else {
+        data.DiscoveredNameSource = types.StringNull()
     }
     if obj, ok := item["macAddress"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

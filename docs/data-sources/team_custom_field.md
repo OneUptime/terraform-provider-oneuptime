@@ -30,7 +30,7 @@ data "oneuptime_team_custom_field" "by_id" {
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description of this custom field that will help you remember.
-- `dropdown_options` (String) Options and optional colors for dropdown fields. Plain one-per-line values remain supported.
+- `dropdown_options` (String) Options and optional colors for dropdown fields, in the order they are listed. Plain one-per-line values remain supported. Records store an option as its text: changing an option here keeps the values records already hold. To rename an option and move those values with it, send the renames with the update, in miscDataProps: {"renamedDropdownOptions": [{"from": "Old text", "to": "New text"}]}. "to" must be one of the options.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `map_from_custom_field_name` (String) Name of the custom field on the related resource this field copies its value from.
 - `map_from_resource_type` (String) Related resource this field copies its value from. Empty means values are entered by hand.

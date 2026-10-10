@@ -35,6 +35,8 @@ resource "oneuptime_network_device" "example" {
 - `description` (String) Friendly description for this network device.
 - `device_model` (String) Hardware model from ENTITY-MIB (entPhysicalModelName). Managed by the probe.
 - `device_role` (String) Deprecated legacy device role key. Use the Network Device Role relation instead; this column exists only for the backfill migration and will be removed.
+- `discovered_name` (String) The name a discovery scan gave this device. While the device is still called exactly this, a later scan that finds a better name for it (its own name instead of its DNS name or IP address) renames it. Rename the device yourself and discovery never changes its name again.
+- `discovered_name_source` (String) Where the discovered name came from: system-name (the name the device reports over SNMP), netbios-name (the computer name a Windows or Samba host reports over NetBIOS), dns-name (its reverse-DNS record) or address (its IP address). Empty for devices discovery did not name.
 - `dns_name` (String) Fully qualified DNS name of this device, from its reverse-DNS (PTR) record when it was discovered, or its previous full name when its name was shortened to the hostname. Kept so the device can still be found, and matched by site-assignment hostname patterns, by the name DNS gives it.
 - `firmware_version` (String) Firmware revision from ENTITY-MIB (entPhysicalFirmwareRev). Managed by the probe.
 - `interfaces_down` (Number) Cached count of operationally down interfaces on this device.

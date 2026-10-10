@@ -28,7 +28,7 @@ resource "oneuptime_network_device_discovery_scan" "example" {
 
 ### Optional
 
-- `is_netbios_lookup_enabled` (Boolean) Whether hosts with no SNMP name and no reverse DNS record are asked for their NetBIOS name over UDP 137. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes. Defaults to `false`.
+- `is_netbios_lookup_enabled` (Boolean) Whether hosts with no SNMP name are asked for their NetBIOS name over UDP 137, including hosts reverse DNS already named. A NetBIOS name is the name the host reports for itself, so it names the device ahead of its reverse DNS name. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes. Defaults to `false`.
 - `is_recurring` (Boolean) Re-run this scan automatically every Rescan Interval minutes to keep discovery continuous. Defaults to `false`.
 - `is_snmp_enabled` (Boolean) Whether hosts that answer the ping sweep are then queried over SNMP. Turn it off for an ICMP-only scan, which reports every host that answers ping and asks nothing else of them. Defaults to `true`.
 - `name` (String) Optional name for this scan, so it can be told apart from other scans at a glance. Falls back to the scan target when empty.

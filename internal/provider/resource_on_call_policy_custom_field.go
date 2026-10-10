@@ -100,7 +100,7 @@ func (r *OnCallPolicyCustomFieldResource) schemaDefinition() schema.Schema {
                 },
             },
             "dropdown_options": schema.StringAttribute{
-                MarkdownDescription: "Options and optional colors for dropdown fields. Plain one-per-line values remain supported.",
+                MarkdownDescription: "Options and optional colors for dropdown fields, in the order they are listed. Plain one-per-line values remain supported. Records store an option as its text: changing an option here keeps the values records already hold. To rename an option and move those values with it, send the renames with the update, in miscDataProps: {\"renamedDropdownOptions\": [{\"from\": \"Old text\", \"to\": \"New text\"}]}. \"to\" must be one of the options.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

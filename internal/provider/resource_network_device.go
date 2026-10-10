@@ -46,6 +46,8 @@ type NetworkDeviceResourceModel struct {
     Description types.String `tfsdk:"description"`
     Hostname types.String `tfsdk:"hostname"`
     DnsName types.String `tfsdk:"dns_name"`
+    DiscoveredName types.String `tfsdk:"discovered_name"`
+    DiscoveredNameSource types.String `tfsdk:"discovered_name_source"`
     MacAddress types.String `tfsdk:"mac_address"`
     IsMacAddressLearned types.Bool `tfsdk:"is_mac_address_learned"`
     ProbeId types.String `tfsdk:"probe_id"`
@@ -158,6 +160,24 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "discovered_name": schema.StringAttribute{
+                MarkdownDescription: "The name a discovery scan gave this device. While the device is still called exactly this, a later scan that finds a better name for it (its own name instead of its DNS name or IP address) renames it. Rename the device yourself and discovery never changes its name again.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "discovered_name_source": schema.StringAttribute{
+                MarkdownDescription: "Where the discovered name came from: system-name (the name the device reports over SNMP), netbios-name (the computer name a Windows or Samba host reports over NetBIOS), dns-name (its reverse-DNS record) or address (its IP address). Empty for devices discovery did not name.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "mac_address": schema.StringAttribute{
@@ -735,6 +755,12 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     if !data.DnsName.IsNull() && !data.DnsName.IsUnknown() {
         requestDataMap["dnsName"] = data.DnsName.ValueString()
     }
+    if !data.DiscoveredName.IsNull() && !data.DiscoveredName.IsUnknown() {
+        requestDataMap["discoveredName"] = data.DiscoveredName.ValueString()
+    }
+    if !data.DiscoveredNameSource.IsNull() && !data.DiscoveredNameSource.IsUnknown() {
+        requestDataMap["discoveredNameSource"] = data.DiscoveredNameSource.ValueString()
+    }
     if !data.MacAddress.IsNull() && !data.MacAddress.IsUnknown() {
         requestDataMap["macAddress"] = data.MacAddress.ValueString()
     }
@@ -872,6 +898,8 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "description": true,
         "hostname": true,
         "dnsName": true,
+        "discoveredName": true,
+        "discoveredNameSource": true,
         "macAddress": true,
         "isMacAddressLearned": true,
         "probeId": true,
@@ -1123,6 +1151,80 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         data.DnsName = types.StringValue(val)
     } else {
         data.DnsName = types.StringNull()
+    }
+    if obj, ok := dataMap["discoveredName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DiscoveredName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DiscoveredName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DiscoveredName = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DiscoveredName = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredName = types.StringValue(string(jsonBytes))
+        } else {
+            data.DiscoveredName = types.StringNull()
+        }
+    } else if val, ok := dataMap["discoveredName"].(string); ok {
+        data.DiscoveredName = types.StringValue(val)
+    } else {
+        data.DiscoveredName = types.StringNull()
+    }
+    if obj, ok := dataMap["discoveredNameSource"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredNameSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DiscoveredNameSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DiscoveredNameSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DiscoveredNameSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredNameSource = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DiscoveredNameSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredNameSource = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredNameSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.DiscoveredNameSource = types.StringNull()
+        }
+    } else if val, ok := dataMap["discoveredNameSource"].(string); ok {
+        data.DiscoveredNameSource = types.StringValue(val)
+    } else {
+        data.DiscoveredNameSource = types.StringNull()
     }
     if obj, ok := dataMap["macAddress"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2835,6 +2937,8 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "description": true,
         "hostname": true,
         "dnsName": true,
+        "discoveredName": true,
+        "discoveredNameSource": true,
         "macAddress": true,
         "isMacAddressLearned": true,
         "probeId": true,
@@ -3087,6 +3191,80 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         data.DnsName = types.StringValue(val)
     } else {
         data.DnsName = types.StringNull()
+    }
+    if obj, ok := dataMap["discoveredName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DiscoveredName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DiscoveredName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DiscoveredName = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DiscoveredName = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredName = types.StringValue(string(jsonBytes))
+        } else {
+            data.DiscoveredName = types.StringNull()
+        }
+    } else if val, ok := dataMap["discoveredName"].(string); ok {
+        data.DiscoveredName = types.StringValue(val)
+    } else {
+        data.DiscoveredName = types.StringNull()
+    }
+    if obj, ok := dataMap["discoveredNameSource"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredNameSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DiscoveredNameSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DiscoveredNameSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DiscoveredNameSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredNameSource = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DiscoveredNameSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredNameSource = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredNameSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.DiscoveredNameSource = types.StringNull()
+        }
+    } else if val, ok := dataMap["discoveredNameSource"].(string); ok {
+        data.DiscoveredNameSource = types.StringValue(val)
+    } else {
+        data.DiscoveredNameSource = types.StringNull()
     }
     if obj, ok := dataMap["macAddress"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -5044,6 +5222,8 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "description": true,
         "hostname": true,
         "dnsName": true,
+        "discoveredName": true,
+        "discoveredNameSource": true,
         "macAddress": true,
         "isMacAddressLearned": true,
         "probeId": true,
@@ -5290,6 +5470,80 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.DnsName = types.StringValue(val)
     } else {
         data.DnsName = types.StringNull()
+    }
+    if obj, ok := dataMap["discoveredName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DiscoveredName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DiscoveredName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DiscoveredName = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DiscoveredName = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredName = types.StringValue(string(jsonBytes))
+        } else {
+            data.DiscoveredName = types.StringNull()
+        }
+    } else if val, ok := dataMap["discoveredName"].(string); ok {
+        data.DiscoveredName = types.StringValue(val)
+    } else {
+        data.DiscoveredName = types.StringNull()
+    }
+    if obj, ok := dataMap["discoveredNameSource"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredNameSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DiscoveredNameSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DiscoveredNameSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DiscoveredNameSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredNameSource = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DiscoveredNameSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.DiscoveredNameSource = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredNameSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.DiscoveredNameSource = types.StringNull()
+        }
+    } else if val, ok := dataMap["discoveredNameSource"].(string); ok {
+        data.DiscoveredNameSource = types.StringValue(val)
+    } else {
+        data.DiscoveredNameSource = types.StringNull()
     }
     if obj, ok := dataMap["macAddress"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -7029,6 +7283,12 @@ func (r *NetworkDeviceResource) keepPlannedValues(data *NetworkDeviceResourceMod
     }
     if config.DnsName.IsNull() && !plan.DnsName.IsUnknown() {
         data.DnsName = plan.DnsName
+    }
+    if config.DiscoveredName.IsNull() && !plan.DiscoveredName.IsUnknown() {
+        data.DiscoveredName = plan.DiscoveredName
+    }
+    if config.DiscoveredNameSource.IsNull() && !plan.DiscoveredNameSource.IsUnknown() {
+        data.DiscoveredNameSource = plan.DiscoveredNameSource
     }
     if config.MacAddress.IsNull() && !plan.MacAddress.IsUnknown() {
         data.MacAddress = plan.MacAddress

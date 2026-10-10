@@ -217,7 +217,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "is_netbios_lookup_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether hosts with no SNMP name and no reverse DNS record are asked for their NetBIOS name over UDP 137. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes.",
+                MarkdownDescription: "Whether hosts with no SNMP name are asked for their NetBIOS name over UDP 137, including hosts reverse DNS already named. A NetBIOS name is the name the host reports for itself, so it names the device ahead of its reverse DNS name. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

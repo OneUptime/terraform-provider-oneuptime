@@ -39,10 +39,13 @@ type VideoCallConnectionResourceModel struct {
     Name JSONSubsetValue `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     ProviderValue types.String `tfsdk:"provider_value"`
+    AuthMethod types.String `tfsdk:"auth_method"`
     Config JSONSubsetValue `tfsdk:"config"`
     Secrets types.String `tfsdk:"secrets"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    ConnectedAccount types.String `tfsdk:"connected_account"`
+    ConnectedAccountId types.String `tfsdk:"connected_account_id"`
     LastCallStartedAt RFC3339Value `tfsdk:"last_call_started_at"`
     LastError types.String `tfsdk:"last_error"`
     LastErrorAt RFC3339Value `tfsdk:"last_error_at"`
@@ -99,6 +102,15 @@ func (r *VideoCallConnectionResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
             },
+            "auth_method": schema.StringAttribute{
+                MarkdownDescription: "How this connection signs in to its provider: OAuth when someone connected it by signing in to Zoom, Google or Microsoft (Connect in Project Settings > Video Calls), AppCredentials when it uses the project's own app - a Zoom Server-to-Server OAuth app, a Google service account or a Microsoft Entra app registration. Empty for a meeting link. Fixed once created. A connection made by signing in is created by signing in, never through the API.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
             "config": schema.StringAttribute{
                 MarkdownDescription: "Provider-specific, non-secret settings such as the Zoom account and meeting host, the Google Workspace user or the Microsoft Entra tenant and organizer. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
@@ -112,7 +124,7 @@ func (r *VideoCallConnectionResource) schemaDefinition() schema.Schema {
                 },
             },
             "secrets": schema.StringAttribute{
-                MarkdownDescription: "Provider-specific secrets (a client secret or a service account key) as a JSON object. Encrypted at rest and never returned by the API.",
+                MarkdownDescription: "Provider-specific secrets (a client secret or a service account key) as a JSON object. Encrypted at rest and never returned by the API. A connection made by signing in keeps its sign-in's tokens here, which only OneUptime writes.",
                 Optional: true,
             },
             "created_at": schema.StringAttribute{
@@ -126,6 +138,14 @@ func (r *VideoCallConnectionResource) schemaDefinition() schema.Schema {
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "connected_account": schema.StringAttribute{
+                MarkdownDescription: "For a connection made by signing in: the Zoom, Google or Microsoft account that signed in, which every meeting is created as. Set by OneUptime when someone connects or reconnects, and cleared when the account removes OneUptime.",
+                Computed: true,
+            },
+            "connected_account_id": schema.StringAttribute{
+                MarkdownDescription: "For a connection made by signing in: the provider's id of the account that signed in (a Zoom user ID, a Google account ID, a Microsoft Entra object ID). Connections signed in as the same account share one sign-in, because Zoom keeps only one per account.",
                 Computed: true,
             },
             "last_call_started_at": schema.StringAttribute{
@@ -211,6 +231,9 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
     if !data.ProviderValue.IsNull() && !data.ProviderValue.IsUnknown() {
         requestDataMap["provider"] = data.ProviderValue.ValueString()
     }
+    if !data.AuthMethod.IsNull() && !data.AuthMethod.IsUnknown() {
+        requestDataMap["authMethod"] = data.AuthMethod.ValueString()
+    }
     if parsedConfig := r.parseJSONField(data.Config); parsedConfig != nil {
         requestDataMap["config"] = parsedConfig
     }
@@ -266,9 +289,12 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
         "name": true,
         "description": true,
         "provider": true,
+        "authMethod": true,
         "config": true,
         "createdAt": true,
         "updatedAt": true,
+        "connectedAccount": true,
+        "connectedAccountId": true,
         "lastCallStartedAt": true,
         "lastError": true,
         "lastErrorAt": true,
@@ -427,6 +453,43 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
     } else {
         data.ProviderValue = types.StringNull()
     }
+    if obj, ok := dataMap["authMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AuthMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AuthMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AuthMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AuthMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.AuthMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AuthMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.AuthMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AuthMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.AuthMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["authMethod"].(string); ok {
+        data.AuthMethod = types.StringValue(val)
+    } else {
+        data.AuthMethod = types.StringNull()
+    }
     if obj, ok := dataMap["config"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -485,6 +548,80 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["connectedAccount"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectedAccount = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ConnectedAccount = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ConnectedAccount = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ConnectedAccount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccount = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ConnectedAccount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccount = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ConnectedAccount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccount = types.StringNull()
+        }
+    } else if val, ok := dataMap["connectedAccount"].(string); ok {
+        data.ConnectedAccount = types.StringValue(val)
+    } else {
+        data.ConnectedAccount = types.StringNull()
+    }
+    if obj, ok := dataMap["connectedAccountId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectedAccountId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ConnectedAccountId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccountId = types.StringNull()
+        }
+    } else if val, ok := dataMap["connectedAccountId"].(string); ok {
+        data.ConnectedAccountId = types.StringValue(val)
+    } else {
+        data.ConnectedAccountId = types.StringNull()
     }
     if obj, ok := dataMap["lastCallStartedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -616,9 +753,12 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
         "name": true,
         "description": true,
         "provider": true,
+        "authMethod": true,
         "config": true,
         "createdAt": true,
         "updatedAt": true,
+        "connectedAccount": true,
+        "connectedAccountId": true,
         "lastCallStartedAt": true,
         "lastError": true,
         "lastErrorAt": true,
@@ -778,6 +918,43 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
     } else {
         data.ProviderValue = types.StringNull()
     }
+    if obj, ok := dataMap["authMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AuthMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AuthMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AuthMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AuthMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.AuthMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AuthMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.AuthMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AuthMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.AuthMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["authMethod"].(string); ok {
+        data.AuthMethod = types.StringValue(val)
+    } else {
+        data.AuthMethod = types.StringNull()
+    }
     if obj, ok := dataMap["config"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -836,6 +1013,80 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["connectedAccount"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectedAccount = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ConnectedAccount = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ConnectedAccount = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ConnectedAccount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccount = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ConnectedAccount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccount = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ConnectedAccount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccount = types.StringNull()
+        }
+    } else if val, ok := dataMap["connectedAccount"].(string); ok {
+        data.ConnectedAccount = types.StringValue(val)
+    } else {
+        data.ConnectedAccount = types.StringNull()
+    }
+    if obj, ok := dataMap["connectedAccountId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectedAccountId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ConnectedAccountId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccountId = types.StringNull()
+        }
+    } else if val, ok := dataMap["connectedAccountId"].(string); ok {
+        data.ConnectedAccountId = types.StringValue(val)
+    } else {
+        data.ConnectedAccountId = types.StringNull()
     }
     if obj, ok := dataMap["lastCallStartedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1025,9 +1276,12 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
         "name": true,
         "description": true,
         "provider": true,
+        "authMethod": true,
         "config": true,
         "createdAt": true,
         "updatedAt": true,
+        "connectedAccount": true,
+        "connectedAccountId": true,
         "lastCallStartedAt": true,
         "lastError": true,
         "lastErrorAt": true,
@@ -1181,6 +1435,43 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
     } else {
         data.ProviderValue = types.StringNull()
     }
+    if obj, ok := dataMap["authMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AuthMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AuthMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AuthMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AuthMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.AuthMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AuthMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.AuthMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AuthMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.AuthMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["authMethod"].(string); ok {
+        data.AuthMethod = types.StringValue(val)
+    } else {
+        data.AuthMethod = types.StringNull()
+    }
     if obj, ok := dataMap["config"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1239,6 +1530,80 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["connectedAccount"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectedAccount = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ConnectedAccount = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ConnectedAccount = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ConnectedAccount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccount = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ConnectedAccount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccount = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ConnectedAccount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccount = types.StringNull()
+        }
+    } else if val, ok := dataMap["connectedAccount"].(string); ok {
+        data.ConnectedAccount = types.StringValue(val)
+    } else {
+        data.ConnectedAccount = types.StringNull()
+    }
+    if obj, ok := dataMap["connectedAccountId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectedAccountId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ConnectedAccountId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccountId = types.StringNull()
+        }
+    } else if val, ok := dataMap["connectedAccountId"].(string); ok {
+        data.ConnectedAccountId = types.StringValue(val)
+    } else {
+        data.ConnectedAccountId = types.StringNull()
     }
     if obj, ok := dataMap["lastCallStartedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1395,6 +1760,9 @@ func (r *VideoCallConnectionResource) ImportState(ctx context.Context, req resou
 func (r *VideoCallConnectionResource) keepPlannedValues(data *VideoCallConnectionResourceModel, plan *VideoCallConnectionResourceModel, config *VideoCallConnectionResourceModel) {
     if config.Description.IsNull() && !plan.Description.IsUnknown() {
         data.Description = plan.Description
+    }
+    if config.AuthMethod.IsNull() && !plan.AuthMethod.IsUnknown() {
+        data.AuthMethod = plan.AuthMethod
     }
     if config.Config.IsNull() && !plan.Config.IsUnknown() {
         data.Config = plan.Config
