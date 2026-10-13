@@ -44,7 +44,7 @@ func (d *UserOverrideDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *UserOverrideDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. Look up an existing user override by `id`, or by any of its other arguments (`created_by_user_id`, `on_call_duty_policy_id`, `override_user_id`, ...): each one set must match, and exactly one user override may match them all.",
+        MarkdownDescription: "While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. Look up an existing user override by `id`, or by any of its other arguments (`created_by_user_id`, `on_call_duty_policy_id`, `override_user_id`, ...): each one set must match, and exactly one user override may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -75,21 +75,21 @@ func (d *UserOverrideDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "override_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user who is away. While the override is in force, alerts that would page this user go to the user in Route Alerts To User ID instead. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the user who is away. While the override is in force, alerts that would page this user go to the user in Route Alerts To User ID instead. With no Route Alerts To User ID, they are skipped: each of their turns in an on-call schedule goes to the next person in the rotation who is not away. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
             },
             "route_alerts_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user who covers. While the override is in force, this user gets the alerts that would page the user in Override User ID. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the user who covers. While the override is in force, this user gets the alerts that would page the user in Override User ID. Leave it empty to skip that user instead: each of their turns in an on-call schedule goes to the next person in the rotation who is not away, and teams and escalation rules that name them do not page them until the override ends. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
             },
             "starts_at": schema.StringAttribute{
-                MarkdownDescription: "When the override starts sending the Override User's alerts to the Route Alerts To User.",
+                MarkdownDescription: "When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns.",
                 Computed: true,
             },
             "ends_at": schema.StringAttribute{
-                MarkdownDescription: "When the override ends, which has to be after it starts. From then on, alerts page the Override User again.",
+                MarkdownDescription: "When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again.",
                 Computed: true,
             },
         },

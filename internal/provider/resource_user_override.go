@@ -55,7 +55,7 @@ func (r *UserOverrideResource) Schema(ctx context.Context, req resource.SchemaRe
 
 func (r *UserOverrideResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy.",
+        MarkdownDescription: "While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -82,21 +82,23 @@ func (r *UserOverrideResource) schemaDefinition() schema.Schema {
                 },
             },
             "override_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user who is away. While the override is in force, alerts that would page this user go to the user in Route Alerts To User ID instead. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the user who is away. While the override is in force, alerts that would page this user go to the user in Route Alerts To User ID instead. With no Route Alerts To User ID, they are skipped: each of their turns in an on-call schedule goes to the next person in the rotation who is not away. The ID of a `oneuptime_user` (see the data source).",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "route_alerts_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user who covers. While the override is in force, this user gets the alerts that would page the user in Override User ID. The ID of a `oneuptime_user` (see the data source).",
-                Required: true,
+                MarkdownDescription: "ID of the user who covers. While the override is in force, this user gets the alerts that would page the user in Override User ID. Leave it empty to skip that user instead: each of their turns in an on-call schedule goes to the next person in the rotation who is not away, and teams and escalation rules that name them do not page them until the override ends. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "starts_at": schema.StringAttribute{
-                MarkdownDescription: "When the override starts sending the Override User's alerts to the Route Alerts To User.",
+                MarkdownDescription: "When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns.",
                 CustomType: RFC3339Type{},
                 Required: true,
                 PlanModifiers: []planmodifier.String{
@@ -104,7 +106,7 @@ func (r *UserOverrideResource) schemaDefinition() schema.Schema {
                 },
             },
             "ends_at": schema.StringAttribute{
-                MarkdownDescription: "When the override ends, which has to be after it starts. From then on, alerts page the Override User again.",
+                MarkdownDescription: "When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again.",
                 CustomType: RFC3339Type{},
                 Required: true,
                 PlanModifiers: []planmodifier.String{
@@ -1126,6 +1128,9 @@ func (r *UserOverrideResource) ImportState(ctx context.Context, req resource.Imp
 func (r *UserOverrideResource) keepPlannedValues(data *UserOverrideResourceModel, plan *UserOverrideResourceModel, config *UserOverrideResourceModel) {
     if config.OnCallDutyPolicyId.IsNull() && !plan.OnCallDutyPolicyId.IsUnknown() {
         data.OnCallDutyPolicyId = plan.OnCallDutyPolicyId
+    }
+    if config.RouteAlertsToUserId.IsNull() && !plan.RouteAlertsToUserId.IsUnknown() {
+        data.RouteAlertsToUserId = plan.RouteAlertsToUserId
     }
 }
 
