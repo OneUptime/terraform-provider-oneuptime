@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -626,17 +625,7 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.MaterializedPath = types.StringNull()
     }
-    if val, ok := item["depth"].(float64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["depth"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Depth = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Depth = types.NumberNull()
-        }
-    } else {
-        data.Depth = types.NumberNull()
-    }
+    data.Depth = numberFromAPI(data.Depth, item["depth"])
     if obj, ok := item["address"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Address = types.StringValue(val)
@@ -654,28 +643,8 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.Address = types.StringNull()
     }
-    if val, ok := item["latitude"].(float64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["latitude"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Latitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Latitude = types.NumberNull()
-        }
-    } else {
-        data.Latitude = types.NumberNull()
-    }
-    if val, ok := item["longitude"].(float64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["longitude"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Longitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Longitude = types.NumberNull()
-        }
-    } else {
-        data.Longitude = types.NumberNull()
-    }
+    data.Latitude = numberFromAPI(data.Latitude, item["latitude"])
+    data.Longitude = numberFromAPI(data.Longitude, item["longitude"])
     if obj, ok := item["currentMonitorStatusId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CurrentMonitorStatusId = types.StringValue(val)
@@ -727,17 +696,7 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.HealthRollupPolicy = types.StringNull()
     }
-    if val, ok := item["offlineThresholdPercent"].(float64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["offlineThresholdPercent"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OfflineThresholdPercent = types.NumberNull()
-        }
-    } else {
-        data.OfflineThresholdPercent = types.NumberNull()
-    }
+    data.OfflineThresholdPercent = numberFromAPI(data.OfflineThresholdPercent, item["offlineThresholdPercent"])
     if val, ok := item["shouldAlertWhenUnhealthy"].(bool); ok {
         data.ShouldAlertWhenUnhealthy = types.BoolValue(val)
     } else {

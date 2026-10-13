@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -659,83 +658,13 @@ func (d *CephClusterDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["monCount"].(float64); ok {
-        data.MonCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["monCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MonCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MonCount = types.NumberNull()
-        }
-    } else {
-        data.MonCount = types.NumberNull()
-    }
-    if val, ok := item["osdCount"].(float64); ok {
-        data.OsdCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["osdCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OsdCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OsdCount = types.NumberNull()
-        }
-    } else {
-        data.OsdCount = types.NumberNull()
-    }
-    if val, ok := item["osdUpCount"].(float64); ok {
-        data.OsdUpCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["osdUpCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OsdUpCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OsdUpCount = types.NumberNull()
-        }
-    } else {
-        data.OsdUpCount = types.NumberNull()
-    }
-    if val, ok := item["osdInCount"].(float64); ok {
-        data.OsdInCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["osdInCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OsdInCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OsdInCount = types.NumberNull()
-        }
-    } else {
-        data.OsdInCount = types.NumberNull()
-    }
-    if val, ok := item["poolCount"].(float64); ok {
-        data.PoolCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["poolCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PoolCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PoolCount = types.NumberNull()
-        }
-    } else {
-        data.PoolCount = types.NumberNull()
-    }
-    if val, ok := item["healthStatus"].(float64); ok {
-        data.HealthStatus = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["healthStatus"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.HealthStatus = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.HealthStatus = types.NumberNull()
-        }
-    } else {
-        data.HealthStatus = types.NumberNull()
-    }
-    if val, ok := item["capacityUsedPercent"].(float64); ok {
-        data.CapacityUsedPercent = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["capacityUsedPercent"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CapacityUsedPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CapacityUsedPercent = types.NumberNull()
-        }
-    } else {
-        data.CapacityUsedPercent = types.NumberNull()
-    }
+    data.MonCount = numberFromAPI(data.MonCount, item["monCount"])
+    data.OsdCount = numberFromAPI(data.OsdCount, item["osdCount"])
+    data.OsdUpCount = numberFromAPI(data.OsdUpCount, item["osdUpCount"])
+    data.OsdInCount = numberFromAPI(data.OsdInCount, item["osdInCount"])
+    data.PoolCount = numberFromAPI(data.PoolCount, item["poolCount"])
+    data.HealthStatus = numberFromAPI(data.HealthStatus, item["healthStatus"])
+    data.CapacityUsedPercent = numberFromAPI(data.CapacityUsedPercent, item["capacityUsedPercent"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)
@@ -816,17 +745,7 @@ func (d *CephClusterDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -423,17 +422,7 @@ func (d *RunbookCredentialDataSource) Read(ctx context.Context, req datasource.R
     } else {
         data.SshHostname = types.StringNull()
     }
-    if val, ok := item["sshPort"].(float64); ok {
-        data.SshPort = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sshPort"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SshPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SshPort = types.NumberNull()
-        }
-    } else {
-        data.SshPort = types.NumberNull()
-    }
+    data.SshPort = numberFromAPI(data.SshPort, item["sshPort"])
     if obj, ok := item["sshUsername"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SshUsername = types.StringValue(val)

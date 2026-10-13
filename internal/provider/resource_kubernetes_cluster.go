@@ -688,23 +688,7 @@ func (r *KubernetesClusterResource) Create(ctx context.Context, req resource.Cre
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -827,57 +811,9 @@ func (r *KubernetesClusterResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["nodeCount"].(float64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["nodeCount"].(int); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["nodeCount"].(int64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["nodeCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NodeCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NodeCount = types.NumberNull()
-    }
-    if val, ok := dataMap["podCount"].(float64); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["podCount"].(int); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["podCount"].(int64); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["podCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PodCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PodCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PodCount = types.NumberNull()
-    }
-    if val, ok := dataMap["namespaceCount"].(float64); ok {
-        data.NamespaceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["namespaceCount"].(int); ok {
-        data.NamespaceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["namespaceCount"].(int64); ok {
-        data.NamespaceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["namespaceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NamespaceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NamespaceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NamespaceCount = types.NumberNull()
-    }
+    data.NodeCount = numberFromAPI(data.NodeCount, dataMap["nodeCount"])
+    data.PodCount = numberFromAPI(data.PodCount, dataMap["podCount"])
+    data.NamespaceCount = numberFromAPI(data.NamespaceCount, dataMap["namespaceCount"])
     if obj, ok := dataMap["aiAccessRunnerId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1530,23 +1466,7 @@ func (r *KubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1669,57 +1589,9 @@ func (r *KubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["nodeCount"].(float64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["nodeCount"].(int); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["nodeCount"].(int64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["nodeCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NodeCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NodeCount = types.NumberNull()
-    }
-    if val, ok := dataMap["podCount"].(float64); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["podCount"].(int); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["podCount"].(int64); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["podCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PodCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PodCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PodCount = types.NumberNull()
-    }
-    if val, ok := dataMap["namespaceCount"].(float64); ok {
-        data.NamespaceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["namespaceCount"].(int); ok {
-        data.NamespaceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["namespaceCount"].(int64); ok {
-        data.NamespaceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["namespaceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NamespaceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NamespaceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NamespaceCount = types.NumberNull()
-    }
+    data.NodeCount = numberFromAPI(data.NodeCount, dataMap["nodeCount"])
+    data.PodCount = numberFromAPI(data.PodCount, dataMap["podCount"])
+    data.NamespaceCount = numberFromAPI(data.NamespaceCount, dataMap["namespaceCount"])
     if obj, ok := dataMap["aiAccessRunnerId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2469,23 +2341,7 @@ func (r *KubernetesClusterResource) Update(ctx context.Context, req resource.Upd
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2608,57 +2464,9 @@ func (r *KubernetesClusterResource) Update(ctx context.Context, req resource.Upd
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["nodeCount"].(float64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["nodeCount"].(int); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["nodeCount"].(int64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["nodeCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NodeCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NodeCount = types.NumberNull()
-    }
-    if val, ok := dataMap["podCount"].(float64); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["podCount"].(int); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["podCount"].(int64); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["podCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PodCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PodCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PodCount = types.NumberNull()
-    }
-    if val, ok := dataMap["namespaceCount"].(float64); ok {
-        data.NamespaceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["namespaceCount"].(int); ok {
-        data.NamespaceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["namespaceCount"].(int64); ok {
-        data.NamespaceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["namespaceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NamespaceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NamespaceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NamespaceCount = types.NumberNull()
-    }
+    data.NodeCount = numberFromAPI(data.NodeCount, dataMap["nodeCount"])
+    data.PodCount = numberFromAPI(data.PodCount, dataMap["podCount"])
+    data.NamespaceCount = numberFromAPI(data.NamespaceCount, dataMap["namespaceCount"])
     if obj, ok := dataMap["aiAccessRunnerId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

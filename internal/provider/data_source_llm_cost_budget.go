@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -391,17 +390,7 @@ func (d *LlmCostBudgetDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.IsEnabled = types.BoolNull()
     }
-    if val, ok := item["dailyBudgetInUSD"].(float64); ok {
-        data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["dailyBudgetInUSD"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DailyBudgetInUsd = types.NumberNull()
-        }
-    } else {
-        data.DailyBudgetInUsd = types.NumberNull()
-    }
+    data.DailyBudgetInUsd = numberFromAPI(data.DailyBudgetInUsd, item["dailyBudgetInUSD"])
     if obj, ok := item["serviceId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ServiceId = types.StringValue(val)
@@ -453,17 +442,7 @@ func (d *LlmCostBudgetDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.LlmModel = types.StringNull()
     }
-    if val, ok := item["currentDaySpendInUSD"].(float64); ok {
-        data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["currentDaySpendInUSD"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentDaySpendInUsd = types.NumberNull()
-        }
-    } else {
-        data.CurrentDaySpendInUsd = types.NumberNull()
-    }
+    data.CurrentDaySpendInUsd = numberFromAPI(data.CurrentDaySpendInUsd, item["currentDaySpendInUSD"])
     if obj, ok := item["spendLastEvaluatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SpendLastEvaluatedAt = types.StringValue(val)

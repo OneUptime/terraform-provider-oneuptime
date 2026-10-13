@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -723,17 +722,7 @@ func (d *ServerlessFunctionDataSource) Read(ctx context.Context, req datasource.
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)

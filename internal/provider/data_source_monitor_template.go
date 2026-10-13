@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -544,17 +543,7 @@ func (d *MonitorTemplateDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.CustomFields = types.StringNull()
     }
-    if val, ok := item["minimumProbeAgreement"].(float64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["minimumProbeAgreement"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumProbeAgreement = types.NumberNull()
-        }
-    } else {
-        data.MinimumProbeAgreement = types.NumberNull()
-    }
+    data.MinimumProbeAgreement = numberFromAPI(data.MinimumProbeAgreement, item["minimumProbeAgreement"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)

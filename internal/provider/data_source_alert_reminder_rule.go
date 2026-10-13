@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -397,33 +396,13 @@ func (d *AlertReminderRuleDataSource) Read(ctx context.Context, req datasource.R
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := item["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["order"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, item["order"])
     if val, ok := item["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     } else {
         data.IsEnabled = types.BoolNull()
     }
-    if val, ok := item["reminderIntervalInMinutes"].(float64); ok {
-        data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["reminderIntervalInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        data.ReminderIntervalInMinutes = types.NumberNull()
-    }
+    data.ReminderIntervalInMinutes = numberFromAPI(data.ReminderIntervalInMinutes, item["reminderIntervalInMinutes"])
     if obj, ok := item["stopRemindersOnState"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.StopRemindersOnState = types.StringValue(val)

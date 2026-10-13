@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -594,33 +593,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
     } else {
         data.RedactReplacement = types.StringNull()
     }
-    if val, ok := item["samplePercentage"].(float64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["samplePercentage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SamplePercentage = types.NumberNull()
-        }
-    } else {
-        data.SamplePercentage = types.NumberNull()
-    }
+    data.SamplePercentage = numberFromAPI(data.SamplePercentage, item["samplePercentage"])
     if val, ok := item["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     } else {
         data.IsEnabled = types.BoolNull()
     }
-    if val, ok := item["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sortOrder"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, item["sortOrder"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)

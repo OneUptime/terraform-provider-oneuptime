@@ -443,23 +443,7 @@ func (r *SourceMapResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.Content = types.StringNull()
     }
-    if val, ok := dataMap["sizeInBytes"].(float64); ok {
-        data.SizeInBytes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sizeInBytes"].(int); ok {
-        data.SizeInBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sizeInBytes"].(int64); ok {
-        data.SizeInBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sizeInBytes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SizeInBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SizeInBytes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SizeInBytes = types.NumberNull()
-    }
+    data.SizeInBytes = numberFromAPI(data.SizeInBytes, dataMap["sizeInBytes"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -750,23 +734,7 @@ func (r *SourceMapResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.Content = types.StringNull()
     }
-    if val, ok := dataMap["sizeInBytes"].(float64); ok {
-        data.SizeInBytes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sizeInBytes"].(int); ok {
-        data.SizeInBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sizeInBytes"].(int64); ok {
-        data.SizeInBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sizeInBytes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SizeInBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SizeInBytes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SizeInBytes = types.NumberNull()
-    }
+    data.SizeInBytes = numberFromAPI(data.SizeInBytes, dataMap["sizeInBytes"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1086,23 +1054,7 @@ func (r *SourceMapResource) Update(ctx context.Context, req resource.UpdateReque
     } else {
         data.Content = types.StringNull()
     }
-    if val, ok := dataMap["sizeInBytes"].(float64); ok {
-        data.SizeInBytes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sizeInBytes"].(int); ok {
-        data.SizeInBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sizeInBytes"].(int64); ok {
-        data.SizeInBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sizeInBytes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SizeInBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SizeInBytes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SizeInBytes = types.NumberNull()
-    }
+    data.SizeInBytes = numberFromAPI(data.SizeInBytes, dataMap["sizeInBytes"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)

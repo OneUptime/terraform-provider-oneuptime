@@ -1931,57 +1931,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.CallSmsConfigId = types.StringNull()
     }
-    if val, ok := dataMap["showIncidentHistoryInDays"].(float64); ok {
-        data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showIncidentHistoryInDays"].(int); ok {
-        data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showIncidentHistoryInDays"].(int64); ok {
-        data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showIncidentHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowIncidentHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowIncidentHistoryInDays = types.NumberNull()
-    }
-    if val, ok := dataMap["showAnnouncementHistoryInDays"].(float64); ok {
-        data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showAnnouncementHistoryInDays"].(int); ok {
-        data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showAnnouncementHistoryInDays"].(int64); ok {
-        data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showAnnouncementHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowAnnouncementHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowAnnouncementHistoryInDays = types.NumberNull()
-    }
-    if val, ok := dataMap["showScheduledEventHistoryInDays"].(float64); ok {
-        data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showScheduledEventHistoryInDays"].(int); ok {
-        data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showScheduledEventHistoryInDays"].(int64); ok {
-        data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showScheduledEventHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowScheduledEventHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowScheduledEventHistoryInDays = types.NumberNull()
-    }
+    data.ShowIncidentHistoryInDays = numberFromAPI(data.ShowIncidentHistoryInDays, dataMap["showIncidentHistoryInDays"])
+    data.ShowAnnouncementHistoryInDays = numberFromAPI(data.ShowAnnouncementHistoryInDays, dataMap["showAnnouncementHistoryInDays"])
+    data.ShowScheduledEventHistoryInDays = numberFromAPI(data.ShowScheduledEventHistoryInDays, dataMap["showScheduledEventHistoryInDays"])
     if obj, ok := dataMap["overviewPageDescription"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2158,23 +2110,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.SendNextReportBy = NewRFC3339Null()
     }
-    if val, ok := dataMap["reportDataInDays"].(float64); ok {
-        data.ReportDataInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reportDataInDays"].(int); ok {
-        data.ReportDataInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reportDataInDays"].(int64); ok {
-        data.ReportDataInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reportDataInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReportDataInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReportDataInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReportDataInDays = types.NumberNull()
-    }
+    data.ReportDataInDays = numberFromAPI(data.ReportDataInDays, dataMap["reportDataInDays"])
     if obj, ok := dataMap["reportPeriodType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2341,23 +2277,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if val, ok := dataMap["showEpisodesOnStatusPage"].(bool); ok {
         data.ShowEpisodesOnStatusPage = types.BoolValue(val)
     }
-    if val, ok := dataMap["showEpisodeHistoryInDays"].(float64); ok {
-        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int); ok {
-        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int64); ok {
-        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showEpisodeHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowEpisodeHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowEpisodeHistoryInDays = types.NumberNull()
-    }
+    data.ShowEpisodeHistoryInDays = numberFromAPI(data.ShowEpisodeHistoryInDays, dataMap["showEpisodeHistoryInDays"])
     if val, ok := dataMap["showEpisodeLabelsOnStatusPage"].(bool); ok {
         data.ShowEpisodeLabelsOnStatusPage = types.BoolValue(val)
     }
@@ -2407,23 +2327,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if val, ok := dataMap["enableEmbeddedOverallStatus"].(bool); ok {
         data.EnableEmbeddedOverallStatus = types.BoolValue(val)
     }
-    if val, ok := dataMap["showUptimeHistoryInDays"].(float64); ok {
-        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int); ok {
-        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int64); ok {
-        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showUptimeHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowUptimeHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowUptimeHistoryInDays = types.NumberNull()
-    }
+    data.ShowUptimeHistoryInDays = numberFromAPI(data.ShowUptimeHistoryInDays, dataMap["showUptimeHistoryInDays"])
     if obj, ok := dataMap["embeddedOverallStatusToken"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3606,57 +3510,9 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.CallSmsConfigId = types.StringNull()
     }
-    if val, ok := dataMap["showIncidentHistoryInDays"].(float64); ok {
-        data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showIncidentHistoryInDays"].(int); ok {
-        data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showIncidentHistoryInDays"].(int64); ok {
-        data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showIncidentHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowIncidentHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowIncidentHistoryInDays = types.NumberNull()
-    }
-    if val, ok := dataMap["showAnnouncementHistoryInDays"].(float64); ok {
-        data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showAnnouncementHistoryInDays"].(int); ok {
-        data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showAnnouncementHistoryInDays"].(int64); ok {
-        data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showAnnouncementHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowAnnouncementHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowAnnouncementHistoryInDays = types.NumberNull()
-    }
-    if val, ok := dataMap["showScheduledEventHistoryInDays"].(float64); ok {
-        data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showScheduledEventHistoryInDays"].(int); ok {
-        data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showScheduledEventHistoryInDays"].(int64); ok {
-        data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showScheduledEventHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowScheduledEventHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowScheduledEventHistoryInDays = types.NumberNull()
-    }
+    data.ShowIncidentHistoryInDays = numberFromAPI(data.ShowIncidentHistoryInDays, dataMap["showIncidentHistoryInDays"])
+    data.ShowAnnouncementHistoryInDays = numberFromAPI(data.ShowAnnouncementHistoryInDays, dataMap["showAnnouncementHistoryInDays"])
+    data.ShowScheduledEventHistoryInDays = numberFromAPI(data.ShowScheduledEventHistoryInDays, dataMap["showScheduledEventHistoryInDays"])
     if obj, ok := dataMap["overviewPageDescription"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3833,23 +3689,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.SendNextReportBy = NewRFC3339Null()
     }
-    if val, ok := dataMap["reportDataInDays"].(float64); ok {
-        data.ReportDataInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reportDataInDays"].(int); ok {
-        data.ReportDataInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reportDataInDays"].(int64); ok {
-        data.ReportDataInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reportDataInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReportDataInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReportDataInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReportDataInDays = types.NumberNull()
-    }
+    data.ReportDataInDays = numberFromAPI(data.ReportDataInDays, dataMap["reportDataInDays"])
     if obj, ok := dataMap["reportPeriodType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4016,23 +3856,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     if val, ok := dataMap["showEpisodesOnStatusPage"].(bool); ok {
         data.ShowEpisodesOnStatusPage = types.BoolValue(val)
     }
-    if val, ok := dataMap["showEpisodeHistoryInDays"].(float64); ok {
-        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int); ok {
-        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int64); ok {
-        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showEpisodeHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowEpisodeHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowEpisodeHistoryInDays = types.NumberNull()
-    }
+    data.ShowEpisodeHistoryInDays = numberFromAPI(data.ShowEpisodeHistoryInDays, dataMap["showEpisodeHistoryInDays"])
     if val, ok := dataMap["showEpisodeLabelsOnStatusPage"].(bool); ok {
         data.ShowEpisodeLabelsOnStatusPage = types.BoolValue(val)
     }
@@ -4082,23 +3906,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     if val, ok := dataMap["enableEmbeddedOverallStatus"].(bool); ok {
         data.EnableEmbeddedOverallStatus = types.BoolValue(val)
     }
-    if val, ok := dataMap["showUptimeHistoryInDays"].(float64); ok {
-        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int); ok {
-        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int64); ok {
-        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showUptimeHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowUptimeHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowUptimeHistoryInDays = types.NumberNull()
-    }
+    data.ShowUptimeHistoryInDays = numberFromAPI(data.ShowUptimeHistoryInDays, dataMap["showUptimeHistoryInDays"])
     if obj, ok := dataMap["embeddedOverallStatusToken"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5534,57 +5342,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.CallSmsConfigId = types.StringNull()
     }
-    if val, ok := dataMap["showIncidentHistoryInDays"].(float64); ok {
-        data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showIncidentHistoryInDays"].(int); ok {
-        data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showIncidentHistoryInDays"].(int64); ok {
-        data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showIncidentHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowIncidentHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowIncidentHistoryInDays = types.NumberNull()
-    }
-    if val, ok := dataMap["showAnnouncementHistoryInDays"].(float64); ok {
-        data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showAnnouncementHistoryInDays"].(int); ok {
-        data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showAnnouncementHistoryInDays"].(int64); ok {
-        data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showAnnouncementHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowAnnouncementHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowAnnouncementHistoryInDays = types.NumberNull()
-    }
-    if val, ok := dataMap["showScheduledEventHistoryInDays"].(float64); ok {
-        data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showScheduledEventHistoryInDays"].(int); ok {
-        data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showScheduledEventHistoryInDays"].(int64); ok {
-        data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showScheduledEventHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowScheduledEventHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowScheduledEventHistoryInDays = types.NumberNull()
-    }
+    data.ShowIncidentHistoryInDays = numberFromAPI(data.ShowIncidentHistoryInDays, dataMap["showIncidentHistoryInDays"])
+    data.ShowAnnouncementHistoryInDays = numberFromAPI(data.ShowAnnouncementHistoryInDays, dataMap["showAnnouncementHistoryInDays"])
+    data.ShowScheduledEventHistoryInDays = numberFromAPI(data.ShowScheduledEventHistoryInDays, dataMap["showScheduledEventHistoryInDays"])
     if obj, ok := dataMap["overviewPageDescription"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5761,23 +5521,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.SendNextReportBy = NewRFC3339Null()
     }
-    if val, ok := dataMap["reportDataInDays"].(float64); ok {
-        data.ReportDataInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reportDataInDays"].(int); ok {
-        data.ReportDataInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reportDataInDays"].(int64); ok {
-        data.ReportDataInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reportDataInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReportDataInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReportDataInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReportDataInDays = types.NumberNull()
-    }
+    data.ReportDataInDays = numberFromAPI(data.ReportDataInDays, dataMap["reportDataInDays"])
     if obj, ok := dataMap["reportPeriodType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5944,23 +5688,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if val, ok := dataMap["showEpisodesOnStatusPage"].(bool); ok {
         data.ShowEpisodesOnStatusPage = types.BoolValue(val)
     }
-    if val, ok := dataMap["showEpisodeHistoryInDays"].(float64); ok {
-        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int); ok {
-        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int64); ok {
-        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showEpisodeHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowEpisodeHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowEpisodeHistoryInDays = types.NumberNull()
-    }
+    data.ShowEpisodeHistoryInDays = numberFromAPI(data.ShowEpisodeHistoryInDays, dataMap["showEpisodeHistoryInDays"])
     if val, ok := dataMap["showEpisodeLabelsOnStatusPage"].(bool); ok {
         data.ShowEpisodeLabelsOnStatusPage = types.BoolValue(val)
     }
@@ -6010,23 +5738,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if val, ok := dataMap["enableEmbeddedOverallStatus"].(bool); ok {
         data.EnableEmbeddedOverallStatus = types.BoolValue(val)
     }
-    if val, ok := dataMap["showUptimeHistoryInDays"].(float64); ok {
-        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int); ok {
-        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int64); ok {
-        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["showUptimeHistoryInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowUptimeHistoryInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShowUptimeHistoryInDays = types.NumberNull()
-    }
+    data.ShowUptimeHistoryInDays = numberFromAPI(data.ShowUptimeHistoryInDays, dataMap["showUptimeHistoryInDays"])
     if obj, ok := dataMap["embeddedOverallStatusToken"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

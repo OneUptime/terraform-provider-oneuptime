@@ -591,111 +591,15 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["responseTimeInMinutes"].(float64); ok {
-        data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["responseTimeInMinutes"].(int); ok {
-        data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["responseTimeInMinutes"].(int64); ok {
-        data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["responseTimeInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResponseTimeInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ResponseTimeInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["resolutionTimeInMinutes"].(float64); ok {
-        data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["resolutionTimeInMinutes"].(int); ok {
-        data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["resolutionTimeInMinutes"].(int64); ok {
-        data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["resolutionTimeInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResolutionTimeInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ResolutionTimeInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["atRiskThresholdInPercentage"].(float64); ok {
-        data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["atRiskThresholdInPercentage"].(int); ok {
-        data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["atRiskThresholdInPercentage"].(int64); ok {
-        data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["atRiskThresholdInPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AtRiskThresholdInPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AtRiskThresholdInPercentage = types.NumberNull()
-    }
-    if val, ok := dataMap["internalNoteReminderIntervalInMinutes"].(float64); ok {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["internalNoteReminderIntervalInMinutes"].(int); ok {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["internalNoteReminderIntervalInMinutes"].(int64); ok {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["internalNoteReminderIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InternalNoteReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InternalNoteReminderIntervalInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["publicNoteReminderIntervalInMinutes"].(float64); ok {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["publicNoteReminderIntervalInMinutes"].(int); ok {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["publicNoteReminderIntervalInMinutes"].(int64); ok {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["publicNoteReminderIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PublicNoteReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PublicNoteReminderIntervalInMinutes = types.NumberNull()
-    }
+    data.ResponseTimeInMinutes = numberFromAPI(data.ResponseTimeInMinutes, dataMap["responseTimeInMinutes"])
+    data.ResolutionTimeInMinutes = numberFromAPI(data.ResolutionTimeInMinutes, dataMap["resolutionTimeInMinutes"])
+    data.AtRiskThresholdInPercentage = numberFromAPI(data.AtRiskThresholdInPercentage, dataMap["atRiskThresholdInPercentage"])
+    data.InternalNoteReminderIntervalInMinutes = numberFromAPI(data.InternalNoteReminderIntervalInMinutes, dataMap["internalNoteReminderIntervalInMinutes"])
+    data.PublicNoteReminderIntervalInMinutes = numberFromAPI(data.PublicNoteReminderIntervalInMinutes, dataMap["publicNoteReminderIntervalInMinutes"])
     if obj, ok := dataMap["internalNoteReminderTemplate"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1238,111 +1142,15 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["responseTimeInMinutes"].(float64); ok {
-        data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["responseTimeInMinutes"].(int); ok {
-        data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["responseTimeInMinutes"].(int64); ok {
-        data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["responseTimeInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResponseTimeInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ResponseTimeInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["resolutionTimeInMinutes"].(float64); ok {
-        data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["resolutionTimeInMinutes"].(int); ok {
-        data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["resolutionTimeInMinutes"].(int64); ok {
-        data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["resolutionTimeInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResolutionTimeInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ResolutionTimeInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["atRiskThresholdInPercentage"].(float64); ok {
-        data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["atRiskThresholdInPercentage"].(int); ok {
-        data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["atRiskThresholdInPercentage"].(int64); ok {
-        data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["atRiskThresholdInPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AtRiskThresholdInPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AtRiskThresholdInPercentage = types.NumberNull()
-    }
-    if val, ok := dataMap["internalNoteReminderIntervalInMinutes"].(float64); ok {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["internalNoteReminderIntervalInMinutes"].(int); ok {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["internalNoteReminderIntervalInMinutes"].(int64); ok {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["internalNoteReminderIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InternalNoteReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InternalNoteReminderIntervalInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["publicNoteReminderIntervalInMinutes"].(float64); ok {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["publicNoteReminderIntervalInMinutes"].(int); ok {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["publicNoteReminderIntervalInMinutes"].(int64); ok {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["publicNoteReminderIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PublicNoteReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PublicNoteReminderIntervalInMinutes = types.NumberNull()
-    }
+    data.ResponseTimeInMinutes = numberFromAPI(data.ResponseTimeInMinutes, dataMap["responseTimeInMinutes"])
+    data.ResolutionTimeInMinutes = numberFromAPI(data.ResolutionTimeInMinutes, dataMap["resolutionTimeInMinutes"])
+    data.AtRiskThresholdInPercentage = numberFromAPI(data.AtRiskThresholdInPercentage, dataMap["atRiskThresholdInPercentage"])
+    data.InternalNoteReminderIntervalInMinutes = numberFromAPI(data.InternalNoteReminderIntervalInMinutes, dataMap["internalNoteReminderIntervalInMinutes"])
+    data.PublicNoteReminderIntervalInMinutes = numberFromAPI(data.PublicNoteReminderIntervalInMinutes, dataMap["publicNoteReminderIntervalInMinutes"])
     if obj, ok := dataMap["internalNoteReminderTemplate"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1974,111 +1782,15 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["responseTimeInMinutes"].(float64); ok {
-        data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["responseTimeInMinutes"].(int); ok {
-        data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["responseTimeInMinutes"].(int64); ok {
-        data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["responseTimeInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResponseTimeInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ResponseTimeInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["resolutionTimeInMinutes"].(float64); ok {
-        data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["resolutionTimeInMinutes"].(int); ok {
-        data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["resolutionTimeInMinutes"].(int64); ok {
-        data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["resolutionTimeInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResolutionTimeInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ResolutionTimeInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["atRiskThresholdInPercentage"].(float64); ok {
-        data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["atRiskThresholdInPercentage"].(int); ok {
-        data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["atRiskThresholdInPercentage"].(int64); ok {
-        data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["atRiskThresholdInPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AtRiskThresholdInPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AtRiskThresholdInPercentage = types.NumberNull()
-    }
-    if val, ok := dataMap["internalNoteReminderIntervalInMinutes"].(float64); ok {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["internalNoteReminderIntervalInMinutes"].(int); ok {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["internalNoteReminderIntervalInMinutes"].(int64); ok {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["internalNoteReminderIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InternalNoteReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InternalNoteReminderIntervalInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["publicNoteReminderIntervalInMinutes"].(float64); ok {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["publicNoteReminderIntervalInMinutes"].(int); ok {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["publicNoteReminderIntervalInMinutes"].(int64); ok {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["publicNoteReminderIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PublicNoteReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PublicNoteReminderIntervalInMinutes = types.NumberNull()
-    }
+    data.ResponseTimeInMinutes = numberFromAPI(data.ResponseTimeInMinutes, dataMap["responseTimeInMinutes"])
+    data.ResolutionTimeInMinutes = numberFromAPI(data.ResolutionTimeInMinutes, dataMap["resolutionTimeInMinutes"])
+    data.AtRiskThresholdInPercentage = numberFromAPI(data.AtRiskThresholdInPercentage, dataMap["atRiskThresholdInPercentage"])
+    data.InternalNoteReminderIntervalInMinutes = numberFromAPI(data.InternalNoteReminderIntervalInMinutes, dataMap["internalNoteReminderIntervalInMinutes"])
+    data.PublicNoteReminderIntervalInMinutes = numberFromAPI(data.PublicNoteReminderIntervalInMinutes, dataMap["publicNoteReminderIntervalInMinutes"])
     if obj, ok := dataMap["internalNoteReminderTemplate"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

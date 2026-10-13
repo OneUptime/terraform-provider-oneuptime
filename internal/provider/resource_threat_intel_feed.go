@@ -661,40 +661,8 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["pollIntervalInMinutes"].(float64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pollIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PollIntervalInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["minimumConfidence"].(float64); ok {
-        data.MinimumConfidence = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumConfidence"].(int); ok {
-        data.MinimumConfidence = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumConfidence"].(int64); ok {
-        data.MinimumConfidence = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumConfidence"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumConfidence = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumConfidence = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumConfidence = types.NumberNull()
-    }
+    data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, dataMap["pollIntervalInMinutes"])
+    data.MinimumConfidence = numberFromAPI(data.MinimumConfidence, dataMap["minimumConfidence"])
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     }
@@ -1342,40 +1310,8 @@ func (r *ThreatIntelFeedResource) Read(ctx context.Context, req resource.ReadReq
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["pollIntervalInMinutes"].(float64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pollIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PollIntervalInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["minimumConfidence"].(float64); ok {
-        data.MinimumConfidence = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumConfidence"].(int); ok {
-        data.MinimumConfidence = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumConfidence"].(int64); ok {
-        data.MinimumConfidence = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumConfidence"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumConfidence = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumConfidence = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumConfidence = types.NumberNull()
-    }
+    data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, dataMap["pollIntervalInMinutes"])
+    data.MinimumConfidence = numberFromAPI(data.MinimumConfidence, dataMap["minimumConfidence"])
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     }
@@ -2103,40 +2039,8 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["pollIntervalInMinutes"].(float64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pollIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PollIntervalInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["minimumConfidence"].(float64); ok {
-        data.MinimumConfidence = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumConfidence"].(int); ok {
-        data.MinimumConfidence = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumConfidence"].(int64); ok {
-        data.MinimumConfidence = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumConfidence"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumConfidence = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumConfidence = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumConfidence = types.NumberNull()
-    }
+    data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, dataMap["pollIntervalInMinutes"])
+    data.MinimumConfidence = numberFromAPI(data.MinimumConfidence, dataMap["minimumConfidence"])
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     }

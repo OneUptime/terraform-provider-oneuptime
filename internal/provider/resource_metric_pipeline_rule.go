@@ -830,43 +830,11 @@ func (r *MetricPipelineRuleResource) Create(ctx context.Context, req resource.Cr
     } else {
         data.RedactReplacement = types.StringNull()
     }
-    if val, ok := dataMap["samplePercentage"].(float64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["samplePercentage"].(int); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["samplePercentage"].(int64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["samplePercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SamplePercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SamplePercentage = types.NumberNull()
-    }
+    data.SamplePercentage = numberFromAPI(data.SamplePercentage, dataMap["samplePercentage"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sortOrder"].(int); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sortOrder"].(int64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, dataMap["sortOrder"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1425,43 +1393,11 @@ func (r *MetricPipelineRuleResource) Read(ctx context.Context, req resource.Read
     } else {
         data.RedactReplacement = types.StringNull()
     }
-    if val, ok := dataMap["samplePercentage"].(float64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["samplePercentage"].(int); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["samplePercentage"].(int64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["samplePercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SamplePercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SamplePercentage = types.NumberNull()
-    }
+    data.SamplePercentage = numberFromAPI(data.SamplePercentage, dataMap["samplePercentage"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sortOrder"].(int); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sortOrder"].(int64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, dataMap["sortOrder"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2102,43 +2038,11 @@ func (r *MetricPipelineRuleResource) Update(ctx context.Context, req resource.Up
     } else {
         data.RedactReplacement = types.StringNull()
     }
-    if val, ok := dataMap["samplePercentage"].(float64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["samplePercentage"].(int); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["samplePercentage"].(int64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["samplePercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SamplePercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SamplePercentage = types.NumberNull()
-    }
+    data.SamplePercentage = numberFromAPI(data.SamplePercentage, dataMap["samplePercentage"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sortOrder"].(int); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sortOrder"].(int64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, dataMap["sortOrder"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)

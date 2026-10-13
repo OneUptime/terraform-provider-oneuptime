@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -553,17 +552,7 @@ func (d *WhatsappLogDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.Status = types.StringNull()
     }
-    if val, ok := item["whatsAppCostInUSDCents"].(float64); ok {
-        data.WhatsAppCostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["whatsAppCostInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.WhatsAppCostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WhatsAppCostInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.WhatsAppCostInUsdCents = types.NumberNull()
-    }
+    data.WhatsAppCostInUsdCents = numberFromAPI(data.WhatsAppCostInUsdCents, item["whatsAppCostInUSDCents"])
     if obj, ok := item["incidentId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.IncidentId = types.StringValue(val)

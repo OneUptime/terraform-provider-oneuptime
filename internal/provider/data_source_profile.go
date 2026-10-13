@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -875,17 +874,7 @@ func (d *ProfileDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.ContainerEntityKey = types.StringNull()
     }
-    if val, ok := item["sampleCount"].(float64); ok {
-        data.SampleCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sampleCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SampleCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SampleCount = types.NumberNull()
-        }
-    } else {
-        data.SampleCount = types.NumberNull()
-    }
+    data.SampleCount = numberFromAPI(data.SampleCount, item["sampleCount"])
     if obj, ok := item["originalPayloadFormat"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.OriginalPayloadFormat = types.StringValue(val)

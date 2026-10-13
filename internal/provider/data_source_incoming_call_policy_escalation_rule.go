@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -386,28 +385,8 @@ func (d *IncomingCallPolicyEscalationRuleDataSource) Read(ctx context.Context, r
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := item["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["order"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        data.Order = types.NumberNull()
-    }
-    if val, ok := item["escalateAfterSeconds"].(float64); ok {
-        data.EscalateAfterSeconds = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["escalateAfterSeconds"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.EscalateAfterSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EscalateAfterSeconds = types.NumberNull()
-        }
-    } else {
-        data.EscalateAfterSeconds = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, item["order"])
+    data.EscalateAfterSeconds = numberFromAPI(data.EscalateAfterSeconds, item["escalateAfterSeconds"])
     if obj, ok := item["onCallDutyPolicyScheduleId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.OnCallDutyPolicyScheduleId = types.StringValue(val)

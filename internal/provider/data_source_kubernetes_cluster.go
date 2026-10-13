@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -643,39 +642,9 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["nodeCount"].(float64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["nodeCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.NodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NodeCount = types.NumberNull()
-        }
-    } else {
-        data.NodeCount = types.NumberNull()
-    }
-    if val, ok := item["podCount"].(float64); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["podCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PodCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PodCount = types.NumberNull()
-        }
-    } else {
-        data.PodCount = types.NumberNull()
-    }
-    if val, ok := item["namespaceCount"].(float64); ok {
-        data.NamespaceCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["namespaceCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.NamespaceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NamespaceCount = types.NumberNull()
-        }
-    } else {
-        data.NamespaceCount = types.NumberNull()
-    }
+    data.NodeCount = numberFromAPI(data.NodeCount, item["nodeCount"])
+    data.PodCount = numberFromAPI(data.PodCount, item["podCount"])
+    data.NamespaceCount = numberFromAPI(data.NamespaceCount, item["namespaceCount"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)
@@ -756,17 +725,7 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)

@@ -546,23 +546,7 @@ func (r *NetworkAlertPolicyResource) Create(ctx context.Context, req resource.Cr
     } else {
         data.LastSyncError = types.StringNull()
     }
-    if val, ok := dataMap["coveredDeviceCount"].(float64); ok {
-        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["coveredDeviceCount"].(int); ok {
-        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["coveredDeviceCount"].(int64); ok {
-        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["coveredDeviceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CoveredDeviceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CoveredDeviceCount = types.NumberNull()
-    }
+    data.CoveredDeviceCount = numberFromAPI(data.CoveredDeviceCount, dataMap["coveredDeviceCount"])
     if obj, ok := dataMap["templateSyncedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.TemplateSyncedAt = NewRFC3339Value(val)
@@ -919,23 +903,7 @@ func (r *NetworkAlertPolicyResource) Read(ctx context.Context, req resource.Read
     } else {
         data.LastSyncError = types.StringNull()
     }
-    if val, ok := dataMap["coveredDeviceCount"].(float64); ok {
-        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["coveredDeviceCount"].(int); ok {
-        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["coveredDeviceCount"].(int64); ok {
-        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["coveredDeviceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CoveredDeviceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CoveredDeviceCount = types.NumberNull()
-    }
+    data.CoveredDeviceCount = numberFromAPI(data.CoveredDeviceCount, dataMap["coveredDeviceCount"])
     if obj, ok := dataMap["templateSyncedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.TemplateSyncedAt = NewRFC3339Value(val)
@@ -1342,23 +1310,7 @@ func (r *NetworkAlertPolicyResource) Update(ctx context.Context, req resource.Up
     } else {
         data.LastSyncError = types.StringNull()
     }
-    if val, ok := dataMap["coveredDeviceCount"].(float64); ok {
-        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["coveredDeviceCount"].(int); ok {
-        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["coveredDeviceCount"].(int64); ok {
-        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["coveredDeviceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CoveredDeviceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CoveredDeviceCount = types.NumberNull()
-    }
+    data.CoveredDeviceCount = numberFromAPI(data.CoveredDeviceCount, dataMap["coveredDeviceCount"])
     if obj, ok := dataMap["templateSyncedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.TemplateSyncedAt = NewRFC3339Value(val)

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -511,17 +510,7 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
     } else {
         data.LastUsedAt = types.StringNull()
     }
-    if val, ok := item["requestsPerMinuteLimit"].(float64); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["requestsPerMinuteLimit"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RequestsPerMinuteLimit = types.NumberNull()
-        }
-    } else {
-        data.RequestsPerMinuteLimit = types.NumberNull()
-    }
+    data.RequestsPerMinuteLimit = numberFromAPI(data.RequestsPerMinuteLimit, item["requestsPerMinuteLimit"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

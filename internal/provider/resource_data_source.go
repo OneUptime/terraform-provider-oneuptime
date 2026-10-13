@@ -568,23 +568,7 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.DatabaseHost = types.StringNull()
     }
-    if val, ok := dataMap["databasePort"].(float64); ok {
-        data.DatabasePort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["databasePort"].(int); ok {
-        data.DatabasePort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["databasePort"].(int64); ok {
-        data.DatabasePort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["databasePort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DatabasePort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DatabasePort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DatabasePort = types.NumberNull()
-    }
+    data.DatabasePort = numberFromAPI(data.DatabasePort, dataMap["databasePort"])
     if obj, ok := dataMap["databaseName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1065,23 +1049,7 @@ func (r *DataSourceResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.DatabaseHost = types.StringNull()
     }
-    if val, ok := dataMap["databasePort"].(float64); ok {
-        data.DatabasePort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["databasePort"].(int); ok {
-        data.DatabasePort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["databasePort"].(int64); ok {
-        data.DatabasePort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["databasePort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DatabasePort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DatabasePort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DatabasePort = types.NumberNull()
-    }
+    data.DatabasePort = numberFromAPI(data.DatabasePort, dataMap["databasePort"])
     if obj, ok := dataMap["databaseName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1638,23 +1606,7 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.DatabaseHost = types.StringNull()
     }
-    if val, ok := dataMap["databasePort"].(float64); ok {
-        data.DatabasePort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["databasePort"].(int); ok {
-        data.DatabasePort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["databasePort"].(int64); ok {
-        data.DatabasePort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["databasePort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DatabasePort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DatabasePort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DatabasePort = types.NumberNull()
-    }
+    data.DatabasePort = numberFromAPI(data.DatabasePort, dataMap["databasePort"])
     if obj, ok := dataMap["databaseName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

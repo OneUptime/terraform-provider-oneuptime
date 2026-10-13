@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -428,17 +427,7 @@ func (d *TableViewDataSource) Read(ctx context.Context, req datasource.ReadReque
     } else {
         data.Sort = types.StringNull()
     }
-    if val, ok := item["itemsOnPage"].(float64); ok {
-        data.ItemsOnPage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["itemsOnPage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ItemsOnPage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ItemsOnPage = types.NumberNull()
-        }
-    } else {
-        data.ItemsOnPage = types.NumberNull()
-    }
+    data.ItemsOnPage = numberFromAPI(data.ItemsOnPage, item["itemsOnPage"])
     if obj, ok := item["facets"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Facets = types.StringValue(val)

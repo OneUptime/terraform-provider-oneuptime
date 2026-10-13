@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -454,17 +453,7 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.AttachedNetworkDeviceId = types.StringNull()
     }
-    if val, ok := item["attachedInterfaceIndex"].(float64); ok {
-        data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["attachedInterfaceIndex"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AttachedInterfaceIndex = types.NumberNull()
-        }
-    } else {
-        data.AttachedInterfaceIndex = types.NumberNull()
-    }
+    data.AttachedInterfaceIndex = numberFromAPI(data.AttachedInterfaceIndex, item["attachedInterfaceIndex"])
     if obj, ok := item["attachedPortName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.AttachedPortName = types.StringValue(val)
@@ -482,17 +471,7 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.AttachedPortName = types.StringNull()
     }
-    if val, ok := item["vlanId"].(float64); ok {
-        data.VlanId = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["vlanId"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.VlanId = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VlanId = types.NumberNull()
-        }
-    } else {
-        data.VlanId = types.NumberNull()
-    }
+    data.VlanId = numberFromAPI(data.VlanId, item["vlanId"])
     if obj, ok := item["siteId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SiteId = types.StringValue(val)

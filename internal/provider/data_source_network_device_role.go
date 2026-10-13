@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -441,17 +440,7 @@ func (d *NetworkDeviceRoleDataSource) Read(ctx context.Context, req datasource.R
     } else {
         data.IsSnmpWalkable = types.BoolNull()
     }
-    if val, ok := item["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["order"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, item["order"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -633,17 +632,7 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
     } else {
         data.AcknowledgedByTeamId = types.StringNull()
     }
-    if val, ok := item["lastExecutedEscalationRuleOrder"].(float64); ok {
-        data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["lastExecutedEscalationRuleOrder"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LastExecutedEscalationRuleOrder = types.NumberNull()
-        }
-    } else {
-        data.LastExecutedEscalationRuleOrder = types.NumberNull()
-    }
+    data.LastExecutedEscalationRuleOrder = numberFromAPI(data.LastExecutedEscalationRuleOrder, item["lastExecutedEscalationRuleOrder"])
     if obj, ok := item["lastExecutedEscalationRuleId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.LastExecutedEscalationRuleId = types.StringValue(val)
@@ -661,28 +650,8 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
     } else {
         data.LastExecutedEscalationRuleId = types.StringNull()
     }
-    if val, ok := item["onCallPolicyExecutionRepeatCount"].(float64); ok {
-        data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["onCallPolicyExecutionRepeatCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnCallPolicyExecutionRepeatCount = types.NumberNull()
-        }
-    } else {
-        data.OnCallPolicyExecutionRepeatCount = types.NumberNull()
-    }
-    if val, ok := item["scheduleGapRetryCount"].(float64); ok {
-        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["scheduleGapRetryCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScheduleGapRetryCount = types.NumberNull()
-        }
-    } else {
-        data.ScheduleGapRetryCount = types.NumberNull()
-    }
+    data.OnCallPolicyExecutionRepeatCount = numberFromAPI(data.OnCallPolicyExecutionRepeatCount, item["onCallPolicyExecutionRepeatCount"])
+    data.ScheduleGapRetryCount = numberFromAPI(data.ScheduleGapRetryCount, item["scheduleGapRetryCount"])
     if obj, ok := item["triggeredByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TriggeredByUserId = types.StringValue(val)

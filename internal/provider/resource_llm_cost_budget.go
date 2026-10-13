@@ -413,23 +413,7 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["dailyBudgetInUSD"].(float64); ok {
-        data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["dailyBudgetInUSD"].(int); ok {
-        data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["dailyBudgetInUSD"].(int64); ok {
-        data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["dailyBudgetInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DailyBudgetInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DailyBudgetInUsd = types.NumberNull()
-    }
+    data.DailyBudgetInUsd = numberFromAPI(data.DailyBudgetInUsd, dataMap["dailyBudgetInUSD"])
     if obj, ok := dataMap["serviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -563,23 +547,7 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["currentDaySpendInUSD"].(float64); ok {
-        data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["currentDaySpendInUSD"].(int); ok {
-        data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["currentDaySpendInUSD"].(int64); ok {
-        data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["currentDaySpendInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentDaySpendInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CurrentDaySpendInUsd = types.NumberNull()
-    }
+    data.CurrentDaySpendInUsd = numberFromAPI(data.CurrentDaySpendInUsd, dataMap["currentDaySpendInUSD"])
     if obj, ok := dataMap["spendLastEvaluatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.SpendLastEvaluatedAt = NewRFC3339Value(val)
@@ -792,23 +760,7 @@ func (r *LlmCostBudgetResource) Read(ctx context.Context, req resource.ReadReque
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["dailyBudgetInUSD"].(float64); ok {
-        data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["dailyBudgetInUSD"].(int); ok {
-        data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["dailyBudgetInUSD"].(int64); ok {
-        data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["dailyBudgetInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DailyBudgetInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DailyBudgetInUsd = types.NumberNull()
-    }
+    data.DailyBudgetInUsd = numberFromAPI(data.DailyBudgetInUsd, dataMap["dailyBudgetInUSD"])
     if obj, ok := dataMap["serviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -942,23 +894,7 @@ func (r *LlmCostBudgetResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["currentDaySpendInUSD"].(float64); ok {
-        data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["currentDaySpendInUSD"].(int); ok {
-        data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["currentDaySpendInUSD"].(int64); ok {
-        data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["currentDaySpendInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentDaySpendInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CurrentDaySpendInUsd = types.NumberNull()
-    }
+    data.CurrentDaySpendInUsd = numberFromAPI(data.CurrentDaySpendInUsd, dataMap["currentDaySpendInUSD"])
     if obj, ok := dataMap["spendLastEvaluatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.SpendLastEvaluatedAt = NewRFC3339Value(val)
@@ -1227,23 +1163,7 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["dailyBudgetInUSD"].(float64); ok {
-        data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["dailyBudgetInUSD"].(int); ok {
-        data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["dailyBudgetInUSD"].(int64); ok {
-        data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["dailyBudgetInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DailyBudgetInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DailyBudgetInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DailyBudgetInUsd = types.NumberNull()
-    }
+    data.DailyBudgetInUsd = numberFromAPI(data.DailyBudgetInUsd, dataMap["dailyBudgetInUSD"])
     if obj, ok := dataMap["serviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1377,23 +1297,7 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["currentDaySpendInUSD"].(float64); ok {
-        data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["currentDaySpendInUSD"].(int); ok {
-        data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["currentDaySpendInUSD"].(int64); ok {
-        data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["currentDaySpendInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentDaySpendInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CurrentDaySpendInUsd = types.NumberNull()
-    }
+    data.CurrentDaySpendInUsd = numberFromAPI(data.CurrentDaySpendInUsd, dataMap["currentDaySpendInUSD"])
     if obj, ok := dataMap["spendLastEvaluatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.SpendLastEvaluatedAt = NewRFC3339Value(val)

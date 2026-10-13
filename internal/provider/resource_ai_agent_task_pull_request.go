@@ -650,40 +650,8 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
     } else {
         data.PullRequestUrl = types.StringNull()
     }
-    if val, ok := dataMap["pullRequestId"].(float64); ok {
-        data.PullRequestId = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pullRequestId"].(int); ok {
-        data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pullRequestId"].(int64); ok {
-        data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pullRequestId"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PullRequestId = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PullRequestId = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PullRequestId = types.NumberNull()
-    }
-    if val, ok := dataMap["pullRequestNumber"].(float64); ok {
-        data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pullRequestNumber"].(int); ok {
-        data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pullRequestNumber"].(int64); ok {
-        data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pullRequestNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PullRequestNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PullRequestNumber = types.NumberNull()
-    }
+    data.PullRequestId = numberFromAPI(data.PullRequestId, dataMap["pullRequestId"])
+    data.PullRequestNumber = numberFromAPI(data.PullRequestNumber, dataMap["pullRequestNumber"])
     if obj, ok := dataMap["pullRequestState"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1367,40 +1335,8 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
     } else {
         data.PullRequestUrl = types.StringNull()
     }
-    if val, ok := dataMap["pullRequestId"].(float64); ok {
-        data.PullRequestId = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pullRequestId"].(int); ok {
-        data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pullRequestId"].(int64); ok {
-        data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pullRequestId"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PullRequestId = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PullRequestId = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PullRequestId = types.NumberNull()
-    }
-    if val, ok := dataMap["pullRequestNumber"].(float64); ok {
-        data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pullRequestNumber"].(int); ok {
-        data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pullRequestNumber"].(int64); ok {
-        data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pullRequestNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PullRequestNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PullRequestNumber = types.NumberNull()
-    }
+    data.PullRequestId = numberFromAPI(data.PullRequestId, dataMap["pullRequestId"])
+    data.PullRequestNumber = numberFromAPI(data.PullRequestNumber, dataMap["pullRequestNumber"])
     if obj, ok := dataMap["pullRequestState"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2126,40 +2062,8 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
     } else {
         data.PullRequestUrl = types.StringNull()
     }
-    if val, ok := dataMap["pullRequestId"].(float64); ok {
-        data.PullRequestId = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pullRequestId"].(int); ok {
-        data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pullRequestId"].(int64); ok {
-        data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pullRequestId"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PullRequestId = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PullRequestId = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PullRequestId = types.NumberNull()
-    }
-    if val, ok := dataMap["pullRequestNumber"].(float64); ok {
-        data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pullRequestNumber"].(int); ok {
-        data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pullRequestNumber"].(int64); ok {
-        data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pullRequestNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PullRequestNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PullRequestNumber = types.NumberNull()
-    }
+    data.PullRequestId = numberFromAPI(data.PullRequestId, dataMap["pullRequestId"])
+    data.PullRequestNumber = numberFromAPI(data.PullRequestNumber, dataMap["pullRequestNumber"])
     if obj, ok := dataMap["pullRequestState"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

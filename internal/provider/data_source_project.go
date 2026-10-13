@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -1229,17 +1228,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.PaymentProviderMeteredSubscriptionId = types.StringNull()
     }
-    if val, ok := item["paymentProviderSubscriptionSeats"].(float64); ok {
-        data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["paymentProviderSubscriptionSeats"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PaymentProviderSubscriptionSeats = types.NumberNull()
-        }
-    } else {
-        data.PaymentProviderSubscriptionSeats = types.NumberNull()
-    }
+    data.PaymentProviderSubscriptionSeats = numberFromAPI(data.PaymentProviderSubscriptionSeats, item["paymentProviderSubscriptionSeats"])
     if obj, ok := item["trialEndsAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TrialEndsAt = types.StringValue(val)
@@ -1398,17 +1387,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.IsFeatureFlagMonitorGroupsEnabled = types.BoolNull()
     }
-    if val, ok := item["workflowRunsInLast30Days"].(float64); ok {
-        data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["workflowRunsInLast30Days"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WorkflowRunsInLast30Days = types.NumberNull()
-        }
-    } else {
-        data.WorkflowRunsInLast30Days = types.NumberNull()
-    }
+    data.WorkflowRunsInLast30Days = numberFromAPI(data.WorkflowRunsInLast30Days, item["workflowRunsInLast30Days"])
     if val, ok := item["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
     } else {
@@ -1516,39 +1495,9 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
     }
-    if val, ok := item["smsOrCallCurrentBalanceInUSDCents"].(float64); ok {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["smsOrCallCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
-    }
-    if val, ok := item["autoRechargeSmsOrCallByBalanceInUSD"].(float64); ok {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["autoRechargeSmsOrCallByBalanceInUSD"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
-        }
-    } else {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
-    }
-    if val, ok := item["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(float64); ok {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
-        }
-    } else {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
-    }
+    data.SmsOrCallCurrentBalanceInUsdCents = numberFromAPI(data.SmsOrCallCurrentBalanceInUsdCents, item["smsOrCallCurrentBalanceInUSDCents"])
+    data.AutoRechargeSmsOrCallByBalanceInUsd = numberFromAPI(data.AutoRechargeSmsOrCallByBalanceInUsd, item["autoRechargeSmsOrCallByBalanceInUSD"])
+    data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd, item["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"])
     if val, ok := item["enableSmsNotifications"].(bool); ok {
         data.EnableSmsNotifications = types.BoolValue(val)
     } else {
@@ -1579,66 +1528,16 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolNull()
     }
-    if val, ok := item["aiCurrentBalanceInUSDCents"].(float64); ok {
-        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["aiCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiCurrentBalanceInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.AiCurrentBalanceInUsdCents = types.NumberNull()
-    }
-    if val, ok := item["autoAiRechargeByBalanceInUSD"].(float64); ok {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["autoAiRechargeByBalanceInUSD"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
-        }
-    } else {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
-    }
-    if val, ok := item["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(float64); ok {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
-        }
-    } else {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
-    }
+    data.AiCurrentBalanceInUsdCents = numberFromAPI(data.AiCurrentBalanceInUsdCents, item["aiCurrentBalanceInUSDCents"])
+    data.AutoAiRechargeByBalanceInUsd = numberFromAPI(data.AutoAiRechargeByBalanceInUsd, item["autoAiRechargeByBalanceInUSD"])
+    data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeAiWhenCurrentBalanceFallsInUsd, item["autoRechargeAiWhenCurrentBalanceFallsInUSD"])
     if val, ok := item["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
     } else {
         data.EnableAi = types.BoolNull()
     }
-    if val, ok := item["aiDailyTokenLimit"].(float64); ok {
-        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["aiDailyTokenLimit"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyTokenLimit = types.NumberNull()
-        }
-    } else {
-        data.AiDailyTokenLimit = types.NumberNull()
-    }
-    if val, ok := item["aiDailySpendLimitInUSD"].(float64); ok {
-        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["aiDailySpendLimitInUSD"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailySpendLimitInUsd = types.NumberNull()
-        }
-    } else {
-        data.AiDailySpendLimitInUsd = types.NumberNull()
-    }
+    data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, item["aiDailyTokenLimit"])
+    data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, item["aiDailySpendLimitInUSD"])
     if val, ok := item["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
     } else {
@@ -1726,83 +1625,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.AlertInvestigationMinimumSeverityId = types.StringNull()
     }
-    if val, ok := item["aiDailyAutonomousTokenLimit"].(float64); ok {
-        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["aiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        data.AiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := item["incidentAiDailyAutonomousTokenLimit"].(float64); ok {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["incidentAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := item["alertAiDailyAutonomousTokenLimit"].(float64); ok {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["alertAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := item["aiDailyFixTaskLimit"].(float64); ok {
-        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["aiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        data.AiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := item["incidentAiDailyFixTaskLimit"].(float64); ok {
-        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["incidentAiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        data.IncidentAiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := item["alertAiDailyFixTaskLimit"].(float64); ok {
-        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["alertAiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        data.AlertAiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := item["alertInvestigationDedupeWindowMinutes"].(float64); ok {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["alertInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
-    }
+    data.AiDailyAutonomousTokenLimit = numberFromAPI(data.AiDailyAutonomousTokenLimit, item["aiDailyAutonomousTokenLimit"])
+    data.IncidentAiDailyAutonomousTokenLimit = numberFromAPI(data.IncidentAiDailyAutonomousTokenLimit, item["incidentAiDailyAutonomousTokenLimit"])
+    data.AlertAiDailyAutonomousTokenLimit = numberFromAPI(data.AlertAiDailyAutonomousTokenLimit, item["alertAiDailyAutonomousTokenLimit"])
+    data.AiDailyFixTaskLimit = numberFromAPI(data.AiDailyFixTaskLimit, item["aiDailyFixTaskLimit"])
+    data.IncidentAiDailyFixTaskLimit = numberFromAPI(data.IncidentAiDailyFixTaskLimit, item["incidentAiDailyFixTaskLimit"])
+    data.AlertAiDailyFixTaskLimit = numberFromAPI(data.AlertAiDailyFixTaskLimit, item["alertAiDailyFixTaskLimit"])
+    data.AlertInvestigationDedupeWindowMinutes = numberFromAPI(data.AlertInvestigationDedupeWindowMinutes, item["alertInvestigationDedupeWindowMinutes"])
     if obj, ok := item["incidentInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.IncidentInvestigationMinimumSeverityId = types.StringValue(val)
@@ -1820,72 +1649,12 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.IncidentInvestigationMinimumSeverityId = types.StringNull()
     }
-    if val, ok := item["incidentInvestigationDedupeWindowMinutes"].(float64); ok {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["incidentInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
-    }
-    if val, ok := item["aiMaxConcurrentInvestigations"].(float64); ok {
-        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["aiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        data.AiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := item["incidentAiMaxConcurrentInvestigations"].(float64); ok {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["incidentAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := item["alertAiMaxConcurrentInvestigations"].(float64); ok {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["alertAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := item["incidentAiInvestigationTimeLimitInMinutes"].(float64); ok {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["incidentAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
-        }
-    } else {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
-    }
-    if val, ok := item["alertAiInvestigationTimeLimitInMinutes"].(float64); ok {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["alertAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
-        }
-    } else {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
-    }
+    data.IncidentInvestigationDedupeWindowMinutes = numberFromAPI(data.IncidentInvestigationDedupeWindowMinutes, item["incidentInvestigationDedupeWindowMinutes"])
+    data.AiMaxConcurrentInvestigations = numberFromAPI(data.AiMaxConcurrentInvestigations, item["aiMaxConcurrentInvestigations"])
+    data.IncidentAiMaxConcurrentInvestigations = numberFromAPI(data.IncidentAiMaxConcurrentInvestigations, item["incidentAiMaxConcurrentInvestigations"])
+    data.AlertAiMaxConcurrentInvestigations = numberFromAPI(data.AlertAiMaxConcurrentInvestigations, item["alertAiMaxConcurrentInvestigations"])
+    data.IncidentAiInvestigationTimeLimitInMinutes = numberFromAPI(data.IncidentAiInvestigationTimeLimitInMinutes, item["incidentAiInvestigationTimeLimitInMinutes"])
+    data.AlertAiInvestigationTimeLimitInMinutes = numberFromAPI(data.AlertAiInvestigationTimeLimitInMinutes, item["alertAiInvestigationTimeLimitInMinutes"])
     if val, ok := item["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
     } else {
@@ -1991,28 +1760,8 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.GitHubAppInstallationId = types.StringNull()
     }
-    if val, ok := item["defaultMetricCardinalityBudget"].(float64); ok {
-        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["defaultMetricCardinalityBudget"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DefaultMetricCardinalityBudget = types.NumberNull()
-        }
-    } else {
-        data.DefaultMetricCardinalityBudget = types.NumberNull()
-    }
-    if val, ok := item["defaultTelemetryRetentionInDays"].(float64); ok {
-        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["defaultTelemetryRetentionInDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DefaultTelemetryRetentionInDays = types.NumberNull()
-        }
-    } else {
-        data.DefaultTelemetryRetentionInDays = types.NumberNull()
-    }
+    data.DefaultMetricCardinalityBudget = numberFromAPI(data.DefaultMetricCardinalityBudget, item["defaultMetricCardinalityBudget"])
+    data.DefaultTelemetryRetentionInDays = numberFromAPI(data.DefaultTelemetryRetentionInDays, item["defaultTelemetryRetentionInDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)
@@ -2057,17 +1806,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.IsSessionReplayAllowed = types.BoolNull()
     }
-    if val, ok := item["auditLogsRetentionInDays"].(float64); ok {
-        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["auditLogsRetentionInDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AuditLogsRetentionInDays = types.NumberNull()
-        }
-    } else {
-        data.AuditLogsRetentionInDays = types.NumberNull()
-    }
+    data.AuditLogsRetentionInDays = numberFromAPI(data.AuditLogsRetentionInDays, item["auditLogsRetentionInDays"])
     if val, ok := item["storeSystemEventsInAuditLogs"].(bool); ok {
         data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
     } else {

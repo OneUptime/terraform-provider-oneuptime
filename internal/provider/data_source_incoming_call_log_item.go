@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -455,28 +454,8 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
     } else {
         data.StatusMessage = types.StringNull()
     }
-    if val, ok := item["dialDurationInSeconds"].(float64); ok {
-        data.DialDurationInSeconds = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["dialDurationInSeconds"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DialDurationInSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DialDurationInSeconds = types.NumberNull()
-        }
-    } else {
-        data.DialDurationInSeconds = types.NumberNull()
-    }
-    if val, ok := item["callCostInUSDCents"].(float64); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["callCostInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallCostInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.CallCostInUsdCents = types.NumberNull()
-    }
+    data.DialDurationInSeconds = numberFromAPI(data.DialDurationInSeconds, item["dialDurationInSeconds"])
+    data.CallCostInUsdCents = numberFromAPI(data.CallCostInUsdCents, item["callCostInUSDCents"])
     if obj, ok := item["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.StartedAt = types.StringValue(val)

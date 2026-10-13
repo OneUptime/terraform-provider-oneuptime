@@ -598,23 +598,7 @@ func (r *IncomingCallPolicyResource) Create(ctx context.Context, req resource.Cr
     if val, ok := dataMap["repeatPolicyIfNoOneAnswers"].(bool); ok {
         data.RepeatPolicyIfNoOneAnswers = types.BoolValue(val)
     }
-    if val, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(float64); ok {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(int); ok {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(int64); ok {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RepeatPolicyIfNoOneAnswersTimes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberNull()
-    }
+    data.RepeatPolicyIfNoOneAnswersTimes = numberFromAPI(data.RepeatPolicyIfNoOneAnswersTimes, dataMap["repeatPolicyIfNoOneAnswersTimes"])
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1224,23 +1208,7 @@ func (r *IncomingCallPolicyResource) Read(ctx context.Context, req resource.Read
     if val, ok := dataMap["repeatPolicyIfNoOneAnswers"].(bool); ok {
         data.RepeatPolicyIfNoOneAnswers = types.BoolValue(val)
     }
-    if val, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(float64); ok {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(int); ok {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(int64); ok {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RepeatPolicyIfNoOneAnswersTimes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberNull()
-    }
+    data.RepeatPolicyIfNoOneAnswersTimes = numberFromAPI(data.RepeatPolicyIfNoOneAnswersTimes, dataMap["repeatPolicyIfNoOneAnswersTimes"])
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1910,23 +1878,7 @@ func (r *IncomingCallPolicyResource) Update(ctx context.Context, req resource.Up
     if val, ok := dataMap["repeatPolicyIfNoOneAnswers"].(bool); ok {
         data.RepeatPolicyIfNoOneAnswers = types.BoolValue(val)
     }
-    if val, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(float64); ok {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(int); ok {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(int64); ok {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["repeatPolicyIfNoOneAnswersTimes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RepeatPolicyIfNoOneAnswersTimes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberNull()
-    }
+    data.RepeatPolicyIfNoOneAnswersTimes = numberFromAPI(data.RepeatPolicyIfNoOneAnswersTimes, dataMap["repeatPolicyIfNoOneAnswersTimes"])
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value

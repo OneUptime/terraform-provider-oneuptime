@@ -781,23 +781,7 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     } else {
         data.TestCommand = types.StringNull()
     }
-    if val, ok := dataMap["maxOpenFixPullRequests"].(float64); ok {
-        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int); ok {
-        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int64); ok {
-        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["maxOpenFixPullRequests"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxOpenFixPullRequests = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MaxOpenFixPullRequests = types.NumberNull()
-    }
+    data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
     } else {
@@ -1507,23 +1491,7 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.TestCommand = types.StringNull()
     }
-    if val, ok := dataMap["maxOpenFixPullRequests"].(float64); ok {
-        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int); ok {
-        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int64); ok {
-        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["maxOpenFixPullRequests"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxOpenFixPullRequests = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MaxOpenFixPullRequests = types.NumberNull()
-    }
+    data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
     } else {
@@ -2296,23 +2264,7 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     } else {
         data.TestCommand = types.StringNull()
     }
-    if val, ok := dataMap["maxOpenFixPullRequests"].(float64); ok {
-        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int); ok {
-        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int64); ok {
-        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["maxOpenFixPullRequests"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxOpenFixPullRequests = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MaxOpenFixPullRequests = types.NumberNull()
-    }
+    data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
     } else {

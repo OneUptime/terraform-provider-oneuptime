@@ -768,23 +768,7 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     } else {
         data.AcknowledgedByTeamId = types.StringNull()
     }
-    if val, ok := dataMap["lastExecutedEscalationRuleOrder"].(float64); ok {
-        data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["lastExecutedEscalationRuleOrder"].(int); ok {
-        data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["lastExecutedEscalationRuleOrder"].(int64); ok {
-        data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["lastExecutedEscalationRuleOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LastExecutedEscalationRuleOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.LastExecutedEscalationRuleOrder = types.NumberNull()
-    }
+    data.LastExecutedEscalationRuleOrder = numberFromAPI(data.LastExecutedEscalationRuleOrder, dataMap["lastExecutedEscalationRuleOrder"])
     if obj, ok := dataMap["lastExecutedEscalationRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -822,23 +806,7 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     } else {
         data.LastExecutedEscalationRuleId = types.StringNull()
     }
-    if val, ok := dataMap["onCallPolicyExecutionRepeatCount"].(float64); ok {
-        data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["onCallPolicyExecutionRepeatCount"].(int); ok {
-        data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["onCallPolicyExecutionRepeatCount"].(int64); ok {
-        data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["onCallPolicyExecutionRepeatCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnCallPolicyExecutionRepeatCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OnCallPolicyExecutionRepeatCount = types.NumberNull()
-    }
+    data.OnCallPolicyExecutionRepeatCount = numberFromAPI(data.OnCallPolicyExecutionRepeatCount, dataMap["onCallPolicyExecutionRepeatCount"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -935,23 +903,7 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     } else {
         data.AcknowledgedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["scheduleGapRetryCount"].(float64); ok {
-        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["scheduleGapRetryCount"].(int); ok {
-        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["scheduleGapRetryCount"].(int64); ok {
-        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["scheduleGapRetryCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScheduleGapRetryCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ScheduleGapRetryCount = types.NumberNull()
-    }
+    data.ScheduleGapRetryCount = numberFromAPI(data.ScheduleGapRetryCount, dataMap["scheduleGapRetryCount"])
     if obj, ok := dataMap["triggeredByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1427,23 +1379,7 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
     } else {
         data.AcknowledgedByTeamId = types.StringNull()
     }
-    if val, ok := dataMap["lastExecutedEscalationRuleOrder"].(float64); ok {
-        data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["lastExecutedEscalationRuleOrder"].(int); ok {
-        data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["lastExecutedEscalationRuleOrder"].(int64); ok {
-        data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["lastExecutedEscalationRuleOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LastExecutedEscalationRuleOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.LastExecutedEscalationRuleOrder = types.NumberNull()
-    }
+    data.LastExecutedEscalationRuleOrder = numberFromAPI(data.LastExecutedEscalationRuleOrder, dataMap["lastExecutedEscalationRuleOrder"])
     if obj, ok := dataMap["lastExecutedEscalationRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1481,23 +1417,7 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
     } else {
         data.LastExecutedEscalationRuleId = types.StringNull()
     }
-    if val, ok := dataMap["onCallPolicyExecutionRepeatCount"].(float64); ok {
-        data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["onCallPolicyExecutionRepeatCount"].(int); ok {
-        data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["onCallPolicyExecutionRepeatCount"].(int64); ok {
-        data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["onCallPolicyExecutionRepeatCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnCallPolicyExecutionRepeatCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OnCallPolicyExecutionRepeatCount = types.NumberNull()
-    }
+    data.OnCallPolicyExecutionRepeatCount = numberFromAPI(data.OnCallPolicyExecutionRepeatCount, dataMap["onCallPolicyExecutionRepeatCount"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1594,23 +1514,7 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
     } else {
         data.AcknowledgedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["scheduleGapRetryCount"].(float64); ok {
-        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["scheduleGapRetryCount"].(int); ok {
-        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["scheduleGapRetryCount"].(int64); ok {
-        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["scheduleGapRetryCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScheduleGapRetryCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ScheduleGapRetryCount = types.NumberNull()
-    }
+    data.ScheduleGapRetryCount = numberFromAPI(data.ScheduleGapRetryCount, dataMap["scheduleGapRetryCount"])
     if obj, ok := dataMap["triggeredByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

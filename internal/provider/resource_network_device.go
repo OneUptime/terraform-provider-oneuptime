@@ -1686,23 +1686,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := dataMap["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["snmpPort"].(int); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["snmpPort"].(int64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, dataMap["snmpPort"])
     if obj, ok := dataMap["snmpV3Auth"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1965,23 +1949,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     if val, ok := dataMap["isPollingEnabled"].(bool); ok {
         data.IsPollingEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["pollingIntervalInMinutes"].(float64); ok {
-        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pollingIntervalInMinutes"].(int); ok {
-        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pollingIntervalInMinutes"].(int64); ok {
-        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pollingIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollingIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PollingIntervalInMinutes = types.NumberNull()
-    }
+    data.PollingIntervalInMinutes = numberFromAPI(data.PollingIntervalInMinutes, dataMap["pollingIntervalInMinutes"])
     if val, ok := dataMap["walkInterfaces"].(bool); ok {
         data.WalkInterfaces = types.BoolValue(val)
     }
@@ -2720,57 +2688,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.LastSnmpSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["interfacesTotal"].(float64); ok {
-        data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["interfacesTotal"].(int); ok {
-        data.InterfacesTotal = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["interfacesTotal"].(int64); ok {
-        data.InterfacesTotal = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["interfacesTotal"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesTotal = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InterfacesTotal = types.NumberNull()
-    }
-    if val, ok := dataMap["interfacesUp"].(float64); ok {
-        data.InterfacesUp = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["interfacesUp"].(int); ok {
-        data.InterfacesUp = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["interfacesUp"].(int64); ok {
-        data.InterfacesUp = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["interfacesUp"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesUp = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesUp = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InterfacesUp = types.NumberNull()
-    }
-    if val, ok := dataMap["interfacesDown"].(float64); ok {
-        data.InterfacesDown = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["interfacesDown"].(int); ok {
-        data.InterfacesDown = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["interfacesDown"].(int64); ok {
-        data.InterfacesDown = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["interfacesDown"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesDown = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesDown = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InterfacesDown = types.NumberNull()
-    }
+    data.InterfacesTotal = numberFromAPI(data.InterfacesTotal, dataMap["interfacesTotal"])
+    data.InterfacesUp = numberFromAPI(data.InterfacesUp, dataMap["interfacesUp"])
+    data.InterfacesDown = numberFromAPI(data.InterfacesDown, dataMap["interfacesDown"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -3764,23 +3684,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := dataMap["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["snmpPort"].(int); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["snmpPort"].(int64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, dataMap["snmpPort"])
     if obj, ok := dataMap["snmpV3Auth"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4043,23 +3947,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     if val, ok := dataMap["isPollingEnabled"].(bool); ok {
         data.IsPollingEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["pollingIntervalInMinutes"].(float64); ok {
-        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pollingIntervalInMinutes"].(int); ok {
-        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pollingIntervalInMinutes"].(int64); ok {
-        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pollingIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollingIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PollingIntervalInMinutes = types.NumberNull()
-    }
+    data.PollingIntervalInMinutes = numberFromAPI(data.PollingIntervalInMinutes, dataMap["pollingIntervalInMinutes"])
     if val, ok := dataMap["walkInterfaces"].(bool); ok {
         data.WalkInterfaces = types.BoolValue(val)
     }
@@ -4798,57 +4686,9 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.LastSnmpSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["interfacesTotal"].(float64); ok {
-        data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["interfacesTotal"].(int); ok {
-        data.InterfacesTotal = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["interfacesTotal"].(int64); ok {
-        data.InterfacesTotal = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["interfacesTotal"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesTotal = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InterfacesTotal = types.NumberNull()
-    }
-    if val, ok := dataMap["interfacesUp"].(float64); ok {
-        data.InterfacesUp = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["interfacesUp"].(int); ok {
-        data.InterfacesUp = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["interfacesUp"].(int64); ok {
-        data.InterfacesUp = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["interfacesUp"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesUp = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesUp = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InterfacesUp = types.NumberNull()
-    }
-    if val, ok := dataMap["interfacesDown"].(float64); ok {
-        data.InterfacesDown = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["interfacesDown"].(int); ok {
-        data.InterfacesDown = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["interfacesDown"].(int64); ok {
-        data.InterfacesDown = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["interfacesDown"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesDown = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesDown = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InterfacesDown = types.NumberNull()
-    }
+    data.InterfacesTotal = numberFromAPI(data.InterfacesTotal, dataMap["interfacesTotal"])
+    data.InterfacesUp = numberFromAPI(data.InterfacesUp, dataMap["interfacesUp"])
+    data.InterfacesDown = numberFromAPI(data.InterfacesDown, dataMap["interfacesDown"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -6084,23 +5924,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := dataMap["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["snmpPort"].(int); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["snmpPort"].(int64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, dataMap["snmpPort"])
     if obj, ok := dataMap["snmpV3Auth"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6363,23 +6187,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     if val, ok := dataMap["isPollingEnabled"].(bool); ok {
         data.IsPollingEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["pollingIntervalInMinutes"].(float64); ok {
-        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pollingIntervalInMinutes"].(int); ok {
-        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pollingIntervalInMinutes"].(int64); ok {
-        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pollingIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollingIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PollingIntervalInMinutes = types.NumberNull()
-    }
+    data.PollingIntervalInMinutes = numberFromAPI(data.PollingIntervalInMinutes, dataMap["pollingIntervalInMinutes"])
     if val, ok := dataMap["walkInterfaces"].(bool); ok {
         data.WalkInterfaces = types.BoolValue(val)
     }
@@ -7118,57 +6926,9 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.LastSnmpSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["interfacesTotal"].(float64); ok {
-        data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["interfacesTotal"].(int); ok {
-        data.InterfacesTotal = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["interfacesTotal"].(int64); ok {
-        data.InterfacesTotal = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["interfacesTotal"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesTotal = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InterfacesTotal = types.NumberNull()
-    }
-    if val, ok := dataMap["interfacesUp"].(float64); ok {
-        data.InterfacesUp = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["interfacesUp"].(int); ok {
-        data.InterfacesUp = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["interfacesUp"].(int64); ok {
-        data.InterfacesUp = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["interfacesUp"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesUp = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesUp = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InterfacesUp = types.NumberNull()
-    }
-    if val, ok := dataMap["interfacesDown"].(float64); ok {
-        data.InterfacesDown = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["interfacesDown"].(int); ok {
-        data.InterfacesDown = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["interfacesDown"].(int64); ok {
-        data.InterfacesDown = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["interfacesDown"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesDown = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesDown = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InterfacesDown = types.NumberNull()
-    }
+    data.InterfacesTotal = numberFromAPI(data.InterfacesTotal, dataMap["interfacesTotal"])
+    data.InterfacesUp = numberFromAPI(data.InterfacesUp, dataMap["interfacesUp"])
+    data.InterfacesDown = numberFromAPI(data.InterfacesDown, dataMap["interfacesDown"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)

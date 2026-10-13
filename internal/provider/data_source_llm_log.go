@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -574,61 +573,11 @@ func (d *LlmLogDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     } else {
         data.IsGlobalProvider = types.BoolNull()
     }
-    if val, ok := item["totalTokens"].(float64); ok {
-        data.TotalTokens = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["totalTokens"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TotalTokens = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TotalTokens = types.NumberNull()
-        }
-    } else {
-        data.TotalTokens = types.NumberNull()
-    }
-    if val, ok := item["completionTokens"].(float64); ok {
-        data.CompletionTokens = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["completionTokens"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CompletionTokens = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CompletionTokens = types.NumberNull()
-        }
-    } else {
-        data.CompletionTokens = types.NumberNull()
-    }
-    if val, ok := item["cachedInputTokens"].(float64); ok {
-        data.CachedInputTokens = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["cachedInputTokens"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CachedInputTokens = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CachedInputTokens = types.NumberNull()
-        }
-    } else {
-        data.CachedInputTokens = types.NumberNull()
-    }
-    if val, ok := item["cacheCreationTokens"].(float64); ok {
-        data.CacheCreationTokens = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["cacheCreationTokens"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CacheCreationTokens = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CacheCreationTokens = types.NumberNull()
-        }
-    } else {
-        data.CacheCreationTokens = types.NumberNull()
-    }
-    if val, ok := item["costInUSDCents"].(float64); ok {
-        data.CostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["costInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CostInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.CostInUsdCents = types.NumberNull()
-    }
+    data.TotalTokens = numberFromAPI(data.TotalTokens, item["totalTokens"])
+    data.CompletionTokens = numberFromAPI(data.CompletionTokens, item["completionTokens"])
+    data.CachedInputTokens = numberFromAPI(data.CachedInputTokens, item["cachedInputTokens"])
+    data.CacheCreationTokens = numberFromAPI(data.CacheCreationTokens, item["cacheCreationTokens"])
+    data.CostInUsdCents = numberFromAPI(data.CostInUsdCents, item["costInUSDCents"])
     if val, ok := item["wasBilled"].(bool); ok {
         data.WasBilled = types.BoolValue(val)
     } else {
@@ -838,17 +787,7 @@ func (d *LlmLogDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     } else {
         data.RequestCompletedAt = types.StringNull()
     }
-    if val, ok := item["durationMs"].(float64); ok {
-        data.DurationMs = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["durationMs"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DurationMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DurationMs = types.NumberNull()
-        }
-    } else {
-        data.DurationMs = types.NumberNull()
-    }
+    data.DurationMs = numberFromAPI(data.DurationMs, item["durationMs"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

@@ -25,7 +25,7 @@ resource "oneuptime_status_page_history_chart_bar_color" "example" {
 
 - `bar_color` (String) Color of the bar chart when this rule matches (#32a852 for example).
 - `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
-- `uptime_percent_greater_than_or_equal_to` (Number) Uptime percent greater than or equal to this value.
+- `uptime_percent_greater_than_or_equal_to` (Number) Uptime percent, from 0 to 100, that a day must reach for this rule to color its bar (99.65 for example).
 
 ### Optional
 

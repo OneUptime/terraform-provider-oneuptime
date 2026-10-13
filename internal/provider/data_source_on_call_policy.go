@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -492,17 +491,7 @@ func (d *OnCallPolicyDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.RepeatPolicyIfNoOneAcknowledges = types.BoolNull()
     }
-    if val, ok := item["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(float64); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberNull()
-        }
-    } else {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberNull()
-    }
+    data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = numberFromAPI(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes, item["repeatPolicyIfNoOneAcknowledgesNoOfTimes"])
     if obj, ok := item["customFields"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CustomFields = types.StringValue(val)

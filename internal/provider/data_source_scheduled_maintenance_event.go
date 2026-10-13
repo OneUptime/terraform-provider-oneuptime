@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -1209,17 +1208,7 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
     } else {
         data.NextSubscriberNotificationBeforeTheEventAt = types.StringNull()
     }
-    if val, ok := item["scheduledMaintenanceNumber"].(float64); ok {
-        data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["scheduledMaintenanceNumber"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScheduledMaintenanceNumber = types.NumberNull()
-        }
-    } else {
-        data.ScheduledMaintenanceNumber = types.NumberNull()
-    }
+    data.ScheduledMaintenanceNumber = numberFromAPI(data.ScheduledMaintenanceNumber, item["scheduledMaintenanceNumber"])
     if obj, ok := item["scheduledMaintenanceNumberWithPrefix"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
@@ -1264,17 +1253,7 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
     } else {
         data.NextReminderNotificationAt = types.StringNull()
     }
-    if val, ok := item["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, item["reminderNotificationSentCount"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

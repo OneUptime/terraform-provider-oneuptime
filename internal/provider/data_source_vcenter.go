@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -798,105 +797,15 @@ func (d *VcenterDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["datacenterCount"].(float64); ok {
-        data.DatacenterCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["datacenterCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DatacenterCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DatacenterCount = types.NumberNull()
-        }
-    } else {
-        data.DatacenterCount = types.NumberNull()
-    }
-    if val, ok := item["clusterCount"].(float64); ok {
-        data.ClusterCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["clusterCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ClusterCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ClusterCount = types.NumberNull()
-        }
-    } else {
-        data.ClusterCount = types.NumberNull()
-    }
-    if val, ok := item["hostCount"].(float64); ok {
-        data.HostCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["hostCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.HostCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.HostCount = types.NumberNull()
-        }
-    } else {
-        data.HostCount = types.NumberNull()
-    }
-    if val, ok := item["vmCount"].(float64); ok {
-        data.VmCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["vmCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.VmCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VmCount = types.NumberNull()
-        }
-    } else {
-        data.VmCount = types.NumberNull()
-    }
-    if val, ok := item["poweredOnVmCount"].(float64); ok {
-        data.PoweredOnVmCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["poweredOnVmCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PoweredOnVmCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PoweredOnVmCount = types.NumberNull()
-        }
-    } else {
-        data.PoweredOnVmCount = types.NumberNull()
-    }
-    if val, ok := item["datastoreCount"].(float64); ok {
-        data.DatastoreCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["datastoreCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DatastoreCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DatastoreCount = types.NumberNull()
-        }
-    } else {
-        data.DatastoreCount = types.NumberNull()
-    }
-    if val, ok := item["resourcePoolCount"].(float64); ok {
-        data.ResourcePoolCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["resourcePoolCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ResourcePoolCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResourcePoolCount = types.NumberNull()
-        }
-    } else {
-        data.ResourcePoolCount = types.NumberNull()
-    }
-    if val, ok := item["datastoreCapacityBytes"].(float64); ok {
-        data.DatastoreCapacityBytes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["datastoreCapacityBytes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DatastoreCapacityBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DatastoreCapacityBytes = types.NumberNull()
-        }
-    } else {
-        data.DatastoreCapacityBytes = types.NumberNull()
-    }
-    if val, ok := item["datastoreUsedBytes"].(float64); ok {
-        data.DatastoreUsedBytes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["datastoreUsedBytes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DatastoreUsedBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DatastoreUsedBytes = types.NumberNull()
-        }
-    } else {
-        data.DatastoreUsedBytes = types.NumberNull()
-    }
+    data.DatacenterCount = numberFromAPI(data.DatacenterCount, item["datacenterCount"])
+    data.ClusterCount = numberFromAPI(data.ClusterCount, item["clusterCount"])
+    data.HostCount = numberFromAPI(data.HostCount, item["hostCount"])
+    data.VmCount = numberFromAPI(data.VmCount, item["vmCount"])
+    data.PoweredOnVmCount = numberFromAPI(data.PoweredOnVmCount, item["poweredOnVmCount"])
+    data.DatastoreCount = numberFromAPI(data.DatastoreCount, item["datastoreCount"])
+    data.ResourcePoolCount = numberFromAPI(data.ResourcePoolCount, item["resourcePoolCount"])
+    data.DatastoreCapacityBytes = numberFromAPI(data.DatastoreCapacityBytes, item["datastoreCapacityBytes"])
+    data.DatastoreUsedBytes = numberFromAPI(data.DatastoreUsedBytes, item["datastoreUsedBytes"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)
@@ -977,17 +886,7 @@ func (d *VcenterDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)
@@ -1202,17 +1101,7 @@ func (d *VcenterDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.TrustedCertificateFingerprint = types.StringNull()
     }
-    if val, ok := item["collectionIntervalInMinutes"].(float64); ok {
-        data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["collectionIntervalInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CollectionIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CollectionIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        data.CollectionIntervalInMinutes = types.NumberNull()
-    }
+    data.CollectionIntervalInMinutes = numberFromAPI(data.CollectionIntervalInMinutes, item["collectionIntervalInMinutes"])
     if obj, ok := item["collectionStatus"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CollectionStatus = types.StringValue(val)
@@ -1349,17 +1238,7 @@ func (d *VcenterDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.LastSuccessfulCollectionAt = types.StringNull()
     }
-    if val, ok := item["collectionSettingsVersion"].(float64); ok {
-        data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["collectionSettingsVersion"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CollectionSettingsVersion = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CollectionSettingsVersion = types.NumberNull()
-        }
-    } else {
-        data.CollectionSettingsVersion = types.NumberNull()
-    }
+    data.CollectionSettingsVersion = numberFromAPI(data.CollectionSettingsVersion, item["collectionSettingsVersion"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

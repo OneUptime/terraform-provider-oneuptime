@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -449,17 +448,7 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
     } else {
         data.IsEnabled = types.BoolNull()
     }
-    if val, ok := item["pollIntervalInMinutes"].(float64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["pollIntervalInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        data.PollIntervalInMinutes = types.NumberNull()
-    }
+    data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, item["pollIntervalInMinutes"])
     if val, ok := item["alertingOnly"].(bool); ok {
         data.AlertingOnly = types.BoolValue(val)
     } else {

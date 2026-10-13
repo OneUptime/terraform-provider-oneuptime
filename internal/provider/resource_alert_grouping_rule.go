@@ -849,23 +849,7 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["priority"].(float64); ok {
-        data.Priority = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["priority"].(int); ok {
-        data.Priority = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["priority"].(int64); ok {
-        data.Priority = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["priority"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Priority = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Priority = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Priority = types.NumberNull()
-    }
+    data.Priority = numberFromAPI(data.Priority, dataMap["priority"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
@@ -1200,23 +1184,7 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
     }
-    if val, ok := dataMap["timeWindowMinutes"].(float64); ok {
-        data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["timeWindowMinutes"].(int); ok {
-        data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["timeWindowMinutes"].(int64); ok {
-        data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["timeWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TimeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.TimeWindowMinutes = types.NumberNull()
-    }
+    data.TimeWindowMinutes = numberFromAPI(data.TimeWindowMinutes, dataMap["timeWindowMinutes"])
     if obj, ok := dataMap["groupByFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1331,63 +1299,15 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
     if val, ok := dataMap["enableResolveDelay"].(bool); ok {
         data.EnableResolveDelay = types.BoolValue(val)
     }
-    if val, ok := dataMap["resolveDelayMinutes"].(float64); ok {
-        data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["resolveDelayMinutes"].(int); ok {
-        data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["resolveDelayMinutes"].(int64); ok {
-        data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["resolveDelayMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResolveDelayMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ResolveDelayMinutes = types.NumberNull()
-    }
+    data.ResolveDelayMinutes = numberFromAPI(data.ResolveDelayMinutes, dataMap["resolveDelayMinutes"])
     if val, ok := dataMap["enableReopenWindow"].(bool); ok {
         data.EnableReopenWindow = types.BoolValue(val)
     }
-    if val, ok := dataMap["reopenWindowMinutes"].(float64); ok {
-        data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reopenWindowMinutes"].(int); ok {
-        data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reopenWindowMinutes"].(int64); ok {
-        data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reopenWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReopenWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReopenWindowMinutes = types.NumberNull()
-    }
+    data.ReopenWindowMinutes = numberFromAPI(data.ReopenWindowMinutes, dataMap["reopenWindowMinutes"])
     if val, ok := dataMap["enableInactivityTimeout"].(bool); ok {
         data.EnableInactivityTimeout = types.BoolValue(val)
     }
-    if val, ok := dataMap["inactivityTimeoutMinutes"].(float64); ok {
-        data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["inactivityTimeoutMinutes"].(int); ok {
-        data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["inactivityTimeoutMinutes"].(int64); ok {
-        data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["inactivityTimeoutMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InactivityTimeoutMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InactivityTimeoutMinutes = types.NumberNull()
-    }
+    data.InactivityTimeoutMinutes = numberFromAPI(data.InactivityTimeoutMinutes, dataMap["inactivityTimeoutMinutes"])
     if val, ok := dataMap["onCallDutyPolicies"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1874,23 +1794,7 @@ func (r *AlertGroupingRuleResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["priority"].(float64); ok {
-        data.Priority = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["priority"].(int); ok {
-        data.Priority = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["priority"].(int64); ok {
-        data.Priority = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["priority"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Priority = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Priority = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Priority = types.NumberNull()
-    }
+    data.Priority = numberFromAPI(data.Priority, dataMap["priority"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
@@ -2225,23 +2129,7 @@ func (r *AlertGroupingRuleResource) Read(ctx context.Context, req resource.ReadR
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
     }
-    if val, ok := dataMap["timeWindowMinutes"].(float64); ok {
-        data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["timeWindowMinutes"].(int); ok {
-        data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["timeWindowMinutes"].(int64); ok {
-        data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["timeWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TimeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.TimeWindowMinutes = types.NumberNull()
-    }
+    data.TimeWindowMinutes = numberFromAPI(data.TimeWindowMinutes, dataMap["timeWindowMinutes"])
     if obj, ok := dataMap["groupByFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2356,63 +2244,15 @@ func (r *AlertGroupingRuleResource) Read(ctx context.Context, req resource.ReadR
     if val, ok := dataMap["enableResolveDelay"].(bool); ok {
         data.EnableResolveDelay = types.BoolValue(val)
     }
-    if val, ok := dataMap["resolveDelayMinutes"].(float64); ok {
-        data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["resolveDelayMinutes"].(int); ok {
-        data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["resolveDelayMinutes"].(int64); ok {
-        data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["resolveDelayMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResolveDelayMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ResolveDelayMinutes = types.NumberNull()
-    }
+    data.ResolveDelayMinutes = numberFromAPI(data.ResolveDelayMinutes, dataMap["resolveDelayMinutes"])
     if val, ok := dataMap["enableReopenWindow"].(bool); ok {
         data.EnableReopenWindow = types.BoolValue(val)
     }
-    if val, ok := dataMap["reopenWindowMinutes"].(float64); ok {
-        data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reopenWindowMinutes"].(int); ok {
-        data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reopenWindowMinutes"].(int64); ok {
-        data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reopenWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReopenWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReopenWindowMinutes = types.NumberNull()
-    }
+    data.ReopenWindowMinutes = numberFromAPI(data.ReopenWindowMinutes, dataMap["reopenWindowMinutes"])
     if val, ok := dataMap["enableInactivityTimeout"].(bool); ok {
         data.EnableInactivityTimeout = types.BoolValue(val)
     }
-    if val, ok := dataMap["inactivityTimeoutMinutes"].(float64); ok {
-        data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["inactivityTimeoutMinutes"].(int); ok {
-        data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["inactivityTimeoutMinutes"].(int64); ok {
-        data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["inactivityTimeoutMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InactivityTimeoutMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InactivityTimeoutMinutes = types.NumberNull()
-    }
+    data.InactivityTimeoutMinutes = numberFromAPI(data.InactivityTimeoutMinutes, dataMap["inactivityTimeoutMinutes"])
     if val, ok := dataMap["onCallDutyPolicies"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -3052,23 +2892,7 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["priority"].(float64); ok {
-        data.Priority = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["priority"].(int); ok {
-        data.Priority = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["priority"].(int64); ok {
-        data.Priority = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["priority"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Priority = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Priority = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Priority = types.NumberNull()
-    }
+    data.Priority = numberFromAPI(data.Priority, dataMap["priority"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
@@ -3403,23 +3227,7 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
     }
-    if val, ok := dataMap["timeWindowMinutes"].(float64); ok {
-        data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["timeWindowMinutes"].(int); ok {
-        data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["timeWindowMinutes"].(int64); ok {
-        data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["timeWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TimeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.TimeWindowMinutes = types.NumberNull()
-    }
+    data.TimeWindowMinutes = numberFromAPI(data.TimeWindowMinutes, dataMap["timeWindowMinutes"])
     if obj, ok := dataMap["groupByFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3534,63 +3342,15 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
     if val, ok := dataMap["enableResolveDelay"].(bool); ok {
         data.EnableResolveDelay = types.BoolValue(val)
     }
-    if val, ok := dataMap["resolveDelayMinutes"].(float64); ok {
-        data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["resolveDelayMinutes"].(int); ok {
-        data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["resolveDelayMinutes"].(int64); ok {
-        data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["resolveDelayMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResolveDelayMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ResolveDelayMinutes = types.NumberNull()
-    }
+    data.ResolveDelayMinutes = numberFromAPI(data.ResolveDelayMinutes, dataMap["resolveDelayMinutes"])
     if val, ok := dataMap["enableReopenWindow"].(bool); ok {
         data.EnableReopenWindow = types.BoolValue(val)
     }
-    if val, ok := dataMap["reopenWindowMinutes"].(float64); ok {
-        data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reopenWindowMinutes"].(int); ok {
-        data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reopenWindowMinutes"].(int64); ok {
-        data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reopenWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReopenWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReopenWindowMinutes = types.NumberNull()
-    }
+    data.ReopenWindowMinutes = numberFromAPI(data.ReopenWindowMinutes, dataMap["reopenWindowMinutes"])
     if val, ok := dataMap["enableInactivityTimeout"].(bool); ok {
         data.EnableInactivityTimeout = types.BoolValue(val)
     }
-    if val, ok := dataMap["inactivityTimeoutMinutes"].(float64); ok {
-        data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["inactivityTimeoutMinutes"].(int); ok {
-        data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["inactivityTimeoutMinutes"].(int64); ok {
-        data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["inactivityTimeoutMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InactivityTimeoutMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InactivityTimeoutMinutes = types.NumberNull()
-    }
+    data.InactivityTimeoutMinutes = numberFromAPI(data.InactivityTimeoutMinutes, dataMap["inactivityTimeoutMinutes"])
     if val, ok := dataMap["onCallDutyPolicies"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value

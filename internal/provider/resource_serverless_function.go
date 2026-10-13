@@ -554,23 +554,7 @@ func (r *ServerlessFunctionResource) Create(ctx context.Context, req resource.Cr
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1340,23 +1324,7 @@ func (r *ServerlessFunctionResource) Read(ctx context.Context, req resource.Read
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2179,23 +2147,7 @@ func (r *ServerlessFunctionResource) Update(ctx context.Context, req resource.Up
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

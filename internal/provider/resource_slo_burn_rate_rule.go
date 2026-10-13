@@ -745,91 +745,11 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["burnRateThreshold"].(float64); ok {
-        data.BurnRateThreshold = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["burnRateThreshold"].(int); ok {
-        data.BurnRateThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["burnRateThreshold"].(int64); ok {
-        data.BurnRateThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["burnRateThreshold"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.BurnRateThreshold = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.BurnRateThreshold = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.BurnRateThreshold = types.NumberNull()
-    }
-    if val, ok := dataMap["longWindowInMinutes"].(float64); ok {
-        data.LongWindowInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["longWindowInMinutes"].(int); ok {
-        data.LongWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["longWindowInMinutes"].(int64); ok {
-        data.LongWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["longWindowInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.LongWindowInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LongWindowInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.LongWindowInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["shortWindowInMinutes"].(float64); ok {
-        data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["shortWindowInMinutes"].(int); ok {
-        data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["shortWindowInMinutes"].(int64); ok {
-        data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["shortWindowInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShortWindowInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShortWindowInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["minimumSampleCount"].(float64); ok {
-        data.MinimumSampleCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumSampleCount"].(int); ok {
-        data.MinimumSampleCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumSampleCount"].(int64); ok {
-        data.MinimumSampleCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumSampleCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumSampleCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumSampleCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumSampleCount = types.NumberNull()
-    }
-    if val, ok := dataMap["refireSuppressionMinutes"].(float64); ok {
-        data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["refireSuppressionMinutes"].(int); ok {
-        data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["refireSuppressionMinutes"].(int64); ok {
-        data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["refireSuppressionMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RefireSuppressionMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RefireSuppressionMinutes = types.NumberNull()
-    }
+    data.BurnRateThreshold = numberFromAPI(data.BurnRateThreshold, dataMap["burnRateThreshold"])
+    data.LongWindowInMinutes = numberFromAPI(data.LongWindowInMinutes, dataMap["longWindowInMinutes"])
+    data.ShortWindowInMinutes = numberFromAPI(data.ShortWindowInMinutes, dataMap["shortWindowInMinutes"])
+    data.MinimumSampleCount = numberFromAPI(data.MinimumSampleCount, dataMap["minimumSampleCount"])
+    data.RefireSuppressionMinutes = numberFromAPI(data.RefireSuppressionMinutes, dataMap["refireSuppressionMinutes"])
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     }
@@ -1696,91 +1616,11 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["burnRateThreshold"].(float64); ok {
-        data.BurnRateThreshold = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["burnRateThreshold"].(int); ok {
-        data.BurnRateThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["burnRateThreshold"].(int64); ok {
-        data.BurnRateThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["burnRateThreshold"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.BurnRateThreshold = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.BurnRateThreshold = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.BurnRateThreshold = types.NumberNull()
-    }
-    if val, ok := dataMap["longWindowInMinutes"].(float64); ok {
-        data.LongWindowInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["longWindowInMinutes"].(int); ok {
-        data.LongWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["longWindowInMinutes"].(int64); ok {
-        data.LongWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["longWindowInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.LongWindowInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LongWindowInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.LongWindowInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["shortWindowInMinutes"].(float64); ok {
-        data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["shortWindowInMinutes"].(int); ok {
-        data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["shortWindowInMinutes"].(int64); ok {
-        data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["shortWindowInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShortWindowInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShortWindowInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["minimumSampleCount"].(float64); ok {
-        data.MinimumSampleCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumSampleCount"].(int); ok {
-        data.MinimumSampleCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumSampleCount"].(int64); ok {
-        data.MinimumSampleCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumSampleCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumSampleCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumSampleCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumSampleCount = types.NumberNull()
-    }
-    if val, ok := dataMap["refireSuppressionMinutes"].(float64); ok {
-        data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["refireSuppressionMinutes"].(int); ok {
-        data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["refireSuppressionMinutes"].(int64); ok {
-        data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["refireSuppressionMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RefireSuppressionMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RefireSuppressionMinutes = types.NumberNull()
-    }
+    data.BurnRateThreshold = numberFromAPI(data.BurnRateThreshold, dataMap["burnRateThreshold"])
+    data.LongWindowInMinutes = numberFromAPI(data.LongWindowInMinutes, dataMap["longWindowInMinutes"])
+    data.ShortWindowInMinutes = numberFromAPI(data.ShortWindowInMinutes, dataMap["shortWindowInMinutes"])
+    data.MinimumSampleCount = numberFromAPI(data.MinimumSampleCount, dataMap["minimumSampleCount"])
+    data.RefireSuppressionMinutes = numberFromAPI(data.RefireSuppressionMinutes, dataMap["refireSuppressionMinutes"])
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     }
@@ -2767,91 +2607,11 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["burnRateThreshold"].(float64); ok {
-        data.BurnRateThreshold = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["burnRateThreshold"].(int); ok {
-        data.BurnRateThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["burnRateThreshold"].(int64); ok {
-        data.BurnRateThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["burnRateThreshold"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.BurnRateThreshold = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.BurnRateThreshold = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.BurnRateThreshold = types.NumberNull()
-    }
-    if val, ok := dataMap["longWindowInMinutes"].(float64); ok {
-        data.LongWindowInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["longWindowInMinutes"].(int); ok {
-        data.LongWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["longWindowInMinutes"].(int64); ok {
-        data.LongWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["longWindowInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.LongWindowInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LongWindowInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.LongWindowInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["shortWindowInMinutes"].(float64); ok {
-        data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["shortWindowInMinutes"].(int); ok {
-        data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["shortWindowInMinutes"].(int64); ok {
-        data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["shortWindowInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShortWindowInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ShortWindowInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["minimumSampleCount"].(float64); ok {
-        data.MinimumSampleCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumSampleCount"].(int); ok {
-        data.MinimumSampleCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumSampleCount"].(int64); ok {
-        data.MinimumSampleCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumSampleCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumSampleCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumSampleCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumSampleCount = types.NumberNull()
-    }
-    if val, ok := dataMap["refireSuppressionMinutes"].(float64); ok {
-        data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["refireSuppressionMinutes"].(int); ok {
-        data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["refireSuppressionMinutes"].(int64); ok {
-        data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["refireSuppressionMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RefireSuppressionMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RefireSuppressionMinutes = types.NumberNull()
-    }
+    data.BurnRateThreshold = numberFromAPI(data.BurnRateThreshold, dataMap["burnRateThreshold"])
+    data.LongWindowInMinutes = numberFromAPI(data.LongWindowInMinutes, dataMap["longWindowInMinutes"])
+    data.ShortWindowInMinutes = numberFromAPI(data.ShortWindowInMinutes, dataMap["shortWindowInMinutes"])
+    data.MinimumSampleCount = numberFromAPI(data.MinimumSampleCount, dataMap["minimumSampleCount"])
+    data.RefireSuppressionMinutes = numberFromAPI(data.RefireSuppressionMinutes, dataMap["refireSuppressionMinutes"])
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     }

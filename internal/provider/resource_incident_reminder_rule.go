@@ -468,43 +468,11 @@ func (r *IncidentReminderRuleResource) Create(ctx context.Context, req resource.
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["reminderIntervalInMinutes"].(float64); ok {
-        data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderIntervalInMinutes"].(int); ok {
-        data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderIntervalInMinutes"].(int64); ok {
-        data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderIntervalInMinutes = types.NumberNull()
-    }
+    data.ReminderIntervalInMinutes = numberFromAPI(data.ReminderIntervalInMinutes, dataMap["reminderIntervalInMinutes"])
     if obj, ok := dataMap["stopRemindersOnState"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -863,43 +831,11 @@ func (r *IncidentReminderRuleResource) Read(ctx context.Context, req resource.Re
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["reminderIntervalInMinutes"].(float64); ok {
-        data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderIntervalInMinutes"].(int); ok {
-        data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderIntervalInMinutes"].(int64); ok {
-        data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderIntervalInMinutes = types.NumberNull()
-    }
+    data.ReminderIntervalInMinutes = numberFromAPI(data.ReminderIntervalInMinutes, dataMap["reminderIntervalInMinutes"])
     if obj, ok := dataMap["stopRemindersOnState"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1320,43 +1256,11 @@ func (r *IncidentReminderRuleResource) Update(ctx context.Context, req resource.
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["reminderIntervalInMinutes"].(float64); ok {
-        data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderIntervalInMinutes"].(int); ok {
-        data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderIntervalInMinutes"].(int64); ok {
-        data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderIntervalInMinutes = types.NumberNull()
-    }
+    data.ReminderIntervalInMinutes = numberFromAPI(data.ReminderIntervalInMinutes, dataMap["reminderIntervalInMinutes"])
     if obj, ok := dataMap["stopRemindersOnState"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

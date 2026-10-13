@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -730,17 +729,7 @@ func (d *AiInsightDataSource) Read(ctx context.Context, req datasource.ReadReque
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["occurrenceCount"].(float64); ok {
-        data.OccurrenceCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["occurrenceCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OccurrenceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OccurrenceCount = types.NumberNull()
-        }
-    } else {
-        data.OccurrenceCount = types.NumberNull()
-    }
+    data.OccurrenceCount = numberFromAPI(data.OccurrenceCount, item["occurrenceCount"])
     if obj, ok := item["triageAiRunId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TriageAiRunId = types.StringValue(val)

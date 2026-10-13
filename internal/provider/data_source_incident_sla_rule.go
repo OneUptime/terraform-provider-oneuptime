@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -488,77 +487,17 @@ func (d *IncidentSlaRuleDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := item["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["order"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, item["order"])
     if val, ok := item["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     } else {
         data.IsEnabled = types.BoolNull()
     }
-    if val, ok := item["responseTimeInMinutes"].(float64); ok {
-        data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["responseTimeInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ResponseTimeInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResponseTimeInMinutes = types.NumberNull()
-        }
-    } else {
-        data.ResponseTimeInMinutes = types.NumberNull()
-    }
-    if val, ok := item["resolutionTimeInMinutes"].(float64); ok {
-        data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["resolutionTimeInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ResolutionTimeInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResolutionTimeInMinutes = types.NumberNull()
-        }
-    } else {
-        data.ResolutionTimeInMinutes = types.NumberNull()
-    }
-    if val, ok := item["atRiskThresholdInPercentage"].(float64); ok {
-        data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["atRiskThresholdInPercentage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AtRiskThresholdInPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AtRiskThresholdInPercentage = types.NumberNull()
-        }
-    } else {
-        data.AtRiskThresholdInPercentage = types.NumberNull()
-    }
-    if val, ok := item["internalNoteReminderIntervalInMinutes"].(float64); ok {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["internalNoteReminderIntervalInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InternalNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InternalNoteReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        data.InternalNoteReminderIntervalInMinutes = types.NumberNull()
-    }
-    if val, ok := item["publicNoteReminderIntervalInMinutes"].(float64); ok {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["publicNoteReminderIntervalInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PublicNoteReminderIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PublicNoteReminderIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        data.PublicNoteReminderIntervalInMinutes = types.NumberNull()
-    }
+    data.ResponseTimeInMinutes = numberFromAPI(data.ResponseTimeInMinutes, item["responseTimeInMinutes"])
+    data.ResolutionTimeInMinutes = numberFromAPI(data.ResolutionTimeInMinutes, item["resolutionTimeInMinutes"])
+    data.AtRiskThresholdInPercentage = numberFromAPI(data.AtRiskThresholdInPercentage, item["atRiskThresholdInPercentage"])
+    data.InternalNoteReminderIntervalInMinutes = numberFromAPI(data.InternalNoteReminderIntervalInMinutes, item["internalNoteReminderIntervalInMinutes"])
+    data.PublicNoteReminderIntervalInMinutes = numberFromAPI(data.PublicNoteReminderIntervalInMinutes, item["publicNoteReminderIntervalInMinutes"])
     if obj, ok := item["internalNoteReminderTemplate"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.InternalNoteReminderTemplate = types.StringValue(val)

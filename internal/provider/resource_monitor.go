@@ -1669,23 +1669,7 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.ServerMonitorResponse = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["minimumProbeAgreement"].(float64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumProbeAgreement"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumProbeAgreement = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumProbeAgreement = types.NumberNull()
-    }
+    data.MinimumProbeAgreement = numberFromAPI(data.MinimumProbeAgreement, dataMap["minimumProbeAgreement"])
     if obj, ok := dataMap["incomingEmailCustomLocalPart"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3121,23 +3105,7 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.ServerMonitorResponse = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["minimumProbeAgreement"].(float64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumProbeAgreement"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumProbeAgreement = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumProbeAgreement = types.NumberNull()
-    }
+    data.MinimumProbeAgreement = numberFromAPI(data.MinimumProbeAgreement, dataMap["minimumProbeAgreement"])
     if obj, ok := dataMap["incomingEmailCustomLocalPart"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4691,23 +4659,7 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.ServerMonitorResponse = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["minimumProbeAgreement"].(float64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumProbeAgreement"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumProbeAgreement = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumProbeAgreement = types.NumberNull()
-    }
+    data.MinimumProbeAgreement = numberFromAPI(data.MinimumProbeAgreement, dataMap["minimumProbeAgreement"])
     if obj, ok := dataMap["incomingEmailCustomLocalPart"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

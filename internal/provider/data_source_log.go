@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -522,17 +521,7 @@ func (d *LogDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
     } else {
         data.SeverityText = types.StringNull()
     }
-    if val, ok := item["severityNumber"].(float64); ok {
-        data.SeverityNumber = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["severityNumber"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SeverityNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SeverityNumber = types.NumberNull()
-        }
-    } else {
-        data.SeverityNumber = types.NumberNull()
-    }
+    data.SeverityNumber = numberFromAPI(data.SeverityNumber, item["severityNumber"])
     if obj, ok := item["attributes"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Attributes = types.StringValue(val)
@@ -785,28 +774,8 @@ func (d *LogDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
     } else {
         data.ObservedTimeUnixNano = types.StringNull()
     }
-    if val, ok := item["droppedAttributesCount"].(float64); ok {
-        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["droppedAttributesCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DroppedAttributesCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DroppedAttributesCount = types.NumberNull()
-        }
-    } else {
-        data.DroppedAttributesCount = types.NumberNull()
-    }
-    if val, ok := item["flags"].(float64); ok {
-        data.Flags = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["flags"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Flags = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Flags = types.NumberNull()
-        }
-    } else {
-        data.Flags = types.NumberNull()
-    }
+    data.DroppedAttributesCount = numberFromAPI(data.DroppedAttributesCount, item["droppedAttributesCount"])
+    data.Flags = numberFromAPI(data.Flags, item["flags"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

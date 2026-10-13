@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -547,17 +546,7 @@ func (d *TelegramLogDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.Status = types.StringNull()
     }
-    if val, ok := item["telegramCostInUSDCents"].(float64); ok {
-        data.TelegramCostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["telegramCostInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TelegramCostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TelegramCostInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.TelegramCostInUsdCents = types.NumberNull()
-    }
+    data.TelegramCostInUsdCents = numberFromAPI(data.TelegramCostInUsdCents, item["telegramCostInUSDCents"])
     if obj, ok := item["incidentId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.IncidentId = types.StringValue(val)

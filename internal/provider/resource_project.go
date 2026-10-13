@@ -1598,23 +1598,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["isSessionReplayAllowed"].(bool); ok {
         data.IsSessionReplayAllowed = types.BoolValue(val)
     }
-    if val, ok := dataMap["auditLogsRetentionInDays"].(float64); ok {
-        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int); ok {
-        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int64); ok {
-        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["auditLogsRetentionInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AuditLogsRetentionInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AuditLogsRetentionInDays = types.NumberNull()
-    }
+    data.AuditLogsRetentionInDays = numberFromAPI(data.AuditLogsRetentionInDays, dataMap["auditLogsRetentionInDays"])
     if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
         data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
     }
@@ -1658,40 +1642,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.RequireSsoWithSsoProviderId = types.StringNull()
     }
-    if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(float64); ok {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(int); ok {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(int64); ok {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
-    }
-    if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(float64); ok {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(int); ok {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(int64); ok {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
-    }
+    data.AutoRechargeSmsOrCallByBalanceInUsd = numberFromAPI(data.AutoRechargeSmsOrCallByBalanceInUsd, dataMap["autoRechargeSmsOrCallByBalanceInUSD"])
+    data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableSmsNotifications"].(bool); ok {
         data.EnableSmsNotifications = types.BoolValue(val)
     }
@@ -1710,77 +1662,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
     }
-    if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(float64); ok {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(int); ok {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(int64); ok {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoAiRechargeByBalanceInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
-    }
-    if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(float64); ok {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(int); ok {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(int64); ok {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
-    }
+    data.AutoAiRechargeByBalanceInUsd = numberFromAPI(data.AutoAiRechargeByBalanceInUsd, dataMap["autoAiRechargeByBalanceInUSD"])
+    data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeAiWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
     }
-    if val, ok := dataMap["aiDailyTokenLimit"].(float64); ok {
-        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailyTokenLimit"].(int); ok {
-        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailyTokenLimit"].(int64); ok {
-        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailyTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailyTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["aiDailySpendLimitInUSD"].(float64); ok {
-        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int); ok {
-        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int64); ok {
-        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailySpendLimitInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailySpendLimitInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailySpendLimitInUsd = types.NumberNull()
-    }
+    data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, dataMap["aiDailyTokenLimit"])
+    data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, dataMap["aiDailySpendLimitInUSD"])
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
     }
@@ -1824,125 +1712,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.AlertInvestigationMinimumSeverityId = types.StringNull()
     }
-    if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(float64); ok {
-        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int); ok {
-        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int64); ok {
-        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(float64); ok {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int); ok {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int64); ok {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(float64); ok {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int); ok {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int64); ok {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["aiDailyFixTaskLimit"].(float64); ok {
-        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int); ok {
-        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int64); ok {
-        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(float64); ok {
-        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int); ok {
-        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int64); ok {
-        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiDailyFixTaskLimit"].(float64); ok {
-        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int); ok {
-        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int64); ok {
-        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int); ok {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int64); ok {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
-    }
+    data.AiDailyAutonomousTokenLimit = numberFromAPI(data.AiDailyAutonomousTokenLimit, dataMap["aiDailyAutonomousTokenLimit"])
+    data.IncidentAiDailyAutonomousTokenLimit = numberFromAPI(data.IncidentAiDailyAutonomousTokenLimit, dataMap["incidentAiDailyAutonomousTokenLimit"])
+    data.AlertAiDailyAutonomousTokenLimit = numberFromAPI(data.AlertAiDailyAutonomousTokenLimit, dataMap["alertAiDailyAutonomousTokenLimit"])
+    data.AiDailyFixTaskLimit = numberFromAPI(data.AiDailyFixTaskLimit, dataMap["aiDailyFixTaskLimit"])
+    data.IncidentAiDailyFixTaskLimit = numberFromAPI(data.IncidentAiDailyFixTaskLimit, dataMap["incidentAiDailyFixTaskLimit"])
+    data.AlertAiDailyFixTaskLimit = numberFromAPI(data.AlertAiDailyFixTaskLimit, dataMap["alertAiDailyFixTaskLimit"])
+    data.AlertInvestigationDedupeWindowMinutes = numberFromAPI(data.AlertInvestigationDedupeWindowMinutes, dataMap["alertInvestigationDedupeWindowMinutes"])
     if obj, ok := dataMap["incidentInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1980,148 +1756,20 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.IncidentInvestigationMinimumSeverityId = types.StringNull()
     }
-    if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(float64); ok {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int); ok {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int64); ok {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["aiMaxConcurrentInvestigations"].(float64); ok {
-        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int); ok {
-        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int64); ok {
-        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(float64); ok {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int); ok {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int64); ok {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(float64); ok {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int); ok {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int64); ok {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(float64); ok {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int); ok {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int64); ok {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(float64); ok {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int); ok {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int64); ok {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
-    }
+    data.IncidentInvestigationDedupeWindowMinutes = numberFromAPI(data.IncidentInvestigationDedupeWindowMinutes, dataMap["incidentInvestigationDedupeWindowMinutes"])
+    data.AiMaxConcurrentInvestigations = numberFromAPI(data.AiMaxConcurrentInvestigations, dataMap["aiMaxConcurrentInvestigations"])
+    data.IncidentAiMaxConcurrentInvestigations = numberFromAPI(data.IncidentAiMaxConcurrentInvestigations, dataMap["incidentAiMaxConcurrentInvestigations"])
+    data.AlertAiMaxConcurrentInvestigations = numberFromAPI(data.AlertAiMaxConcurrentInvestigations, dataMap["alertAiMaxConcurrentInvestigations"])
+    data.IncidentAiInvestigationTimeLimitInMinutes = numberFromAPI(data.IncidentAiInvestigationTimeLimitInMinutes, dataMap["incidentAiInvestigationTimeLimitInMinutes"])
+    data.AlertAiInvestigationTimeLimitInMinutes = numberFromAPI(data.AlertAiInvestigationTimeLimitInMinutes, dataMap["alertAiInvestigationTimeLimitInMinutes"])
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
     }
     if val, ok := dataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"].(bool); ok {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
     }
-    if val, ok := dataMap["defaultMetricCardinalityBudget"].(float64); ok {
-        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int); ok {
-        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int64); ok {
-        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["defaultMetricCardinalityBudget"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DefaultMetricCardinalityBudget = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DefaultMetricCardinalityBudget = types.NumberNull()
-    }
-    if val, ok := dataMap["defaultTelemetryRetentionInDays"].(float64); ok {
-        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int); ok {
-        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int64); ok {
-        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["defaultTelemetryRetentionInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DefaultTelemetryRetentionInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DefaultTelemetryRetentionInDays = types.NumberNull()
-    }
+    data.DefaultMetricCardinalityBudget = numberFromAPI(data.DefaultMetricCardinalityBudget, dataMap["defaultMetricCardinalityBudget"])
+    data.DefaultTelemetryRetentionInDays = numberFromAPI(data.DefaultTelemetryRetentionInDays, dataMap["defaultTelemetryRetentionInDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2329,23 +1977,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.PaymentProviderMeteredSubscriptionId = types.StringNull()
     }
-    if val, ok := dataMap["paymentProviderSubscriptionSeats"].(float64); ok {
-        data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["paymentProviderSubscriptionSeats"].(int); ok {
-        data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["paymentProviderSubscriptionSeats"].(int64); ok {
-        data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["paymentProviderSubscriptionSeats"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PaymentProviderSubscriptionSeats = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PaymentProviderSubscriptionSeats = types.NumberNull()
-    }
+    data.PaymentProviderSubscriptionSeats = numberFromAPI(data.PaymentProviderSubscriptionSeats, dataMap["paymentProviderSubscriptionSeats"])
     if obj, ok := dataMap["trialEndsAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.TrialEndsAt = NewRFC3339Value(val)
@@ -2505,57 +2137,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["workflowRunsInLast30Days"].(float64); ok {
-        data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["workflowRunsInLast30Days"].(int); ok {
-        data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["workflowRunsInLast30Days"].(int64); ok {
-        data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["workflowRunsInLast30Days"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WorkflowRunsInLast30Days = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.WorkflowRunsInLast30Days = types.NumberNull()
-    }
-    if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(float64); ok {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(int); ok {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(int64); ok {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
-    }
-    if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(float64); ok {
-        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(int); ok {
-        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(int64); ok {
-        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiCurrentBalanceInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiCurrentBalanceInUsdCents = types.NumberNull()
-    }
+    data.WorkflowRunsInLast30Days = numberFromAPI(data.WorkflowRunsInLast30Days, dataMap["workflowRunsInLast30Days"])
+    data.SmsOrCallCurrentBalanceInUsdCents = numberFromAPI(data.SmsOrCallCurrentBalanceInUsdCents, dataMap["smsOrCallCurrentBalanceInUSDCents"])
+    data.AiCurrentBalanceInUsdCents = numberFromAPI(data.AiCurrentBalanceInUsdCents, dataMap["aiCurrentBalanceInUSDCents"])
     if obj, ok := dataMap["planName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3349,23 +2933,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["isSessionReplayAllowed"].(bool); ok {
         data.IsSessionReplayAllowed = types.BoolValue(val)
     }
-    if val, ok := dataMap["auditLogsRetentionInDays"].(float64); ok {
-        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int); ok {
-        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int64); ok {
-        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["auditLogsRetentionInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AuditLogsRetentionInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AuditLogsRetentionInDays = types.NumberNull()
-    }
+    data.AuditLogsRetentionInDays = numberFromAPI(data.AuditLogsRetentionInDays, dataMap["auditLogsRetentionInDays"])
     if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
         data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
     }
@@ -3409,40 +2977,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.RequireSsoWithSsoProviderId = types.StringNull()
     }
-    if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(float64); ok {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(int); ok {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(int64); ok {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
-    }
-    if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(float64); ok {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(int); ok {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(int64); ok {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
-    }
+    data.AutoRechargeSmsOrCallByBalanceInUsd = numberFromAPI(data.AutoRechargeSmsOrCallByBalanceInUsd, dataMap["autoRechargeSmsOrCallByBalanceInUSD"])
+    data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableSmsNotifications"].(bool); ok {
         data.EnableSmsNotifications = types.BoolValue(val)
     }
@@ -3461,77 +2997,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
     }
-    if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(float64); ok {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(int); ok {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(int64); ok {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoAiRechargeByBalanceInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
-    }
-    if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(float64); ok {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(int); ok {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(int64); ok {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
-    }
+    data.AutoAiRechargeByBalanceInUsd = numberFromAPI(data.AutoAiRechargeByBalanceInUsd, dataMap["autoAiRechargeByBalanceInUSD"])
+    data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeAiWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
     }
-    if val, ok := dataMap["aiDailyTokenLimit"].(float64); ok {
-        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailyTokenLimit"].(int); ok {
-        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailyTokenLimit"].(int64); ok {
-        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailyTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailyTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["aiDailySpendLimitInUSD"].(float64); ok {
-        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int); ok {
-        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int64); ok {
-        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailySpendLimitInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailySpendLimitInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailySpendLimitInUsd = types.NumberNull()
-    }
+    data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, dataMap["aiDailyTokenLimit"])
+    data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, dataMap["aiDailySpendLimitInUSD"])
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
     }
@@ -3575,125 +3047,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.AlertInvestigationMinimumSeverityId = types.StringNull()
     }
-    if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(float64); ok {
-        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int); ok {
-        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int64); ok {
-        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(float64); ok {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int); ok {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int64); ok {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(float64); ok {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int); ok {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int64); ok {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["aiDailyFixTaskLimit"].(float64); ok {
-        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int); ok {
-        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int64); ok {
-        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(float64); ok {
-        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int); ok {
-        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int64); ok {
-        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiDailyFixTaskLimit"].(float64); ok {
-        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int); ok {
-        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int64); ok {
-        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int); ok {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int64); ok {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
-    }
+    data.AiDailyAutonomousTokenLimit = numberFromAPI(data.AiDailyAutonomousTokenLimit, dataMap["aiDailyAutonomousTokenLimit"])
+    data.IncidentAiDailyAutonomousTokenLimit = numberFromAPI(data.IncidentAiDailyAutonomousTokenLimit, dataMap["incidentAiDailyAutonomousTokenLimit"])
+    data.AlertAiDailyAutonomousTokenLimit = numberFromAPI(data.AlertAiDailyAutonomousTokenLimit, dataMap["alertAiDailyAutonomousTokenLimit"])
+    data.AiDailyFixTaskLimit = numberFromAPI(data.AiDailyFixTaskLimit, dataMap["aiDailyFixTaskLimit"])
+    data.IncidentAiDailyFixTaskLimit = numberFromAPI(data.IncidentAiDailyFixTaskLimit, dataMap["incidentAiDailyFixTaskLimit"])
+    data.AlertAiDailyFixTaskLimit = numberFromAPI(data.AlertAiDailyFixTaskLimit, dataMap["alertAiDailyFixTaskLimit"])
+    data.AlertInvestigationDedupeWindowMinutes = numberFromAPI(data.AlertInvestigationDedupeWindowMinutes, dataMap["alertInvestigationDedupeWindowMinutes"])
     if obj, ok := dataMap["incidentInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3731,148 +3091,20 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.IncidentInvestigationMinimumSeverityId = types.StringNull()
     }
-    if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(float64); ok {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int); ok {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int64); ok {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["aiMaxConcurrentInvestigations"].(float64); ok {
-        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int); ok {
-        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int64); ok {
-        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(float64); ok {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int); ok {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int64); ok {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(float64); ok {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int); ok {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int64); ok {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(float64); ok {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int); ok {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int64); ok {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(float64); ok {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int); ok {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int64); ok {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
-    }
+    data.IncidentInvestigationDedupeWindowMinutes = numberFromAPI(data.IncidentInvestigationDedupeWindowMinutes, dataMap["incidentInvestigationDedupeWindowMinutes"])
+    data.AiMaxConcurrentInvestigations = numberFromAPI(data.AiMaxConcurrentInvestigations, dataMap["aiMaxConcurrentInvestigations"])
+    data.IncidentAiMaxConcurrentInvestigations = numberFromAPI(data.IncidentAiMaxConcurrentInvestigations, dataMap["incidentAiMaxConcurrentInvestigations"])
+    data.AlertAiMaxConcurrentInvestigations = numberFromAPI(data.AlertAiMaxConcurrentInvestigations, dataMap["alertAiMaxConcurrentInvestigations"])
+    data.IncidentAiInvestigationTimeLimitInMinutes = numberFromAPI(data.IncidentAiInvestigationTimeLimitInMinutes, dataMap["incidentAiInvestigationTimeLimitInMinutes"])
+    data.AlertAiInvestigationTimeLimitInMinutes = numberFromAPI(data.AlertAiInvestigationTimeLimitInMinutes, dataMap["alertAiInvestigationTimeLimitInMinutes"])
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
     }
     if val, ok := dataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"].(bool); ok {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
     }
-    if val, ok := dataMap["defaultMetricCardinalityBudget"].(float64); ok {
-        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int); ok {
-        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int64); ok {
-        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["defaultMetricCardinalityBudget"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DefaultMetricCardinalityBudget = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DefaultMetricCardinalityBudget = types.NumberNull()
-    }
-    if val, ok := dataMap["defaultTelemetryRetentionInDays"].(float64); ok {
-        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int); ok {
-        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int64); ok {
-        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["defaultTelemetryRetentionInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DefaultTelemetryRetentionInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DefaultTelemetryRetentionInDays = types.NumberNull()
-    }
+    data.DefaultMetricCardinalityBudget = numberFromAPI(data.DefaultMetricCardinalityBudget, dataMap["defaultMetricCardinalityBudget"])
+    data.DefaultTelemetryRetentionInDays = numberFromAPI(data.DefaultTelemetryRetentionInDays, dataMap["defaultTelemetryRetentionInDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4080,23 +3312,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.PaymentProviderMeteredSubscriptionId = types.StringNull()
     }
-    if val, ok := dataMap["paymentProviderSubscriptionSeats"].(float64); ok {
-        data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["paymentProviderSubscriptionSeats"].(int); ok {
-        data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["paymentProviderSubscriptionSeats"].(int64); ok {
-        data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["paymentProviderSubscriptionSeats"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PaymentProviderSubscriptionSeats = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PaymentProviderSubscriptionSeats = types.NumberNull()
-    }
+    data.PaymentProviderSubscriptionSeats = numberFromAPI(data.PaymentProviderSubscriptionSeats, dataMap["paymentProviderSubscriptionSeats"])
     if obj, ok := dataMap["trialEndsAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.TrialEndsAt = NewRFC3339Value(val)
@@ -4256,57 +3472,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["workflowRunsInLast30Days"].(float64); ok {
-        data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["workflowRunsInLast30Days"].(int); ok {
-        data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["workflowRunsInLast30Days"].(int64); ok {
-        data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["workflowRunsInLast30Days"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WorkflowRunsInLast30Days = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.WorkflowRunsInLast30Days = types.NumberNull()
-    }
-    if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(float64); ok {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(int); ok {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(int64); ok {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
-    }
-    if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(float64); ok {
-        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(int); ok {
-        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(int64); ok {
-        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiCurrentBalanceInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiCurrentBalanceInUsdCents = types.NumberNull()
-    }
+    data.WorkflowRunsInLast30Days = numberFromAPI(data.WorkflowRunsInLast30Days, dataMap["workflowRunsInLast30Days"])
+    data.SmsOrCallCurrentBalanceInUsdCents = numberFromAPI(data.SmsOrCallCurrentBalanceInUsdCents, dataMap["smsOrCallCurrentBalanceInUSDCents"])
+    data.AiCurrentBalanceInUsdCents = numberFromAPI(data.AiCurrentBalanceInUsdCents, dataMap["aiCurrentBalanceInUSDCents"])
     if obj, ok := dataMap["planName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5338,23 +4506,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["isSessionReplayAllowed"].(bool); ok {
         data.IsSessionReplayAllowed = types.BoolValue(val)
     }
-    if val, ok := dataMap["auditLogsRetentionInDays"].(float64); ok {
-        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int); ok {
-        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int64); ok {
-        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["auditLogsRetentionInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AuditLogsRetentionInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AuditLogsRetentionInDays = types.NumberNull()
-    }
+    data.AuditLogsRetentionInDays = numberFromAPI(data.AuditLogsRetentionInDays, dataMap["auditLogsRetentionInDays"])
     if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
         data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
     }
@@ -5398,40 +4550,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.RequireSsoWithSsoProviderId = types.StringNull()
     }
-    if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(float64); ok {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(int); ok {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(int64); ok {
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
-    }
-    if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(float64); ok {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(int); ok {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(int64); ok {
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
-    }
+    data.AutoRechargeSmsOrCallByBalanceInUsd = numberFromAPI(data.AutoRechargeSmsOrCallByBalanceInUsd, dataMap["autoRechargeSmsOrCallByBalanceInUSD"])
+    data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableSmsNotifications"].(bool); ok {
         data.EnableSmsNotifications = types.BoolValue(val)
     }
@@ -5450,77 +4570,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
     }
-    if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(float64); ok {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(int); ok {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(int64); ok {
-        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoAiRechargeByBalanceInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
-    }
-    if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(float64); ok {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(int); ok {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(int64); ok {
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
-    }
+    data.AutoAiRechargeByBalanceInUsd = numberFromAPI(data.AutoAiRechargeByBalanceInUsd, dataMap["autoAiRechargeByBalanceInUSD"])
+    data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeAiWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
     }
-    if val, ok := dataMap["aiDailyTokenLimit"].(float64); ok {
-        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailyTokenLimit"].(int); ok {
-        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailyTokenLimit"].(int64); ok {
-        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailyTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailyTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["aiDailySpendLimitInUSD"].(float64); ok {
-        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int); ok {
-        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int64); ok {
-        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailySpendLimitInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailySpendLimitInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailySpendLimitInUsd = types.NumberNull()
-    }
+    data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, dataMap["aiDailyTokenLimit"])
+    data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, dataMap["aiDailySpendLimitInUSD"])
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
     }
@@ -5564,125 +4620,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.AlertInvestigationMinimumSeverityId = types.StringNull()
     }
-    if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(float64); ok {
-        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int); ok {
-        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int64); ok {
-        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(float64); ok {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int); ok {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int64); ok {
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(float64); ok {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int); ok {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int64); ok {
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["aiDailyFixTaskLimit"].(float64); ok {
-        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int); ok {
-        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int64); ok {
-        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(float64); ok {
-        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int); ok {
-        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int64); ok {
-        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiDailyFixTaskLimit"].(float64); ok {
-        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int); ok {
-        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int64); ok {
-        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiDailyFixTaskLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiDailyFixTaskLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiDailyFixTaskLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int); ok {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int64); ok {
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
-    }
+    data.AiDailyAutonomousTokenLimit = numberFromAPI(data.AiDailyAutonomousTokenLimit, dataMap["aiDailyAutonomousTokenLimit"])
+    data.IncidentAiDailyAutonomousTokenLimit = numberFromAPI(data.IncidentAiDailyAutonomousTokenLimit, dataMap["incidentAiDailyAutonomousTokenLimit"])
+    data.AlertAiDailyAutonomousTokenLimit = numberFromAPI(data.AlertAiDailyAutonomousTokenLimit, dataMap["alertAiDailyAutonomousTokenLimit"])
+    data.AiDailyFixTaskLimit = numberFromAPI(data.AiDailyFixTaskLimit, dataMap["aiDailyFixTaskLimit"])
+    data.IncidentAiDailyFixTaskLimit = numberFromAPI(data.IncidentAiDailyFixTaskLimit, dataMap["incidentAiDailyFixTaskLimit"])
+    data.AlertAiDailyFixTaskLimit = numberFromAPI(data.AlertAiDailyFixTaskLimit, dataMap["alertAiDailyFixTaskLimit"])
+    data.AlertInvestigationDedupeWindowMinutes = numberFromAPI(data.AlertInvestigationDedupeWindowMinutes, dataMap["alertInvestigationDedupeWindowMinutes"])
     if obj, ok := dataMap["incidentInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5720,148 +4664,20 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.IncidentInvestigationMinimumSeverityId = types.StringNull()
     }
-    if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(float64); ok {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int); ok {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int64); ok {
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["aiMaxConcurrentInvestigations"].(float64); ok {
-        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int); ok {
-        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int64); ok {
-        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(float64); ok {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int); ok {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int64); ok {
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(float64); ok {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int); ok {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int64); ok {
-        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
-    }
-    if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(float64); ok {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int); ok {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int64); ok {
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(float64); ok {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int); ok {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int64); ok {
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
-    }
+    data.IncidentInvestigationDedupeWindowMinutes = numberFromAPI(data.IncidentInvestigationDedupeWindowMinutes, dataMap["incidentInvestigationDedupeWindowMinutes"])
+    data.AiMaxConcurrentInvestigations = numberFromAPI(data.AiMaxConcurrentInvestigations, dataMap["aiMaxConcurrentInvestigations"])
+    data.IncidentAiMaxConcurrentInvestigations = numberFromAPI(data.IncidentAiMaxConcurrentInvestigations, dataMap["incidentAiMaxConcurrentInvestigations"])
+    data.AlertAiMaxConcurrentInvestigations = numberFromAPI(data.AlertAiMaxConcurrentInvestigations, dataMap["alertAiMaxConcurrentInvestigations"])
+    data.IncidentAiInvestigationTimeLimitInMinutes = numberFromAPI(data.IncidentAiInvestigationTimeLimitInMinutes, dataMap["incidentAiInvestigationTimeLimitInMinutes"])
+    data.AlertAiInvestigationTimeLimitInMinutes = numberFromAPI(data.AlertAiInvestigationTimeLimitInMinutes, dataMap["alertAiInvestigationTimeLimitInMinutes"])
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
     }
     if val, ok := dataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"].(bool); ok {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
     }
-    if val, ok := dataMap["defaultMetricCardinalityBudget"].(float64); ok {
-        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int); ok {
-        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int64); ok {
-        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["defaultMetricCardinalityBudget"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DefaultMetricCardinalityBudget = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DefaultMetricCardinalityBudget = types.NumberNull()
-    }
-    if val, ok := dataMap["defaultTelemetryRetentionInDays"].(float64); ok {
-        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int); ok {
-        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int64); ok {
-        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["defaultTelemetryRetentionInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DefaultTelemetryRetentionInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DefaultTelemetryRetentionInDays = types.NumberNull()
-    }
+    data.DefaultMetricCardinalityBudget = numberFromAPI(data.DefaultMetricCardinalityBudget, dataMap["defaultMetricCardinalityBudget"])
+    data.DefaultTelemetryRetentionInDays = numberFromAPI(data.DefaultTelemetryRetentionInDays, dataMap["defaultTelemetryRetentionInDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6069,23 +4885,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.PaymentProviderMeteredSubscriptionId = types.StringNull()
     }
-    if val, ok := dataMap["paymentProviderSubscriptionSeats"].(float64); ok {
-        data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["paymentProviderSubscriptionSeats"].(int); ok {
-        data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["paymentProviderSubscriptionSeats"].(int64); ok {
-        data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["paymentProviderSubscriptionSeats"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PaymentProviderSubscriptionSeats = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PaymentProviderSubscriptionSeats = types.NumberNull()
-    }
+    data.PaymentProviderSubscriptionSeats = numberFromAPI(data.PaymentProviderSubscriptionSeats, dataMap["paymentProviderSubscriptionSeats"])
     if obj, ok := dataMap["trialEndsAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.TrialEndsAt = NewRFC3339Value(val)
@@ -6245,57 +5045,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["workflowRunsInLast30Days"].(float64); ok {
-        data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["workflowRunsInLast30Days"].(int); ok {
-        data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["workflowRunsInLast30Days"].(int64); ok {
-        data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["workflowRunsInLast30Days"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WorkflowRunsInLast30Days = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.WorkflowRunsInLast30Days = types.NumberNull()
-    }
-    if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(float64); ok {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(int); ok {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(int64); ok {
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
-    }
-    if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(float64); ok {
-        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(int); ok {
-        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(int64); ok {
-        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["aiCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AiCurrentBalanceInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AiCurrentBalanceInUsdCents = types.NumberNull()
-    }
+    data.WorkflowRunsInLast30Days = numberFromAPI(data.WorkflowRunsInLast30Days, dataMap["workflowRunsInLast30Days"])
+    data.SmsOrCallCurrentBalanceInUsdCents = numberFromAPI(data.SmsOrCallCurrentBalanceInUsdCents, dataMap["smsOrCallCurrentBalanceInUSDCents"])
+    data.AiCurrentBalanceInUsdCents = numberFromAPI(data.AiCurrentBalanceInUsdCents, dataMap["aiCurrentBalanceInUSDCents"])
     if obj, ok := dataMap["planName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

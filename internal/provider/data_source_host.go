@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -876,39 +875,9 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
     } else {
         data.HostIpAddresses = types.StringNull()
     }
-    if val, ok := item["cpuCores"].(float64); ok {
-        data.CpuCores = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["cpuCores"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CpuCores = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CpuCores = types.NumberNull()
-        }
-    } else {
-        data.CpuCores = types.NumberNull()
-    }
-    if val, ok := item["totalMemoryBytes"].(float64); ok {
-        data.TotalMemoryBytes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["totalMemoryBytes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TotalMemoryBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TotalMemoryBytes = types.NumberNull()
-        }
-    } else {
-        data.TotalMemoryBytes = types.NumberNull()
-    }
-    if val, ok := item["processCount"].(float64); ok {
-        data.ProcessCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["processCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ProcessCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ProcessCount = types.NumberNull()
-        }
-    } else {
-        data.ProcessCount = types.NumberNull()
-    }
+    data.CpuCores = numberFromAPI(data.CpuCores, item["cpuCores"])
+    data.TotalMemoryBytes = numberFromAPI(data.TotalMemoryBytes, item["totalMemoryBytes"])
+    data.ProcessCount = numberFromAPI(data.ProcessCount, item["processCount"])
     if obj, ok := item["containerRuntime"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ContainerRuntime = types.StringValue(val)
@@ -1057,17 +1026,7 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)

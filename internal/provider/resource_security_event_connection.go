@@ -534,23 +534,7 @@ func (r *SecurityEventConnectionResource) Create(ctx context.Context, req resour
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["pollIntervalInMinutes"].(float64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pollIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PollIntervalInMinutes = types.NumberNull()
-    }
+    data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, dataMap["pollIntervalInMinutes"])
     if val, ok := dataMap["alertingOnly"].(bool); ok {
         data.AlertingOnly = types.BoolValue(val)
     }
@@ -999,23 +983,7 @@ func (r *SecurityEventConnectionResource) Read(ctx context.Context, req resource
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["pollIntervalInMinutes"].(float64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pollIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PollIntervalInMinutes = types.NumberNull()
-    }
+    data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, dataMap["pollIntervalInMinutes"])
     if val, ok := dataMap["alertingOnly"].(bool); ok {
         data.AlertingOnly = types.BoolValue(val)
     }
@@ -1525,23 +1493,7 @@ func (r *SecurityEventConnectionResource) Update(ctx context.Context, req resour
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["pollIntervalInMinutes"].(float64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pollIntervalInMinutes"].(int64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pollIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PollIntervalInMinutes = types.NumberNull()
-    }
+    data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, dataMap["pollIntervalInMinutes"])
     if val, ok := dataMap["alertingOnly"].(bool); ok {
         data.AlertingOnly = types.BoolValue(val)
     }

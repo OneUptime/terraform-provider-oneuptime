@@ -365,40 +365,8 @@ func (r *LlmModelPriceResource) Create(ctx context.Context, req resource.CreateR
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["inputPricePerMillionTokensInUSD"].(float64); ok {
-        data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["inputPricePerMillionTokensInUSD"].(int); ok {
-        data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["inputPricePerMillionTokensInUSD"].(int64); ok {
-        data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["inputPricePerMillionTokensInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InputPricePerMillionTokensInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InputPricePerMillionTokensInUsd = types.NumberNull()
-    }
-    if val, ok := dataMap["outputPricePerMillionTokensInUSD"].(float64); ok {
-        data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["outputPricePerMillionTokensInUSD"].(int); ok {
-        data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["outputPricePerMillionTokensInUSD"].(int64); ok {
-        data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["outputPricePerMillionTokensInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OutputPricePerMillionTokensInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OutputPricePerMillionTokensInUsd = types.NumberNull()
-    }
+    data.InputPricePerMillionTokensInUsd = numberFromAPI(data.InputPricePerMillionTokensInUsd, dataMap["inputPricePerMillionTokensInUSD"])
+    data.OutputPricePerMillionTokensInUsd = numberFromAPI(data.OutputPricePerMillionTokensInUsd, dataMap["outputPricePerMillionTokensInUSD"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -618,40 +586,8 @@ func (r *LlmModelPriceResource) Read(ctx context.Context, req resource.ReadReque
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["inputPricePerMillionTokensInUSD"].(float64); ok {
-        data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["inputPricePerMillionTokensInUSD"].(int); ok {
-        data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["inputPricePerMillionTokensInUSD"].(int64); ok {
-        data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["inputPricePerMillionTokensInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InputPricePerMillionTokensInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InputPricePerMillionTokensInUsd = types.NumberNull()
-    }
-    if val, ok := dataMap["outputPricePerMillionTokensInUSD"].(float64); ok {
-        data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["outputPricePerMillionTokensInUSD"].(int); ok {
-        data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["outputPricePerMillionTokensInUSD"].(int64); ok {
-        data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["outputPricePerMillionTokensInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OutputPricePerMillionTokensInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OutputPricePerMillionTokensInUsd = types.NumberNull()
-    }
+    data.InputPricePerMillionTokensInUsd = numberFromAPI(data.InputPricePerMillionTokensInUsd, dataMap["inputPricePerMillionTokensInUSD"])
+    data.OutputPricePerMillionTokensInUsd = numberFromAPI(data.OutputPricePerMillionTokensInUsd, dataMap["outputPricePerMillionTokensInUSD"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -916,40 +852,8 @@ func (r *LlmModelPriceResource) Update(ctx context.Context, req resource.UpdateR
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["inputPricePerMillionTokensInUSD"].(float64); ok {
-        data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["inputPricePerMillionTokensInUSD"].(int); ok {
-        data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["inputPricePerMillionTokensInUSD"].(int64); ok {
-        data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["inputPricePerMillionTokensInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InputPricePerMillionTokensInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InputPricePerMillionTokensInUsd = types.NumberNull()
-    }
-    if val, ok := dataMap["outputPricePerMillionTokensInUSD"].(float64); ok {
-        data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["outputPricePerMillionTokensInUSD"].(int); ok {
-        data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["outputPricePerMillionTokensInUSD"].(int64); ok {
-        data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["outputPricePerMillionTokensInUSD"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OutputPricePerMillionTokensInUsd = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OutputPricePerMillionTokensInUsd = types.NumberNull()
-    }
+    data.InputPricePerMillionTokensInUsd = numberFromAPI(data.InputPricePerMillionTokensInUsd, dataMap["inputPricePerMillionTokensInUSD"])
+    data.OutputPricePerMillionTokensInUsd = numberFromAPI(data.OutputPricePerMillionTokensInUsd, dataMap["outputPricePerMillionTokensInUSD"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)

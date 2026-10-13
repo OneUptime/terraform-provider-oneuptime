@@ -542,23 +542,7 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["evaluationIntervalInMinutes"].(float64); ok {
-        data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["evaluationIntervalInMinutes"].(int); ok {
-        data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["evaluationIntervalInMinutes"].(int64); ok {
-        data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["evaluationIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EvaluationIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.EvaluationIntervalInMinutes = types.NumberNull()
-    }
+    data.EvaluationIntervalInMinutes = numberFromAPI(data.EvaluationIntervalInMinutes, dataMap["evaluationIntervalInMinutes"])
     if obj, ok := dataMap["groupByField"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -633,23 +617,7 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.DistinctCountField = types.StringNull()
     }
-    if val, ok := dataMap["matchCountThreshold"].(float64); ok {
-        data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["matchCountThreshold"].(int); ok {
-        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["matchCountThreshold"].(int64); ok {
-        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["matchCountThreshold"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MatchCountThreshold = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MatchCountThreshold = types.NumberNull()
-    }
+    data.MatchCountThreshold = numberFromAPI(data.MatchCountThreshold, dataMap["matchCountThreshold"])
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     }
@@ -1059,23 +1027,7 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["evaluationIntervalInMinutes"].(float64); ok {
-        data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["evaluationIntervalInMinutes"].(int); ok {
-        data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["evaluationIntervalInMinutes"].(int64); ok {
-        data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["evaluationIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EvaluationIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.EvaluationIntervalInMinutes = types.NumberNull()
-    }
+    data.EvaluationIntervalInMinutes = numberFromAPI(data.EvaluationIntervalInMinutes, dataMap["evaluationIntervalInMinutes"])
     if obj, ok := dataMap["groupByField"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1150,23 +1102,7 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.DistinctCountField = types.StringNull()
     }
-    if val, ok := dataMap["matchCountThreshold"].(float64); ok {
-        data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["matchCountThreshold"].(int); ok {
-        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["matchCountThreshold"].(int64); ok {
-        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["matchCountThreshold"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MatchCountThreshold = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MatchCountThreshold = types.NumberNull()
-    }
+    data.MatchCountThreshold = numberFromAPI(data.MatchCountThreshold, dataMap["matchCountThreshold"])
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     }
@@ -1650,23 +1586,7 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["evaluationIntervalInMinutes"].(float64); ok {
-        data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["evaluationIntervalInMinutes"].(int); ok {
-        data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["evaluationIntervalInMinutes"].(int64); ok {
-        data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["evaluationIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EvaluationIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.EvaluationIntervalInMinutes = types.NumberNull()
-    }
+    data.EvaluationIntervalInMinutes = numberFromAPI(data.EvaluationIntervalInMinutes, dataMap["evaluationIntervalInMinutes"])
     if obj, ok := dataMap["groupByField"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1741,23 +1661,7 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.DistinctCountField = types.StringNull()
     }
-    if val, ok := dataMap["matchCountThreshold"].(float64); ok {
-        data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["matchCountThreshold"].(int); ok {
-        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["matchCountThreshold"].(int64); ok {
-        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["matchCountThreshold"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MatchCountThreshold = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MatchCountThreshold = types.NumberNull()
-    }
+    data.MatchCountThreshold = numberFromAPI(data.MatchCountThreshold, dataMap["matchCountThreshold"])
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     }

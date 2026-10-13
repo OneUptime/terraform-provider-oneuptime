@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -449,39 +448,9 @@ func (d *InventoryItemRelationshipDataSource) Read(ctx context.Context, req data
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["callCount"].(float64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["callCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CallCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallCount = types.NumberNull()
-        }
-    } else {
-        data.CallCount = types.NumberNull()
-    }
-    if val, ok := item["errorCount"].(float64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["errorCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorCount = types.NumberNull()
-        }
-    } else {
-        data.ErrorCount = types.NumberNull()
-    }
-    if val, ok := item["avgDurationMs"].(float64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["avgDurationMs"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AvgDurationMs = types.NumberNull()
-        }
-    } else {
-        data.AvgDurationMs = types.NumberNull()
-    }
+    data.CallCount = numberFromAPI(data.CallCount, item["callCount"])
+    data.ErrorCount = numberFromAPI(data.ErrorCount, item["errorCount"])
+    data.AvgDurationMs = numberFromAPI(data.AvgDurationMs, item["avgDurationMs"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -653,94 +652,14 @@ func (d *DockerSwarmClusterDataSource) Read(ctx context.Context, req datasource.
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["nodeCount"].(float64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["nodeCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.NodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NodeCount = types.NumberNull()
-        }
-    } else {
-        data.NodeCount = types.NumberNull()
-    }
-    if val, ok := item["readyNodeCount"].(float64); ok {
-        data.ReadyNodeCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["readyNodeCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ReadyNodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReadyNodeCount = types.NumberNull()
-        }
-    } else {
-        data.ReadyNodeCount = types.NumberNull()
-    }
-    if val, ok := item["managerNodeCount"].(float64); ok {
-        data.ManagerNodeCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["managerNodeCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ManagerNodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ManagerNodeCount = types.NumberNull()
-        }
-    } else {
-        data.ManagerNodeCount = types.NumberNull()
-    }
-    if val, ok := item["serviceCount"].(float64); ok {
-        data.ServiceCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["serviceCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ServiceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ServiceCount = types.NumberNull()
-        }
-    } else {
-        data.ServiceCount = types.NumberNull()
-    }
-    if val, ok := item["taskCount"].(float64); ok {
-        data.TaskCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["taskCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TaskCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TaskCount = types.NumberNull()
-        }
-    } else {
-        data.TaskCount = types.NumberNull()
-    }
-    if val, ok := item["runningTaskCount"].(float64); ok {
-        data.RunningTaskCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["runningTaskCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RunningTaskCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RunningTaskCount = types.NumberNull()
-        }
-    } else {
-        data.RunningTaskCount = types.NumberNull()
-    }
-    if val, ok := item["stackCount"].(float64); ok {
-        data.StackCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["stackCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.StackCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.StackCount = types.NumberNull()
-        }
-    } else {
-        data.StackCount = types.NumberNull()
-    }
-    if val, ok := item["networkCount"].(float64); ok {
-        data.NetworkCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["networkCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.NetworkCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NetworkCount = types.NumberNull()
-        }
-    } else {
-        data.NetworkCount = types.NumberNull()
-    }
+    data.NodeCount = numberFromAPI(data.NodeCount, item["nodeCount"])
+    data.ReadyNodeCount = numberFromAPI(data.ReadyNodeCount, item["readyNodeCount"])
+    data.ManagerNodeCount = numberFromAPI(data.ManagerNodeCount, item["managerNodeCount"])
+    data.ServiceCount = numberFromAPI(data.ServiceCount, item["serviceCount"])
+    data.TaskCount = numberFromAPI(data.TaskCount, item["taskCount"])
+    data.RunningTaskCount = numberFromAPI(data.RunningTaskCount, item["runningTaskCount"])
+    data.StackCount = numberFromAPI(data.StackCount, item["stackCount"])
+    data.NetworkCount = numberFromAPI(data.NetworkCount, item["networkCount"])
     if obj, ok := item["swarmId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SwarmId = types.StringValue(val)
@@ -838,17 +757,7 @@ func (d *DockerSwarmClusterDataSource) Read(ctx context.Context, req datasource.
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)

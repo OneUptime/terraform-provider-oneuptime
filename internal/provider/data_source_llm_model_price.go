@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -352,28 +351,8 @@ func (d *LlmModelPriceDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.IsEnabled = types.BoolNull()
     }
-    if val, ok := item["inputPricePerMillionTokensInUSD"].(float64); ok {
-        data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["inputPricePerMillionTokensInUSD"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InputPricePerMillionTokensInUsd = types.NumberNull()
-        }
-    } else {
-        data.InputPricePerMillionTokensInUsd = types.NumberNull()
-    }
-    if val, ok := item["outputPricePerMillionTokensInUSD"].(float64); ok {
-        data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["outputPricePerMillionTokensInUSD"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OutputPricePerMillionTokensInUsd = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OutputPricePerMillionTokensInUsd = types.NumberNull()
-        }
-    } else {
-        data.OutputPricePerMillionTokensInUsd = types.NumberNull()
-    }
+    data.InputPricePerMillionTokensInUsd = numberFromAPI(data.InputPricePerMillionTokensInUsd, item["inputPricePerMillionTokensInUSD"])
+    data.OutputPricePerMillionTokensInUsd = numberFromAPI(data.OutputPricePerMillionTokensInUsd, item["outputPricePerMillionTokensInUSD"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -579,17 +578,7 @@ func (d *OnCallPolicyScheduleDataSource) Read(ctx context.Context, req datasourc
     } else {
         data.RosterStartAt = types.StringNull()
     }
-    if val, ok := item["shiftConfigVersion"].(float64); ok {
-        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["shiftConfigVersion"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ShiftConfigVersion = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShiftConfigVersion = types.NumberNull()
-        }
-    } else {
-        data.ShiftConfigVersion = types.NumberNull()
-    }
+    data.ShiftConfigVersion = numberFromAPI(data.ShiftConfigVersion, item["shiftConfigVersion"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

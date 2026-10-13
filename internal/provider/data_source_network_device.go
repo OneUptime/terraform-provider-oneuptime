@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -1246,17 +1245,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := item["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["snmpPort"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, item["snmpPort"])
     if obj, ok := item["snmpV3Auth"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SnmpV3Auth = types.StringValue(val)
@@ -1381,17 +1370,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.IsPollingEnabled = types.BoolNull()
     }
-    if val, ok := item["pollingIntervalInMinutes"].(float64); ok {
-        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["pollingIntervalInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollingIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        data.PollingIntervalInMinutes = types.NumberNull()
-    }
+    data.PollingIntervalInMinutes = numberFromAPI(data.PollingIntervalInMinutes, item["pollingIntervalInMinutes"])
     if val, ok := item["walkInterfaces"].(bool); ok {
         data.WalkInterfaces = types.BoolValue(val)
     } else {
@@ -1791,39 +1770,9 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.LastSnmpSeenAt = types.StringNull()
     }
-    if val, ok := item["interfacesTotal"].(float64); ok {
-        data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["interfacesTotal"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesTotal = types.NumberNull()
-        }
-    } else {
-        data.InterfacesTotal = types.NumberNull()
-    }
-    if val, ok := item["interfacesUp"].(float64); ok {
-        data.InterfacesUp = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["interfacesUp"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesUp = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesUp = types.NumberNull()
-        }
-    } else {
-        data.InterfacesUp = types.NumberNull()
-    }
-    if val, ok := item["interfacesDown"].(float64); ok {
-        data.InterfacesDown = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["interfacesDown"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfacesDown = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfacesDown = types.NumberNull()
-        }
-    } else {
-        data.InterfacesDown = types.NumberNull()
-    }
+    data.InterfacesTotal = numberFromAPI(data.InterfacesTotal, item["interfacesTotal"])
+    data.InterfacesUp = numberFromAPI(data.InterfacesUp, item["interfacesUp"])
+    data.InterfacesDown = numberFromAPI(data.InterfacesDown, item["interfacesDown"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)

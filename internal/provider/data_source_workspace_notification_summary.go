@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -484,17 +483,7 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
     } else {
         data.RecurringInterval = types.StringNull()
     }
-    if val, ok := item["numberOfDaysOfData"].(float64); ok {
-        data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["numberOfDaysOfData"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NumberOfDaysOfData = types.NumberNull()
-        }
-    } else {
-        data.NumberOfDaysOfData = types.NumberNull()
-    }
+    data.NumberOfDaysOfData = numberFromAPI(data.NumberOfDaysOfData, item["numberOfDaysOfData"])
     if obj, ok := item["sendFirstReportAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SendFirstReportAt = types.StringValue(val)

@@ -404,40 +404,8 @@ func (r *EscalationRuleResource) Create(ctx context.Context, req resource.Create
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["escalateAfterInMinutes"].(float64); ok {
-        data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["escalateAfterInMinutes"].(int); ok {
-        data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["escalateAfterInMinutes"].(int64); ok {
-        data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["escalateAfterInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EscalateAfterInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.EscalateAfterInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.EscalateAfterInMinutes = numberFromAPI(data.EscalateAfterInMinutes, dataMap["escalateAfterInMinutes"])
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -691,40 +659,8 @@ func (r *EscalationRuleResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["escalateAfterInMinutes"].(float64); ok {
-        data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["escalateAfterInMinutes"].(int); ok {
-        data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["escalateAfterInMinutes"].(int64); ok {
-        data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["escalateAfterInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EscalateAfterInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.EscalateAfterInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.EscalateAfterInMinutes = numberFromAPI(data.EscalateAfterInMinutes, dataMap["escalateAfterInMinutes"])
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1020,40 +956,8 @@ func (r *EscalationRuleResource) Update(ctx context.Context, req resource.Update
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["escalateAfterInMinutes"].(float64); ok {
-        data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["escalateAfterInMinutes"].(int); ok {
-        data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["escalateAfterInMinutes"].(int64); ok {
-        data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["escalateAfterInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EscalateAfterInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.EscalateAfterInMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.EscalateAfterInMinutes = numberFromAPI(data.EscalateAfterInMinutes, dataMap["escalateAfterInMinutes"])
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)

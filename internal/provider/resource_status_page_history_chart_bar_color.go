@@ -81,7 +81,7 @@ func (r *StatusPageHistoryChartBarColorResource) schemaDefinition() schema.Schem
                 },
             },
             "uptime_percent_greater_than_or_equal_to": schema.NumberAttribute{
-                MarkdownDescription: "Uptime percent greater than or equal to this value.",
+                MarkdownDescription: "Uptime percent, from 0 to 100, that a day must reach for this rule to color its bar (99.65 for example).",
                 Required: true,
             },
             "bar_color": schema.StringAttribute{
@@ -318,23 +318,7 @@ func (r *StatusPageHistoryChartBarColorResource) Create(ctx context.Context, req
     } else {
         data.StatusPageId = types.StringNull()
     }
-    if val, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(float64); ok {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(int); ok {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(int64); ok {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.UptimePercentGreaterThanOrEqualTo = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberNull()
-    }
+    data.UptimePercentGreaterThanOrEqualTo = numberFromAPI(data.UptimePercentGreaterThanOrEqualTo, dataMap["uptimePercentGreaterThanOrEqualTo"])
     if obj, ok := dataMap["barColor"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -372,23 +356,7 @@ func (r *StatusPageHistoryChartBarColorResource) Create(ctx context.Context, req
     } else {
         data.BarColor = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -567,23 +535,7 @@ func (r *StatusPageHistoryChartBarColorResource) Read(ctx context.Context, req r
     } else {
         data.StatusPageId = types.StringNull()
     }
-    if val, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(float64); ok {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(int); ok {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(int64); ok {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.UptimePercentGreaterThanOrEqualTo = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberNull()
-    }
+    data.UptimePercentGreaterThanOrEqualTo = numberFromAPI(data.UptimePercentGreaterThanOrEqualTo, dataMap["uptimePercentGreaterThanOrEqualTo"])
     if obj, ok := dataMap["barColor"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -621,23 +573,7 @@ func (r *StatusPageHistoryChartBarColorResource) Read(ctx context.Context, req r
     } else {
         data.BarColor = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -860,23 +796,7 @@ func (r *StatusPageHistoryChartBarColorResource) Update(ctx context.Context, req
     } else {
         data.StatusPageId = types.StringNull()
     }
-    if val, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(float64); ok {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(int); ok {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(int64); ok {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["uptimePercentGreaterThanOrEqualTo"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.UptimePercentGreaterThanOrEqualTo = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberNull()
-    }
+    data.UptimePercentGreaterThanOrEqualTo = numberFromAPI(data.UptimePercentGreaterThanOrEqualTo, dataMap["uptimePercentGreaterThanOrEqualTo"])
     if obj, ok := dataMap["barColor"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -914,23 +834,7 @@ func (r *StatusPageHistoryChartBarColorResource) Update(ctx context.Context, req
     } else {
         data.BarColor = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, dataMap["order"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)

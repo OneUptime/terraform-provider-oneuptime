@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -613,17 +612,7 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.TestCommand = types.StringNull()
     }
-    if val, ok := item["maxOpenFixPullRequests"].(float64); ok {
-        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["maxOpenFixPullRequests"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxOpenFixPullRequests = types.NumberNull()
-        }
-    } else {
-        data.MaxOpenFixPullRequests = types.NumberNull()
-    }
+    data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, item["maxOpenFixPullRequests"])
     if val, ok := item["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
     } else {

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -564,28 +563,8 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.IsEnabled = types.BoolNull()
     }
-    if val, ok := item["pollIntervalInMinutes"].(float64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["pollIntervalInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        data.PollIntervalInMinutes = types.NumberNull()
-    }
-    if val, ok := item["minimumConfidence"].(float64); ok {
-        data.MinimumConfidence = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["minimumConfidence"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumConfidence = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumConfidence = types.NumberNull()
-        }
-    } else {
-        data.MinimumConfidence = types.NumberNull()
-    }
+    data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, item["pollIntervalInMinutes"])
+    data.MinimumConfidence = numberFromAPI(data.MinimumConfidence, item["minimumConfidence"])
     if val, ok := item["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     } else {

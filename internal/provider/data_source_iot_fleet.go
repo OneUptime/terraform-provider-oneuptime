@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -513,28 +512,8 @@ func (d *IotFleetDataSource) Read(ctx context.Context, req datasource.ReadReques
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["deviceCount"].(float64); ok {
-        data.DeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["deviceCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DeviceCount = types.NumberNull()
-        }
-    } else {
-        data.DeviceCount = types.NumberNull()
-    }
-    if val, ok := item["onlineDeviceCount"].(float64); ok {
-        data.OnlineDeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["onlineDeviceCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OnlineDeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnlineDeviceCount = types.NumberNull()
-        }
-    } else {
-        data.OnlineDeviceCount = types.NumberNull()
-    }
+    data.DeviceCount = numberFromAPI(data.DeviceCount, item["deviceCount"])
+    data.OnlineDeviceCount = numberFromAPI(data.OnlineDeviceCount, item["onlineDeviceCount"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)
@@ -615,17 +594,7 @@ func (d *IotFleetDataSource) Read(ctx context.Context, req datasource.ReadReques
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)

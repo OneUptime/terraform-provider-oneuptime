@@ -767,23 +767,7 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.ServerAddress = types.StringNull()
     }
-    if val, ok := dataMap["serverPort"].(float64); ok {
-        data.ServerPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["serverPort"].(int); ok {
-        data.ServerPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["serverPort"].(int64); ok {
-        data.ServerPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["serverPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ServerPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ServerPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ServerPort = types.NumberNull()
-    }
+    data.ServerPort = numberFromAPI(data.ServerPort, dataMap["serverPort"])
     if obj, ok := dataMap["discoverySource"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -856,23 +840,7 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1379,23 +1347,7 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.MemberEntityKeys = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["instanceCount"].(float64); ok {
-        data.InstanceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["instanceCount"].(int); ok {
-        data.InstanceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["instanceCount"].(int64); ok {
-        data.InstanceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["instanceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InstanceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InstanceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InstanceCount = types.NumberNull()
-    }
+    data.InstanceCount = numberFromAPI(data.InstanceCount, dataMap["instanceCount"])
     if obj, ok := dataMap["otelCollectorStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2045,23 +1997,7 @@ func (r *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.ServerAddress = types.StringNull()
     }
-    if val, ok := dataMap["serverPort"].(float64); ok {
-        data.ServerPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["serverPort"].(int); ok {
-        data.ServerPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["serverPort"].(int64); ok {
-        data.ServerPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["serverPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ServerPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ServerPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ServerPort = types.NumberNull()
-    }
+    data.ServerPort = numberFromAPI(data.ServerPort, dataMap["serverPort"])
     if obj, ok := dataMap["discoverySource"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2134,23 +2070,7 @@ func (r *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, r
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2657,23 +2577,7 @@ func (r *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.MemberEntityKeys = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["instanceCount"].(float64); ok {
-        data.InstanceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["instanceCount"].(int); ok {
-        data.InstanceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["instanceCount"].(int64); ok {
-        data.InstanceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["instanceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InstanceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InstanceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InstanceCount = types.NumberNull()
-    }
+    data.InstanceCount = numberFromAPI(data.InstanceCount, dataMap["instanceCount"])
     if obj, ok := dataMap["otelCollectorStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3390,23 +3294,7 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         data.ServerAddress = types.StringNull()
     }
-    if val, ok := dataMap["serverPort"].(float64); ok {
-        data.ServerPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["serverPort"].(int); ok {
-        data.ServerPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["serverPort"].(int64); ok {
-        data.ServerPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["serverPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ServerPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ServerPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ServerPort = types.NumberNull()
-    }
+    data.ServerPort = numberFromAPI(data.ServerPort, dataMap["serverPort"])
     if obj, ok := dataMap["discoverySource"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3479,23 +3367,7 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4002,23 +3874,7 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         data.MemberEntityKeys = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["instanceCount"].(float64); ok {
-        data.InstanceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["instanceCount"].(int); ok {
-        data.InstanceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["instanceCount"].(int64); ok {
-        data.InstanceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["instanceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.InstanceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InstanceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.InstanceCount = types.NumberNull()
-    }
+    data.InstanceCount = numberFromAPI(data.InstanceCount, dataMap["instanceCount"])
     if obj, ok := dataMap["otelCollectorStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -359,17 +358,7 @@ func (d *AiRunEventDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.UserId = types.StringNull()
     }
-    if val, ok := item["sequence"].(float64); ok {
-        data.Sequence = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sequence"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Sequence = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Sequence = types.NumberNull()
-        }
-    } else {
-        data.Sequence = types.NumberNull()
-    }
+    data.Sequence = numberFromAPI(data.Sequence, item["sequence"])
     if obj, ok := item["eventType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.EventType = types.StringValue(val)

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -773,17 +772,7 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
     } else {
         data.IsArchived = types.BoolNull()
     }
-    if val, ok := item["occuranceCount"].(float64); ok {
-        data.OccuranceCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["occuranceCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OccuranceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OccuranceCount = types.NumberNull()
-        }
-    } else {
-        data.OccuranceCount = types.NumberNull()
-    }
+    data.OccuranceCount = numberFromAPI(data.OccuranceCount, item["occuranceCount"])
     if obj, ok := item["firstSeenInRelease"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.FirstSeenInRelease = types.StringValue(val)

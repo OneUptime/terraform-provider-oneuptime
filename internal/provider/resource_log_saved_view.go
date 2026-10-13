@@ -540,23 +540,7 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.SortOrder = types.StringNull()
     }
-    if val, ok := dataMap["pageSize"].(float64); ok {
-        data.PageSize = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pageSize"].(int); ok {
-        data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pageSize"].(int64); ok {
-        data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pageSize"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PageSize = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PageSize = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PageSize = types.NumberNull()
-    }
+    data.PageSize = numberFromAPI(data.PageSize, dataMap["pageSize"])
     if obj, ok := dataMap["timeRange"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -927,23 +911,7 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.SortOrder = types.StringNull()
     }
-    if val, ok := dataMap["pageSize"].(float64); ok {
-        data.PageSize = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pageSize"].(int); ok {
-        data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pageSize"].(int64); ok {
-        data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pageSize"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PageSize = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PageSize = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PageSize = types.NumberNull()
-    }
+    data.PageSize = numberFromAPI(data.PageSize, dataMap["pageSize"])
     if obj, ok := dataMap["timeRange"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1388,23 +1356,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
     } else {
         data.SortOrder = types.StringNull()
     }
-    if val, ok := dataMap["pageSize"].(float64); ok {
-        data.PageSize = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["pageSize"].(int); ok {
-        data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["pageSize"].(int64); ok {
-        data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["pageSize"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PageSize = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PageSize = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PageSize = types.NumberNull()
-    }
+    data.PageSize = numberFromAPI(data.PageSize, dataMap["pageSize"])
     if obj, ok := dataMap["timeRange"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

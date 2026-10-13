@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -806,17 +805,7 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
     } else {
         data.MetricQueryConfig = types.StringNull()
     }
-    if val, ok := item["targetPercentage"].(float64); ok {
-        data.TargetPercentage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["targetPercentage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TargetPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TargetPercentage = types.NumberNull()
-        }
-    } else {
-        data.TargetPercentage = types.NumberNull()
-    }
+    data.TargetPercentage = numberFromAPI(data.TargetPercentage, item["targetPercentage"])
     if obj, ok := item["windowType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.WindowType = types.StringValue(val)
@@ -834,17 +823,7 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
     } else {
         data.WindowType = types.StringNull()
     }
-    if val, ok := item["windowDays"].(float64); ok {
-        data.WindowDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["windowDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.WindowDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WindowDays = types.NumberNull()
-        }
-    } else {
-        data.WindowDays = types.NumberNull()
-    }
+    data.WindowDays = numberFromAPI(data.WindowDays, item["windowDays"])
     if obj, ok := item["timezone"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Timezone = types.StringValue(val)
@@ -862,72 +841,12 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
     } else {
         data.Timezone = types.StringNull()
     }
-    if val, ok := item["atRiskThresholdPercentage"].(float64); ok {
-        data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["atRiskThresholdPercentage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AtRiskThresholdPercentage = types.NumberNull()
-        }
-    } else {
-        data.AtRiskThresholdPercentage = types.NumberNull()
-    }
-    if val, ok := item["currentSliPercentage"].(float64); ok {
-        data.CurrentSliPercentage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["currentSliPercentage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentSliPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentSliPercentage = types.NumberNull()
-        }
-    } else {
-        data.CurrentSliPercentage = types.NumberNull()
-    }
-    if val, ok := item["errorBudgetRemainingPercentage"].(float64); ok {
-        data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["errorBudgetRemainingPercentage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetRemainingPercentage = types.NumberNull()
-        }
-    } else {
-        data.ErrorBudgetRemainingPercentage = types.NumberNull()
-    }
-    if val, ok := item["errorBudgetRemainingSeconds"].(float64); ok {
-        data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["errorBudgetRemainingSeconds"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetRemainingSeconds = types.NumberNull()
-        }
-    } else {
-        data.ErrorBudgetRemainingSeconds = types.NumberNull()
-    }
-    if val, ok := item["errorBudgetTotalSeconds"].(float64); ok {
-        data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["errorBudgetTotalSeconds"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetTotalSeconds = types.NumberNull()
-        }
-    } else {
-        data.ErrorBudgetTotalSeconds = types.NumberNull()
-    }
-    if val, ok := item["currentBurnRate"].(float64); ok {
-        data.CurrentBurnRate = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["currentBurnRate"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentBurnRate = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentBurnRate = types.NumberNull()
-        }
-    } else {
-        data.CurrentBurnRate = types.NumberNull()
-    }
+    data.AtRiskThresholdPercentage = numberFromAPI(data.AtRiskThresholdPercentage, item["atRiskThresholdPercentage"])
+    data.CurrentSliPercentage = numberFromAPI(data.CurrentSliPercentage, item["currentSliPercentage"])
+    data.ErrorBudgetRemainingPercentage = numberFromAPI(data.ErrorBudgetRemainingPercentage, item["errorBudgetRemainingPercentage"])
+    data.ErrorBudgetRemainingSeconds = numberFromAPI(data.ErrorBudgetRemainingSeconds, item["errorBudgetRemainingSeconds"])
+    data.ErrorBudgetTotalSeconds = numberFromAPI(data.ErrorBudgetTotalSeconds, item["errorBudgetTotalSeconds"])
+    data.CurrentBurnRate = numberFromAPI(data.CurrentBurnRate, item["currentBurnRate"])
     if obj, ok := item["sloStatus"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SloStatus = types.StringValue(val)

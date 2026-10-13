@@ -741,23 +741,7 @@ func (r *HostResource) Create(ctx context.Context, req resource.CreateRequest, r
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1102,57 +1086,9 @@ func (r *HostResource) Create(ctx context.Context, req resource.CreateRequest, r
     } else {
         data.HostIpAddresses = types.StringNull()
     }
-    if val, ok := dataMap["cpuCores"].(float64); ok {
-        data.CpuCores = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["cpuCores"].(int); ok {
-        data.CpuCores = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["cpuCores"].(int64); ok {
-        data.CpuCores = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["cpuCores"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CpuCores = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CpuCores = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CpuCores = types.NumberNull()
-    }
-    if val, ok := dataMap["totalMemoryBytes"].(float64); ok {
-        data.TotalMemoryBytes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["totalMemoryBytes"].(int); ok {
-        data.TotalMemoryBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["totalMemoryBytes"].(int64); ok {
-        data.TotalMemoryBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["totalMemoryBytes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.TotalMemoryBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TotalMemoryBytes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.TotalMemoryBytes = types.NumberNull()
-    }
-    if val, ok := dataMap["processCount"].(float64); ok {
-        data.ProcessCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["processCount"].(int); ok {
-        data.ProcessCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["processCount"].(int64); ok {
-        data.ProcessCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["processCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ProcessCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ProcessCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ProcessCount = types.NumberNull()
-    }
+    data.CpuCores = numberFromAPI(data.CpuCores, dataMap["cpuCores"])
+    data.TotalMemoryBytes = numberFromAPI(data.TotalMemoryBytes, dataMap["totalMemoryBytes"])
+    data.ProcessCount = numberFromAPI(data.ProcessCount, dataMap["processCount"])
     if obj, ok := dataMap["containerRuntime"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2103,23 +2039,7 @@ func (r *HostResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2464,57 +2384,9 @@ func (r *HostResource) Read(ctx context.Context, req resource.ReadRequest, resp 
     } else {
         data.HostIpAddresses = types.StringNull()
     }
-    if val, ok := dataMap["cpuCores"].(float64); ok {
-        data.CpuCores = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["cpuCores"].(int); ok {
-        data.CpuCores = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["cpuCores"].(int64); ok {
-        data.CpuCores = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["cpuCores"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CpuCores = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CpuCores = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CpuCores = types.NumberNull()
-    }
-    if val, ok := dataMap["totalMemoryBytes"].(float64); ok {
-        data.TotalMemoryBytes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["totalMemoryBytes"].(int); ok {
-        data.TotalMemoryBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["totalMemoryBytes"].(int64); ok {
-        data.TotalMemoryBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["totalMemoryBytes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.TotalMemoryBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TotalMemoryBytes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.TotalMemoryBytes = types.NumberNull()
-    }
-    if val, ok := dataMap["processCount"].(float64); ok {
-        data.ProcessCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["processCount"].(int); ok {
-        data.ProcessCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["processCount"].(int64); ok {
-        data.ProcessCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["processCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ProcessCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ProcessCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ProcessCount = types.NumberNull()
-    }
+    data.CpuCores = numberFromAPI(data.CpuCores, dataMap["cpuCores"])
+    data.TotalMemoryBytes = numberFromAPI(data.TotalMemoryBytes, dataMap["totalMemoryBytes"])
+    data.ProcessCount = numberFromAPI(data.ProcessCount, dataMap["processCount"])
     if obj, ok := dataMap["containerRuntime"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3574,23 +3446,7 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3935,57 +3791,9 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
     } else {
         data.HostIpAddresses = types.StringNull()
     }
-    if val, ok := dataMap["cpuCores"].(float64); ok {
-        data.CpuCores = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["cpuCores"].(int); ok {
-        data.CpuCores = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["cpuCores"].(int64); ok {
-        data.CpuCores = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["cpuCores"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CpuCores = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CpuCores = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CpuCores = types.NumberNull()
-    }
-    if val, ok := dataMap["totalMemoryBytes"].(float64); ok {
-        data.TotalMemoryBytes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["totalMemoryBytes"].(int); ok {
-        data.TotalMemoryBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["totalMemoryBytes"].(int64); ok {
-        data.TotalMemoryBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["totalMemoryBytes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.TotalMemoryBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TotalMemoryBytes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.TotalMemoryBytes = types.NumberNull()
-    }
-    if val, ok := dataMap["processCount"].(float64); ok {
-        data.ProcessCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["processCount"].(int); ok {
-        data.ProcessCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["processCount"].(int64); ok {
-        data.ProcessCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["processCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ProcessCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ProcessCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ProcessCount = types.NumberNull()
-    }
+    data.CpuCores = numberFromAPI(data.CpuCores, dataMap["cpuCores"])
+    data.TotalMemoryBytes = numberFromAPI(data.TotalMemoryBytes, dataMap["totalMemoryBytes"])
+    data.ProcessCount = numberFromAPI(data.ProcessCount, dataMap["processCount"])
     if obj, ok := dataMap["containerRuntime"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

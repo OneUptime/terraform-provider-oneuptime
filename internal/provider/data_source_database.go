@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -744,17 +743,7 @@ func (d *DatabaseDataSource) Read(ctx context.Context, req datasource.ReadReques
     } else {
         data.ServerAddress = types.StringNull()
     }
-    if val, ok := item["serverPort"].(float64); ok {
-        data.ServerPort = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["serverPort"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ServerPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ServerPort = types.NumberNull()
-        }
-    } else {
-        data.ServerPort = types.NumberNull()
-    }
+    data.ServerPort = numberFromAPI(data.ServerPort, item["serverPort"])
     if obj, ok := item["dbVersion"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.DbVersion = types.StringValue(val)
@@ -908,17 +897,7 @@ func (d *DatabaseDataSource) Read(ctx context.Context, req datasource.ReadReques
     } else {
         data.MemberEntityKeys = types.StringNull()
     }
-    if val, ok := item["instanceCount"].(float64); ok {
-        data.InstanceCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["instanceCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InstanceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InstanceCount = types.NumberNull()
-        }
-    } else {
-        data.InstanceCount = types.NumberNull()
-    }
+    data.InstanceCount = numberFromAPI(data.InstanceCount, item["instanceCount"])
     if obj, ok := item["otelCollectorStatus"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.OtelCollectorStatus = types.StringValue(val)
@@ -1152,17 +1131,7 @@ func (d *DatabaseDataSource) Read(ctx context.Context, req datasource.ReadReques
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)

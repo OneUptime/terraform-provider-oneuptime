@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -381,17 +380,7 @@ func (d *SourceMapDataSource) Read(ctx context.Context, req datasource.ReadReque
     } else {
         data.Content = types.StringNull()
     }
-    if val, ok := item["sizeInBytes"].(float64); ok {
-        data.SizeInBytes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sizeInBytes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SizeInBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SizeInBytes = types.NumberNull()
-        }
-    } else {
-        data.SizeInBytes = types.NumberNull()
-    }
+    data.SizeInBytes = numberFromAPI(data.SizeInBytes, item["sizeInBytes"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)

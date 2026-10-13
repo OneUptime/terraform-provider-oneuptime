@@ -525,57 +525,9 @@ func (r *PacketCaptureResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.BpfFilter = types.StringNull()
     }
-    if val, ok := dataMap["maxDurationInSeconds"].(float64); ok {
-        data.MaxDurationInSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["maxDurationInSeconds"].(int); ok {
-        data.MaxDurationInSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["maxDurationInSeconds"].(int64); ok {
-        data.MaxDurationInSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["maxDurationInSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxDurationInSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxDurationInSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MaxDurationInSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["maxPackets"].(float64); ok {
-        data.MaxPackets = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["maxPackets"].(int); ok {
-        data.MaxPackets = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["maxPackets"].(int64); ok {
-        data.MaxPackets = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["maxPackets"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxPackets = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxPackets = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MaxPackets = types.NumberNull()
-    }
-    if val, ok := dataMap["maxFileSizeInMB"].(float64); ok {
-        data.MaxFileSizeInMb = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["maxFileSizeInMB"].(int); ok {
-        data.MaxFileSizeInMb = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["maxFileSizeInMB"].(int64); ok {
-        data.MaxFileSizeInMb = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["maxFileSizeInMB"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxFileSizeInMb = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxFileSizeInMb = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MaxFileSizeInMb = types.NumberNull()
-    }
+    data.MaxDurationInSeconds = numberFromAPI(data.MaxDurationInSeconds, dataMap["maxDurationInSeconds"])
+    data.MaxPackets = numberFromAPI(data.MaxPackets, dataMap["maxPackets"])
+    data.MaxFileSizeInMb = numberFromAPI(data.MaxFileSizeInMb, dataMap["maxFileSizeInMB"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -779,40 +731,8 @@ func (r *PacketCaptureResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.StopRequestedAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["packetCount"].(float64); ok {
-        data.PacketCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["packetCount"].(int); ok {
-        data.PacketCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["packetCount"].(int64); ok {
-        data.PacketCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["packetCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PacketCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PacketCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PacketCount = types.NumberNull()
-    }
-    if val, ok := dataMap["fileSizeInBytes"].(float64); ok {
-        data.FileSizeInBytes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["fileSizeInBytes"].(int); ok {
-        data.FileSizeInBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["fileSizeInBytes"].(int64); ok {
-        data.FileSizeInBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["fileSizeInBytes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.FileSizeInBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.FileSizeInBytes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.FileSizeInBytes = types.NumberNull()
-    }
+    data.PacketCount = numberFromAPI(data.PacketCount, dataMap["packetCount"])
+    data.FileSizeInBytes = numberFromAPI(data.FileSizeInBytes, dataMap["fileSizeInBytes"])
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1092,57 +1012,9 @@ func (r *PacketCaptureResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.BpfFilter = types.StringNull()
     }
-    if val, ok := dataMap["maxDurationInSeconds"].(float64); ok {
-        data.MaxDurationInSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["maxDurationInSeconds"].(int); ok {
-        data.MaxDurationInSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["maxDurationInSeconds"].(int64); ok {
-        data.MaxDurationInSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["maxDurationInSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxDurationInSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxDurationInSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MaxDurationInSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["maxPackets"].(float64); ok {
-        data.MaxPackets = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["maxPackets"].(int); ok {
-        data.MaxPackets = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["maxPackets"].(int64); ok {
-        data.MaxPackets = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["maxPackets"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxPackets = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxPackets = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MaxPackets = types.NumberNull()
-    }
-    if val, ok := dataMap["maxFileSizeInMB"].(float64); ok {
-        data.MaxFileSizeInMb = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["maxFileSizeInMB"].(int); ok {
-        data.MaxFileSizeInMb = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["maxFileSizeInMB"].(int64); ok {
-        data.MaxFileSizeInMb = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["maxFileSizeInMB"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxFileSizeInMb = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxFileSizeInMb = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MaxFileSizeInMb = types.NumberNull()
-    }
+    data.MaxDurationInSeconds = numberFromAPI(data.MaxDurationInSeconds, dataMap["maxDurationInSeconds"])
+    data.MaxPackets = numberFromAPI(data.MaxPackets, dataMap["maxPackets"])
+    data.MaxFileSizeInMb = numberFromAPI(data.MaxFileSizeInMb, dataMap["maxFileSizeInMB"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1346,40 +1218,8 @@ func (r *PacketCaptureResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.StopRequestedAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["packetCount"].(float64); ok {
-        data.PacketCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["packetCount"].(int); ok {
-        data.PacketCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["packetCount"].(int64); ok {
-        data.PacketCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["packetCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.PacketCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PacketCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.PacketCount = types.NumberNull()
-    }
-    if val, ok := dataMap["fileSizeInBytes"].(float64); ok {
-        data.FileSizeInBytes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["fileSizeInBytes"].(int); ok {
-        data.FileSizeInBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["fileSizeInBytes"].(int64); ok {
-        data.FileSizeInBytes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["fileSizeInBytes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.FileSizeInBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.FileSizeInBytes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.FileSizeInBytes = types.NumberNull()
-    }
+    data.PacketCount = numberFromAPI(data.PacketCount, dataMap["packetCount"])
+    data.FileSizeInBytes = numberFromAPI(data.FileSizeInBytes, dataMap["fileSizeInBytes"])
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

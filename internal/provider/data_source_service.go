@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -683,28 +682,8 @@ func (d *ServiceDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.TechStack = types.StringNull()
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
-    if val, ok := item["metricCardinalityBudget"].(float64); ok {
-        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["metricCardinalityBudget"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MetricCardinalityBudget = types.NumberNull()
-        }
-    } else {
-        data.MetricCardinalityBudget = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
+    data.MetricCardinalityBudget = numberFromAPI(data.MetricCardinalityBudget, item["metricCardinalityBudget"])
     if obj, ok := item["metricDownsamplingRetentionDays"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.MetricDownsamplingRetentionDays = types.StringValue(val)

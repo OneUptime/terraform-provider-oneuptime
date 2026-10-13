@@ -827,23 +827,7 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
-    if val, ok := dataMap["occuranceCount"].(float64); ok {
-        data.OccuranceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["occuranceCount"].(int); ok {
-        data.OccuranceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["occuranceCount"].(int64); ok {
-        data.OccuranceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["occuranceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OccuranceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OccuranceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OccuranceCount = types.NumberNull()
-    }
+    data.OccuranceCount = numberFromAPI(data.OccuranceCount, dataMap["occuranceCount"])
     if obj, ok := dataMap["firstSeenInRelease"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1662,23 +1646,7 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
-    if val, ok := dataMap["occuranceCount"].(float64); ok {
-        data.OccuranceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["occuranceCount"].(int); ok {
-        data.OccuranceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["occuranceCount"].(int64); ok {
-        data.OccuranceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["occuranceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OccuranceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OccuranceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OccuranceCount = types.NumberNull()
-    }
+    data.OccuranceCount = numberFromAPI(data.OccuranceCount, dataMap["occuranceCount"])
     if obj, ok := dataMap["firstSeenInRelease"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2572,23 +2540,7 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
-    if val, ok := dataMap["occuranceCount"].(float64); ok {
-        data.OccuranceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["occuranceCount"].(int); ok {
-        data.OccuranceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["occuranceCount"].(int64); ok {
-        data.OccuranceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["occuranceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OccuranceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OccuranceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OccuranceCount = types.NumberNull()
-    }
+    data.OccuranceCount = numberFromAPI(data.OccuranceCount, dataMap["occuranceCount"])
     if obj, ok := dataMap["firstSeenInRelease"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

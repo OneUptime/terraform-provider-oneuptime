@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -1467,39 +1466,9 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolNull()
     }
-    if val, ok := item["showIncidentHistoryInDays"].(float64); ok {
-        data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["showIncidentHistoryInDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowIncidentHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowIncidentHistoryInDays = types.NumberNull()
-        }
-    } else {
-        data.ShowIncidentHistoryInDays = types.NumberNull()
-    }
-    if val, ok := item["showAnnouncementHistoryInDays"].(float64); ok {
-        data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["showAnnouncementHistoryInDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowAnnouncementHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowAnnouncementHistoryInDays = types.NumberNull()
-        }
-    } else {
-        data.ShowAnnouncementHistoryInDays = types.NumberNull()
-    }
-    if val, ok := item["showScheduledEventHistoryInDays"].(float64); ok {
-        data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["showScheduledEventHistoryInDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowScheduledEventHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowScheduledEventHistoryInDays = types.NumberNull()
-        }
-    } else {
-        data.ShowScheduledEventHistoryInDays = types.NumberNull()
-    }
+    data.ShowIncidentHistoryInDays = numberFromAPI(data.ShowIncidentHistoryInDays, item["showIncidentHistoryInDays"])
+    data.ShowAnnouncementHistoryInDays = numberFromAPI(data.ShowAnnouncementHistoryInDays, item["showAnnouncementHistoryInDays"])
+    data.ShowScheduledEventHistoryInDays = numberFromAPI(data.ShowScheduledEventHistoryInDays, item["showScheduledEventHistoryInDays"])
     if obj, ok := item["overviewPageDescription"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.OverviewPageDescription = types.StringValue(val)
@@ -1636,17 +1605,7 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.SendNextReportBy = types.StringNull()
     }
-    if val, ok := item["reportDataInDays"].(float64); ok {
-        data.ReportDataInDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["reportDataInDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ReportDataInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReportDataInDays = types.NumberNull()
-        }
-    } else {
-        data.ReportDataInDays = types.NumberNull()
-    }
+    data.ReportDataInDays = numberFromAPI(data.ReportDataInDays, item["reportDataInDays"])
     if obj, ok := item["reportPeriodType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ReportPeriodType = types.StringValue(val)
@@ -1745,17 +1704,7 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.ShowEpisodesOnStatusPage = types.BoolNull()
     }
-    if val, ok := item["showEpisodeHistoryInDays"].(float64); ok {
-        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["showEpisodeHistoryInDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowEpisodeHistoryInDays = types.NumberNull()
-        }
-    } else {
-        data.ShowEpisodeHistoryInDays = types.NumberNull()
-    }
+    data.ShowEpisodeHistoryInDays = numberFromAPI(data.ShowEpisodeHistoryInDays, item["showEpisodeHistoryInDays"])
     if val, ok := item["showEpisodeLabelsOnStatusPage"].(bool); ok {
         data.ShowEpisodeLabelsOnStatusPage = types.BoolValue(val)
     } else {
@@ -1793,17 +1742,7 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.EnableEmbeddedOverallStatus = types.BoolNull()
     }
-    if val, ok := item["showUptimeHistoryInDays"].(float64); ok {
-        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["showUptimeHistoryInDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShowUptimeHistoryInDays = types.NumberNull()
-        }
-    } else {
-        data.ShowUptimeHistoryInDays = types.NumberNull()
-    }
+    data.ShowUptimeHistoryInDays = numberFromAPI(data.ShowUptimeHistoryInDays, item["showUptimeHistoryInDays"])
     if obj, ok := item["embeddedOverallStatusToken"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.EmbeddedOverallStatusToken = types.StringValue(val)

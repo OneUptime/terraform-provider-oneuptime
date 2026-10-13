@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -632,61 +631,11 @@ func (d *SloBurnRateRuleDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.IsEnabled = types.BoolNull()
     }
-    if val, ok := item["burnRateThreshold"].(float64); ok {
-        data.BurnRateThreshold = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["burnRateThreshold"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.BurnRateThreshold = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.BurnRateThreshold = types.NumberNull()
-        }
-    } else {
-        data.BurnRateThreshold = types.NumberNull()
-    }
-    if val, ok := item["longWindowInMinutes"].(float64); ok {
-        data.LongWindowInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["longWindowInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.LongWindowInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LongWindowInMinutes = types.NumberNull()
-        }
-    } else {
-        data.LongWindowInMinutes = types.NumberNull()
-    }
-    if val, ok := item["shortWindowInMinutes"].(float64); ok {
-        data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["shortWindowInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ShortWindowInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShortWindowInMinutes = types.NumberNull()
-        }
-    } else {
-        data.ShortWindowInMinutes = types.NumberNull()
-    }
-    if val, ok := item["minimumSampleCount"].(float64); ok {
-        data.MinimumSampleCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["minimumSampleCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumSampleCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumSampleCount = types.NumberNull()
-        }
-    } else {
-        data.MinimumSampleCount = types.NumberNull()
-    }
-    if val, ok := item["refireSuppressionMinutes"].(float64); ok {
-        data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["refireSuppressionMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RefireSuppressionMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RefireSuppressionMinutes = types.NumberNull()
-        }
-    } else {
-        data.RefireSuppressionMinutes = types.NumberNull()
-    }
+    data.BurnRateThreshold = numberFromAPI(data.BurnRateThreshold, item["burnRateThreshold"])
+    data.LongWindowInMinutes = numberFromAPI(data.LongWindowInMinutes, item["longWindowInMinutes"])
+    data.ShortWindowInMinutes = numberFromAPI(data.ShortWindowInMinutes, item["shortWindowInMinutes"])
+    data.MinimumSampleCount = numberFromAPI(data.MinimumSampleCount, item["minimumSampleCount"])
+    data.RefireSuppressionMinutes = numberFromAPI(data.RefireSuppressionMinutes, item["refireSuppressionMinutes"])
     if val, ok := item["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     } else {

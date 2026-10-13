@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -439,17 +438,7 @@ func (d *ThreatIntelIndicatorDataSource) Read(ctx context.Context, req datasourc
     } else {
         data.IndicatorName = types.StringNull()
     }
-    if val, ok := item["confidence"].(float64); ok {
-        data.Confidence = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["confidence"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Confidence = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Confidence = types.NumberNull()
-        }
-    } else {
-        data.Confidence = types.NumberNull()
-    }
+    data.Confidence = numberFromAPI(data.Confidence, item["confidence"])
     if val, ok := item["stixLabels"].([]interface{}); ok {
         var setItems []attr.Value
         for _, item := range val {

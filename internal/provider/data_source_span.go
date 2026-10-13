@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -784,17 +783,7 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
     } else {
         data.StartTimeUnixNano = types.StringNull()
     }
-    if val, ok := item["durationUnixNano"].(float64); ok {
-        data.DurationUnixNano = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["durationUnixNano"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DurationUnixNano = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DurationUnixNano = types.NumberNull()
-        }
-    } else {
-        data.DurationUnixNano = types.NumberNull()
-    }
+    data.DurationUnixNano = numberFromAPI(data.DurationUnixNano, item["durationUnixNano"])
     if obj, ok := item["endTimeUnixNano"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.EndTimeUnixNano = types.StringValue(val)
@@ -1105,17 +1094,7 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
     } else {
         data.Links = types.StringNull()
     }
-    if val, ok := item["statusCode"].(float64); ok {
-        data.StatusCode = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["statusCode"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.StatusCode = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.StatusCode = types.NumberNull()
-        }
-    } else {
-        data.StatusCode = types.NumberNull()
-    }
+    data.StatusCode = numberFromAPI(data.StatusCode, item["statusCode"])
     if obj, ok := item["statusMessage"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.StatusMessage = types.StringValue(val)
@@ -1284,50 +1263,10 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
     } else {
         data.LlmToolName = types.StringNull()
     }
-    if val, ok := item["llmInputTokens"].(float64); ok {
-        data.LlmInputTokens = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["llmInputTokens"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.LlmInputTokens = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LlmInputTokens = types.NumberNull()
-        }
-    } else {
-        data.LlmInputTokens = types.NumberNull()
-    }
-    if val, ok := item["llmOutputTokens"].(float64); ok {
-        data.LlmOutputTokens = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["llmOutputTokens"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.LlmOutputTokens = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LlmOutputTokens = types.NumberNull()
-        }
-    } else {
-        data.LlmOutputTokens = types.NumberNull()
-    }
-    if val, ok := item["llmTotalTokens"].(float64); ok {
-        data.LlmTotalTokens = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["llmTotalTokens"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.LlmTotalTokens = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LlmTotalTokens = types.NumberNull()
-        }
-    } else {
-        data.LlmTotalTokens = types.NumberNull()
-    }
-    if val, ok := item["llmCost"].(float64); ok {
-        data.LlmCost = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["llmCost"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.LlmCost = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LlmCost = types.NumberNull()
-        }
-    } else {
-        data.LlmCost = types.NumberNull()
-    }
+    data.LlmInputTokens = numberFromAPI(data.LlmInputTokens, item["llmInputTokens"])
+    data.LlmOutputTokens = numberFromAPI(data.LlmOutputTokens, item["llmOutputTokens"])
+    data.LlmTotalTokens = numberFromAPI(data.LlmTotalTokens, item["llmTotalTokens"])
+    data.LlmCost = numberFromAPI(data.LlmCost, item["llmCost"])
     if obj, ok := item["llmConversationId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.LlmConversationId = types.StringValue(val)

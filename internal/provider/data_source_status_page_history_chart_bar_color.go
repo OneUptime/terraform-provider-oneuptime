@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -70,7 +69,7 @@ func (d *StatusPageHistoryChartBarColorDataSource) Schema(ctx context.Context, r
                 Computed: true,
             },
             "uptime_percent_greater_than_or_equal_to": schema.NumberAttribute{
-                MarkdownDescription: "Uptime percent greater than or equal to this value.",
+                MarkdownDescription: "Uptime percent, from 0 to 100, that a day must reach for this rule to color its bar (99.65 for example).",
                 Optional: true,
                 Computed: true,
             },
@@ -314,17 +313,7 @@ func (d *StatusPageHistoryChartBarColorDataSource) Read(ctx context.Context, req
     } else {
         data.StatusPageId = types.StringNull()
     }
-    if val, ok := item["uptimePercentGreaterThanOrEqualTo"].(float64); ok {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["uptimePercentGreaterThanOrEqualTo"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.UptimePercentGreaterThanOrEqualTo = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.UptimePercentGreaterThanOrEqualTo = types.NumberNull()
-        }
-    } else {
-        data.UptimePercentGreaterThanOrEqualTo = types.NumberNull()
-    }
+    data.UptimePercentGreaterThanOrEqualTo = numberFromAPI(data.UptimePercentGreaterThanOrEqualTo, item["uptimePercentGreaterThanOrEqualTo"])
     if obj, ok := item["barColor"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.BarColor = types.StringValue(val)
@@ -359,17 +348,7 @@ func (d *StatusPageHistoryChartBarColorDataSource) Read(ctx context.Context, req
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := item["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["order"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        data.Order = types.NumberNull()
-    }
+    data.Order = numberFromAPI(data.Order, item["order"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

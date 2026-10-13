@@ -533,23 +533,7 @@ func (r *RunbookCredentialResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.SshHostname = types.StringNull()
     }
-    if val, ok := dataMap["sshPort"].(float64); ok {
-        data.SshPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sshPort"].(int); ok {
-        data.SshPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sshPort"].(int64); ok {
-        data.SshPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sshPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SshPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SshPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SshPort = types.NumberNull()
-    }
+    data.SshPort = numberFromAPI(data.SshPort, dataMap["sshPort"])
     if obj, ok := dataMap["sshUsername"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -987,23 +971,7 @@ func (r *RunbookCredentialResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.SshHostname = types.StringNull()
     }
-    if val, ok := dataMap["sshPort"].(float64); ok {
-        data.SshPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sshPort"].(int); ok {
-        data.SshPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sshPort"].(int64); ok {
-        data.SshPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sshPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SshPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SshPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SshPort = types.NumberNull()
-    }
+    data.SshPort = numberFromAPI(data.SshPort, dataMap["sshPort"])
     if obj, ok := dataMap["sshUsername"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1507,23 +1475,7 @@ func (r *RunbookCredentialResource) Update(ctx context.Context, req resource.Upd
     } else {
         data.SshHostname = types.StringNull()
     }
-    if val, ok := dataMap["sshPort"].(float64); ok {
-        data.SshPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sshPort"].(int); ok {
-        data.SshPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sshPort"].(int64); ok {
-        data.SshPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sshPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SshPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SshPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SshPort = types.NumberNull()
-    }
+    data.SshPort = numberFromAPI(data.SshPort, dataMap["sshPort"])
     if obj, ok := dataMap["sshUsername"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

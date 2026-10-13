@@ -761,40 +761,8 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
     } else {
         data.Address = types.StringNull()
     }
-    if val, ok := dataMap["latitude"].(float64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["latitude"].(int); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["latitude"].(int64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["latitude"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Latitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Latitude = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Latitude = types.NumberNull()
-    }
-    if val, ok := dataMap["longitude"].(float64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["longitude"].(int); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["longitude"].(int64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["longitude"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Longitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Longitude = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Longitude = types.NumberNull()
-    }
+    data.Latitude = numberFromAPI(data.Latitude, dataMap["latitude"])
+    data.Longitude = numberFromAPI(data.Longitude, dataMap["longitude"])
     if obj, ok := dataMap["healthRollupPolicy"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -832,23 +800,7 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
     } else {
         data.HealthRollupPolicy = types.StringNull()
     }
-    if val, ok := dataMap["offlineThresholdPercent"].(float64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["offlineThresholdPercent"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OfflineThresholdPercent = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OfflineThresholdPercent = types.NumberNull()
-    }
+    data.OfflineThresholdPercent = numberFromAPI(data.OfflineThresholdPercent, dataMap["offlineThresholdPercent"])
     if val, ok := dataMap["shouldAlertWhenUnhealthy"].(bool); ok {
         data.ShouldAlertWhenUnhealthy = types.BoolValue(val)
     } else {
@@ -928,23 +880,7 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
     } else {
         data.MaterializedPath = types.StringNull()
     }
-    if val, ok := dataMap["depth"].(float64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["depth"].(int); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["depth"].(int64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["depth"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Depth = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Depth = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Depth = types.NumberNull()
-    }
+    data.Depth = numberFromAPI(data.Depth, dataMap["depth"])
     if obj, ok := dataMap["currentMonitorStatusId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1520,40 +1456,8 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
     } else {
         data.Address = types.StringNull()
     }
-    if val, ok := dataMap["latitude"].(float64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["latitude"].(int); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["latitude"].(int64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["latitude"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Latitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Latitude = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Latitude = types.NumberNull()
-    }
-    if val, ok := dataMap["longitude"].(float64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["longitude"].(int); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["longitude"].(int64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["longitude"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Longitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Longitude = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Longitude = types.NumberNull()
-    }
+    data.Latitude = numberFromAPI(data.Latitude, dataMap["latitude"])
+    data.Longitude = numberFromAPI(data.Longitude, dataMap["longitude"])
     if obj, ok := dataMap["healthRollupPolicy"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1591,23 +1495,7 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
     } else {
         data.HealthRollupPolicy = types.StringNull()
     }
-    if val, ok := dataMap["offlineThresholdPercent"].(float64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["offlineThresholdPercent"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OfflineThresholdPercent = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OfflineThresholdPercent = types.NumberNull()
-    }
+    data.OfflineThresholdPercent = numberFromAPI(data.OfflineThresholdPercent, dataMap["offlineThresholdPercent"])
     if val, ok := dataMap["shouldAlertWhenUnhealthy"].(bool); ok {
         data.ShouldAlertWhenUnhealthy = types.BoolValue(val)
     } else {
@@ -1687,23 +1575,7 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
     } else {
         data.MaterializedPath = types.StringNull()
     }
-    if val, ok := dataMap["depth"].(float64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["depth"].(int); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["depth"].(int64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["depth"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Depth = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Depth = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Depth = types.NumberNull()
-    }
+    data.Depth = numberFromAPI(data.Depth, dataMap["depth"])
     if obj, ok := dataMap["currentMonitorStatusId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2363,40 +2235,8 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
     } else {
         data.Address = types.StringNull()
     }
-    if val, ok := dataMap["latitude"].(float64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["latitude"].(int); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["latitude"].(int64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["latitude"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Latitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Latitude = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Latitude = types.NumberNull()
-    }
-    if val, ok := dataMap["longitude"].(float64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["longitude"].(int); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["longitude"].(int64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["longitude"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Longitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Longitude = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Longitude = types.NumberNull()
-    }
+    data.Latitude = numberFromAPI(data.Latitude, dataMap["latitude"])
+    data.Longitude = numberFromAPI(data.Longitude, dataMap["longitude"])
     if obj, ok := dataMap["healthRollupPolicy"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2434,23 +2274,7 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
     } else {
         data.HealthRollupPolicy = types.StringNull()
     }
-    if val, ok := dataMap["offlineThresholdPercent"].(float64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["offlineThresholdPercent"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OfflineThresholdPercent = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OfflineThresholdPercent = types.NumberNull()
-    }
+    data.OfflineThresholdPercent = numberFromAPI(data.OfflineThresholdPercent, dataMap["offlineThresholdPercent"])
     if val, ok := dataMap["shouldAlertWhenUnhealthy"].(bool); ok {
         data.ShouldAlertWhenUnhealthy = types.BoolValue(val)
     } else {
@@ -2530,23 +2354,7 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
     } else {
         data.MaterializedPath = types.StringNull()
     }
-    if val, ok := dataMap["depth"].(float64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["depth"].(int); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["depth"].(int64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["depth"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Depth = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Depth = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Depth = types.NumberNull()
-    }
+    data.Depth = numberFromAPI(data.Depth, dataMap["depth"])
     if obj, ok := dataMap["currentMonitorStatusId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

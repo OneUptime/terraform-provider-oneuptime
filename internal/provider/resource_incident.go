@@ -2579,23 +2579,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.HoldsMonitors = types.BoolNull()
     }
-    if val, ok := dataMap["incidentNumber"].(float64); ok {
-        data.IncidentNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentNumber"].(int); ok {
-        data.IncidentNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentNumber"].(int64); ok {
-        data.IncidentNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentNumber = types.NumberNull()
-    }
+    data.IncidentNumber = numberFromAPI(data.IncidentNumber, dataMap["incidentNumber"])
     if obj, ok := dataMap["incidentNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2684,23 +2668,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
     if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4518,23 +4486,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.HoldsMonitors = types.BoolNull()
     }
-    if val, ok := dataMap["incidentNumber"].(float64); ok {
-        data.IncidentNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentNumber"].(int); ok {
-        data.IncidentNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentNumber"].(int64); ok {
-        data.IncidentNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentNumber = types.NumberNull()
-    }
+    data.IncidentNumber = numberFromAPI(data.IncidentNumber, dataMap["incidentNumber"])
     if obj, ok := dataMap["incidentNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4623,23 +4575,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
     if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6617,23 +6553,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         data.HoldsMonitors = types.BoolNull()
     }
-    if val, ok := dataMap["incidentNumber"].(float64); ok {
-        data.IncidentNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["incidentNumber"].(int); ok {
-        data.IncidentNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["incidentNumber"].(int64); ok {
-        data.IncidentNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["incidentNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.IncidentNumber = types.NumberNull()
-    }
+    data.IncidentNumber = numberFromAPI(data.IncidentNumber, dataMap["incidentNumber"])
     if obj, ok := dataMap["incidentNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6722,23 +6642,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
     if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

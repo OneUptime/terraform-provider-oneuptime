@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -468,17 +467,7 @@ func (d *WebhookLogDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.RequestBody = types.StringNull()
     }
-    if val, ok := item["responseStatusCode"].(float64); ok {
-        data.ResponseStatusCode = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["responseStatusCode"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ResponseStatusCode = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResponseStatusCode = types.NumberNull()
-        }
-    } else {
-        data.ResponseStatusCode = types.NumberNull()
-    }
+    data.ResponseStatusCode = numberFromAPI(data.ResponseStatusCode, item["responseStatusCode"])
     if obj, ok := item["responseBody"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ResponseBody = types.StringValue(val)

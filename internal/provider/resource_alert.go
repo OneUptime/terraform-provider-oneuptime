@@ -2041,23 +2041,7 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     if val, ok := dataMap["isCreatedAutomatically"].(bool); ok {
         data.IsCreatedAutomatically = types.BoolValue(val)
     }
-    if val, ok := dataMap["alertNumber"].(float64); ok {
-        data.AlertNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertNumber"].(int); ok {
-        data.AlertNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertNumber"].(int64); ok {
-        data.AlertNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertNumber = types.NumberNull()
-    }
+    data.AlertNumber = numberFromAPI(data.AlertNumber, dataMap["alertNumber"])
     if obj, ok := dataMap["alertNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2143,23 +2127,7 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     } else {
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -3565,23 +3533,7 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
     if val, ok := dataMap["isCreatedAutomatically"].(bool); ok {
         data.IsCreatedAutomatically = types.BoolValue(val)
     }
-    if val, ok := dataMap["alertNumber"].(float64); ok {
-        data.AlertNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertNumber"].(int); ok {
-        data.AlertNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertNumber"].(int64); ok {
-        data.AlertNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertNumber = types.NumberNull()
-    }
+    data.AlertNumber = numberFromAPI(data.AlertNumber, dataMap["alertNumber"])
     if obj, ok := dataMap["alertNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3667,23 +3619,7 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
     } else {
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -5222,23 +5158,7 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
     if val, ok := dataMap["isCreatedAutomatically"].(bool); ok {
         data.IsCreatedAutomatically = types.BoolValue(val)
     }
-    if val, ok := dataMap["alertNumber"].(float64); ok {
-        data.AlertNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertNumber"].(int); ok {
-        data.AlertNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertNumber"].(int64); ok {
-        data.AlertNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertNumber = types.NumberNull()
-    }
+    data.AlertNumber = numberFromAPI(data.AlertNumber, dataMap["alertNumber"])
     if obj, ok := dataMap["alertNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5324,23 +5244,7 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
     } else {
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {

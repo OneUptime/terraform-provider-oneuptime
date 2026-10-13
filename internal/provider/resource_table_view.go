@@ -533,23 +533,7 @@ func (r *TableViewResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.Sort = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["itemsOnPage"].(float64); ok {
-        data.ItemsOnPage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["itemsOnPage"].(int); ok {
-        data.ItemsOnPage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["itemsOnPage"].(int64); ok {
-        data.ItemsOnPage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["itemsOnPage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ItemsOnPage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ItemsOnPage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ItemsOnPage = types.NumberNull()
-    }
+    data.ItemsOnPage = numberFromAPI(data.ItemsOnPage, dataMap["itemsOnPage"])
     if obj, ok := dataMap["facets"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -954,23 +938,7 @@ func (r *TableViewResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.Sort = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["itemsOnPage"].(float64); ok {
-        data.ItemsOnPage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["itemsOnPage"].(int); ok {
-        data.ItemsOnPage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["itemsOnPage"].(int64); ok {
-        data.ItemsOnPage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["itemsOnPage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ItemsOnPage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ItemsOnPage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ItemsOnPage = types.NumberNull()
-    }
+    data.ItemsOnPage = numberFromAPI(data.ItemsOnPage, dataMap["itemsOnPage"])
     if obj, ok := dataMap["facets"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1449,23 +1417,7 @@ func (r *TableViewResource) Update(ctx context.Context, req resource.UpdateReque
     } else {
         data.Sort = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["itemsOnPage"].(float64); ok {
-        data.ItemsOnPage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["itemsOnPage"].(int); ok {
-        data.ItemsOnPage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["itemsOnPage"].(int64); ok {
-        data.ItemsOnPage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["itemsOnPage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ItemsOnPage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ItemsOnPage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ItemsOnPage = types.NumberNull()
-    }
+    data.ItemsOnPage = numberFromAPI(data.ItemsOnPage, dataMap["itemsOnPage"])
     if obj, ok := dataMap["facets"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -780,171 +779,21 @@ func (d *StorageArrayDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["capacityBytes"].(float64); ok {
-        data.CapacityBytes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["capacityBytes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CapacityBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CapacityBytes = types.NumberNull()
-        }
-    } else {
-        data.CapacityBytes = types.NumberNull()
-    }
-    if val, ok := item["usedBytes"].(float64); ok {
-        data.UsedBytes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["usedBytes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.UsedBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.UsedBytes = types.NumberNull()
-        }
-    } else {
-        data.UsedBytes = types.NumberNull()
-    }
-    if val, ok := item["capacityUsedPercent"].(float64); ok {
-        data.CapacityUsedPercent = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["capacityUsedPercent"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CapacityUsedPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CapacityUsedPercent = types.NumberNull()
-        }
-    } else {
-        data.CapacityUsedPercent = types.NumberNull()
-    }
-    if val, ok := item["dataReductionRatio"].(float64); ok {
-        data.DataReductionRatio = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["dataReductionRatio"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DataReductionRatio = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DataReductionRatio = types.NumberNull()
-        }
-    } else {
-        data.DataReductionRatio = types.NumberNull()
-    }
-    if val, ok := item["openAlertCount"].(float64); ok {
-        data.OpenAlertCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["openAlertCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OpenAlertCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OpenAlertCount = types.NumberNull()
-        }
-    } else {
-        data.OpenAlertCount = types.NumberNull()
-    }
-    if val, ok := item["criticalAlertCount"].(float64); ok {
-        data.CriticalAlertCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["criticalAlertCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CriticalAlertCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CriticalAlertCount = types.NumberNull()
-        }
-    } else {
-        data.CriticalAlertCount = types.NumberNull()
-    }
-    if val, ok := item["warningAlertCount"].(float64); ok {
-        data.WarningAlertCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["warningAlertCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.WarningAlertCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WarningAlertCount = types.NumberNull()
-        }
-    } else {
-        data.WarningAlertCount = types.NumberNull()
-    }
-    if val, ok := item["volumeCount"].(float64); ok {
-        data.VolumeCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["volumeCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.VolumeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VolumeCount = types.NumberNull()
-        }
-    } else {
-        data.VolumeCount = types.NumberNull()
-    }
-    if val, ok := item["hostCount"].(float64); ok {
-        data.HostCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["hostCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.HostCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.HostCount = types.NumberNull()
-        }
-    } else {
-        data.HostCount = types.NumberNull()
-    }
-    if val, ok := item["podCount"].(float64); ok {
-        data.PodCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["podCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PodCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PodCount = types.NumberNull()
-        }
-    } else {
-        data.PodCount = types.NumberNull()
-    }
-    if val, ok := item["fileSystemCount"].(float64); ok {
-        data.FileSystemCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["fileSystemCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.FileSystemCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.FileSystemCount = types.NumberNull()
-        }
-    } else {
-        data.FileSystemCount = types.NumberNull()
-    }
-    if val, ok := item["bucketCount"].(float64); ok {
-        data.BucketCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["bucketCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.BucketCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.BucketCount = types.NumberNull()
-        }
-    } else {
-        data.BucketCount = types.NumberNull()
-    }
-    if val, ok := item["hardwareComponentCount"].(float64); ok {
-        data.HardwareComponentCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["hardwareComponentCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.HardwareComponentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.HardwareComponentCount = types.NumberNull()
-        }
-    } else {
-        data.HardwareComponentCount = types.NumberNull()
-    }
-    if val, ok := item["unhealthyHardwareCount"].(float64); ok {
-        data.UnhealthyHardwareCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["unhealthyHardwareCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.UnhealthyHardwareCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.UnhealthyHardwareCount = types.NumberNull()
-        }
-    } else {
-        data.UnhealthyHardwareCount = types.NumberNull()
-    }
-    if val, ok := item["healthStatus"].(float64); ok {
-        data.HealthStatus = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["healthStatus"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.HealthStatus = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.HealthStatus = types.NumberNull()
-        }
-    } else {
-        data.HealthStatus = types.NumberNull()
-    }
+    data.CapacityBytes = numberFromAPI(data.CapacityBytes, item["capacityBytes"])
+    data.UsedBytes = numberFromAPI(data.UsedBytes, item["usedBytes"])
+    data.CapacityUsedPercent = numberFromAPI(data.CapacityUsedPercent, item["capacityUsedPercent"])
+    data.DataReductionRatio = numberFromAPI(data.DataReductionRatio, item["dataReductionRatio"])
+    data.OpenAlertCount = numberFromAPI(data.OpenAlertCount, item["openAlertCount"])
+    data.CriticalAlertCount = numberFromAPI(data.CriticalAlertCount, item["criticalAlertCount"])
+    data.WarningAlertCount = numberFromAPI(data.WarningAlertCount, item["warningAlertCount"])
+    data.VolumeCount = numberFromAPI(data.VolumeCount, item["volumeCount"])
+    data.HostCount = numberFromAPI(data.HostCount, item["hostCount"])
+    data.PodCount = numberFromAPI(data.PodCount, item["podCount"])
+    data.FileSystemCount = numberFromAPI(data.FileSystemCount, item["fileSystemCount"])
+    data.BucketCount = numberFromAPI(data.BucketCount, item["bucketCount"])
+    data.HardwareComponentCount = numberFromAPI(data.HardwareComponentCount, item["hardwareComponentCount"])
+    data.UnhealthyHardwareCount = numberFromAPI(data.UnhealthyHardwareCount, item["unhealthyHardwareCount"])
+    data.HealthStatus = numberFromAPI(data.HealthStatus, item["healthStatus"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)
@@ -1025,17 +874,7 @@ func (d *StorageArrayDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -424,17 +423,7 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.NetworkDeviceId = types.StringNull()
     }
-    if val, ok := item["interfaceIndex"].(float64); ok {
-        data.InterfaceIndex = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["interfaceIndex"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfaceIndex = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfaceIndex = types.NumberNull()
-        }
-    } else {
-        data.InterfaceIndex = types.NumberNull()
-    }
+    data.InterfaceIndex = numberFromAPI(data.InterfaceIndex, item["interfaceIndex"])
     if obj, ok := item["name"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Name = types.StringValue(val)
@@ -486,17 +475,7 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.MacAddress = types.StringNull()
     }
-    if val, ok := item["interfaceType"].(float64); ok {
-        data.InterfaceType = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["interfaceType"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InterfaceType = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InterfaceType = types.NumberNull()
-        }
-    } else {
-        data.InterfaceType = types.NumberNull()
-    }
+    data.InterfaceType = numberFromAPI(data.InterfaceType, item["interfaceType"])
     if val, ok := item["isMonitored"].(bool); ok {
         data.IsMonitored = types.BoolValue(val)
     } else {
@@ -512,61 +491,11 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.IsAdministrativelyUp = types.BoolNull()
     }
-    if val, ok := item["speedInMbps"].(float64); ok {
-        data.SpeedInMbps = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["speedInMbps"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SpeedInMbps = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SpeedInMbps = types.NumberNull()
-        }
-    } else {
-        data.SpeedInMbps = types.NumberNull()
-    }
-    if val, ok := item["inRateMbps"].(float64); ok {
-        data.InRateMbps = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["inRateMbps"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InRateMbps = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InRateMbps = types.NumberNull()
-        }
-    } else {
-        data.InRateMbps = types.NumberNull()
-    }
-    if val, ok := item["outRateMbps"].(float64); ok {
-        data.OutRateMbps = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["outRateMbps"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OutRateMbps = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OutRateMbps = types.NumberNull()
-        }
-    } else {
-        data.OutRateMbps = types.NumberNull()
-    }
-    if val, ok := item["utilizationPercent"].(float64); ok {
-        data.UtilizationPercent = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["utilizationPercent"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.UtilizationPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.UtilizationPercent = types.NumberNull()
-        }
-    } else {
-        data.UtilizationPercent = types.NumberNull()
-    }
-    if val, ok := item["errorsPerSecond"].(float64); ok {
-        data.ErrorsPerSecond = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["errorsPerSecond"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorsPerSecond = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorsPerSecond = types.NumberNull()
-        }
-    } else {
-        data.ErrorsPerSecond = types.NumberNull()
-    }
+    data.SpeedInMbps = numberFromAPI(data.SpeedInMbps, item["speedInMbps"])
+    data.InRateMbps = numberFromAPI(data.InRateMbps, item["inRateMbps"])
+    data.OutRateMbps = numberFromAPI(data.OutRateMbps, item["outRateMbps"])
+    data.UtilizationPercent = numberFromAPI(data.UtilizationPercent, item["utilizationPercent"])
+    data.ErrorsPerSecond = numberFromAPI(data.ErrorsPerSecond, item["errorsPerSecond"])
     if obj, ok := item["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.LastSeenAt = types.StringValue(val)

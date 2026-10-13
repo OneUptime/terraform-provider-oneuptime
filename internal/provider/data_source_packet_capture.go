@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -504,39 +503,9 @@ func (d *PacketCaptureDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.BpfFilter = types.StringNull()
     }
-    if val, ok := item["maxDurationInSeconds"].(float64); ok {
-        data.MaxDurationInSeconds = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["maxDurationInSeconds"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxDurationInSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxDurationInSeconds = types.NumberNull()
-        }
-    } else {
-        data.MaxDurationInSeconds = types.NumberNull()
-    }
-    if val, ok := item["maxPackets"].(float64); ok {
-        data.MaxPackets = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["maxPackets"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxPackets = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxPackets = types.NumberNull()
-        }
-    } else {
-        data.MaxPackets = types.NumberNull()
-    }
-    if val, ok := item["maxFileSizeInMB"].(float64); ok {
-        data.MaxFileSizeInMb = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["maxFileSizeInMB"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MaxFileSizeInMb = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MaxFileSizeInMb = types.NumberNull()
-        }
-    } else {
-        data.MaxFileSizeInMb = types.NumberNull()
-    }
+    data.MaxDurationInSeconds = numberFromAPI(data.MaxDurationInSeconds, item["maxDurationInSeconds"])
+    data.MaxPackets = numberFromAPI(data.MaxPackets, item["maxPackets"])
+    data.MaxFileSizeInMb = numberFromAPI(data.MaxFileSizeInMb, item["maxFileSizeInMB"])
     if obj, ok := item["status"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Status = types.StringValue(val)
@@ -639,28 +608,8 @@ func (d *PacketCaptureDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.StopRequestedAt = types.StringNull()
     }
-    if val, ok := item["packetCount"].(float64); ok {
-        data.PacketCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["packetCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PacketCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PacketCount = types.NumberNull()
-        }
-    } else {
-        data.PacketCount = types.NumberNull()
-    }
-    if val, ok := item["fileSizeInBytes"].(float64); ok {
-        data.FileSizeInBytes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["fileSizeInBytes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.FileSizeInBytes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.FileSizeInBytes = types.NumberNull()
-        }
-    } else {
-        data.FileSizeInBytes = types.NumberNull()
-    }
+    data.PacketCount = numberFromAPI(data.PacketCount, item["packetCount"])
+    data.FileSizeInBytes = numberFromAPI(data.FileSizeInBytes, item["fileSizeInBytes"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)

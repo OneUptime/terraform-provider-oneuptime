@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -1533,17 +1532,7 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.IsNoProbeEnabledOnThisMonitor = types.BoolNull()
     }
-    if val, ok := item["minimumProbeAgreement"].(float64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["minimumProbeAgreement"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumProbeAgreement = types.NumberNull()
-        }
-    } else {
-        data.MinimumProbeAgreement = types.NumberNull()
-    }
+    data.MinimumProbeAgreement = numberFromAPI(data.MinimumProbeAgreement, item["minimumProbeAgreement"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

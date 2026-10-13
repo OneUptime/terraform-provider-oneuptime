@@ -645,23 +645,7 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -821,91 +805,11 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["nodeCount"].(float64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["nodeCount"].(int); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["nodeCount"].(int64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["nodeCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NodeCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NodeCount = types.NumberNull()
-    }
-    if val, ok := dataMap["onlineNodeCount"].(float64); ok {
-        data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["onlineNodeCount"].(int); ok {
-        data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["onlineNodeCount"].(int64); ok {
-        data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["onlineNodeCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnlineNodeCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OnlineNodeCount = types.NumberNull()
-    }
-    if val, ok := dataMap["guestCount"].(float64); ok {
-        data.GuestCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["guestCount"].(int); ok {
-        data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["guestCount"].(int64); ok {
-        data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["guestCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.GuestCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.GuestCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.GuestCount = types.NumberNull()
-    }
-    if val, ok := dataMap["storageCount"].(float64); ok {
-        data.StorageCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["storageCount"].(int); ok {
-        data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["storageCount"].(int64); ok {
-        data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["storageCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.StorageCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.StorageCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.StorageCount = types.NumberNull()
-    }
-    if val, ok := dataMap["guestsWithoutBackupCount"].(float64); ok {
-        data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["guestsWithoutBackupCount"].(int); ok {
-        data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["guestsWithoutBackupCount"].(int64); ok {
-        data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["guestsWithoutBackupCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.GuestsWithoutBackupCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.GuestsWithoutBackupCount = types.NumberNull()
-    }
+    data.NodeCount = numberFromAPI(data.NodeCount, dataMap["nodeCount"])
+    data.OnlineNodeCount = numberFromAPI(data.OnlineNodeCount, dataMap["onlineNodeCount"])
+    data.GuestCount = numberFromAPI(data.GuestCount, dataMap["guestCount"])
+    data.StorageCount = numberFromAPI(data.StorageCount, dataMap["storageCount"])
+    data.GuestsWithoutBackupCount = numberFromAPI(data.GuestsWithoutBackupCount, dataMap["guestsWithoutBackupCount"])
     if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
         data.IsAiInvestigationEnabled = types.BoolValue(val)
     }
@@ -1435,23 +1339,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1611,91 +1499,11 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["nodeCount"].(float64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["nodeCount"].(int); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["nodeCount"].(int64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["nodeCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NodeCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NodeCount = types.NumberNull()
-    }
-    if val, ok := dataMap["onlineNodeCount"].(float64); ok {
-        data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["onlineNodeCount"].(int); ok {
-        data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["onlineNodeCount"].(int64); ok {
-        data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["onlineNodeCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnlineNodeCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OnlineNodeCount = types.NumberNull()
-    }
-    if val, ok := dataMap["guestCount"].(float64); ok {
-        data.GuestCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["guestCount"].(int); ok {
-        data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["guestCount"].(int64); ok {
-        data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["guestCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.GuestCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.GuestCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.GuestCount = types.NumberNull()
-    }
-    if val, ok := dataMap["storageCount"].(float64); ok {
-        data.StorageCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["storageCount"].(int); ok {
-        data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["storageCount"].(int64); ok {
-        data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["storageCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.StorageCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.StorageCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.StorageCount = types.NumberNull()
-    }
-    if val, ok := dataMap["guestsWithoutBackupCount"].(float64); ok {
-        data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["guestsWithoutBackupCount"].(int); ok {
-        data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["guestsWithoutBackupCount"].(int64); ok {
-        data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["guestsWithoutBackupCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.GuestsWithoutBackupCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.GuestsWithoutBackupCount = types.NumberNull()
-    }
+    data.NodeCount = numberFromAPI(data.NodeCount, dataMap["nodeCount"])
+    data.OnlineNodeCount = numberFromAPI(data.OnlineNodeCount, dataMap["onlineNodeCount"])
+    data.GuestCount = numberFromAPI(data.GuestCount, dataMap["guestCount"])
+    data.StorageCount = numberFromAPI(data.StorageCount, dataMap["storageCount"])
+    data.GuestsWithoutBackupCount = numberFromAPI(data.GuestsWithoutBackupCount, dataMap["guestsWithoutBackupCount"])
     if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
         data.IsAiInvestigationEnabled = types.BoolValue(val)
     }
@@ -2322,23 +2130,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2498,91 +2290,11 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["nodeCount"].(float64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["nodeCount"].(int); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["nodeCount"].(int64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["nodeCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NodeCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NodeCount = types.NumberNull()
-    }
-    if val, ok := dataMap["onlineNodeCount"].(float64); ok {
-        data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["onlineNodeCount"].(int); ok {
-        data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["onlineNodeCount"].(int64); ok {
-        data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["onlineNodeCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnlineNodeCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OnlineNodeCount = types.NumberNull()
-    }
-    if val, ok := dataMap["guestCount"].(float64); ok {
-        data.GuestCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["guestCount"].(int); ok {
-        data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["guestCount"].(int64); ok {
-        data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["guestCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.GuestCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.GuestCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.GuestCount = types.NumberNull()
-    }
-    if val, ok := dataMap["storageCount"].(float64); ok {
-        data.StorageCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["storageCount"].(int); ok {
-        data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["storageCount"].(int64); ok {
-        data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["storageCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.StorageCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.StorageCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.StorageCount = types.NumberNull()
-    }
-    if val, ok := dataMap["guestsWithoutBackupCount"].(float64); ok {
-        data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["guestsWithoutBackupCount"].(int); ok {
-        data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["guestsWithoutBackupCount"].(int64); ok {
-        data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["guestsWithoutBackupCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.GuestsWithoutBackupCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.GuestsWithoutBackupCount = types.NumberNull()
-    }
+    data.NodeCount = numberFromAPI(data.NodeCount, dataMap["nodeCount"])
+    data.OnlineNodeCount = numberFromAPI(data.OnlineNodeCount, dataMap["onlineNodeCount"])
+    data.GuestCount = numberFromAPI(data.GuestCount, dataMap["guestCount"])
+    data.StorageCount = numberFromAPI(data.StorageCount, dataMap["storageCount"])
+    data.GuestsWithoutBackupCount = numberFromAPI(data.GuestsWithoutBackupCount, dataMap["guestsWithoutBackupCount"])
     if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
         data.IsAiInvestigationEnabled = types.BoolValue(val)
     }

@@ -757,23 +757,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := dataMap["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["snmpPort"].(int); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["snmpPort"].(int64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, dataMap["snmpPort"])
     if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1002,23 +986,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     if val, ok := dataMap["isRecurring"].(bool); ok {
         data.IsRecurring = types.BoolValue(val)
     }
-    if val, ok := dataMap["rescanIntervalInMinutes"].(float64); ok {
-        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int); ok {
-        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int64); ok {
-        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["rescanIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RescanIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RescanIntervalInMinutes = types.NumberNull()
-    }
+    data.RescanIntervalInMinutes = numberFromAPI(data.RescanIntervalInMinutes, dataMap["rescanIntervalInMinutes"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1152,40 +1120,8 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     } else {
         data.DiscoveredDevices = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["scannedHostCount"].(float64); ok {
-        data.ScannedHostCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["scannedHostCount"].(int); ok {
-        data.ScannedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["scannedHostCount"].(int64); ok {
-        data.ScannedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["scannedHostCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ScannedHostCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScannedHostCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ScannedHostCount = types.NumberNull()
-    }
-    if val, ok := dataMap["respondedHostCount"].(float64); ok {
-        data.RespondedHostCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["respondedHostCount"].(int); ok {
-        data.RespondedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["respondedHostCount"].(int64); ok {
-        data.RespondedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["respondedHostCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RespondedHostCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RespondedHostCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RespondedHostCount = types.NumberNull()
-    }
+    data.ScannedHostCount = numberFromAPI(data.ScannedHostCount, dataMap["scannedHostCount"])
+    data.RespondedHostCount = numberFromAPI(data.RespondedHostCount, dataMap["respondedHostCount"])
     if obj, ok := dataMap["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.StartedAt = NewRFC3339Value(val)
@@ -1600,23 +1536,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := dataMap["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["snmpPort"].(int); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["snmpPort"].(int64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, dataMap["snmpPort"])
     if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1845,23 +1765,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
     if val, ok := dataMap["isRecurring"].(bool); ok {
         data.IsRecurring = types.BoolValue(val)
     }
-    if val, ok := dataMap["rescanIntervalInMinutes"].(float64); ok {
-        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int); ok {
-        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int64); ok {
-        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["rescanIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RescanIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RescanIntervalInMinutes = types.NumberNull()
-    }
+    data.RescanIntervalInMinutes = numberFromAPI(data.RescanIntervalInMinutes, dataMap["rescanIntervalInMinutes"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1995,40 +1899,8 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
     } else {
         data.DiscoveredDevices = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["scannedHostCount"].(float64); ok {
-        data.ScannedHostCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["scannedHostCount"].(int); ok {
-        data.ScannedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["scannedHostCount"].(int64); ok {
-        data.ScannedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["scannedHostCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ScannedHostCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScannedHostCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ScannedHostCount = types.NumberNull()
-    }
-    if val, ok := dataMap["respondedHostCount"].(float64); ok {
-        data.RespondedHostCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["respondedHostCount"].(int); ok {
-        data.RespondedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["respondedHostCount"].(int64); ok {
-        data.RespondedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["respondedHostCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RespondedHostCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RespondedHostCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RespondedHostCount = types.NumberNull()
-    }
+    data.ScannedHostCount = numberFromAPI(data.ScannedHostCount, dataMap["scannedHostCount"])
+    data.RespondedHostCount = numberFromAPI(data.RespondedHostCount, dataMap["respondedHostCount"])
     if obj, ok := dataMap["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.StartedAt = NewRFC3339Value(val)
@@ -2532,23 +2404,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := dataMap["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["snmpPort"].(int); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["snmpPort"].(int64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, dataMap["snmpPort"])
     if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2777,23 +2633,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     if val, ok := dataMap["isRecurring"].(bool); ok {
         data.IsRecurring = types.BoolValue(val)
     }
-    if val, ok := dataMap["rescanIntervalInMinutes"].(float64); ok {
-        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int); ok {
-        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int64); ok {
-        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["rescanIntervalInMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RescanIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RescanIntervalInMinutes = types.NumberNull()
-    }
+    data.RescanIntervalInMinutes = numberFromAPI(data.RescanIntervalInMinutes, dataMap["rescanIntervalInMinutes"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2927,40 +2767,8 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     } else {
         data.DiscoveredDevices = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["scannedHostCount"].(float64); ok {
-        data.ScannedHostCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["scannedHostCount"].(int); ok {
-        data.ScannedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["scannedHostCount"].(int64); ok {
-        data.ScannedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["scannedHostCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ScannedHostCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScannedHostCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ScannedHostCount = types.NumberNull()
-    }
-    if val, ok := dataMap["respondedHostCount"].(float64); ok {
-        data.RespondedHostCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["respondedHostCount"].(int); ok {
-        data.RespondedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["respondedHostCount"].(int64); ok {
-        data.RespondedHostCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["respondedHostCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RespondedHostCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RespondedHostCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RespondedHostCount = types.NumberNull()
-    }
+    data.ScannedHostCount = numberFromAPI(data.ScannedHostCount, dataMap["scannedHostCount"])
+    data.RespondedHostCount = numberFromAPI(data.RespondedHostCount, dataMap["respondedHostCount"])
     if obj, ok := dataMap["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.StartedAt = NewRFC3339Value(val)

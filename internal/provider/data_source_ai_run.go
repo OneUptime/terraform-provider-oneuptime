@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -581,17 +580,7 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     } else {
         data.CodeFixTaskType = types.StringNull()
     }
-    if val, ok := item["taskNumber"].(float64); ok {
-        data.TaskNumber = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["taskNumber"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TaskNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TaskNumber = types.NumberNull()
-        }
-    } else {
-        data.TaskNumber = types.NumberNull()
-    }
+    data.TaskNumber = numberFromAPI(data.TaskNumber, item["taskNumber"])
     if obj, ok := item["status"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Status = types.StringValue(val)
@@ -779,17 +768,7 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     } else {
         data.AiAgentId = types.StringNull()
     }
-    if val, ok := item["attemptCount"].(float64); ok {
-        data.AttemptCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["attemptCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AttemptCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AttemptCount = types.NumberNull()
-        }
-    } else {
-        data.AttemptCount = types.NumberNull()
-    }
+    data.AttemptCount = numberFromAPI(data.AttemptCount, item["attemptCount"])
     if obj, ok := item["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.StartedAt = types.StringValue(val)
@@ -841,50 +820,10 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     } else {
         data.LastHeartbeatAt = types.StringNull()
     }
-    if val, ok := item["llmCallCount"].(float64); ok {
-        data.LlmCallCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["llmCallCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.LlmCallCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LlmCallCount = types.NumberNull()
-        }
-    } else {
-        data.LlmCallCount = types.NumberNull()
-    }
-    if val, ok := item["toolCallCount"].(float64); ok {
-        data.ToolCallCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["toolCallCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ToolCallCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ToolCallCount = types.NumberNull()
-        }
-    } else {
-        data.ToolCallCount = types.NumberNull()
-    }
-    if val, ok := item["totalTokens"].(float64); ok {
-        data.TotalTokens = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["totalTokens"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TotalTokens = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TotalTokens = types.NumberNull()
-        }
-    } else {
-        data.TotalTokens = types.NumberNull()
-    }
-    if val, ok := item["totalCostInUSDCents"].(float64); ok {
-        data.TotalCostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["totalCostInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TotalCostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TotalCostInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.TotalCostInUsdCents = types.NumberNull()
-    }
+    data.LlmCallCount = numberFromAPI(data.LlmCallCount, item["llmCallCount"])
+    data.ToolCallCount = numberFromAPI(data.ToolCallCount, item["toolCallCount"])
+    data.TotalTokens = numberFromAPI(data.TotalTokens, item["totalTokens"])
+    data.TotalCostInUsdCents = numberFromAPI(data.TotalCostInUsdCents, item["totalCostInUSDCents"])
     if obj, ok := item["egressManifest"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.EgressManifest = types.StringValue(val)

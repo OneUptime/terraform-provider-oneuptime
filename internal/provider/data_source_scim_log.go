@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -471,17 +470,7 @@ func (d *ScimLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.RequestPath = types.StringNull()
     }
-    if val, ok := item["httpStatusCode"].(float64); ok {
-        data.HttpStatusCode = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["httpStatusCode"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.HttpStatusCode = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.HttpStatusCode = types.NumberNull()
-        }
-    } else {
-        data.HttpStatusCode = types.NumberNull()
-    }
+    data.HttpStatusCode = numberFromAPI(data.HttpStatusCode, item["httpStatusCode"])
     if obj, ok := item["affectedUserEmail"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.AffectedUserEmail = types.StringValue(val)

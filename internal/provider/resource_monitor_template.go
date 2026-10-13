@@ -667,23 +667,7 @@ func (r *MonitorTemplateResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.CustomFields = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["minimumProbeAgreement"].(float64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumProbeAgreement"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumProbeAgreement = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumProbeAgreement = types.NumberNull()
-    }
+    data.MinimumProbeAgreement = numberFromAPI(data.MinimumProbeAgreement, dataMap["minimumProbeAgreement"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1165,23 +1149,7 @@ func (r *MonitorTemplateResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.CustomFields = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["minimumProbeAgreement"].(float64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumProbeAgreement"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumProbeAgreement = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumProbeAgreement = types.NumberNull()
-    }
+    data.MinimumProbeAgreement = numberFromAPI(data.MinimumProbeAgreement, dataMap["minimumProbeAgreement"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1730,23 +1698,7 @@ func (r *MonitorTemplateResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.CustomFields = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["minimumProbeAgreement"].(float64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["minimumProbeAgreement"].(int64); ok {
-        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["minimumProbeAgreement"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MinimumProbeAgreement = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MinimumProbeAgreement = types.NumberNull()
-    }
+    data.MinimumProbeAgreement = numberFromAPI(data.MinimumProbeAgreement, dataMap["minimumProbeAgreement"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)

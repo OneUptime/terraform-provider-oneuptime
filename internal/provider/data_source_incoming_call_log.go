@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -494,50 +493,10 @@ func (d *IncomingCallLogDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.StatusMessage = types.StringNull()
     }
-    if val, ok := item["callDurationInSeconds"].(float64); ok {
-        data.CallDurationInSeconds = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["callDurationInSeconds"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CallDurationInSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallDurationInSeconds = types.NumberNull()
-        }
-    } else {
-        data.CallDurationInSeconds = types.NumberNull()
-    }
-    if val, ok := item["callCostInUSDCents"].(float64); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["callCostInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallCostInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.CallCostInUsdCents = types.NumberNull()
-    }
-    if val, ok := item["incomingCallCostInUSDCents"].(float64); ok {
-        data.IncomingCallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["incomingCallCostInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.IncomingCallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncomingCallCostInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.IncomingCallCostInUsdCents = types.NumberNull()
-    }
-    if val, ok := item["outgoingCallCostInUSDCents"].(float64); ok {
-        data.OutgoingCallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["outgoingCallCostInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OutgoingCallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OutgoingCallCostInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.OutgoingCallCostInUsdCents = types.NumberNull()
-    }
+    data.CallDurationInSeconds = numberFromAPI(data.CallDurationInSeconds, item["callDurationInSeconds"])
+    data.CallCostInUsdCents = numberFromAPI(data.CallCostInUsdCents, item["callCostInUSDCents"])
+    data.IncomingCallCostInUsdCents = numberFromAPI(data.IncomingCallCostInUsdCents, item["incomingCallCostInUSDCents"])
+    data.OutgoingCallCostInUsdCents = numberFromAPI(data.OutgoingCallCostInUsdCents, item["outgoingCallCostInUSDCents"])
     if obj, ok := item["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.StartedAt = types.StringValue(val)
@@ -589,28 +548,8 @@ func (d *IncomingCallLogDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.AnsweredByUserId = types.StringNull()
     }
-    if val, ok := item["currentEscalationRuleOrder"].(float64); ok {
-        data.CurrentEscalationRuleOrder = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["currentEscalationRuleOrder"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentEscalationRuleOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentEscalationRuleOrder = types.NumberNull()
-        }
-    } else {
-        data.CurrentEscalationRuleOrder = types.NumberNull()
-    }
-    if val, ok := item["repeatCount"].(float64); ok {
-        data.RepeatCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["repeatCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RepeatCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RepeatCount = types.NumberNull()
-        }
-    } else {
-        data.RepeatCount = types.NumberNull()
-    }
+    data.CurrentEscalationRuleOrder = numberFromAPI(data.CurrentEscalationRuleOrder, item["currentEscalationRuleOrder"])
+    data.RepeatCount = numberFromAPI(data.RepeatCount, item["repeatCount"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

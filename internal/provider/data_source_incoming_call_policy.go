@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -619,17 +618,7 @@ func (d *IncomingCallPolicyDataSource) Read(ctx context.Context, req datasource.
     } else {
         data.RepeatPolicyIfNoOneAnswers = types.BoolNull()
     }
-    if val, ok := item["repeatPolicyIfNoOneAnswersTimes"].(float64); ok {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["repeatPolicyIfNoOneAnswersTimes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RepeatPolicyIfNoOneAnswersTimes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RepeatPolicyIfNoOneAnswersTimes = types.NumberNull()
-        }
-    } else {
-        data.RepeatPolicyIfNoOneAnswersTimes = types.NumberNull()
-    }
+    data.RepeatPolicyIfNoOneAnswersTimes = numberFromAPI(data.RepeatPolicyIfNoOneAnswersTimes, item["repeatPolicyIfNoOneAnswersTimes"])
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value
         for _, item := range val {

@@ -518,57 +518,9 @@ func (r *InventoryItemRelationshipResource) Create(ctx context.Context, req reso
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["callCount"].(float64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["callCount"].(int); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["callCount"].(int64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["callCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CallCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CallCount = types.NumberNull()
-    }
-    if val, ok := dataMap["errorCount"].(float64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorCount"].(int); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorCount"].(int64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorCount = types.NumberNull()
-    }
-    if val, ok := dataMap["avgDurationMs"].(float64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["avgDurationMs"].(int); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["avgDurationMs"].(int64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["avgDurationMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AvgDurationMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AvgDurationMs = types.NumberNull()
-    }
+    data.CallCount = numberFromAPI(data.CallCount, dataMap["callCount"])
+    data.ErrorCount = numberFromAPI(data.ErrorCount, dataMap["errorCount"])
+    data.AvgDurationMs = numberFromAPI(data.AvgDurationMs, dataMap["avgDurationMs"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -885,57 +837,9 @@ func (r *InventoryItemRelationshipResource) Read(ctx context.Context, req resour
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["callCount"].(float64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["callCount"].(int); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["callCount"].(int64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["callCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CallCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CallCount = types.NumberNull()
-    }
-    if val, ok := dataMap["errorCount"].(float64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorCount"].(int); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorCount"].(int64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorCount = types.NumberNull()
-    }
-    if val, ok := dataMap["avgDurationMs"].(float64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["avgDurationMs"].(int); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["avgDurationMs"].(int64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["avgDurationMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AvgDurationMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AvgDurationMs = types.NumberNull()
-    }
+    data.CallCount = numberFromAPI(data.CallCount, dataMap["callCount"])
+    data.ErrorCount = numberFromAPI(data.ErrorCount, dataMap["errorCount"])
+    data.AvgDurationMs = numberFromAPI(data.AvgDurationMs, dataMap["avgDurationMs"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1297,57 +1201,9 @@ func (r *InventoryItemRelationshipResource) Update(ctx context.Context, req reso
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["callCount"].(float64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["callCount"].(int); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["callCount"].(int64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["callCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CallCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CallCount = types.NumberNull()
-    }
-    if val, ok := dataMap["errorCount"].(float64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorCount"].(int); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorCount"].(int64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorCount = types.NumberNull()
-    }
-    if val, ok := dataMap["avgDurationMs"].(float64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["avgDurationMs"].(int); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["avgDurationMs"].(int64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["avgDurationMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AvgDurationMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AvgDurationMs = types.NumberNull()
-    }
+    data.CallCount = numberFromAPI(data.CallCount, dataMap["callCount"])
+    data.ErrorCount = numberFromAPI(data.ErrorCount, dataMap["errorCount"])
+    data.AvgDurationMs = numberFromAPI(data.AvgDurationMs, dataMap["avgDurationMs"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)

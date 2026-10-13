@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -376,17 +375,7 @@ func (d *NetworkSiteAssignmentRuleDataSource) Read(ctx context.Context, req data
     } else {
         data.HostnamePattern = types.StringNull()
     }
-    if val, ok := item["priority"].(float64); ok {
-        data.Priority = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["priority"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Priority = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Priority = types.NumberNull()
-        }
-    } else {
-        data.Priority = types.NumberNull()
-    }
+    data.Priority = numberFromAPI(data.Priority, item["priority"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)

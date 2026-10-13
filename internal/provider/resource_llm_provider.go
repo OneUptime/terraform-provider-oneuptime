@@ -722,23 +722,7 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["costPerMillionTokensInUSDCents"].(float64); ok {
-        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["costPerMillionTokensInUSDCents"].(int); ok {
-        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["costPerMillionTokensInUSDCents"].(int64); ok {
-        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["costPerMillionTokensInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CostPerMillionTokensInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CostPerMillionTokensInUsdCents = types.NumberNull()
-    }
+    data.CostPerMillionTokensInUsdCents = numberFromAPI(data.CostPerMillionTokensInUsdCents, dataMap["costPerMillionTokensInUSDCents"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1191,23 +1175,7 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["costPerMillionTokensInUSDCents"].(float64); ok {
-        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["costPerMillionTokensInUSDCents"].(int); ok {
-        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["costPerMillionTokensInUSDCents"].(int64); ok {
-        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["costPerMillionTokensInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CostPerMillionTokensInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CostPerMillionTokensInUsdCents = types.NumberNull()
-    }
+    data.CostPerMillionTokensInUsdCents = numberFromAPI(data.CostPerMillionTokensInUsdCents, dataMap["costPerMillionTokensInUSDCents"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1724,23 +1692,7 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["costPerMillionTokensInUSDCents"].(float64); ok {
-        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["costPerMillionTokensInUSDCents"].(int); ok {
-        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["costPerMillionTokensInUSDCents"].(int64); ok {
-        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["costPerMillionTokensInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CostPerMillionTokensInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CostPerMillionTokensInUsdCents = types.NumberNull()
-    }
+    data.CostPerMillionTokensInUsdCents = numberFromAPI(data.CostPerMillionTokensInUsdCents, dataMap["costPerMillionTokensInUSDCents"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {

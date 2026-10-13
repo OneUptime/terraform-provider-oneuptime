@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -467,61 +466,11 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.DstIp = types.StringNull()
     }
-    if val, ok := item["srcPort"].(float64); ok {
-        data.SrcPort = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["srcPort"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SrcPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SrcPort = types.NumberNull()
-        }
-    } else {
-        data.SrcPort = types.NumberNull()
-    }
-    if val, ok := item["dstPort"].(float64); ok {
-        data.DstPort = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["dstPort"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DstPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DstPort = types.NumberNull()
-        }
-    } else {
-        data.DstPort = types.NumberNull()
-    }
-    if val, ok := item["protocol"].(float64); ok {
-        data.Protocol = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["protocol"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Protocol = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Protocol = types.NumberNull()
-        }
-    } else {
-        data.Protocol = types.NumberNull()
-    }
-    if val, ok := item["inputInterfaceIndex"].(float64); ok {
-        data.InputInterfaceIndex = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["inputInterfaceIndex"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InputInterfaceIndex = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InputInterfaceIndex = types.NumberNull()
-        }
-    } else {
-        data.InputInterfaceIndex = types.NumberNull()
-    }
-    if val, ok := item["outputInterfaceIndex"].(float64); ok {
-        data.OutputInterfaceIndex = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["outputInterfaceIndex"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OutputInterfaceIndex = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OutputInterfaceIndex = types.NumberNull()
-        }
-    } else {
-        data.OutputInterfaceIndex = types.NumberNull()
-    }
+    data.SrcPort = numberFromAPI(data.SrcPort, item["srcPort"])
+    data.DstPort = numberFromAPI(data.DstPort, item["dstPort"])
+    data.Protocol = numberFromAPI(data.Protocol, item["protocol"])
+    data.InputInterfaceIndex = numberFromAPI(data.InputInterfaceIndex, item["inputInterfaceIndex"])
+    data.OutputInterfaceIndex = numberFromAPI(data.OutputInterfaceIndex, item["outputInterfaceIndex"])
     if obj, ok := item["octets"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Octets = types.StringValue(val)
@@ -624,28 +573,8 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.FlowFormat = types.StringNull()
     }
-    if val, ok := item["samplingRate"].(float64); ok {
-        data.SamplingRate = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["samplingRate"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SamplingRate = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SamplingRate = types.NumberNull()
-        }
-    } else {
-        data.SamplingRate = types.NumberNull()
-    }
-    if val, ok := item["flowCount"].(float64); ok {
-        data.FlowCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["flowCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.FlowCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.FlowCount = types.NumberNull()
-        }
-    } else {
-        data.FlowCount = types.NumberNull()
-    }
+    data.SamplingRate = numberFromAPI(data.SamplingRate, item["samplingRate"])
+    data.FlowCount = numberFromAPI(data.FlowCount, item["flowCount"])
     if obj, ok := item["probeId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProbeId = types.StringValue(val)

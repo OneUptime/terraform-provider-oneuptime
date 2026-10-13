@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -596,17 +595,7 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.EventUid = types.StringNull()
     }
-    if val, ok := item["categoryUid"].(float64); ok {
-        data.CategoryUid = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["categoryUid"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CategoryUid = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CategoryUid = types.NumberNull()
-        }
-    } else {
-        data.CategoryUid = types.NumberNull()
-    }
+    data.CategoryUid = numberFromAPI(data.CategoryUid, item["categoryUid"])
     if obj, ok := item["categoryName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CategoryName = types.StringValue(val)
@@ -624,17 +613,7 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.CategoryName = types.StringNull()
     }
-    if val, ok := item["classUid"].(float64); ok {
-        data.ClassUid = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["classUid"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ClassUid = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ClassUid = types.NumberNull()
-        }
-    } else {
-        data.ClassUid = types.NumberNull()
-    }
+    data.ClassUid = numberFromAPI(data.ClassUid, item["classUid"])
     if obj, ok := item["className"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ClassName = types.StringValue(val)
@@ -669,17 +648,7 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.ActivityName = types.StringNull()
     }
-    if val, ok := item["severityId"].(float64); ok {
-        data.SeverityId = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["severityId"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SeverityId = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SeverityId = types.NumberNull()
-        }
-    } else {
-        data.SeverityId = types.NumberNull()
-    }
+    data.SeverityId = numberFromAPI(data.SeverityId, item["severityId"])
     if obj, ok := item["severityName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SeverityName = types.StringValue(val)
@@ -966,17 +935,7 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.TargetIp = types.StringNull()
     }
-    if val, ok := item["targetPort"].(float64); ok {
-        data.TargetPort = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["targetPort"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TargetPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TargetPort = types.NumberNull()
-        }
-    } else {
-        data.TargetPort = types.NumberNull()
-    }
+    data.TargetPort = numberFromAPI(data.TargetPort, item["targetPort"])
     if obj, ok := item["targetResource"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TargetResource = types.StringValue(val)

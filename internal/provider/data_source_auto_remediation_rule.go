@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -789,17 +788,7 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
     } else {
         data.Runbooks = types.SetNull(types.StringType)
     }
-    if val, ok := item["verificationWindowMinutes"].(float64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["verificationWindowMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VerificationWindowMinutes = types.NumberNull()
-        }
-    } else {
-        data.VerificationWindowMinutes = types.NumberNull()
-    }
+    data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, item["verificationWindowMinutes"])
     if val, ok := item["autoResolveOnVerifiedRecovery"].(bool); ok {
         data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
     } else {

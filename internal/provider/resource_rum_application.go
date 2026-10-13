@@ -820,23 +820,7 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1065,57 +1049,9 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     if val, ok := dataMap["sessionReplaySameOriginTracePropagation"].(bool); ok {
         data.SessionReplaySameOriginTracePropagation = types.BoolValue(val)
     }
-    if val, ok := dataMap["sessionReplayLcpBudgetMs"].(float64); ok {
-        data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayLcpBudgetMs"].(int); ok {
-        data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayLcpBudgetMs"].(int64); ok {
-        data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayLcpBudgetMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayLcpBudgetMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayLcpBudgetMs = types.NumberNull()
-    }
-    if val, ok := dataMap["sessionReplayLongTaskBudgetMs"].(float64); ok {
-        data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayLongTaskBudgetMs"].(int); ok {
-        data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayLongTaskBudgetMs"].(int64); ok {
-        data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayLongTaskBudgetMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayLongTaskBudgetMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayLongTaskBudgetMs = types.NumberNull()
-    }
-    if val, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(float64); ok {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(int); ok {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(int64); ok {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplaySlowRequestBudgetMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplaySlowRequestBudgetMs = types.NumberNull()
-    }
+    data.SessionReplayLcpBudgetMs = numberFromAPI(data.SessionReplayLcpBudgetMs, dataMap["sessionReplayLcpBudgetMs"])
+    data.SessionReplayLongTaskBudgetMs = numberFromAPI(data.SessionReplayLongTaskBudgetMs, dataMap["sessionReplayLongTaskBudgetMs"])
+    data.SessionReplaySlowRequestBudgetMs = numberFromAPI(data.SessionReplaySlowRequestBudgetMs, dataMap["sessionReplaySlowRequestBudgetMs"])
     if obj, ok := dataMap["sessionReplayAllowedOrigins"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1227,23 +1163,7 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     } else {
         data.SessionReplayCaptureTrigger = types.StringNull()
     }
-    if val, ok := dataMap["sessionReplaySamplePercentage"].(float64); ok {
-        data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplaySamplePercentage"].(int); ok {
-        data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplaySamplePercentage"].(int64); ok {
-        data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplaySamplePercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplaySamplePercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplaySamplePercentage = types.NumberNull()
-    }
+    data.SessionReplaySamplePercentage = numberFromAPI(data.SessionReplaySamplePercentage, dataMap["sessionReplaySamplePercentage"])
     if val, ok := dataMap["sessionReplayCaptureUserIdentity"].(bool); ok {
         data.SessionReplayCaptureUserIdentity = types.BoolValue(val)
     }
@@ -1253,40 +1173,8 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     if val, ok := dataMap["sessionReplayRecordCanvas"].(bool); ok {
         data.SessionReplayRecordCanvas = types.BoolValue(val)
     }
-    if val, ok := dataMap["sessionReplayRetentionInDays"].(float64); ok {
-        data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayRetentionInDays"].(int); ok {
-        data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayRetentionInDays"].(int64); ok {
-        data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayRetentionInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayRetentionInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayRetentionInDays = types.NumberNull()
-    }
-    if val, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(float64); ok {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(int); ok {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(int64); ok {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayMonthlyBudgetInGb = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayMonthlyBudgetInGb = types.NumberNull()
-    }
+    data.SessionReplayRetentionInDays = numberFromAPI(data.SessionReplayRetentionInDays, dataMap["sessionReplayRetentionInDays"])
+    data.SessionReplayMonthlyBudgetInGb = numberFromAPI(data.SessionReplayMonthlyBudgetInGb, dataMap["sessionReplayMonthlyBudgetInGB"])
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -1872,23 +1760,7 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2117,57 +1989,9 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
     if val, ok := dataMap["sessionReplaySameOriginTracePropagation"].(bool); ok {
         data.SessionReplaySameOriginTracePropagation = types.BoolValue(val)
     }
-    if val, ok := dataMap["sessionReplayLcpBudgetMs"].(float64); ok {
-        data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayLcpBudgetMs"].(int); ok {
-        data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayLcpBudgetMs"].(int64); ok {
-        data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayLcpBudgetMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayLcpBudgetMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayLcpBudgetMs = types.NumberNull()
-    }
-    if val, ok := dataMap["sessionReplayLongTaskBudgetMs"].(float64); ok {
-        data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayLongTaskBudgetMs"].(int); ok {
-        data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayLongTaskBudgetMs"].(int64); ok {
-        data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayLongTaskBudgetMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayLongTaskBudgetMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayLongTaskBudgetMs = types.NumberNull()
-    }
-    if val, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(float64); ok {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(int); ok {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(int64); ok {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplaySlowRequestBudgetMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplaySlowRequestBudgetMs = types.NumberNull()
-    }
+    data.SessionReplayLcpBudgetMs = numberFromAPI(data.SessionReplayLcpBudgetMs, dataMap["sessionReplayLcpBudgetMs"])
+    data.SessionReplayLongTaskBudgetMs = numberFromAPI(data.SessionReplayLongTaskBudgetMs, dataMap["sessionReplayLongTaskBudgetMs"])
+    data.SessionReplaySlowRequestBudgetMs = numberFromAPI(data.SessionReplaySlowRequestBudgetMs, dataMap["sessionReplaySlowRequestBudgetMs"])
     if obj, ok := dataMap["sessionReplayAllowedOrigins"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2279,23 +2103,7 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.SessionReplayCaptureTrigger = types.StringNull()
     }
-    if val, ok := dataMap["sessionReplaySamplePercentage"].(float64); ok {
-        data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplaySamplePercentage"].(int); ok {
-        data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplaySamplePercentage"].(int64); ok {
-        data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplaySamplePercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplaySamplePercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplaySamplePercentage = types.NumberNull()
-    }
+    data.SessionReplaySamplePercentage = numberFromAPI(data.SessionReplaySamplePercentage, dataMap["sessionReplaySamplePercentage"])
     if val, ok := dataMap["sessionReplayCaptureUserIdentity"].(bool); ok {
         data.SessionReplayCaptureUserIdentity = types.BoolValue(val)
     }
@@ -2305,40 +2113,8 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
     if val, ok := dataMap["sessionReplayRecordCanvas"].(bool); ok {
         data.SessionReplayRecordCanvas = types.BoolValue(val)
     }
-    if val, ok := dataMap["sessionReplayRetentionInDays"].(float64); ok {
-        data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayRetentionInDays"].(int); ok {
-        data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayRetentionInDays"].(int64); ok {
-        data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayRetentionInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayRetentionInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayRetentionInDays = types.NumberNull()
-    }
-    if val, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(float64); ok {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(int); ok {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(int64); ok {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayMonthlyBudgetInGb = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayMonthlyBudgetInGb = types.NumberNull()
-    }
+    data.SessionReplayRetentionInDays = numberFromAPI(data.SessionReplayRetentionInDays, dataMap["sessionReplayRetentionInDays"])
+    data.SessionReplayMonthlyBudgetInGb = numberFromAPI(data.SessionReplayMonthlyBudgetInGb, dataMap["sessionReplayMonthlyBudgetInGB"])
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -3059,23 +2835,7 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3304,57 +3064,9 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     if val, ok := dataMap["sessionReplaySameOriginTracePropagation"].(bool); ok {
         data.SessionReplaySameOriginTracePropagation = types.BoolValue(val)
     }
-    if val, ok := dataMap["sessionReplayLcpBudgetMs"].(float64); ok {
-        data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayLcpBudgetMs"].(int); ok {
-        data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayLcpBudgetMs"].(int64); ok {
-        data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayLcpBudgetMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayLcpBudgetMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayLcpBudgetMs = types.NumberNull()
-    }
-    if val, ok := dataMap["sessionReplayLongTaskBudgetMs"].(float64); ok {
-        data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayLongTaskBudgetMs"].(int); ok {
-        data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayLongTaskBudgetMs"].(int64); ok {
-        data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayLongTaskBudgetMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayLongTaskBudgetMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayLongTaskBudgetMs = types.NumberNull()
-    }
-    if val, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(float64); ok {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(int); ok {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(int64); ok {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplaySlowRequestBudgetMs"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplaySlowRequestBudgetMs = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplaySlowRequestBudgetMs = types.NumberNull()
-    }
+    data.SessionReplayLcpBudgetMs = numberFromAPI(data.SessionReplayLcpBudgetMs, dataMap["sessionReplayLcpBudgetMs"])
+    data.SessionReplayLongTaskBudgetMs = numberFromAPI(data.SessionReplayLongTaskBudgetMs, dataMap["sessionReplayLongTaskBudgetMs"])
+    data.SessionReplaySlowRequestBudgetMs = numberFromAPI(data.SessionReplaySlowRequestBudgetMs, dataMap["sessionReplaySlowRequestBudgetMs"])
     if obj, ok := dataMap["sessionReplayAllowedOrigins"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3466,23 +3178,7 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     } else {
         data.SessionReplayCaptureTrigger = types.StringNull()
     }
-    if val, ok := dataMap["sessionReplaySamplePercentage"].(float64); ok {
-        data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplaySamplePercentage"].(int); ok {
-        data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplaySamplePercentage"].(int64); ok {
-        data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplaySamplePercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplaySamplePercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplaySamplePercentage = types.NumberNull()
-    }
+    data.SessionReplaySamplePercentage = numberFromAPI(data.SessionReplaySamplePercentage, dataMap["sessionReplaySamplePercentage"])
     if val, ok := dataMap["sessionReplayCaptureUserIdentity"].(bool); ok {
         data.SessionReplayCaptureUserIdentity = types.BoolValue(val)
     }
@@ -3492,40 +3188,8 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     if val, ok := dataMap["sessionReplayRecordCanvas"].(bool); ok {
         data.SessionReplayRecordCanvas = types.BoolValue(val)
     }
-    if val, ok := dataMap["sessionReplayRetentionInDays"].(float64); ok {
-        data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayRetentionInDays"].(int); ok {
-        data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayRetentionInDays"].(int64); ok {
-        data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayRetentionInDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayRetentionInDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayRetentionInDays = types.NumberNull()
-    }
-    if val, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(float64); ok {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(int); ok {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(int64); ok {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sessionReplayMonthlyBudgetInGB"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayMonthlyBudgetInGb = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SessionReplayMonthlyBudgetInGb = types.NumberNull()
-    }
+    data.SessionReplayRetentionInDays = numberFromAPI(data.SessionReplayRetentionInDays, dataMap["sessionReplayRetentionInDays"])
+    data.SessionReplayMonthlyBudgetInGb = numberFromAPI(data.SessionReplayMonthlyBudgetInGb, dataMap["sessionReplayMonthlyBudgetInGB"])
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }

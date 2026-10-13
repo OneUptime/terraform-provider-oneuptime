@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -779,17 +778,7 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)
@@ -902,39 +891,9 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.SessionReplaySameOriginTracePropagation = types.BoolNull()
     }
-    if val, ok := item["sessionReplayLcpBudgetMs"].(float64); ok {
-        data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sessionReplayLcpBudgetMs"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayLcpBudgetMs = types.NumberNull()
-        }
-    } else {
-        data.SessionReplayLcpBudgetMs = types.NumberNull()
-    }
-    if val, ok := item["sessionReplayLongTaskBudgetMs"].(float64); ok {
-        data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sessionReplayLongTaskBudgetMs"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayLongTaskBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayLongTaskBudgetMs = types.NumberNull()
-        }
-    } else {
-        data.SessionReplayLongTaskBudgetMs = types.NumberNull()
-    }
-    if val, ok := item["sessionReplaySlowRequestBudgetMs"].(float64); ok {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sessionReplaySlowRequestBudgetMs"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplaySlowRequestBudgetMs = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplaySlowRequestBudgetMs = types.NumberNull()
-        }
-    } else {
-        data.SessionReplaySlowRequestBudgetMs = types.NumberNull()
-    }
+    data.SessionReplayLcpBudgetMs = numberFromAPI(data.SessionReplayLcpBudgetMs, item["sessionReplayLcpBudgetMs"])
+    data.SessionReplayLongTaskBudgetMs = numberFromAPI(data.SessionReplayLongTaskBudgetMs, item["sessionReplayLongTaskBudgetMs"])
+    data.SessionReplaySlowRequestBudgetMs = numberFromAPI(data.SessionReplaySlowRequestBudgetMs, item["sessionReplaySlowRequestBudgetMs"])
     if obj, ok := item["sessionReplayAllowedOrigins"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SessionReplayAllowedOrigins = types.StringValue(val)
@@ -986,17 +945,7 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.SessionReplayCaptureTrigger = types.StringNull()
     }
-    if val, ok := item["sessionReplaySamplePercentage"].(float64); ok {
-        data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sessionReplaySamplePercentage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplaySamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplaySamplePercentage = types.NumberNull()
-        }
-    } else {
-        data.SessionReplaySamplePercentage = types.NumberNull()
-    }
+    data.SessionReplaySamplePercentage = numberFromAPI(data.SessionReplaySamplePercentage, item["sessionReplaySamplePercentage"])
     if val, ok := item["sessionReplayCaptureUserIdentity"].(bool); ok {
         data.SessionReplayCaptureUserIdentity = types.BoolValue(val)
     } else {
@@ -1012,28 +961,8 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.SessionReplayRecordCanvas = types.BoolNull()
     }
-    if val, ok := item["sessionReplayRetentionInDays"].(float64); ok {
-        data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sessionReplayRetentionInDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayRetentionInDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayRetentionInDays = types.NumberNull()
-        }
-    } else {
-        data.SessionReplayRetentionInDays = types.NumberNull()
-    }
-    if val, ok := item["sessionReplayMonthlyBudgetInGB"].(float64); ok {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sessionReplayMonthlyBudgetInGB"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SessionReplayMonthlyBudgetInGb = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SessionReplayMonthlyBudgetInGb = types.NumberNull()
-        }
-    } else {
-        data.SessionReplayMonthlyBudgetInGb = types.NumberNull()
-    }
+    data.SessionReplayRetentionInDays = numberFromAPI(data.SessionReplayRetentionInDays, item["sessionReplayRetentionInDays"])
+    data.SessionReplayMonthlyBudgetInGb = numberFromAPI(data.SessionReplayMonthlyBudgetInGb, item["sessionReplayMonthlyBudgetInGB"])
     if obj, ok := item["sessionReplayLastChunkReceivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SessionReplayLastChunkReceivedAt = types.StringValue(val)

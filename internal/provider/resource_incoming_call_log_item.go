@@ -597,40 +597,8 @@ func (r *IncomingCallLogItemResource) Create(ctx context.Context, req resource.C
     } else {
         data.StatusMessage = types.StringNull()
     }
-    if val, ok := dataMap["dialDurationInSeconds"].(float64); ok {
-        data.DialDurationInSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["dialDurationInSeconds"].(int); ok {
-        data.DialDurationInSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["dialDurationInSeconds"].(int64); ok {
-        data.DialDurationInSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["dialDurationInSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DialDurationInSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DialDurationInSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DialDurationInSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["callCostInUSDCents"].(float64); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["callCostInUSDCents"].(int); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["callCostInUSDCents"].(int64); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["callCostInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallCostInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CallCostInUsdCents = types.NumberNull()
-    }
+    data.DialDurationInSeconds = numberFromAPI(data.DialDurationInSeconds, dataMap["dialDurationInSeconds"])
+    data.CallCostInUsdCents = numberFromAPI(data.CallCostInUsdCents, dataMap["callCostInUSDCents"])
     if obj, ok := dataMap["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.StartedAt = NewRFC3339Value(val)
@@ -988,40 +956,8 @@ func (r *IncomingCallLogItemResource) Read(ctx context.Context, req resource.Rea
     } else {
         data.StatusMessage = types.StringNull()
     }
-    if val, ok := dataMap["dialDurationInSeconds"].(float64); ok {
-        data.DialDurationInSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["dialDurationInSeconds"].(int); ok {
-        data.DialDurationInSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["dialDurationInSeconds"].(int64); ok {
-        data.DialDurationInSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["dialDurationInSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DialDurationInSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DialDurationInSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DialDurationInSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["callCostInUSDCents"].(float64); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["callCostInUSDCents"].(int); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["callCostInUSDCents"].(int64); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["callCostInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallCostInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CallCostInUsdCents = types.NumberNull()
-    }
+    data.DialDurationInSeconds = numberFromAPI(data.DialDurationInSeconds, dataMap["dialDurationInSeconds"])
+    data.CallCostInUsdCents = numberFromAPI(data.CallCostInUsdCents, dataMap["callCostInUSDCents"])
     if obj, ok := dataMap["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.StartedAt = NewRFC3339Value(val)
@@ -1430,40 +1366,8 @@ func (r *IncomingCallLogItemResource) Update(ctx context.Context, req resource.U
     } else {
         data.StatusMessage = types.StringNull()
     }
-    if val, ok := dataMap["dialDurationInSeconds"].(float64); ok {
-        data.DialDurationInSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["dialDurationInSeconds"].(int); ok {
-        data.DialDurationInSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["dialDurationInSeconds"].(int64); ok {
-        data.DialDurationInSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["dialDurationInSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DialDurationInSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DialDurationInSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DialDurationInSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["callCostInUSDCents"].(float64); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["callCostInUSDCents"].(int); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["callCostInUSDCents"].(int64); ok {
-        data.CallCostInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["callCostInUSDCents"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallCostInUsdCents = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CallCostInUsdCents = types.NumberNull()
-    }
+    data.DialDurationInSeconds = numberFromAPI(data.DialDurationInSeconds, dataMap["dialDurationInSeconds"])
+    data.CallCostInUsdCents = numberFromAPI(data.CallCostInUsdCents, dataMap["callCostInUSDCents"])
     if obj, ok := dataMap["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.StartedAt = NewRFC3339Value(val)

@@ -523,23 +523,7 @@ func (r *SnmpCredentialProfileResource) Create(ctx context.Context, req resource
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := dataMap["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["snmpPort"].(int); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["snmpPort"].(int64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, dataMap["snmpPort"])
     if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1058,23 +1042,7 @@ func (r *SnmpCredentialProfileResource) Read(ctx context.Context, req resource.R
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := dataMap["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["snmpPort"].(int); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["snmpPort"].(int64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, dataMap["snmpPort"])
     if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1656,23 +1624,7 @@ func (r *SnmpCredentialProfileResource) Update(ctx context.Context, req resource
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := dataMap["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["snmpPort"].(int); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["snmpPort"].(int64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, dataMap["snmpPort"])
     if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

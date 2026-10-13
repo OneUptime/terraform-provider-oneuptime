@@ -625,23 +625,7 @@ func (r *WorkspaceNotificationSummaryResource) Create(ctx context.Context, req r
     } else {
         data.RecurringInterval = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["numberOfDaysOfData"].(float64); ok {
-        data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["numberOfDaysOfData"].(int); ok {
-        data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["numberOfDaysOfData"].(int64); ok {
-        data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["numberOfDaysOfData"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NumberOfDaysOfData = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NumberOfDaysOfData = types.NumberNull()
-    }
+    data.NumberOfDaysOfData = numberFromAPI(data.NumberOfDaysOfData, dataMap["numberOfDaysOfData"])
     if obj, ok := dataMap["sendFirstReportAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.SendFirstReportAt = NewRFC3339Value(val)
@@ -1240,23 +1224,7 @@ func (r *WorkspaceNotificationSummaryResource) Read(ctx context.Context, req res
     } else {
         data.RecurringInterval = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["numberOfDaysOfData"].(float64); ok {
-        data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["numberOfDaysOfData"].(int); ok {
-        data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["numberOfDaysOfData"].(int64); ok {
-        data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["numberOfDaysOfData"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NumberOfDaysOfData = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NumberOfDaysOfData = types.NumberNull()
-    }
+    data.NumberOfDaysOfData = numberFromAPI(data.NumberOfDaysOfData, dataMap["numberOfDaysOfData"])
     if obj, ok := dataMap["sendFirstReportAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.SendFirstReportAt = NewRFC3339Value(val)
@@ -1953,23 +1921,7 @@ func (r *WorkspaceNotificationSummaryResource) Update(ctx context.Context, req r
     } else {
         data.RecurringInterval = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["numberOfDaysOfData"].(float64); ok {
-        data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["numberOfDaysOfData"].(int); ok {
-        data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["numberOfDaysOfData"].(int64); ok {
-        data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["numberOfDaysOfData"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.NumberOfDaysOfData = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NumberOfDaysOfData = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.NumberOfDaysOfData = types.NumberNull()
-    }
+    data.NumberOfDaysOfData = numberFromAPI(data.NumberOfDaysOfData, dataMap["numberOfDaysOfData"])
     if obj, ok := dataMap["sendFirstReportAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.SendFirstReportAt = NewRFC3339Value(val)

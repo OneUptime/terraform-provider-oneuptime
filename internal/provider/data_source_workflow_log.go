@@ -37,6 +37,8 @@ type WorkflowLogDataSourceModel struct {
     CompletedAt types.String `tfsdk:"completed_at"`
     ResumeAt types.String `tfsdk:"resume_at"`
     StepTrace types.String `tfsdk:"step_trace"`
+    IsTestRun types.Bool `tfsdk:"is_test_run"`
+    StartedByUserId types.String `tfsdk:"started_by_user_id"`
 }
 
 func (d *WorkflowLogDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -45,7 +47,7 @@ func (d *WorkflowLogDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *WorkflowLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Logs of the workflows executed Look up an existing workflow log by `id`, or by any of its other arguments (`logs`, `workflow_id`, `workflow_status`): each one set must match, and exactly one workflow log may match them all.",
+        MarkdownDescription: "Logs of the workflows executed Look up an existing workflow log by `id`, or by any of its other arguments (`is_test_run`, `logs`, `started_by_user_id`, ...): each one set must match, and exactly one workflow log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -94,6 +96,16 @@ func (d *WorkflowLogDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "step_trace": schema.StringAttribute{
                 MarkdownDescription: "Structured per-step record of this run: arguments, return values, the port taken and timing. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "is_test_run": schema.BoolAttribute{
+                MarkdownDescription: "True for a run a person started by hand from the Builder while the workflow was turned off. Its steps ran for real; the workflow's trigger stayed paused.",
+                Optional: true,
+                Computed: true,
+            },
+            "started_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person who started this run by hand from the Builder. Empty for a run its trigger or another workflow started. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -147,6 +159,14 @@ func (d *WorkflowLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["workflowStatus"] = data.WorkflowStatus.ValueString()
         filterNames = append(filterNames, "workflow_status = "+fmt.Sprintf("%q", data.WorkflowStatus.ValueString()))
     }
+    if !data.IsTestRun.IsNull() && !data.IsTestRun.IsUnknown() {
+        filters["isTestRun"] = data.IsTestRun.ValueBool()
+        filterNames = append(filterNames, "is_test_run = "+fmt.Sprintf("%t", data.IsTestRun.ValueBool()))
+    }
+    if !data.StartedByUserId.IsNull() && !data.StartedByUserId.IsUnknown() {
+        filters["startedByUserId"] = data.StartedByUserId.ValueString()
+        filterNames = append(filterNames, "started_by_user_id = "+fmt.Sprintf("%q", data.StartedByUserId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -174,6 +194,8 @@ func (d *WorkflowLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         "completedAt": true,
         "resumeAt": true,
         "stepTrace": true,
+        "isTestRun": true,
+        "startedByUserId": true,
         "_id": true,
     }
 
@@ -421,6 +443,28 @@ func (d *WorkflowLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.StepTrace = types.StringValue(val)
     } else {
         data.StepTrace = types.StringNull()
+    }
+    if val, ok := item["isTestRun"].(bool); ok {
+        data.IsTestRun = types.BoolValue(val)
+    } else {
+        data.IsTestRun = types.BoolNull()
+    }
+    if obj, ok := item["startedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.StartedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.StartedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.StartedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.StartedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.StartedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["startedByUserId"].(string); ok {
+        data.StartedByUserId = types.StringValue(val)
+    } else {
+        data.StartedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

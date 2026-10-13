@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -542,28 +541,8 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
     } else {
         data.PullRequestUrl = types.StringNull()
     }
-    if val, ok := item["pullRequestId"].(float64); ok {
-        data.PullRequestId = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["pullRequestId"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PullRequestId = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PullRequestId = types.NumberNull()
-        }
-    } else {
-        data.PullRequestId = types.NumberNull()
-    }
-    if val, ok := item["pullRequestNumber"].(float64); ok {
-        data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["pullRequestNumber"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PullRequestNumber = types.NumberNull()
-        }
-    } else {
-        data.PullRequestNumber = types.NumberNull()
-    }
+    data.PullRequestId = numberFromAPI(data.PullRequestId, item["pullRequestId"])
+    data.PullRequestNumber = numberFromAPI(data.PullRequestNumber, item["pullRequestNumber"])
     if obj, ok := item["pullRequestState"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.PullRequestState = types.StringValue(val)

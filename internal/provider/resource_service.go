@@ -702,40 +702,8 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.TechStack = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
-    if val, ok := dataMap["metricCardinalityBudget"].(float64); ok {
-        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["metricCardinalityBudget"].(int); ok {
-        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["metricCardinalityBudget"].(int64); ok {
-        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["metricCardinalityBudget"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MetricCardinalityBudget = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MetricCardinalityBudget = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
+    data.MetricCardinalityBudget = numberFromAPI(data.MetricCardinalityBudget, dataMap["metricCardinalityBudget"])
     if obj, ok := dataMap["metricDownsamplingRetentionDays"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1658,40 +1626,8 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.TechStack = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
-    if val, ok := dataMap["metricCardinalityBudget"].(float64); ok {
-        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["metricCardinalityBudget"].(int); ok {
-        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["metricCardinalityBudget"].(int64); ok {
-        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["metricCardinalityBudget"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MetricCardinalityBudget = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MetricCardinalityBudget = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
+    data.MetricCardinalityBudget = numberFromAPI(data.MetricCardinalityBudget, dataMap["metricCardinalityBudget"])
     if obj, ok := dataMap["metricDownsamplingRetentionDays"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2697,40 +2633,8 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.TechStack = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
-    if val, ok := dataMap["metricCardinalityBudget"].(float64); ok {
-        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["metricCardinalityBudget"].(int); ok {
-        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["metricCardinalityBudget"].(int64); ok {
-        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["metricCardinalityBudget"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MetricCardinalityBudget = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.MetricCardinalityBudget = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
+    data.MetricCardinalityBudget = numberFromAPI(data.MetricCardinalityBudget, dataMap["metricCardinalityBudget"])
     if obj, ok := dataMap["metricDownsamplingRetentionDays"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -637,17 +636,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
     } else {
         data.SnmpCommunityString = types.StringNull()
     }
-    if val, ok := item["snmpPort"].(float64); ok {
-        data.SnmpPort = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["snmpPort"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SnmpPort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SnmpPort = types.NumberNull()
-        }
-    } else {
-        data.SnmpPort = types.NumberNull()
-    }
+    data.SnmpPort = numberFromAPI(data.SnmpPort, item["snmpPort"])
     if obj, ok := item["snmpV3SecurityLevel"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SnmpV3SecurityLevel = types.StringValue(val)
@@ -806,28 +795,8 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
     } else {
         data.DiscoveredDevices = types.StringNull()
     }
-    if val, ok := item["scannedHostCount"].(float64); ok {
-        data.ScannedHostCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["scannedHostCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ScannedHostCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScannedHostCount = types.NumberNull()
-        }
-    } else {
-        data.ScannedHostCount = types.NumberNull()
-    }
-    if val, ok := item["respondedHostCount"].(float64); ok {
-        data.RespondedHostCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["respondedHostCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RespondedHostCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RespondedHostCount = types.NumberNull()
-        }
-    } else {
-        data.RespondedHostCount = types.NumberNull()
-    }
+    data.ScannedHostCount = numberFromAPI(data.ScannedHostCount, item["scannedHostCount"])
+    data.RespondedHostCount = numberFromAPI(data.RespondedHostCount, item["respondedHostCount"])
     if obj, ok := item["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.StartedAt = types.StringValue(val)
@@ -867,17 +836,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
     } else {
         data.IsRecurring = types.BoolNull()
     }
-    if val, ok := item["rescanIntervalInMinutes"].(float64); ok {
-        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["rescanIntervalInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RescanIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        data.RescanIntervalInMinutes = types.NumberNull()
-    }
+    data.RescanIntervalInMinutes = numberFromAPI(data.RescanIntervalInMinutes, item["rescanIntervalInMinutes"])
     if obj, ok := item["nextScanAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.NextScanAt = types.StringValue(val)

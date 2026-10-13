@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -480,17 +479,7 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.IsEnabled = types.BoolNull()
     }
-    if val, ok := item["evaluationIntervalInMinutes"].(float64); ok {
-        data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["evaluationIntervalInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.EvaluationIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EvaluationIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        data.EvaluationIntervalInMinutes = types.NumberNull()
-    }
+    data.EvaluationIntervalInMinutes = numberFromAPI(data.EvaluationIntervalInMinutes, item["evaluationIntervalInMinutes"])
     if obj, ok := item["groupByField"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.GroupByField = types.StringValue(val)
@@ -525,17 +514,7 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.DistinctCountField = types.StringNull()
     }
-    if val, ok := item["matchCountThreshold"].(float64); ok {
-        data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["matchCountThreshold"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.MatchCountThreshold = types.NumberNull()
-        }
-    } else {
-        data.MatchCountThreshold = types.NumberNull()
-    }
+    data.MatchCountThreshold = numberFromAPI(data.MatchCountThreshold, item["matchCountThreshold"])
     if val, ok := item["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
     } else {

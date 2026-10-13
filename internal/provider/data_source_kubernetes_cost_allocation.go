@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -884,259 +883,29 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
     } else {
         data.LabelKeys = types.SetNull(types.StringType)
     }
-    if val, ok := item["cpuCoreHours"].(float64); ok {
-        data.CpuCoreHours = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["cpuCoreHours"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CpuCoreHours = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CpuCoreHours = types.NumberNull()
-        }
-    } else {
-        data.CpuCoreHours = types.NumberNull()
-    }
-    if val, ok := item["cpuCoreRequestAverage"].(float64); ok {
-        data.CpuCoreRequestAverage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["cpuCoreRequestAverage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CpuCoreRequestAverage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CpuCoreRequestAverage = types.NumberNull()
-        }
-    } else {
-        data.CpuCoreRequestAverage = types.NumberNull()
-    }
-    if val, ok := item["cpuCoreUsageAverage"].(float64); ok {
-        data.CpuCoreUsageAverage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["cpuCoreUsageAverage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CpuCoreUsageAverage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CpuCoreUsageAverage = types.NumberNull()
-        }
-    } else {
-        data.CpuCoreUsageAverage = types.NumberNull()
-    }
-    if val, ok := item["cpuCoreLimitAverage"].(float64); ok {
-        data.CpuCoreLimitAverage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["cpuCoreLimitAverage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CpuCoreLimitAverage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CpuCoreLimitAverage = types.NumberNull()
-        }
-    } else {
-        data.CpuCoreLimitAverage = types.NumberNull()
-    }
-    if val, ok := item["cpuCost"].(float64); ok {
-        data.CpuCost = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["cpuCost"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CpuCost = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CpuCost = types.NumberNull()
-        }
-    } else {
-        data.CpuCost = types.NumberNull()
-    }
-    if val, ok := item["gpuHours"].(float64); ok {
-        data.GpuHours = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["gpuHours"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.GpuHours = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.GpuHours = types.NumberNull()
-        }
-    } else {
-        data.GpuHours = types.NumberNull()
-    }
-    if val, ok := item["gpuCost"].(float64); ok {
-        data.GpuCost = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["gpuCost"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.GpuCost = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.GpuCost = types.NumberNull()
-        }
-    } else {
-        data.GpuCost = types.NumberNull()
-    }
-    if val, ok := item["ramByteHours"].(float64); ok {
-        data.RamByteHours = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["ramByteHours"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RamByteHours = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RamByteHours = types.NumberNull()
-        }
-    } else {
-        data.RamByteHours = types.NumberNull()
-    }
-    if val, ok := item["ramBytesRequestAverage"].(float64); ok {
-        data.RamBytesRequestAverage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["ramBytesRequestAverage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RamBytesRequestAverage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RamBytesRequestAverage = types.NumberNull()
-        }
-    } else {
-        data.RamBytesRequestAverage = types.NumberNull()
-    }
-    if val, ok := item["ramBytesUsageAverage"].(float64); ok {
-        data.RamBytesUsageAverage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["ramBytesUsageAverage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RamBytesUsageAverage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RamBytesUsageAverage = types.NumberNull()
-        }
-    } else {
-        data.RamBytesUsageAverage = types.NumberNull()
-    }
-    if val, ok := item["ramBytesLimitAverage"].(float64); ok {
-        data.RamBytesLimitAverage = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["ramBytesLimitAverage"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RamBytesLimitAverage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RamBytesLimitAverage = types.NumberNull()
-        }
-    } else {
-        data.RamBytesLimitAverage = types.NumberNull()
-    }
-    if val, ok := item["ramBytesUsageMax"].(float64); ok {
-        data.RamBytesUsageMax = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["ramBytesUsageMax"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RamBytesUsageMax = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RamBytesUsageMax = types.NumberNull()
-        }
-    } else {
-        data.RamBytesUsageMax = types.NumberNull()
-    }
-    if val, ok := item["ramCost"].(float64); ok {
-        data.RamCost = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["ramCost"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RamCost = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RamCost = types.NumberNull()
-        }
-    } else {
-        data.RamCost = types.NumberNull()
-    }
-    if val, ok := item["pvByteHours"].(float64); ok {
-        data.PvByteHours = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["pvByteHours"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PvByteHours = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PvByteHours = types.NumberNull()
-        }
-    } else {
-        data.PvByteHours = types.NumberNull()
-    }
-    if val, ok := item["pvCost"].(float64); ok {
-        data.PvCost = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["pvCost"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PvCost = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PvCost = types.NumberNull()
-        }
-    } else {
-        data.PvCost = types.NumberNull()
-    }
-    if val, ok := item["networkCost"].(float64); ok {
-        data.NetworkCost = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["networkCost"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.NetworkCost = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NetworkCost = types.NumberNull()
-        }
-    } else {
-        data.NetworkCost = types.NumberNull()
-    }
-    if val, ok := item["loadBalancerCost"].(float64); ok {
-        data.LoadBalancerCost = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["loadBalancerCost"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.LoadBalancerCost = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.LoadBalancerCost = types.NumberNull()
-        }
-    } else {
-        data.LoadBalancerCost = types.NumberNull()
-    }
-    if val, ok := item["sharedCost"].(float64); ok {
-        data.SharedCost = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sharedCost"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SharedCost = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SharedCost = types.NumberNull()
-        }
-    } else {
-        data.SharedCost = types.NumberNull()
-    }
-    if val, ok := item["externalCost"].(float64); ok {
-        data.ExternalCost = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["externalCost"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ExternalCost = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ExternalCost = types.NumberNull()
-        }
-    } else {
-        data.ExternalCost = types.NumberNull()
-    }
-    if val, ok := item["totalCost"].(float64); ok {
-        data.TotalCost = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["totalCost"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TotalCost = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TotalCost = types.NumberNull()
-        }
-    } else {
-        data.TotalCost = types.NumberNull()
-    }
-    if val, ok := item["cpuEfficiency"].(float64); ok {
-        data.CpuEfficiency = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["cpuEfficiency"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CpuEfficiency = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CpuEfficiency = types.NumberNull()
-        }
-    } else {
-        data.CpuEfficiency = types.NumberNull()
-    }
-    if val, ok := item["ramEfficiency"].(float64); ok {
-        data.RamEfficiency = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["ramEfficiency"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RamEfficiency = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RamEfficiency = types.NumberNull()
-        }
-    } else {
-        data.RamEfficiency = types.NumberNull()
-    }
-    if val, ok := item["totalEfficiency"].(float64); ok {
-        data.TotalEfficiency = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["totalEfficiency"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TotalEfficiency = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TotalEfficiency = types.NumberNull()
-        }
-    } else {
-        data.TotalEfficiency = types.NumberNull()
-    }
+    data.CpuCoreHours = numberFromAPI(data.CpuCoreHours, item["cpuCoreHours"])
+    data.CpuCoreRequestAverage = numberFromAPI(data.CpuCoreRequestAverage, item["cpuCoreRequestAverage"])
+    data.CpuCoreUsageAverage = numberFromAPI(data.CpuCoreUsageAverage, item["cpuCoreUsageAverage"])
+    data.CpuCoreLimitAverage = numberFromAPI(data.CpuCoreLimitAverage, item["cpuCoreLimitAverage"])
+    data.CpuCost = numberFromAPI(data.CpuCost, item["cpuCost"])
+    data.GpuHours = numberFromAPI(data.GpuHours, item["gpuHours"])
+    data.GpuCost = numberFromAPI(data.GpuCost, item["gpuCost"])
+    data.RamByteHours = numberFromAPI(data.RamByteHours, item["ramByteHours"])
+    data.RamBytesRequestAverage = numberFromAPI(data.RamBytesRequestAverage, item["ramBytesRequestAverage"])
+    data.RamBytesUsageAverage = numberFromAPI(data.RamBytesUsageAverage, item["ramBytesUsageAverage"])
+    data.RamBytesLimitAverage = numberFromAPI(data.RamBytesLimitAverage, item["ramBytesLimitAverage"])
+    data.RamBytesUsageMax = numberFromAPI(data.RamBytesUsageMax, item["ramBytesUsageMax"])
+    data.RamCost = numberFromAPI(data.RamCost, item["ramCost"])
+    data.PvByteHours = numberFromAPI(data.PvByteHours, item["pvByteHours"])
+    data.PvCost = numberFromAPI(data.PvCost, item["pvCost"])
+    data.NetworkCost = numberFromAPI(data.NetworkCost, item["networkCost"])
+    data.LoadBalancerCost = numberFromAPI(data.LoadBalancerCost, item["loadBalancerCost"])
+    data.SharedCost = numberFromAPI(data.SharedCost, item["sharedCost"])
+    data.ExternalCost = numberFromAPI(data.ExternalCost, item["externalCost"])
+    data.TotalCost = numberFromAPI(data.TotalCost, item["totalCost"])
+    data.CpuEfficiency = numberFromAPI(data.CpuEfficiency, item["cpuEfficiency"])
+    data.RamEfficiency = numberFromAPI(data.RamEfficiency, item["ramEfficiency"])
+    data.TotalEfficiency = numberFromAPI(data.TotalEfficiency, item["totalEfficiency"])
     if obj, ok := item["currency"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Currency = types.StringValue(val)
@@ -1171,17 +940,7 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
     } else {
         data.ShipmentId = types.StringNull()
     }
-    if val, ok := item["shipmentChunk"].(float64); ok {
-        data.ShipmentChunk = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["shipmentChunk"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ShipmentChunk = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ShipmentChunk = types.NumberNull()
-        }
-    } else {
-        data.ShipmentChunk = types.NumberNull()
-    }
+    data.ShipmentChunk = numberFromAPI(data.ShipmentChunk, item["shipmentChunk"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

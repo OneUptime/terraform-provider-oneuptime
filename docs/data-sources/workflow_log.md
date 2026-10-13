@@ -29,7 +29,9 @@ data "oneuptime_workflow_log" "by_id" {
 ### Optional
 
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_test_run` (Boolean) True for a run a person started by hand from the Builder while the workflow was turned off. Its steps ran for real; the workflow's trigger stayed paused.
 - `logs` (String) Logs.
+- `started_by_user_id` (String) ID of the person who started this run by hand from the Builder. Empty for a run its trigger or another workflow started. The ID of a `oneuptime_user` (see the data source).
 - `workflow_id` (String) ID of Workflow this logs belong to. The ID of a `oneuptime_workflow`.
 - `workflow_status` (String) Status of this workflow.
 

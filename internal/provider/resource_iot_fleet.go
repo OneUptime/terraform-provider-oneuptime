@@ -532,23 +532,7 @@ func (r *IotFleetResource) Create(ctx context.Context, req resource.CreateReques
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -671,40 +655,8 @@ func (r *IotFleetResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["deviceCount"].(float64); ok {
-        data.DeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["deviceCount"].(int); ok {
-        data.DeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["deviceCount"].(int64); ok {
-        data.DeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["deviceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DeviceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DeviceCount = types.NumberNull()
-    }
-    if val, ok := dataMap["onlineDeviceCount"].(float64); ok {
-        data.OnlineDeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["onlineDeviceCount"].(int); ok {
-        data.OnlineDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["onlineDeviceCount"].(int64); ok {
-        data.OnlineDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["onlineDeviceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OnlineDeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnlineDeviceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OnlineDeviceCount = types.NumberNull()
-    }
+    data.DeviceCount = numberFromAPI(data.DeviceCount, dataMap["deviceCount"])
+    data.OnlineDeviceCount = numberFromAPI(data.OnlineDeviceCount, dataMap["onlineDeviceCount"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1050,23 +1002,7 @@ func (r *IotFleetResource) Read(ctx context.Context, req resource.ReadRequest, r
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1189,40 +1125,8 @@ func (r *IotFleetResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["deviceCount"].(float64); ok {
-        data.DeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["deviceCount"].(int); ok {
-        data.DeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["deviceCount"].(int64); ok {
-        data.DeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["deviceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DeviceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DeviceCount = types.NumberNull()
-    }
-    if val, ok := dataMap["onlineDeviceCount"].(float64); ok {
-        data.OnlineDeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["onlineDeviceCount"].(int); ok {
-        data.OnlineDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["onlineDeviceCount"].(int64); ok {
-        data.OnlineDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["onlineDeviceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OnlineDeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnlineDeviceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OnlineDeviceCount = types.NumberNull()
-    }
+    data.DeviceCount = numberFromAPI(data.DeviceCount, dataMap["deviceCount"])
+    data.OnlineDeviceCount = numberFromAPI(data.OnlineDeviceCount, dataMap["onlineDeviceCount"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1636,23 +1540,7 @@ func (r *IotFleetResource) Update(ctx context.Context, req resource.UpdateReques
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1775,40 +1663,8 @@ func (r *IotFleetResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["deviceCount"].(float64); ok {
-        data.DeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["deviceCount"].(int); ok {
-        data.DeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["deviceCount"].(int64); ok {
-        data.DeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["deviceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DeviceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DeviceCount = types.NumberNull()
-    }
-    if val, ok := dataMap["onlineDeviceCount"].(float64); ok {
-        data.OnlineDeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["onlineDeviceCount"].(int); ok {
-        data.OnlineDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["onlineDeviceCount"].(int64); ok {
-        data.OnlineDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["onlineDeviceCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OnlineDeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnlineDeviceCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OnlineDeviceCount = types.NumberNull()
-    }
+    data.DeviceCount = numberFromAPI(data.DeviceCount, dataMap["deviceCount"])
+    data.OnlineDeviceCount = numberFromAPI(data.OnlineDeviceCount, dataMap["onlineDeviceCount"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)

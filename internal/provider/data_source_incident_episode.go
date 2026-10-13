@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -602,17 +601,7 @@ func (d *IncidentEpisodeDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := item["episodeNumber"].(float64); ok {
-        data.EpisodeNumber = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["episodeNumber"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.EpisodeNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EpisodeNumber = types.NumberNull()
-        }
-    } else {
-        data.EpisodeNumber = types.NumberNull()
-    }
+    data.EpisodeNumber = numberFromAPI(data.EpisodeNumber, item["episodeNumber"])
     if obj, ok := item["episodeNumberWithPrefix"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.EpisodeNumberWithPrefix = types.StringValue(val)
@@ -795,17 +784,7 @@ func (d *IncidentEpisodeDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.IsOnCallPolicyExecuted = types.BoolNull()
     }
-    if val, ok := item["incidentCount"].(float64); ok {
-        data.IncidentCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["incidentCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentCount = types.NumberNull()
-        }
-    } else {
-        data.IncidentCount = types.NumberNull()
-    }
+    data.IncidentCount = numberFromAPI(data.IncidentCount, item["incidentCount"])
     if obj, ok := item["titleTemplate"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TitleTemplate = types.StringValue(val)

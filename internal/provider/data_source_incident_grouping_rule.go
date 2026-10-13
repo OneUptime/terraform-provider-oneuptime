@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -684,17 +683,7 @@ func (d *IncidentGroupingRuleDataSource) Read(ctx context.Context, req datasourc
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := item["priority"].(float64); ok {
-        data.Priority = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["priority"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Priority = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Priority = types.NumberNull()
-        }
-    } else {
-        data.Priority = types.NumberNull()
-    }
+    data.Priority = numberFromAPI(data.Priority, item["priority"])
     if val, ok := item["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     } else {
@@ -911,17 +900,7 @@ func (d *IncidentGroupingRuleDataSource) Read(ctx context.Context, req datasourc
     } else {
         data.EnableTimeWindow = types.BoolNull()
     }
-    if val, ok := item["timeWindowMinutes"].(float64); ok {
-        data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["timeWindowMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TimeWindowMinutes = types.NumberNull()
-        }
-    } else {
-        data.TimeWindowMinutes = types.NumberNull()
-    }
+    data.TimeWindowMinutes = numberFromAPI(data.TimeWindowMinutes, item["timeWindowMinutes"])
     if obj, ok := item["groupByFields"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.GroupByFields = types.StringValue(val)
@@ -978,49 +957,19 @@ func (d *IncidentGroupingRuleDataSource) Read(ctx context.Context, req datasourc
     } else {
         data.EnableResolveDelay = types.BoolNull()
     }
-    if val, ok := item["resolveDelayMinutes"].(float64); ok {
-        data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["resolveDelayMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ResolveDelayMinutes = types.NumberNull()
-        }
-    } else {
-        data.ResolveDelayMinutes = types.NumberNull()
-    }
+    data.ResolveDelayMinutes = numberFromAPI(data.ResolveDelayMinutes, item["resolveDelayMinutes"])
     if val, ok := item["enableReopenWindow"].(bool); ok {
         data.EnableReopenWindow = types.BoolValue(val)
     } else {
         data.EnableReopenWindow = types.BoolNull()
     }
-    if val, ok := item["reopenWindowMinutes"].(float64); ok {
-        data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["reopenWindowMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReopenWindowMinutes = types.NumberNull()
-        }
-    } else {
-        data.ReopenWindowMinutes = types.NumberNull()
-    }
+    data.ReopenWindowMinutes = numberFromAPI(data.ReopenWindowMinutes, item["reopenWindowMinutes"])
     if val, ok := item["enableInactivityTimeout"].(bool); ok {
         data.EnableInactivityTimeout = types.BoolValue(val)
     } else {
         data.EnableInactivityTimeout = types.BoolNull()
     }
-    if val, ok := item["inactivityTimeoutMinutes"].(float64); ok {
-        data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["inactivityTimeoutMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.InactivityTimeoutMinutes = types.NumberNull()
-        }
-    } else {
-        data.InactivityTimeoutMinutes = types.NumberNull()
-    }
+    data.InactivityTimeoutMinutes = numberFromAPI(data.InactivityTimeoutMinutes, item["inactivityTimeoutMinutes"])
     if val, ok := item["onCallDutyPolicies"].([]interface{}); ok {
         var setItems []attr.Value
         for _, item := range val {

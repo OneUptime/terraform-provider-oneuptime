@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -933,50 +932,10 @@ func (d *MetricDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     } else {
         data.CountValue = types.StringNull()
     }
-    if val, ok := item["sum"].(float64); ok {
-        data.Sum = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sum"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Sum = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Sum = types.NumberNull()
-        }
-    } else {
-        data.Sum = types.NumberNull()
-    }
-    if val, ok := item["value"].(float64); ok {
-        data.Value = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["value"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Value = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Value = types.NumberNull()
-        }
-    } else {
-        data.Value = types.NumberNull()
-    }
-    if val, ok := item["min"].(float64); ok {
-        data.Min = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["min"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Min = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Min = types.NumberNull()
-        }
-    } else {
-        data.Min = types.NumberNull()
-    }
-    if val, ok := item["max"].(float64); ok {
-        data.Max = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["max"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Max = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Max = types.NumberNull()
-        }
-    } else {
-        data.Max = types.NumberNull()
-    }
+    data.Sum = numberFromAPI(data.Sum, item["sum"])
+    data.Value = numberFromAPI(data.Value, item["value"])
+    data.Min = numberFromAPI(data.Min, item["min"])
+    data.Max = numberFromAPI(data.Max, item["max"])
     if obj, ok := item["bucketCounts"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.BucketCounts = types.StringValue(val)
@@ -1011,17 +970,7 @@ func (d *MetricDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     } else {
         data.ExplicitBounds = types.StringNull()
     }
-    if val, ok := item["scale"].(float64); ok {
-        data.Scale = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["scale"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Scale = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Scale = types.NumberNull()
-        }
-    } else {
-        data.Scale = types.NumberNull()
-    }
+    data.Scale = numberFromAPI(data.Scale, item["scale"])
     if obj, ok := item["zeroCount"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ZeroCount = types.StringValue(val)
@@ -1039,17 +988,7 @@ func (d *MetricDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     } else {
         data.ZeroCount = types.StringNull()
     }
-    if val, ok := item["positiveOffset"].(float64); ok {
-        data.PositiveOffset = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["positiveOffset"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PositiveOffset = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PositiveOffset = types.NumberNull()
-        }
-    } else {
-        data.PositiveOffset = types.NumberNull()
-    }
+    data.PositiveOffset = numberFromAPI(data.PositiveOffset, item["positiveOffset"])
     if obj, ok := item["positiveBucketCounts"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.PositiveBucketCounts = types.StringValue(val)
@@ -1067,17 +1006,7 @@ func (d *MetricDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     } else {
         data.PositiveBucketCounts = types.StringNull()
     }
-    if val, ok := item["negativeOffset"].(float64); ok {
-        data.NegativeOffset = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["negativeOffset"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.NegativeOffset = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NegativeOffset = types.NumberNull()
-        }
-    } else {
-        data.NegativeOffset = types.NumberNull()
-    }
+    data.NegativeOffset = numberFromAPI(data.NegativeOffset, item["negativeOffset"])
     if obj, ok := item["negativeBucketCounts"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.NegativeBucketCounts = types.StringValue(val)

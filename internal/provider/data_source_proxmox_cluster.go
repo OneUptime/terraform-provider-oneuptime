@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -620,61 +619,11 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["nodeCount"].(float64); ok {
-        data.NodeCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["nodeCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.NodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.NodeCount = types.NumberNull()
-        }
-    } else {
-        data.NodeCount = types.NumberNull()
-    }
-    if val, ok := item["onlineNodeCount"].(float64); ok {
-        data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["onlineNodeCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OnlineNodeCount = types.NumberNull()
-        }
-    } else {
-        data.OnlineNodeCount = types.NumberNull()
-    }
-    if val, ok := item["guestCount"].(float64); ok {
-        data.GuestCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["guestCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.GuestCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.GuestCount = types.NumberNull()
-        }
-    } else {
-        data.GuestCount = types.NumberNull()
-    }
-    if val, ok := item["storageCount"].(float64); ok {
-        data.StorageCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["storageCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.StorageCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.StorageCount = types.NumberNull()
-        }
-    } else {
-        data.StorageCount = types.NumberNull()
-    }
-    if val, ok := item["guestsWithoutBackupCount"].(float64); ok {
-        data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["guestsWithoutBackupCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.GuestsWithoutBackupCount = types.NumberNull()
-        }
-    } else {
-        data.GuestsWithoutBackupCount = types.NumberNull()
-    }
+    data.NodeCount = numberFromAPI(data.NodeCount, item["nodeCount"])
+    data.OnlineNodeCount = numberFromAPI(data.OnlineNodeCount, item["onlineNodeCount"])
+    data.GuestCount = numberFromAPI(data.GuestCount, item["guestCount"])
+    data.StorageCount = numberFromAPI(data.StorageCount, item["storageCount"])
+    data.GuestsWithoutBackupCount = numberFromAPI(data.GuestsWithoutBackupCount, item["guestsWithoutBackupCount"])
     if obj, ok := item["cephClusterId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CephClusterId = types.StringValue(val)
@@ -772,17 +721,7 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)

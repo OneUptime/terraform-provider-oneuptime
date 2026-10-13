@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -481,17 +480,7 @@ func (d *IncidentCustomFieldDataSource) Read(ctx context.Context, req datasource
     } else {
         data.IsRequiredOnCreate = types.BoolNull()
     }
-    if val, ok := item["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["sortOrder"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, item["sortOrder"])
     if val, ok := item["showOnCreate"].(bool); ok {
         data.ShowOnCreate = types.BoolValue(val)
     } else {

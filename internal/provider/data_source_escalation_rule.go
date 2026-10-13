@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -381,28 +380,8 @@ func (d *EscalationRuleDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := item["escalateAfterInMinutes"].(float64); ok {
-        data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["escalateAfterInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.EscalateAfterInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EscalateAfterInMinutes = types.NumberNull()
-        }
-    } else {
-        data.EscalateAfterInMinutes = types.NumberNull()
-    }
-    if val, ok := item["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["order"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Order = types.NumberNull()
-        }
-    } else {
-        data.Order = types.NumberNull()
-    }
+    data.EscalateAfterInMinutes = numberFromAPI(data.EscalateAfterInMinutes, item["escalateAfterInMinutes"])
+    data.Order = numberFromAPI(data.Order, item["order"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

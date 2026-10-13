@@ -481,43 +481,11 @@ func (r *TraceDropFilterResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.Action = types.StringNull()
     }
-    if val, ok := dataMap["samplePercentage"].(float64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["samplePercentage"].(int); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["samplePercentage"].(int64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["samplePercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SamplePercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SamplePercentage = types.NumberNull()
-    }
+    data.SamplePercentage = numberFromAPI(data.SamplePercentage, dataMap["samplePercentage"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sortOrder"].(int); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sortOrder"].(int64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, dataMap["sortOrder"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -540,23 +508,7 @@ func (r *TraceDropFilterResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["droppedCount"].(float64); ok {
-        data.DroppedCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["droppedCount"].(int); ok {
-        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["droppedCount"].(int64); ok {
-        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["droppedCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DroppedCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DroppedCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DroppedCount = types.NumberNull()
-    }
+    data.DroppedCount = numberFromAPI(data.DroppedCount, dataMap["droppedCount"])
     if obj, ok := dataMap["lastDroppedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastDroppedAt = NewRFC3339Value(val)
@@ -840,43 +792,11 @@ func (r *TraceDropFilterResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.Action = types.StringNull()
     }
-    if val, ok := dataMap["samplePercentage"].(float64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["samplePercentage"].(int); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["samplePercentage"].(int64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["samplePercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SamplePercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SamplePercentage = types.NumberNull()
-    }
+    data.SamplePercentage = numberFromAPI(data.SamplePercentage, dataMap["samplePercentage"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sortOrder"].(int); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sortOrder"].(int64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, dataMap["sortOrder"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -899,23 +819,7 @@ func (r *TraceDropFilterResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["droppedCount"].(float64); ok {
-        data.DroppedCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["droppedCount"].(int); ok {
-        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["droppedCount"].(int64); ok {
-        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["droppedCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DroppedCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DroppedCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DroppedCount = types.NumberNull()
-    }
+    data.DroppedCount = numberFromAPI(data.DroppedCount, dataMap["droppedCount"])
     if obj, ok := dataMap["lastDroppedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastDroppedAt = NewRFC3339Value(val)
@@ -1255,43 +1159,11 @@ func (r *TraceDropFilterResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.Action = types.StringNull()
     }
-    if val, ok := dataMap["samplePercentage"].(float64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["samplePercentage"].(int); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["samplePercentage"].(int64); ok {
-        data.SamplePercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["samplePercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SamplePercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SamplePercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SamplePercentage = types.NumberNull()
-    }
+    data.SamplePercentage = numberFromAPI(data.SamplePercentage, dataMap["samplePercentage"])
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sortOrder"].(int); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sortOrder"].(int64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, dataMap["sortOrder"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1314,23 +1186,7 @@ func (r *TraceDropFilterResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["droppedCount"].(float64); ok {
-        data.DroppedCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["droppedCount"].(int); ok {
-        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["droppedCount"].(int64); ok {
-        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["droppedCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.DroppedCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DroppedCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.DroppedCount = types.NumberNull()
-    }
+    data.DroppedCount = numberFromAPI(data.DroppedCount, dataMap["droppedCount"])
     if obj, ok := dataMap["lastDroppedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastDroppedAt = NewRFC3339Value(val)

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -600,17 +599,7 @@ func (d *ExceptionInstanceDataSource) Read(ctx context.Context, req datasource.R
     } else {
         data.Message = types.StringNull()
     }
-    if val, ok := item["spanStatusCode"].(float64); ok {
-        data.SpanStatusCode = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["spanStatusCode"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.SpanStatusCode = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SpanStatusCode = types.NumberNull()
-        }
-    } else {
-        data.SpanStatusCode = types.NumberNull()
-    }
+    data.SpanStatusCode = numberFromAPI(data.SpanStatusCode, item["spanStatusCode"])
     if val, ok := item["escaped"].(bool); ok {
         data.Escaped = types.BoolValue(val)
     } else {

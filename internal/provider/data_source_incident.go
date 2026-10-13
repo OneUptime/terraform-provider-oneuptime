@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -1791,17 +1790,7 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
     } else {
         data.TelemetryQuery = types.StringNull()
     }
-    if val, ok := item["incidentNumber"].(float64); ok {
-        data.IncidentNumber = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["incidentNumber"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.IncidentNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.IncidentNumber = types.NumberNull()
-        }
-    } else {
-        data.IncidentNumber = types.NumberNull()
-    }
+    data.IncidentNumber = numberFromAPI(data.IncidentNumber, item["incidentNumber"])
     if obj, ok := item["incidentNumberWithPrefix"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.IncidentNumberWithPrefix = types.StringValue(val)
@@ -1897,17 +1886,7 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
     } else {
         data.NextReminderNotificationAt = types.StringNull()
     }
-    if val, ok := item["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, item["reminderNotificationSentCount"])
     if obj, ok := item["incidentEpisodeId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.IncidentEpisodeId = types.StringValue(val)

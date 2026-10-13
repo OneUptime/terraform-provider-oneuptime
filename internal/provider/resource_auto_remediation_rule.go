@@ -1095,23 +1095,7 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
         // For sets, always use empty set instead of null to match default values
         data.Runbooks = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["verificationWindowMinutes"].(float64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["verificationWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VerificationWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.VerificationWindowMinutes = types.NumberNull()
-    }
+    data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, dataMap["verificationWindowMinutes"])
     if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
         data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
     }
@@ -1839,23 +1823,7 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
         // For sets, always use empty set instead of null to match default values
         data.Runbooks = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["verificationWindowMinutes"].(float64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["verificationWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VerificationWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.VerificationWindowMinutes = types.NumberNull()
-    }
+    data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, dataMap["verificationWindowMinutes"])
     if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
         data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
     }
@@ -2683,23 +2651,7 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
         // For sets, always use empty set instead of null to match default values
         data.Runbooks = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["verificationWindowMinutes"].(float64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["verificationWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VerificationWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.VerificationWindowMinutes = types.NumberNull()
-    }
+    data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, dataMap["verificationWindowMinutes"])
     if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
         data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
     }

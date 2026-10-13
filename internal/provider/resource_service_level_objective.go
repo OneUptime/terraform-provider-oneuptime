@@ -826,23 +826,7 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     } else {
         data.MetricQueryConfig = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["targetPercentage"].(float64); ok {
-        data.TargetPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["targetPercentage"].(int); ok {
-        data.TargetPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["targetPercentage"].(int64); ok {
-        data.TargetPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["targetPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.TargetPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TargetPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.TargetPercentage = types.NumberNull()
-    }
+    data.TargetPercentage = numberFromAPI(data.TargetPercentage, dataMap["targetPercentage"])
     if obj, ok := dataMap["windowType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -880,23 +864,7 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     } else {
         data.WindowType = types.StringNull()
     }
-    if val, ok := dataMap["windowDays"].(float64); ok {
-        data.WindowDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["windowDays"].(int); ok {
-        data.WindowDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["windowDays"].(int64); ok {
-        data.WindowDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["windowDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.WindowDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WindowDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.WindowDays = types.NumberNull()
-    }
+    data.WindowDays = numberFromAPI(data.WindowDays, dataMap["windowDays"])
     if obj, ok := dataMap["timezone"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -934,23 +902,7 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     } else {
         data.Timezone = types.StringNull()
     }
-    if val, ok := dataMap["atRiskThresholdPercentage"].(float64); ok {
-        data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["atRiskThresholdPercentage"].(int); ok {
-        data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["atRiskThresholdPercentage"].(int64); ok {
-        data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["atRiskThresholdPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AtRiskThresholdPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AtRiskThresholdPercentage = types.NumberNull()
-    }
+    data.AtRiskThresholdPercentage = numberFromAPI(data.AtRiskThresholdPercentage, dataMap["atRiskThresholdPercentage"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1122,91 +1074,11 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         // For sets, always use empty set instead of null to match default values
         data.DowntimeMonitorStatuses = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["currentSliPercentage"].(float64); ok {
-        data.CurrentSliPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["currentSliPercentage"].(int); ok {
-        data.CurrentSliPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["currentSliPercentage"].(int64); ok {
-        data.CurrentSliPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["currentSliPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentSliPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentSliPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CurrentSliPercentage = types.NumberNull()
-    }
-    if val, ok := dataMap["errorBudgetRemainingPercentage"].(float64); ok {
-        data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorBudgetRemainingPercentage"].(int); ok {
-        data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorBudgetRemainingPercentage"].(int64); ok {
-        data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorBudgetRemainingPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetRemainingPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorBudgetRemainingPercentage = types.NumberNull()
-    }
-    if val, ok := dataMap["errorBudgetRemainingSeconds"].(float64); ok {
-        data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorBudgetRemainingSeconds"].(int); ok {
-        data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorBudgetRemainingSeconds"].(int64); ok {
-        data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorBudgetRemainingSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetRemainingSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorBudgetRemainingSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["errorBudgetTotalSeconds"].(float64); ok {
-        data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorBudgetTotalSeconds"].(int); ok {
-        data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorBudgetTotalSeconds"].(int64); ok {
-        data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorBudgetTotalSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetTotalSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorBudgetTotalSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["currentBurnRate"].(float64); ok {
-        data.CurrentBurnRate = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["currentBurnRate"].(int); ok {
-        data.CurrentBurnRate = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["currentBurnRate"].(int64); ok {
-        data.CurrentBurnRate = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["currentBurnRate"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentBurnRate = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentBurnRate = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CurrentBurnRate = types.NumberNull()
-    }
+    data.CurrentSliPercentage = numberFromAPI(data.CurrentSliPercentage, dataMap["currentSliPercentage"])
+    data.ErrorBudgetRemainingPercentage = numberFromAPI(data.ErrorBudgetRemainingPercentage, dataMap["errorBudgetRemainingPercentage"])
+    data.ErrorBudgetRemainingSeconds = numberFromAPI(data.ErrorBudgetRemainingSeconds, dataMap["errorBudgetRemainingSeconds"])
+    data.ErrorBudgetTotalSeconds = numberFromAPI(data.ErrorBudgetTotalSeconds, dataMap["errorBudgetTotalSeconds"])
+    data.CurrentBurnRate = numberFromAPI(data.CurrentBurnRate, dataMap["currentBurnRate"])
     if obj, ok := dataMap["sloStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1720,23 +1592,7 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
     } else {
         data.MetricQueryConfig = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["targetPercentage"].(float64); ok {
-        data.TargetPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["targetPercentage"].(int); ok {
-        data.TargetPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["targetPercentage"].(int64); ok {
-        data.TargetPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["targetPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.TargetPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TargetPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.TargetPercentage = types.NumberNull()
-    }
+    data.TargetPercentage = numberFromAPI(data.TargetPercentage, dataMap["targetPercentage"])
     if obj, ok := dataMap["windowType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1774,23 +1630,7 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
     } else {
         data.WindowType = types.StringNull()
     }
-    if val, ok := dataMap["windowDays"].(float64); ok {
-        data.WindowDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["windowDays"].(int); ok {
-        data.WindowDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["windowDays"].(int64); ok {
-        data.WindowDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["windowDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.WindowDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WindowDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.WindowDays = types.NumberNull()
-    }
+    data.WindowDays = numberFromAPI(data.WindowDays, dataMap["windowDays"])
     if obj, ok := dataMap["timezone"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1828,23 +1668,7 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
     } else {
         data.Timezone = types.StringNull()
     }
-    if val, ok := dataMap["atRiskThresholdPercentage"].(float64); ok {
-        data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["atRiskThresholdPercentage"].(int); ok {
-        data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["atRiskThresholdPercentage"].(int64); ok {
-        data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["atRiskThresholdPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AtRiskThresholdPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AtRiskThresholdPercentage = types.NumberNull()
-    }
+    data.AtRiskThresholdPercentage = numberFromAPI(data.AtRiskThresholdPercentage, dataMap["atRiskThresholdPercentage"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2016,91 +1840,11 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         // For sets, always use empty set instead of null to match default values
         data.DowntimeMonitorStatuses = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["currentSliPercentage"].(float64); ok {
-        data.CurrentSliPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["currentSliPercentage"].(int); ok {
-        data.CurrentSliPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["currentSliPercentage"].(int64); ok {
-        data.CurrentSliPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["currentSliPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentSliPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentSliPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CurrentSliPercentage = types.NumberNull()
-    }
-    if val, ok := dataMap["errorBudgetRemainingPercentage"].(float64); ok {
-        data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorBudgetRemainingPercentage"].(int); ok {
-        data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorBudgetRemainingPercentage"].(int64); ok {
-        data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorBudgetRemainingPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetRemainingPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorBudgetRemainingPercentage = types.NumberNull()
-    }
-    if val, ok := dataMap["errorBudgetRemainingSeconds"].(float64); ok {
-        data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorBudgetRemainingSeconds"].(int); ok {
-        data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorBudgetRemainingSeconds"].(int64); ok {
-        data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorBudgetRemainingSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetRemainingSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorBudgetRemainingSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["errorBudgetTotalSeconds"].(float64); ok {
-        data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorBudgetTotalSeconds"].(int); ok {
-        data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorBudgetTotalSeconds"].(int64); ok {
-        data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorBudgetTotalSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetTotalSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorBudgetTotalSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["currentBurnRate"].(float64); ok {
-        data.CurrentBurnRate = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["currentBurnRate"].(int); ok {
-        data.CurrentBurnRate = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["currentBurnRate"].(int64); ok {
-        data.CurrentBurnRate = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["currentBurnRate"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentBurnRate = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentBurnRate = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CurrentBurnRate = types.NumberNull()
-    }
+    data.CurrentSliPercentage = numberFromAPI(data.CurrentSliPercentage, dataMap["currentSliPercentage"])
+    data.ErrorBudgetRemainingPercentage = numberFromAPI(data.ErrorBudgetRemainingPercentage, dataMap["errorBudgetRemainingPercentage"])
+    data.ErrorBudgetRemainingSeconds = numberFromAPI(data.ErrorBudgetRemainingSeconds, dataMap["errorBudgetRemainingSeconds"])
+    data.ErrorBudgetTotalSeconds = numberFromAPI(data.ErrorBudgetTotalSeconds, dataMap["errorBudgetTotalSeconds"])
+    data.CurrentBurnRate = numberFromAPI(data.CurrentBurnRate, dataMap["currentBurnRate"])
     if obj, ok := dataMap["sloStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2694,23 +2438,7 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     } else {
         data.MetricQueryConfig = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["targetPercentage"].(float64); ok {
-        data.TargetPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["targetPercentage"].(int); ok {
-        data.TargetPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["targetPercentage"].(int64); ok {
-        data.TargetPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["targetPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.TargetPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.TargetPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.TargetPercentage = types.NumberNull()
-    }
+    data.TargetPercentage = numberFromAPI(data.TargetPercentage, dataMap["targetPercentage"])
     if obj, ok := dataMap["windowType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2748,23 +2476,7 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     } else {
         data.WindowType = types.StringNull()
     }
-    if val, ok := dataMap["windowDays"].(float64); ok {
-        data.WindowDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["windowDays"].(int); ok {
-        data.WindowDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["windowDays"].(int64); ok {
-        data.WindowDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["windowDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.WindowDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WindowDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.WindowDays = types.NumberNull()
-    }
+    data.WindowDays = numberFromAPI(data.WindowDays, dataMap["windowDays"])
     if obj, ok := dataMap["timezone"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2802,23 +2514,7 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     } else {
         data.Timezone = types.StringNull()
     }
-    if val, ok := dataMap["atRiskThresholdPercentage"].(float64); ok {
-        data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["atRiskThresholdPercentage"].(int); ok {
-        data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["atRiskThresholdPercentage"].(int64); ok {
-        data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["atRiskThresholdPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AtRiskThresholdPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AtRiskThresholdPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AtRiskThresholdPercentage = types.NumberNull()
-    }
+    data.AtRiskThresholdPercentage = numberFromAPI(data.AtRiskThresholdPercentage, dataMap["atRiskThresholdPercentage"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2990,91 +2686,11 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         // For sets, always use empty set instead of null to match default values
         data.DowntimeMonitorStatuses = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["currentSliPercentage"].(float64); ok {
-        data.CurrentSliPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["currentSliPercentage"].(int); ok {
-        data.CurrentSliPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["currentSliPercentage"].(int64); ok {
-        data.CurrentSliPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["currentSliPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentSliPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentSliPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CurrentSliPercentage = types.NumberNull()
-    }
-    if val, ok := dataMap["errorBudgetRemainingPercentage"].(float64); ok {
-        data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorBudgetRemainingPercentage"].(int); ok {
-        data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorBudgetRemainingPercentage"].(int64); ok {
-        data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorBudgetRemainingPercentage"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetRemainingPercentage = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetRemainingPercentage = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorBudgetRemainingPercentage = types.NumberNull()
-    }
-    if val, ok := dataMap["errorBudgetRemainingSeconds"].(float64); ok {
-        data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorBudgetRemainingSeconds"].(int); ok {
-        data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorBudgetRemainingSeconds"].(int64); ok {
-        data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorBudgetRemainingSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetRemainingSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetRemainingSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorBudgetRemainingSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["errorBudgetTotalSeconds"].(float64); ok {
-        data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorBudgetTotalSeconds"].(int); ok {
-        data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorBudgetTotalSeconds"].(int64); ok {
-        data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["errorBudgetTotalSeconds"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorBudgetTotalSeconds = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ErrorBudgetTotalSeconds = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ErrorBudgetTotalSeconds = types.NumberNull()
-    }
-    if val, ok := dataMap["currentBurnRate"].(float64); ok {
-        data.CurrentBurnRate = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["currentBurnRate"].(int); ok {
-        data.CurrentBurnRate = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["currentBurnRate"].(int64); ok {
-        data.CurrentBurnRate = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["currentBurnRate"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.CurrentBurnRate = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CurrentBurnRate = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.CurrentBurnRate = types.NumberNull()
-    }
+    data.CurrentSliPercentage = numberFromAPI(data.CurrentSliPercentage, dataMap["currentSliPercentage"])
+    data.ErrorBudgetRemainingPercentage = numberFromAPI(data.ErrorBudgetRemainingPercentage, dataMap["errorBudgetRemainingPercentage"])
+    data.ErrorBudgetRemainingSeconds = numberFromAPI(data.ErrorBudgetRemainingSeconds, dataMap["errorBudgetRemainingSeconds"])
+    data.ErrorBudgetTotalSeconds = numberFromAPI(data.ErrorBudgetTotalSeconds, dataMap["errorBudgetTotalSeconds"])
+    data.CurrentBurnRate = numberFromAPI(data.CurrentBurnRate, dataMap["currentBurnRate"])
     if obj, ok := dataMap["sloStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

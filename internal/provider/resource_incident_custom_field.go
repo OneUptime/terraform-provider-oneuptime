@@ -601,23 +601,7 @@ func (r *IncidentCustomFieldResource) Create(ctx context.Context, req resource.C
     if val, ok := dataMap["isRequiredOnCreate"].(bool); ok {
         data.IsRequiredOnCreate = types.BoolValue(val)
     }
-    if val, ok := dataMap["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sortOrder"].(int); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sortOrder"].(int64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, dataMap["sortOrder"])
     if val, ok := dataMap["showOnCreate"].(bool); ok {
         data.ShowOnCreate = types.BoolValue(val)
     }
@@ -1034,23 +1018,7 @@ func (r *IncidentCustomFieldResource) Read(ctx context.Context, req resource.Rea
     if val, ok := dataMap["isRequiredOnCreate"].(bool); ok {
         data.IsRequiredOnCreate = types.BoolValue(val)
     }
-    if val, ok := dataMap["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sortOrder"].(int); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sortOrder"].(int64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, dataMap["sortOrder"])
     if val, ok := dataMap["showOnCreate"].(bool); ok {
         data.ShowOnCreate = types.BoolValue(val)
     }
@@ -1524,23 +1492,7 @@ func (r *IncidentCustomFieldResource) Update(ctx context.Context, req resource.U
     if val, ok := dataMap["isRequiredOnCreate"].(bool); ok {
         data.IsRequiredOnCreate = types.BoolValue(val)
     }
-    if val, ok := dataMap["sortOrder"].(float64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["sortOrder"].(int); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["sortOrder"].(int64); ok {
-        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.SortOrder = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.SortOrder = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.SortOrder = types.NumberNull()
-    }
+    data.SortOrder = numberFromAPI(data.SortOrder, dataMap["sortOrder"])
     if val, ok := dataMap["showOnCreate"].(bool); ok {
         data.ShowOnCreate = types.BoolValue(val)
     }

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -465,17 +464,7 @@ func (d *DataSourceDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.DatabaseHost = types.StringNull()
     }
-    if val, ok := item["databasePort"].(float64); ok {
-        data.DatabasePort = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["databasePort"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.DatabasePort = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.DatabasePort = types.NumberNull()
-        }
-    } else {
-        data.DatabasePort = types.NumberNull()
-    }
+    data.DatabasePort = numberFromAPI(data.DatabasePort, item["databasePort"])
     if obj, ok := item["databaseName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.DatabaseName = types.StringValue(val)

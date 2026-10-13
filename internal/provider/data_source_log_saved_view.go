@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -433,17 +432,7 @@ func (d *LogSavedViewDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.SortOrder = types.StringNull()
     }
-    if val, ok := item["pageSize"].(float64); ok {
-        data.PageSize = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["pageSize"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PageSize = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PageSize = types.NumberNull()
-        }
-    } else {
-        data.PageSize = types.NumberNull()
-    }
+    data.PageSize = numberFromAPI(data.PageSize, item["pageSize"])
     if obj, ok := item["timeRange"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TimeRange = types.StringValue(val)

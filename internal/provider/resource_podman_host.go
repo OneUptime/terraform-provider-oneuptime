@@ -631,23 +631,7 @@ func (r *PodmanHostResource) Create(ctx context.Context, req resource.CreateRequ
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -770,57 +754,9 @@ func (r *PodmanHostResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["containersRunning"].(float64); ok {
-        data.ContainersRunning = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["containersRunning"].(int); ok {
-        data.ContainersRunning = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["containersRunning"].(int64); ok {
-        data.ContainersRunning = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["containersRunning"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersRunning = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersRunning = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ContainersRunning = types.NumberNull()
-    }
-    if val, ok := dataMap["containersStopped"].(float64); ok {
-        data.ContainersStopped = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["containersStopped"].(int); ok {
-        data.ContainersStopped = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["containersStopped"].(int64); ok {
-        data.ContainersStopped = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["containersStopped"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersStopped = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersStopped = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ContainersStopped = types.NumberNull()
-    }
-    if val, ok := dataMap["containersPaused"].(float64); ok {
-        data.ContainersPaused = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["containersPaused"].(int); ok {
-        data.ContainersPaused = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["containersPaused"].(int64); ok {
-        data.ContainersPaused = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["containersPaused"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersPaused = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersPaused = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ContainersPaused = types.NumberNull()
-    }
+    data.ContainersRunning = numberFromAPI(data.ContainersRunning, dataMap["containersRunning"])
+    data.ContainersStopped = numberFromAPI(data.ContainersStopped, dataMap["containersStopped"])
+    data.ContainersPaused = numberFromAPI(data.ContainersPaused, dataMap["containersPaused"])
     if obj, ok := dataMap["osType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1423,23 +1359,7 @@ func (r *PodmanHostResource) Read(ctx context.Context, req resource.ReadRequest,
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1562,57 +1482,9 @@ func (r *PodmanHostResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["containersRunning"].(float64); ok {
-        data.ContainersRunning = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["containersRunning"].(int); ok {
-        data.ContainersRunning = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["containersRunning"].(int64); ok {
-        data.ContainersRunning = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["containersRunning"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersRunning = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersRunning = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ContainersRunning = types.NumberNull()
-    }
-    if val, ok := dataMap["containersStopped"].(float64); ok {
-        data.ContainersStopped = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["containersStopped"].(int); ok {
-        data.ContainersStopped = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["containersStopped"].(int64); ok {
-        data.ContainersStopped = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["containersStopped"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersStopped = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersStopped = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ContainersStopped = types.NumberNull()
-    }
-    if val, ok := dataMap["containersPaused"].(float64); ok {
-        data.ContainersPaused = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["containersPaused"].(int); ok {
-        data.ContainersPaused = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["containersPaused"].(int64); ok {
-        data.ContainersPaused = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["containersPaused"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersPaused = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersPaused = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ContainersPaused = types.NumberNull()
-    }
+    data.ContainersRunning = numberFromAPI(data.ContainersRunning, dataMap["containersRunning"])
+    data.ContainersStopped = numberFromAPI(data.ContainersStopped, dataMap["containersStopped"])
+    data.ContainersPaused = numberFromAPI(data.ContainersPaused, dataMap["containersPaused"])
     if obj, ok := dataMap["osType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2309,23 +2181,7 @@ func (r *PodmanHostResource) Update(ctx context.Context, req resource.UpdateRequ
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if val, ok := dataMap["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, dataMap["retainTelemetryDataForDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2448,57 +2304,9 @@ func (r *PodmanHostResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["containersRunning"].(float64); ok {
-        data.ContainersRunning = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["containersRunning"].(int); ok {
-        data.ContainersRunning = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["containersRunning"].(int64); ok {
-        data.ContainersRunning = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["containersRunning"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersRunning = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersRunning = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ContainersRunning = types.NumberNull()
-    }
-    if val, ok := dataMap["containersStopped"].(float64); ok {
-        data.ContainersStopped = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["containersStopped"].(int); ok {
-        data.ContainersStopped = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["containersStopped"].(int64); ok {
-        data.ContainersStopped = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["containersStopped"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersStopped = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersStopped = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ContainersStopped = types.NumberNull()
-    }
-    if val, ok := dataMap["containersPaused"].(float64); ok {
-        data.ContainersPaused = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["containersPaused"].(int); ok {
-        data.ContainersPaused = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["containersPaused"].(int64); ok {
-        data.ContainersPaused = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["containersPaused"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersPaused = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersPaused = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ContainersPaused = types.NumberNull()
-    }
+    data.ContainersRunning = numberFromAPI(data.ContainersRunning, dataMap["containersRunning"])
+    data.ContainersStopped = numberFromAPI(data.ContainersStopped, dataMap["containersStopped"])
+    data.ContainersPaused = numberFromAPI(data.ContainersPaused, dataMap["containersPaused"])
     if obj, ok := dataMap["osType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

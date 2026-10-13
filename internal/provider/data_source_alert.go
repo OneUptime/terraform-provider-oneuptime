@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -1416,17 +1415,7 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     } else {
         data.TelemetryQuery = types.StringNull()
     }
-    if val, ok := item["alertNumber"].(float64); ok {
-        data.AlertNumber = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["alertNumber"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertNumber = types.NumberNull()
-        }
-    } else {
-        data.AlertNumber = types.NumberNull()
-    }
+    data.AlertNumber = numberFromAPI(data.AlertNumber, item["alertNumber"])
     if obj, ok := item["alertNumberWithPrefix"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.AlertNumberWithPrefix = types.StringValue(val)
@@ -1488,17 +1477,7 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     } else {
         data.NextReminderNotificationAt = types.StringNull()
     }
-    if val, ok := item["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, item["reminderNotificationSentCount"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

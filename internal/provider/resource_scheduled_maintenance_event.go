@@ -1655,23 +1655,7 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
     }
-    if val, ok := dataMap["scheduledMaintenanceNumber"].(float64); ok {
-        data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["scheduledMaintenanceNumber"].(int); ok {
-        data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["scheduledMaintenanceNumber"].(int64); ok {
-        data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["scheduledMaintenanceNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScheduledMaintenanceNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ScheduledMaintenanceNumber = types.NumberNull()
-    }
+    data.ScheduledMaintenanceNumber = numberFromAPI(data.ScheduledMaintenanceNumber, dataMap["scheduledMaintenanceNumber"])
     if obj, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1720,23 +1704,7 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     } else {
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2808,23 +2776,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
     }
-    if val, ok := dataMap["scheduledMaintenanceNumber"].(float64); ok {
-        data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["scheduledMaintenanceNumber"].(int); ok {
-        data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["scheduledMaintenanceNumber"].(int64); ok {
-        data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["scheduledMaintenanceNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScheduledMaintenanceNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ScheduledMaintenanceNumber = types.NumberNull()
-    }
+    data.ScheduledMaintenanceNumber = numberFromAPI(data.ScheduledMaintenanceNumber, dataMap["scheduledMaintenanceNumber"])
     if obj, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2873,23 +2825,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
     } else {
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -4082,23 +4018,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
     }
-    if val, ok := dataMap["scheduledMaintenanceNumber"].(float64); ok {
-        data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["scheduledMaintenanceNumber"].(int); ok {
-        data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["scheduledMaintenanceNumber"].(int64); ok {
-        data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["scheduledMaintenanceNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ScheduledMaintenanceNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ScheduledMaintenanceNumber = types.NumberNull()
-    }
+    data.ScheduledMaintenanceNumber = numberFromAPI(data.ScheduledMaintenanceNumber, dataMap["scheduledMaintenanceNumber"])
     if obj, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4147,23 +4067,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     } else {
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
-        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ReminderNotificationSentCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.ReminderNotificationSentCount = types.NumberNull()
-    }
+    data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {

@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -302,17 +301,7 @@ func (d *SloHistoryDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.BucketStart = types.StringNull()
     }
-    if val, ok := item["value"].(float64); ok {
-        data.Value = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["value"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Value = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Value = types.NumberNull()
-        }
-    } else {
-        data.Value = types.NumberNull()
-    }
+    data.Value = numberFromAPI(data.Value, item["value"])
     if obj, ok := item["version"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Version = types.StringValue(val)

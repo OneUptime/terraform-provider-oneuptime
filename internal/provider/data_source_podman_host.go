@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
 
@@ -609,39 +608,9 @@ func (d *PodmanHostDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["containersRunning"].(float64); ok {
-        data.ContainersRunning = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["containersRunning"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersRunning = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersRunning = types.NumberNull()
-        }
-    } else {
-        data.ContainersRunning = types.NumberNull()
-    }
-    if val, ok := item["containersStopped"].(float64); ok {
-        data.ContainersStopped = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["containersStopped"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersStopped = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersStopped = types.NumberNull()
-        }
-    } else {
-        data.ContainersStopped = types.NumberNull()
-    }
-    if val, ok := item["containersPaused"].(float64); ok {
-        data.ContainersPaused = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["containersPaused"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ContainersPaused = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.ContainersPaused = types.NumberNull()
-        }
-    } else {
-        data.ContainersPaused = types.NumberNull()
-    }
+    data.ContainersRunning = numberFromAPI(data.ContainersRunning, item["containersRunning"])
+    data.ContainersStopped = numberFromAPI(data.ContainersStopped, item["containersStopped"])
+    data.ContainersPaused = numberFromAPI(data.ContainersPaused, item["containersPaused"])
     if obj, ok := item["osType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.OsType = types.StringValue(val)
@@ -756,17 +725,7 @@ func (d *PodmanHostDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.Labels = types.SetNull(types.StringType)
     }
-    if val, ok := item["retainTelemetryDataForDays"].(float64); ok {
-        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["retainTelemetryDataForDays"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RetainTelemetryDataForDays = types.NumberNull()
-        }
-    } else {
-        data.RetainTelemetryDataForDays = types.NumberNull()
-    }
+    data.RetainTelemetryDataForDays = numberFromAPI(data.RetainTelemetryDataForDays, item["retainTelemetryDataForDays"])
     if obj, ok := item["telemetryRetentionConfig"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = types.StringValue(val)

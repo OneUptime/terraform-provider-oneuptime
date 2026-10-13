@@ -466,23 +466,7 @@ func (r *OnCallPolicyResource) Create(ctx context.Context, req resource.CreateRe
     if val, ok := dataMap["repeatPolicyIfNoOneAcknowledges"].(bool); ok {
         data.RepeatPolicyIfNoOneAcknowledges = types.BoolValue(val)
     }
-    if val, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(float64); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(int); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(int64); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberNull()
-    }
+    data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = numberFromAPI(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes, dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"])
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -864,23 +848,7 @@ func (r *OnCallPolicyResource) Read(ctx context.Context, req resource.ReadReques
     if val, ok := dataMap["repeatPolicyIfNoOneAcknowledges"].(bool); ok {
         data.RepeatPolicyIfNoOneAcknowledges = types.BoolValue(val)
     }
-    if val, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(float64); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(int); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(int64); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberNull()
-    }
+    data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = numberFromAPI(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes, dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"])
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1318,23 +1286,7 @@ func (r *OnCallPolicyResource) Update(ctx context.Context, req resource.UpdateRe
     if val, ok := dataMap["repeatPolicyIfNoOneAcknowledges"].(bool); ok {
         data.RepeatPolicyIfNoOneAcknowledges = types.BoolValue(val)
     }
-    if val, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(float64); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(int); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(int64); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberNull()
-    }
+    data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = numberFromAPI(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes, dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"])
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

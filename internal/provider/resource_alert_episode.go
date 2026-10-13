@@ -615,23 +615,7 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["episodeNumber"].(float64); ok {
-        data.EpisodeNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["episodeNumber"].(int); ok {
-        data.EpisodeNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["episodeNumber"].(int64); ok {
-        data.EpisodeNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["episodeNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.EpisodeNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EpisodeNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.EpisodeNumber = types.NumberNull()
-    }
+    data.EpisodeNumber = numberFromAPI(data.EpisodeNumber, dataMap["episodeNumber"])
     if obj, ok := dataMap["currentAlertStateId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1204,23 +1188,7 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
     if val, ok := dataMap["isOnCallPolicyExecuted"].(bool); ok {
         data.IsOnCallPolicyExecuted = types.BoolValue(val)
     }
-    if val, ok := dataMap["alertCount"].(float64); ok {
-        data.AlertCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertCount"].(int); ok {
-        data.AlertCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertCount"].(int64); ok {
-        data.AlertCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertCount = types.NumberNull()
-    }
+    data.AlertCount = numberFromAPI(data.AlertCount, dataMap["alertCount"])
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1438,23 +1406,7 @@ func (r *AlertEpisodeResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["episodeNumber"].(float64); ok {
-        data.EpisodeNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["episodeNumber"].(int); ok {
-        data.EpisodeNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["episodeNumber"].(int64); ok {
-        data.EpisodeNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["episodeNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.EpisodeNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EpisodeNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.EpisodeNumber = types.NumberNull()
-    }
+    data.EpisodeNumber = numberFromAPI(data.EpisodeNumber, dataMap["episodeNumber"])
     if obj, ok := dataMap["currentAlertStateId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2027,23 +1979,7 @@ func (r *AlertEpisodeResource) Read(ctx context.Context, req resource.ReadReques
     if val, ok := dataMap["isOnCallPolicyExecuted"].(bool); ok {
         data.IsOnCallPolicyExecuted = types.BoolValue(val)
     }
-    if val, ok := dataMap["alertCount"].(float64); ok {
-        data.AlertCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertCount"].(int); ok {
-        data.AlertCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertCount"].(int64); ok {
-        data.AlertCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertCount = types.NumberNull()
-    }
+    data.AlertCount = numberFromAPI(data.AlertCount, dataMap["alertCount"])
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2341,23 +2277,7 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := dataMap["episodeNumber"].(float64); ok {
-        data.EpisodeNumber = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["episodeNumber"].(int); ok {
-        data.EpisodeNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["episodeNumber"].(int64); ok {
-        data.EpisodeNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["episodeNumber"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.EpisodeNumber = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.EpisodeNumber = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.EpisodeNumber = types.NumberNull()
-    }
+    data.EpisodeNumber = numberFromAPI(data.EpisodeNumber, dataMap["episodeNumber"])
     if obj, ok := dataMap["currentAlertStateId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2930,23 +2850,7 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
     if val, ok := dataMap["isOnCallPolicyExecuted"].(bool); ok {
         data.IsOnCallPolicyExecuted = types.BoolValue(val)
     }
-    if val, ok := dataMap["alertCount"].(float64); ok {
-        data.AlertCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["alertCount"].(int); ok {
-        data.AlertCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["alertCount"].(int64); ok {
-        data.AlertCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["alertCount"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AlertCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AlertCount = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AlertCount = types.NumberNull()
-    }
+    data.AlertCount = numberFromAPI(data.AlertCount, dataMap["alertCount"])
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

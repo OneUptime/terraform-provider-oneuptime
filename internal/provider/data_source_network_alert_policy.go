@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -449,17 +448,7 @@ func (d *NetworkAlertPolicyDataSource) Read(ctx context.Context, req datasource.
     } else {
         data.LastSyncError = types.StringNull()
     }
-    if val, ok := item["coveredDeviceCount"].(float64); ok {
-        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["coveredDeviceCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CoveredDeviceCount = types.NumberNull()
-        }
-    } else {
-        data.CoveredDeviceCount = types.NumberNull()
-    }
+    data.CoveredDeviceCount = numberFromAPI(data.CoveredDeviceCount, item["coveredDeviceCount"])
     if obj, ok := item["templateSyncedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TemplateSyncedAt = types.StringValue(val)

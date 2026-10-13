@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -533,17 +532,7 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.IsDefault = types.BoolNull()
     }
-    if val, ok := item["costPerMillionTokensInUSDCents"].(float64); ok {
-        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["costPerMillionTokensInUSDCents"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CostPerMillionTokensInUsdCents = types.NumberNull()
-        }
-    } else {
-        data.CostPerMillionTokensInUsdCents = types.NumberNull()
-    }
+    data.CostPerMillionTokensInUsdCents = numberFromAPI(data.CostPerMillionTokensInUsdCents, item["costPerMillionTokensInUSDCents"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

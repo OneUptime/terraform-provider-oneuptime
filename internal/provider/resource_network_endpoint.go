@@ -572,23 +572,7 @@ func (r *NetworkEndpointResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.AttachedNetworkDeviceId = types.StringNull()
     }
-    if val, ok := dataMap["attachedInterfaceIndex"].(float64); ok {
-        data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["attachedInterfaceIndex"].(int); ok {
-        data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["attachedInterfaceIndex"].(int64); ok {
-        data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["attachedInterfaceIndex"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AttachedInterfaceIndex = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AttachedInterfaceIndex = types.NumberNull()
-    }
+    data.AttachedInterfaceIndex = numberFromAPI(data.AttachedInterfaceIndex, dataMap["attachedInterfaceIndex"])
     if obj, ok := dataMap["attachedPortName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -626,23 +610,7 @@ func (r *NetworkEndpointResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.AttachedPortName = types.StringNull()
     }
-    if val, ok := dataMap["vlanId"].(float64); ok {
-        data.VlanId = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["vlanId"].(int); ok {
-        data.VlanId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["vlanId"].(int64); ok {
-        data.VlanId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["vlanId"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.VlanId = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VlanId = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.VlanId = types.NumberNull()
-    }
+    data.VlanId = numberFromAPI(data.VlanId, dataMap["vlanId"])
     if obj, ok := dataMap["firstSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.FirstSeenAt = NewRFC3339Value(val)
@@ -1035,23 +1003,7 @@ func (r *NetworkEndpointResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.AttachedNetworkDeviceId = types.StringNull()
     }
-    if val, ok := dataMap["attachedInterfaceIndex"].(float64); ok {
-        data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["attachedInterfaceIndex"].(int); ok {
-        data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["attachedInterfaceIndex"].(int64); ok {
-        data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["attachedInterfaceIndex"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AttachedInterfaceIndex = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AttachedInterfaceIndex = types.NumberNull()
-    }
+    data.AttachedInterfaceIndex = numberFromAPI(data.AttachedInterfaceIndex, dataMap["attachedInterfaceIndex"])
     if obj, ok := dataMap["attachedPortName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1089,23 +1041,7 @@ func (r *NetworkEndpointResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.AttachedPortName = types.StringNull()
     }
-    if val, ok := dataMap["vlanId"].(float64); ok {
-        data.VlanId = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["vlanId"].(int); ok {
-        data.VlanId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["vlanId"].(int64); ok {
-        data.VlanId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["vlanId"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.VlanId = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VlanId = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.VlanId = types.NumberNull()
-    }
+    data.VlanId = numberFromAPI(data.VlanId, dataMap["vlanId"])
     if obj, ok := dataMap["firstSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.FirstSeenAt = NewRFC3339Value(val)
@@ -1540,23 +1476,7 @@ func (r *NetworkEndpointResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.AttachedNetworkDeviceId = types.StringNull()
     }
-    if val, ok := dataMap["attachedInterfaceIndex"].(float64); ok {
-        data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["attachedInterfaceIndex"].(int); ok {
-        data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["attachedInterfaceIndex"].(int64); ok {
-        data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["attachedInterfaceIndex"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.AttachedInterfaceIndex = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.AttachedInterfaceIndex = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.AttachedInterfaceIndex = types.NumberNull()
-    }
+    data.AttachedInterfaceIndex = numberFromAPI(data.AttachedInterfaceIndex, dataMap["attachedInterfaceIndex"])
     if obj, ok := dataMap["attachedPortName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1594,23 +1514,7 @@ func (r *NetworkEndpointResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.AttachedPortName = types.StringNull()
     }
-    if val, ok := dataMap["vlanId"].(float64); ok {
-        data.VlanId = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["vlanId"].(int); ok {
-        data.VlanId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["vlanId"].(int64); ok {
-        data.VlanId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["vlanId"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.VlanId = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VlanId = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.VlanId = types.NumberNull()
-    }
+    data.VlanId = numberFromAPI(data.VlanId, dataMap["vlanId"])
     if obj, ok := dataMap["firstSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.FirstSeenAt = NewRFC3339Value(val)

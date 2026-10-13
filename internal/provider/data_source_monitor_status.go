@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -425,17 +424,7 @@ func (d *MonitorStatusDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.IsOfflineState = types.BoolNull()
     }
-    if val, ok := item["priority"].(float64); ok {
-        data.Priority = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["priority"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Priority = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Priority = types.NumberNull()
-        }
-    } else {
-        data.Priority = types.NumberNull()
-    }
+    data.Priority = numberFromAPI(data.Priority, item["priority"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

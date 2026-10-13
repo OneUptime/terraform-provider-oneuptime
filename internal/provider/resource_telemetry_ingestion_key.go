@@ -557,23 +557,7 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
     } else {
         data.ExpiresAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["requestsPerMinuteLimit"].(float64); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int64); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["requestsPerMinuteLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RequestsPerMinuteLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RequestsPerMinuteLimit = types.NumberNull()
-    }
+    data.RequestsPerMinuteLimit = numberFromAPI(data.RequestsPerMinuteLimit, dataMap["requestsPerMinuteLimit"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -968,23 +952,7 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
     } else {
         data.ExpiresAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["requestsPerMinuteLimit"].(float64); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int64); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["requestsPerMinuteLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RequestsPerMinuteLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RequestsPerMinuteLimit = types.NumberNull()
-    }
+    data.RequestsPerMinuteLimit = numberFromAPI(data.RequestsPerMinuteLimit, dataMap["requestsPerMinuteLimit"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1435,23 +1403,7 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
     } else {
         data.ExpiresAt = NewRFC3339Null()
     }
-    if val, ok := dataMap["requestsPerMinuteLimit"].(float64); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int64); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["requestsPerMinuteLimit"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RequestsPerMinuteLimit = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.RequestsPerMinuteLimit = types.NumberNull()
-    }
+    data.RequestsPerMinuteLimit = numberFromAPI(data.RequestsPerMinuteLimit, dataMap["requestsPerMinuteLimit"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
