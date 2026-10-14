@@ -44,6 +44,7 @@ type IncidentEpisodePublicNoteDataSourceModel struct {
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     PostedAt types.String `tfsdk:"posted_at"`
     PostedFromSlackMessageId types.String `tfsdk:"posted_from_slack_message_id"`
+    SavedFromChatMessage types.String `tfsdk:"saved_from_chat_message"`
 }
 
 func (d *IncidentEpisodePublicNoteDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -129,6 +130,10 @@ func (d *IncidentEpisodePublicNoteDataSource) Schema(ctx context.Context, req da
             "posted_from_slack_message_id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.",
                 Optional: true,
+                Computed: true,
+            },
+            "saved_from_chat_message": schema.StringAttribute{
+                MarkdownDescription: "When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
         },
@@ -242,6 +247,7 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         "isOwnerNotified": true,
         "postedAt": true,
         "postedFromSlackMessageId": true,
+        "savedFromChatMessage": true,
         "_id": true,
     }
 
@@ -557,6 +563,23 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         data.PostedFromSlackMessageId = types.StringValue(val)
     } else {
         data.PostedFromSlackMessageId = types.StringNull()
+    }
+    if obj, ok := item["savedFromChatMessage"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavedFromChatMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SavedFromChatMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SavedFromChatMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SavedFromChatMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = types.StringNull()
+        }
+    } else if val, ok := item["savedFromChatMessage"].(string); ok {
+        data.SavedFromChatMessage = types.StringValue(val)
+    } else {
+        data.SavedFromChatMessage = types.StringNull()
     }
 
     // Write logs using the tflog package

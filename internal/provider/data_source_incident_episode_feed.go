@@ -38,6 +38,7 @@ type IncidentEpisodeFeedDataSourceModel struct {
     DisplayColor types.String `tfsdk:"display_color"`
     UserId types.String `tfsdk:"user_id"`
     PostedAt types.String `tfsdk:"posted_at"`
+    SavedFromChatMessage types.String `tfsdk:"saved_from_chat_message"`
 }
 
 func (d *IncidentEpisodeFeedDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -102,6 +103,10 @@ func (d *IncidentEpisodeFeedDataSource) Schema(ctx context.Context, req datasour
             },
             "posted_at": schema.StringAttribute{
                 MarkdownDescription: "Date and time when the feed was posted.",
+                Computed: true,
+            },
+            "saved_from_chat_message": schema.StringAttribute{
+                MarkdownDescription: "For a note saved from a Slack or Microsoft Teams message: the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). The feed item's user is whoever saved it. Written by OneUptime. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
         },
@@ -195,6 +200,7 @@ func (d *IncidentEpisodeFeedDataSource) Read(ctx context.Context, req datasource
         "displayColor": true,
         "userId": true,
         "postedAt": true,
+        "savedFromChatMessage": true,
         "_id": true,
     }
 
@@ -459,6 +465,23 @@ func (d *IncidentEpisodeFeedDataSource) Read(ctx context.Context, req datasource
         data.PostedAt = types.StringValue(val)
     } else {
         data.PostedAt = types.StringNull()
+    }
+    if obj, ok := item["savedFromChatMessage"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavedFromChatMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SavedFromChatMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SavedFromChatMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SavedFromChatMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = types.StringNull()
+        }
+    } else if val, ok := item["savedFromChatMessage"].(string); ok {
+        data.SavedFromChatMessage = types.StringValue(val)
+    } else {
+        data.SavedFromChatMessage = types.StringNull()
     }
 
     // Write logs using the tflog package

@@ -71,11 +71,15 @@ type StatusPageResourceModel struct {
     EnableSlackSubscribers types.Bool `tfsdk:"enable_slack_subscribers"`
     EnableMicrosoftTeamsSubscribers types.Bool `tfsdk:"enable_microsoft_teams_subscribers"`
     EnableWebhookSubscribers types.Bool `tfsdk:"enable_webhook_subscribers"`
+    SendSubscriberNotifications types.Bool `tfsdk:"send_subscriber_notifications"`
+    LimitSubscribersToPrivateUsers types.Bool `tfsdk:"limit_subscribers_to_private_users"`
+    AllowedSubscriberEmailDomains types.String `tfsdk:"allowed_subscriber_email_domains"`
     CopyrightText types.String `tfsdk:"copyright_text"`
     LogoAltText types.String `tfsdk:"logo_alt_text"`
     CoverImageAltText types.String `tfsdk:"cover_image_alt_text"`
     CustomFields JSONSubsetValue `tfsdk:"custom_fields"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
+    PrivateUserSessionLengthInHours types.Number `tfsdk:"private_user_session_length_in_hours"`
     SmtpConfigId types.String `tfsdk:"smtp_config_id"`
     CallSmsConfigId types.String `tfsdk:"call_sms_config_id"`
     ShowIncidentHistoryInDays types.Number `tfsdk:"show_incident_history_in_days"`
@@ -375,6 +379,32 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "send_subscriber_notifications": schema.BoolAttribute{
+                MarkdownDescription: "Does this status page tell its subscribers anything? Off, it sends them nothing - no message about an incident, an episode, scheduled maintenance or an announcement, and no report - however the event was created. Its subscribers are kept, and the channel switches still decide how visitors can sign up.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "limit_subscribers_to_private_users": schema.BoolAttribute{
+                MarkdownDescription: "Only people who can sign in to this status page can be its subscribers, each with the email address they sign in with: no other address, and no phone, Slack, Microsoft Teams or webhook. A subscriber whose address is not a private user of this page - one removed since, by SCIM or by hand - is sent nothing.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "allowed_subscriber_email_domains": schema.StringAttribute{
+                MarkdownDescription: "The domains an email subscriber's address may be at, one a line, such as acme.com. An address at a subdomain of one matches too. Sign-ups and additions at any other domain are refused, and an email subscriber at another domain is sent nothing. Empty: any domain.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "copyright_text": schema.StringAttribute{
                 MarkdownDescription: "Copyright Text.",
                 Optional: true,
@@ -418,6 +448,14 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "private_user_session_length_in_hours": schema.NumberAttribute{
+                MarkdownDescription: "How long, in hours, a private user stays signed in to this private status page after signing in, however active they are - with a password, SSO or OIDC. When the time is up they sign in again. Applies to readers signed in now too. A whole number from 1 to 8760; empty for no limit, where a reader stays signed in while they open the page at least once every 30 days.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "smtp_config_id": schema.StringAttribute{
@@ -908,6 +946,15 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if !data.EnableWebhookSubscribers.IsNull() && !data.EnableWebhookSubscribers.IsUnknown() {
         requestDataMap["enableWebhookSubscribers"] = data.EnableWebhookSubscribers.ValueBool()
     }
+    if !data.SendSubscriberNotifications.IsNull() && !data.SendSubscriberNotifications.IsUnknown() {
+        requestDataMap["sendSubscriberNotifications"] = data.SendSubscriberNotifications.ValueBool()
+    }
+    if !data.LimitSubscribersToPrivateUsers.IsNull() && !data.LimitSubscribersToPrivateUsers.IsUnknown() {
+        requestDataMap["limitSubscribersToPrivateUsers"] = data.LimitSubscribersToPrivateUsers.ValueBool()
+    }
+    if !data.AllowedSubscriberEmailDomains.IsNull() && !data.AllowedSubscriberEmailDomains.IsUnknown() {
+        requestDataMap["allowedSubscriberEmailDomains"] = data.AllowedSubscriberEmailDomains.ValueString()
+    }
     if !data.CopyrightText.IsNull() && !data.CopyrightText.IsUnknown() {
         requestDataMap["copyrightText"] = data.CopyrightText.ValueString()
     }
@@ -922,6 +969,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     }
     if !data.RequireSsoForLogin.IsNull() && !data.RequireSsoForLogin.IsUnknown() {
         requestDataMap["requireSsoForLogin"] = data.RequireSsoForLogin.ValueBool()
+    }
+    if !data.PrivateUserSessionLengthInHours.IsNull() && !data.PrivateUserSessionLengthInHours.IsUnknown() {
+        requestDataMap["privateUserSessionLengthInHours"] = r.bigFloatToFloat64(data.PrivateUserSessionLengthInHours.ValueBigFloat())
     }
     if !data.SmtpConfigId.IsNull() && !data.SmtpConfigId.IsUnknown() {
         requestDataMap["smtpConfigId"] = data.SmtpConfigId.ValueString()
@@ -1098,11 +1148,15 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "enableSlackSubscribers": true,
         "enableMicrosoftTeamsSubscribers": true,
         "enableWebhookSubscribers": true,
+        "sendSubscriberNotifications": true,
+        "limitSubscribersToPrivateUsers": true,
+        "allowedSubscriberEmailDomains": true,
         "copyrightText": true,
         "logoAltText": true,
         "coverImageAltText": true,
         "customFields": true,
         "requireSsoForLogin": true,
+        "privateUserSessionLengthInHours": true,
         "smtpConfigId": true,
         "callSmsConfigId": true,
         "showIncidentHistoryInDays": true,
@@ -1706,6 +1760,49 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if val, ok := dataMap["enableWebhookSubscribers"].(bool); ok {
         data.EnableWebhookSubscribers = types.BoolValue(val)
     }
+    if val, ok := dataMap["sendSubscriberNotifications"].(bool); ok {
+        data.SendSubscriberNotifications = types.BoolValue(val)
+    }
+    if val, ok := dataMap["limitSubscribersToPrivateUsers"].(bool); ok {
+        data.LimitSubscribersToPrivateUsers = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["allowedSubscriberEmailDomains"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AllowedSubscriberEmailDomains = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AllowedSubscriberEmailDomains = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AllowedSubscriberEmailDomains = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AllowedSubscriberEmailDomains = types.StringValue(string(jsonBytes))
+            } else {
+                data.AllowedSubscriberEmailDomains = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AllowedSubscriberEmailDomains = types.StringValue(string(jsonBytes))
+            } else {
+                data.AllowedSubscriberEmailDomains = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AllowedSubscriberEmailDomains = types.StringValue(string(jsonBytes))
+        } else {
+            data.AllowedSubscriberEmailDomains = types.StringNull()
+        }
+    } else if val, ok := dataMap["allowedSubscriberEmailDomains"].(string); ok {
+        data.AllowedSubscriberEmailDomains = types.StringValue(val)
+    } else {
+        data.AllowedSubscriberEmailDomains = types.StringNull()
+    }
     if obj, ok := dataMap["copyrightText"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1857,6 +1954,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
     }
+    data.PrivateUserSessionLengthInHours = numberFromAPI(data.PrivateUserSessionLengthInHours, dataMap["privateUserSessionLengthInHours"])
     if obj, ok := dataMap["smtpConfigId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2676,11 +2774,15 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "enableSlackSubscribers": true,
         "enableMicrosoftTeamsSubscribers": true,
         "enableWebhookSubscribers": true,
+        "sendSubscriberNotifications": true,
+        "limitSubscribersToPrivateUsers": true,
+        "allowedSubscriberEmailDomains": true,
         "copyrightText": true,
         "logoAltText": true,
         "coverImageAltText": true,
         "customFields": true,
         "requireSsoForLogin": true,
+        "privateUserSessionLengthInHours": true,
         "smtpConfigId": true,
         "callSmsConfigId": true,
         "showIncidentHistoryInDays": true,
@@ -3285,6 +3387,49 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     if val, ok := dataMap["enableWebhookSubscribers"].(bool); ok {
         data.EnableWebhookSubscribers = types.BoolValue(val)
     }
+    if val, ok := dataMap["sendSubscriberNotifications"].(bool); ok {
+        data.SendSubscriberNotifications = types.BoolValue(val)
+    }
+    if val, ok := dataMap["limitSubscribersToPrivateUsers"].(bool); ok {
+        data.LimitSubscribersToPrivateUsers = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["allowedSubscriberEmailDomains"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AllowedSubscriberEmailDomains = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AllowedSubscriberEmailDomains = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AllowedSubscriberEmailDomains = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AllowedSubscriberEmailDomains = types.StringValue(string(jsonBytes))
+            } else {
+                data.AllowedSubscriberEmailDomains = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AllowedSubscriberEmailDomains = types.StringValue(string(jsonBytes))
+            } else {
+                data.AllowedSubscriberEmailDomains = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AllowedSubscriberEmailDomains = types.StringValue(string(jsonBytes))
+        } else {
+            data.AllowedSubscriberEmailDomains = types.StringNull()
+        }
+    } else if val, ok := dataMap["allowedSubscriberEmailDomains"].(string); ok {
+        data.AllowedSubscriberEmailDomains = types.StringValue(val)
+    } else {
+        data.AllowedSubscriberEmailDomains = types.StringNull()
+    }
     if obj, ok := dataMap["copyrightText"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3436,6 +3581,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
     }
+    data.PrivateUserSessionLengthInHours = numberFromAPI(data.PrivateUserSessionLengthInHours, dataMap["privateUserSessionLengthInHours"])
     if obj, ok := dataMap["smtpConfigId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4321,6 +4467,15 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.EnableWebhookSubscribers.IsUnknown() && !state.EnableWebhookSubscribers.IsUnknown() && !data.EnableWebhookSubscribers.Equal(state.EnableWebhookSubscribers) {
         requestDataMap["enableWebhookSubscribers"] = data.EnableWebhookSubscribers.ValueBool()
     }
+    if !data.SendSubscriberNotifications.IsUnknown() && !state.SendSubscriberNotifications.IsUnknown() && !data.SendSubscriberNotifications.Equal(state.SendSubscriberNotifications) {
+        requestDataMap["sendSubscriberNotifications"] = data.SendSubscriberNotifications.ValueBool()
+    }
+    if !data.LimitSubscribersToPrivateUsers.IsUnknown() && !state.LimitSubscribersToPrivateUsers.IsUnknown() && !data.LimitSubscribersToPrivateUsers.Equal(state.LimitSubscribersToPrivateUsers) {
+        requestDataMap["limitSubscribersToPrivateUsers"] = data.LimitSubscribersToPrivateUsers.ValueBool()
+    }
+    if !data.AllowedSubscriberEmailDomains.IsUnknown() && !state.AllowedSubscriberEmailDomains.IsUnknown() && !data.AllowedSubscriberEmailDomains.Equal(state.AllowedSubscriberEmailDomains) {
+        requestDataMap["allowedSubscriberEmailDomains"] = data.AllowedSubscriberEmailDomains.ValueString()
+    }
     if !data.CopyrightText.IsUnknown() && !state.CopyrightText.IsUnknown() && !data.CopyrightText.Equal(state.CopyrightText) {
         requestDataMap["copyrightText"] = data.CopyrightText.ValueString()
     }
@@ -4340,6 +4495,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     if !data.RequireSsoForLogin.IsUnknown() && !state.RequireSsoForLogin.IsUnknown() && !data.RequireSsoForLogin.Equal(state.RequireSsoForLogin) {
         requestDataMap["requireSsoForLogin"] = data.RequireSsoForLogin.ValueBool()
+    }
+    if !data.PrivateUserSessionLengthInHours.IsUnknown() && !state.PrivateUserSessionLengthInHours.IsUnknown() && !data.PrivateUserSessionLengthInHours.Equal(state.PrivateUserSessionLengthInHours) {
+        requestDataMap["privateUserSessionLengthInHours"] = r.bigFloatToFloat64(data.PrivateUserSessionLengthInHours.ValueBigFloat())
     }
     if !data.SmtpConfigId.IsUnknown() && !state.SmtpConfigId.IsUnknown() && !data.SmtpConfigId.Equal(state.SmtpConfigId) {
         requestDataMap["smtpConfigId"] = data.SmtpConfigId.ValueString()
@@ -4514,11 +4672,15 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "enableSlackSubscribers": true,
         "enableMicrosoftTeamsSubscribers": true,
         "enableWebhookSubscribers": true,
+        "sendSubscriberNotifications": true,
+        "limitSubscribersToPrivateUsers": true,
+        "allowedSubscriberEmailDomains": true,
         "copyrightText": true,
         "logoAltText": true,
         "coverImageAltText": true,
         "customFields": true,
         "requireSsoForLogin": true,
+        "privateUserSessionLengthInHours": true,
         "smtpConfigId": true,
         "callSmsConfigId": true,
         "showIncidentHistoryInDays": true,
@@ -5117,6 +5279,49 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if val, ok := dataMap["enableWebhookSubscribers"].(bool); ok {
         data.EnableWebhookSubscribers = types.BoolValue(val)
     }
+    if val, ok := dataMap["sendSubscriberNotifications"].(bool); ok {
+        data.SendSubscriberNotifications = types.BoolValue(val)
+    }
+    if val, ok := dataMap["limitSubscribersToPrivateUsers"].(bool); ok {
+        data.LimitSubscribersToPrivateUsers = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["allowedSubscriberEmailDomains"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AllowedSubscriberEmailDomains = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AllowedSubscriberEmailDomains = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AllowedSubscriberEmailDomains = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AllowedSubscriberEmailDomains = types.StringValue(string(jsonBytes))
+            } else {
+                data.AllowedSubscriberEmailDomains = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AllowedSubscriberEmailDomains = types.StringValue(string(jsonBytes))
+            } else {
+                data.AllowedSubscriberEmailDomains = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AllowedSubscriberEmailDomains = types.StringValue(string(jsonBytes))
+        } else {
+            data.AllowedSubscriberEmailDomains = types.StringNull()
+        }
+    } else if val, ok := dataMap["allowedSubscriberEmailDomains"].(string); ok {
+        data.AllowedSubscriberEmailDomains = types.StringValue(val)
+    } else {
+        data.AllowedSubscriberEmailDomains = types.StringNull()
+    }
     if obj, ok := dataMap["copyrightText"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5268,6 +5473,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
     }
+    data.PrivateUserSessionLengthInHours = numberFromAPI(data.PrivateUserSessionLengthInHours, dataMap["privateUserSessionLengthInHours"])
     if obj, ok := dataMap["smtpConfigId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6164,6 +6370,15 @@ func (r *StatusPageResource) keepPlannedValues(data *StatusPageResourceModel, pl
     if config.EnableWebhookSubscribers.IsNull() && !plan.EnableWebhookSubscribers.IsUnknown() {
         data.EnableWebhookSubscribers = plan.EnableWebhookSubscribers
     }
+    if config.SendSubscriberNotifications.IsNull() && !plan.SendSubscriberNotifications.IsUnknown() {
+        data.SendSubscriberNotifications = plan.SendSubscriberNotifications
+    }
+    if config.LimitSubscribersToPrivateUsers.IsNull() && !plan.LimitSubscribersToPrivateUsers.IsUnknown() {
+        data.LimitSubscribersToPrivateUsers = plan.LimitSubscribersToPrivateUsers
+    }
+    if config.AllowedSubscriberEmailDomains.IsNull() && !plan.AllowedSubscriberEmailDomains.IsUnknown() {
+        data.AllowedSubscriberEmailDomains = plan.AllowedSubscriberEmailDomains
+    }
     if config.CopyrightText.IsNull() && !plan.CopyrightText.IsUnknown() {
         data.CopyrightText = plan.CopyrightText
     }
@@ -6178,6 +6393,9 @@ func (r *StatusPageResource) keepPlannedValues(data *StatusPageResourceModel, pl
     }
     if config.RequireSsoForLogin.IsNull() && !plan.RequireSsoForLogin.IsUnknown() {
         data.RequireSsoForLogin = plan.RequireSsoForLogin
+    }
+    if config.PrivateUserSessionLengthInHours.IsNull() && !plan.PrivateUserSessionLengthInHours.IsUnknown() {
+        data.PrivateUserSessionLengthInHours = plan.PrivateUserSessionLengthInHours
     }
     if config.SmtpConfigId.IsNull() && !plan.SmtpConfigId.IsUnknown() {
         data.SmtpConfigId = plan.SmtpConfigId

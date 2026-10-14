@@ -46,4 +46,5 @@ data "oneuptime_incident_episode_public_note" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `posted_at` (String) Date and time when the note was posted.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `saved_from_chat_message` (String) When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: write it with `jsonencode()`.
 - `updated_at` (String) Date and Time when the object was updated.

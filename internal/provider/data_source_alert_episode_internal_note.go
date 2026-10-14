@@ -38,6 +38,8 @@ type AlertEpisodeInternalNoteDataSourceModel struct {
     Attachments types.Set `tfsdk:"attachments"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     PostedFromSlackMessageId types.String `tfsdk:"posted_from_slack_message_id"`
+    PostedAt types.String `tfsdk:"posted_at"`
+    SavedFromChatMessage types.String `tfsdk:"saved_from_chat_message"`
 }
 
 func (d *AlertEpisodeInternalNoteDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -94,6 +96,14 @@ func (d *AlertEpisodeInternalNoteDataSource) Schema(ctx context.Context, req dat
             "posted_from_slack_message_id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.",
                 Optional: true,
+                Computed: true,
+            },
+            "posted_at": schema.StringAttribute{
+                MarkdownDescription: "Date and time the note belongs to in the timeline: when it was written, or - for a note saved from a Slack or Microsoft Teams message - when that message was posted.",
+                Computed: true,
+            },
+            "saved_from_chat_message": schema.StringAttribute{
+                MarkdownDescription: "When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
         },
@@ -181,6 +191,8 @@ func (d *AlertEpisodeInternalNoteDataSource) Read(ctx context.Context, req datas
         "attachments": true,
         "isOwnerNotified": true,
         "postedFromSlackMessageId": true,
+        "postedAt": true,
+        "savedFromChatMessage": true,
         "_id": true,
     }
 
@@ -406,6 +418,40 @@ func (d *AlertEpisodeInternalNoteDataSource) Read(ctx context.Context, req datas
         data.PostedFromSlackMessageId = types.StringValue(val)
     } else {
         data.PostedFromSlackMessageId = types.StringNull()
+    }
+    if obj, ok := item["postedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PostedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PostedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PostedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PostedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostedAt = types.StringNull()
+        }
+    } else if val, ok := item["postedAt"].(string); ok {
+        data.PostedAt = types.StringValue(val)
+    } else {
+        data.PostedAt = types.StringNull()
+    }
+    if obj, ok := item["savedFromChatMessage"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavedFromChatMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SavedFromChatMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SavedFromChatMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SavedFromChatMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = types.StringNull()
+        }
+    } else if val, ok := item["savedFromChatMessage"].(string); ok {
+        data.SavedFromChatMessage = types.StringValue(val)
+    } else {
+        data.SavedFromChatMessage = types.StringNull()
     }
 
     // Write logs using the tflog package

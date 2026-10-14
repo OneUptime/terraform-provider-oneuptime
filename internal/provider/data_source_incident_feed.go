@@ -32,6 +32,8 @@ type IncidentFeedDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     IncidentId types.String `tfsdk:"incident_id"`
     AiRunId types.String `tfsdk:"ai_run_id"`
+    ApiKeyId types.String `tfsdk:"api_key_id"`
+    ApiKeyName types.String `tfsdk:"api_key_name"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     FeedInfoInMarkdown types.String `tfsdk:"feed_info_in_markdown"`
     MoreInformationInMarkdown types.String `tfsdk:"more_information_in_markdown"`
@@ -39,6 +41,7 @@ type IncidentFeedDataSourceModel struct {
     DisplayColor types.String `tfsdk:"display_color"`
     UserId types.String `tfsdk:"user_id"`
     PostedAt types.String `tfsdk:"posted_at"`
+    SavedFromChatMessage types.String `tfsdk:"saved_from_chat_message"`
 }
 
 func (d *IncidentFeedDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -47,7 +50,7 @@ func (d *IncidentFeedDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *IncidentFeedDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Log of the entire incident state change. This is a log of all the incident state changes, public notes, more etc. Look up an existing incident feed by `id`, or by any of its other arguments (`ai_run_id`, `created_by_user_id`, `feed_info_in_markdown`, ...): each one set must match, and exactly one incident feed may match them all.",
+        MarkdownDescription: "Log of the entire incident state change. This is a log of all the incident state changes, public notes, more etc. Look up an existing incident feed by `id`, or by any of its other arguments (`ai_run_id`, `api_key_id`, `api_key_name`, ...): each one set must match, and exactly one incident feed may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -74,6 +77,16 @@ func (d *IncidentFeedDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "ai_run_id": schema.StringAttribute{
                 MarkdownDescription: "AI investigation run that produced this feed item when the event is a root cause.",
+                Optional: true,
+                Computed: true,
+            },
+            "api_key_id": schema.StringAttribute{
+                MarkdownDescription: "The project API key that made this change, when an API key did rather than a person. Kept when the key is revoked or deleted.",
+                Optional: true,
+                Computed: true,
+            },
+            "api_key_name": schema.StringAttribute{
+                MarkdownDescription: "The name the API key that made this change had at the time, shown as the item's author.",
                 Optional: true,
                 Computed: true,
             },
@@ -108,6 +121,10 @@ func (d *IncidentFeedDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "posted_at": schema.StringAttribute{
                 MarkdownDescription: "Date and time when the feed was posted.",
+                Computed: true,
+            },
+            "saved_from_chat_message": schema.StringAttribute{
+                MarkdownDescription: "For a note saved from a Slack or Microsoft Teams message: the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). The feed item's user is whoever saved it. Written by OneUptime. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
         },
@@ -157,6 +174,14 @@ func (d *IncidentFeedDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["aiRunId"] = data.AiRunId.ValueString()
         filterNames = append(filterNames, "ai_run_id = "+fmt.Sprintf("%q", data.AiRunId.ValueString()))
     }
+    if !data.ApiKeyId.IsNull() && !data.ApiKeyId.IsUnknown() {
+        filters["apiKeyId"] = data.ApiKeyId.ValueString()
+        filterNames = append(filterNames, "api_key_id = "+fmt.Sprintf("%q", data.ApiKeyId.ValueString()))
+    }
+    if !data.ApiKeyName.IsNull() && !data.ApiKeyName.IsUnknown() {
+        filters["apiKeyName"] = data.ApiKeyName.ValueString()
+        filterNames = append(filterNames, "api_key_name = "+fmt.Sprintf("%q", data.ApiKeyName.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -199,6 +224,8 @@ func (d *IncidentFeedDataSource) Read(ctx context.Context, req datasource.ReadRe
         "projectId": true,
         "incidentId": true,
         "aiRunId": true,
+        "apiKeyId": true,
+        "apiKeyName": true,
         "createdByUserId": true,
         "feedInfoInMarkdown": true,
         "moreInformationInMarkdown": true,
@@ -206,6 +233,7 @@ func (d *IncidentFeedDataSource) Read(ctx context.Context, req datasource.ReadRe
         "displayColor": true,
         "userId": true,
         "postedAt": true,
+        "savedFromChatMessage": true,
         "_id": true,
     }
 
@@ -369,6 +397,40 @@ func (d *IncidentFeedDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.AiRunId = types.StringNull()
     }
+    if obj, ok := item["apiKeyId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ApiKeyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyId = types.StringNull()
+        }
+    } else if val, ok := item["apiKeyId"].(string); ok {
+        data.ApiKeyId = types.StringValue(val)
+    } else {
+        data.ApiKeyId = types.StringNull()
+    }
+    if obj, ok := item["apiKeyName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApiKeyName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ApiKeyName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ApiKeyName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ApiKeyName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyName = types.StringNull()
+        }
+    } else if val, ok := item["apiKeyName"].(string); ok {
+        data.ApiKeyName = types.StringValue(val)
+    } else {
+        data.ApiKeyName = types.StringNull()
+    }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)
@@ -487,6 +549,23 @@ func (d *IncidentFeedDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.PostedAt = types.StringValue(val)
     } else {
         data.PostedAt = types.StringNull()
+    }
+    if obj, ok := item["savedFromChatMessage"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavedFromChatMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SavedFromChatMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SavedFromChatMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SavedFromChatMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = types.StringNull()
+        }
+    } else if val, ok := item["savedFromChatMessage"].(string); ok {
+        data.SavedFromChatMessage = types.StringValue(val)
+    } else {
+        data.SavedFromChatMessage = types.StringNull()
     }
 
     // Write logs using the tflog package

@@ -63,11 +63,15 @@ type StatusPageDataSourceModel struct {
     EnableSlackSubscribers types.Bool `tfsdk:"enable_slack_subscribers"`
     EnableMicrosoftTeamsSubscribers types.Bool `tfsdk:"enable_microsoft_teams_subscribers"`
     EnableWebhookSubscribers types.Bool `tfsdk:"enable_webhook_subscribers"`
+    SendSubscriberNotifications types.Bool `tfsdk:"send_subscriber_notifications"`
+    LimitSubscribersToPrivateUsers types.Bool `tfsdk:"limit_subscribers_to_private_users"`
+    AllowedSubscriberEmailDomains types.String `tfsdk:"allowed_subscriber_email_domains"`
     CopyrightText types.String `tfsdk:"copyright_text"`
     LogoAltText types.String `tfsdk:"logo_alt_text"`
     CoverImageAltText types.String `tfsdk:"cover_image_alt_text"`
     CustomFields types.String `tfsdk:"custom_fields"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
+    PrivateUserSessionLengthInHours types.Number `tfsdk:"private_user_session_length_in_hours"`
     SmtpConfigId types.String `tfsdk:"smtp_config_id"`
     CallSmsConfigId types.String `tfsdk:"call_sms_config_id"`
     IsOwnerNotifiedOfResourceCreation types.Bool `tfsdk:"is_owner_notified_of_resource_creation"`
@@ -286,6 +290,21 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Optional: true,
                 Computed: true,
             },
+            "send_subscriber_notifications": schema.BoolAttribute{
+                MarkdownDescription: "Does this status page tell its subscribers anything? Off, it sends them nothing - no message about an incident, an episode, scheduled maintenance or an announcement, and no report - however the event was created. Its subscribers are kept, and the channel switches still decide how visitors can sign up.",
+                Optional: true,
+                Computed: true,
+            },
+            "limit_subscribers_to_private_users": schema.BoolAttribute{
+                MarkdownDescription: "Only people who can sign in to this status page can be its subscribers, each with the email address they sign in with: no other address, and no phone, Slack, Microsoft Teams or webhook. A subscriber whose address is not a private user of this page - one removed since, by SCIM or by hand - is sent nothing.",
+                Optional: true,
+                Computed: true,
+            },
+            "allowed_subscriber_email_domains": schema.StringAttribute{
+                MarkdownDescription: "The domains an email subscriber's address may be at, one a line, such as acme.com. An address at a subdomain of one matches too. Sign-ups and additions at any other domain are refused, and an email subscriber at another domain is sent nothing. Empty: any domain.",
+                Optional: true,
+                Computed: true,
+            },
             "copyright_text": schema.StringAttribute{
                 MarkdownDescription: "Copyright Text.",
                 Optional: true,
@@ -307,6 +326,11 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "require_sso_for_login": schema.BoolAttribute{
                 MarkdownDescription: "Should SSO be required to login to Private Status Page.",
+                Optional: true,
+                Computed: true,
+            },
+            "private_user_session_length_in_hours": schema.NumberAttribute{
+                MarkdownDescription: "How long, in hours, a private user stays signed in to this private status page after signing in, however active they are - with a password, SSO or OIDC. When the time is up they sign in again. Applies to readers signed in now too. A whole number from 1 to 8760; empty for no limit, where a reader stays signed in while they open the page at least once every 30 days.",
                 Optional: true,
                 Computed: true,
             },
@@ -635,6 +659,18 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         filters["enableWebhookSubscribers"] = data.EnableWebhookSubscribers.ValueBool()
         filterNames = append(filterNames, "enable_webhook_subscribers = "+fmt.Sprintf("%t", data.EnableWebhookSubscribers.ValueBool()))
     }
+    if !data.SendSubscriberNotifications.IsNull() && !data.SendSubscriberNotifications.IsUnknown() {
+        filters["sendSubscriberNotifications"] = data.SendSubscriberNotifications.ValueBool()
+        filterNames = append(filterNames, "send_subscriber_notifications = "+fmt.Sprintf("%t", data.SendSubscriberNotifications.ValueBool()))
+    }
+    if !data.LimitSubscribersToPrivateUsers.IsNull() && !data.LimitSubscribersToPrivateUsers.IsUnknown() {
+        filters["limitSubscribersToPrivateUsers"] = data.LimitSubscribersToPrivateUsers.ValueBool()
+        filterNames = append(filterNames, "limit_subscribers_to_private_users = "+fmt.Sprintf("%t", data.LimitSubscribersToPrivateUsers.ValueBool()))
+    }
+    if !data.AllowedSubscriberEmailDomains.IsNull() && !data.AllowedSubscriberEmailDomains.IsUnknown() {
+        filters["allowedSubscriberEmailDomains"] = data.AllowedSubscriberEmailDomains.ValueString()
+        filterNames = append(filterNames, "allowed_subscriber_email_domains = "+fmt.Sprintf("%q", data.AllowedSubscriberEmailDomains.ValueString()))
+    }
     if !data.CopyrightText.IsNull() && !data.CopyrightText.IsUnknown() {
         filters["copyrightText"] = data.CopyrightText.ValueString()
         filterNames = append(filterNames, "copyright_text = "+fmt.Sprintf("%q", data.CopyrightText.ValueString()))
@@ -650,6 +686,10 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
     if !data.RequireSsoForLogin.IsNull() && !data.RequireSsoForLogin.IsUnknown() {
         filters["requireSsoForLogin"] = data.RequireSsoForLogin.ValueBool()
         filterNames = append(filterNames, "require_sso_for_login = "+fmt.Sprintf("%t", data.RequireSsoForLogin.ValueBool()))
+    }
+    if !data.PrivateUserSessionLengthInHours.IsNull() && !data.PrivateUserSessionLengthInHours.IsUnknown() {
+        filters["privateUserSessionLengthInHours"] = lookupNumber(data.PrivateUserSessionLengthInHours)
+        filterNames = append(filterNames, "private_user_session_length_in_hours = "+data.PrivateUserSessionLengthInHours.ValueBigFloat().String())
     }
     if !data.SmtpConfigId.IsNull() && !data.SmtpConfigId.IsUnknown() {
         filters["smtpConfigId"] = data.SmtpConfigId.ValueString()
@@ -818,11 +858,15 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "enableSlackSubscribers": true,
         "enableMicrosoftTeamsSubscribers": true,
         "enableWebhookSubscribers": true,
+        "sendSubscriberNotifications": true,
+        "limitSubscribersToPrivateUsers": true,
+        "allowedSubscriberEmailDomains": true,
         "copyrightText": true,
         "logoAltText": true,
         "coverImageAltText": true,
         "customFields": true,
         "requireSsoForLogin": true,
+        "privateUserSessionLengthInHours": true,
         "smtpConfigId": true,
         "callSmsConfigId": true,
         "isOwnerNotifiedOfResourceCreation": true,
@@ -1354,6 +1398,33 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.EnableWebhookSubscribers = types.BoolNull()
     }
+    if val, ok := item["sendSubscriberNotifications"].(bool); ok {
+        data.SendSubscriberNotifications = types.BoolValue(val)
+    } else {
+        data.SendSubscriberNotifications = types.BoolNull()
+    }
+    if val, ok := item["limitSubscribersToPrivateUsers"].(bool); ok {
+        data.LimitSubscribersToPrivateUsers = types.BoolValue(val)
+    } else {
+        data.LimitSubscribersToPrivateUsers = types.BoolNull()
+    }
+    if obj, ok := item["allowedSubscriberEmailDomains"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AllowedSubscriberEmailDomains = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AllowedSubscriberEmailDomains = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AllowedSubscriberEmailDomains = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AllowedSubscriberEmailDomains = types.StringValue(string(jsonBytes))
+        } else {
+            data.AllowedSubscriberEmailDomains = types.StringNull()
+        }
+    } else if val, ok := item["allowedSubscriberEmailDomains"].(string); ok {
+        data.AllowedSubscriberEmailDomains = types.StringValue(val)
+    } else {
+        data.AllowedSubscriberEmailDomains = types.StringNull()
+    }
     if obj, ok := item["copyrightText"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CopyrightText = types.StringValue(val)
@@ -1427,6 +1498,7 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.RequireSsoForLogin = types.BoolNull()
     }
+    data.PrivateUserSessionLengthInHours = numberFromAPI(data.PrivateUserSessionLengthInHours, item["privateUserSessionLengthInHours"])
     if obj, ok := item["smtpConfigId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SmtpConfigId = types.StringValue(val)

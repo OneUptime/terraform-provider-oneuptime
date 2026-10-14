@@ -27,6 +27,7 @@ resource "oneuptime_incident_episode_internal_note" "example" {
 
 - `attachments` (Set of String) Files attached to this note. IDs of `oneuptime_file` resources.
 - `note` (String) Notes in markdown.
+- `posted_at` (String) Date and time the note belongs to in the timeline: when it was written, or - for a note saved from a Slack or Microsoft Teams message - when that message was posted.
 - `posted_from_slack_message_id` (String) Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.
 
 ### Read-Only
@@ -36,6 +37,7 @@ resource "oneuptime_incident_episode_internal_note" "example" {
 - `id` (String) Unique identifier for the resource.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `saved_from_chat_message` (String) When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: write it with `jsonencode()`.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

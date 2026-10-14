@@ -28,6 +28,7 @@ resource "oneuptime_status_page" "example" {
 
 - `allow_subscribers_to_choose_event_types` (Boolean) Can subscribers choose which event type like Announcements, Incidents, Scheduled Events to subscribe to? Defaults to `false`.
 - `allow_subscribers_to_choose_resources` (Boolean) Can subscribers choose which resources to subscribe to? Defaults to `false`.
+- `allowed_subscriber_email_domains` (String) The domains an email subscriber's address may be at, one a line, such as acme.com. An address at a subdomain of one matches too. Sign-ups and additions at any other domain are refused, and an email subscriber at another domain is sent nothing. Empty: any domain.
 - `call_sms_config_id` (String) ID of your Call/SMS Config Resource which is used to send SMS to subscribers.
 - `copyright_text` (String) Copyright Text.
 - `cover_image_alt_text` (String) Alternative text for the cover image, read by screen readers for accessibility. Leave blank if the cover image is purely decorative.
@@ -59,6 +60,7 @@ resource "oneuptime_status_page" "example" {
 - `is_public_status_page` (Boolean) Is this status page public? Defaults to `true`.
 - `is_report_enabled` (Boolean) Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it. Defaults to `false`.
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `limit_subscribers_to_private_users` (Boolean) Only people who can sign in to this status page can be its subscribers, each with the email address they sign in with: no other address, and no phone, Slack, Microsoft Teams or webhook. A subscriber whose address is not a private user of this page - one removed since, by SCIM or by hand - is sent nothing. Defaults to `false`.
 - `logo_alt_text` (String) Alternative text for the logo image, read by screen readers for accessibility.
 - `logo_file_id` (String) Status Page Logo File ID. The ID of a `oneuptime_file`.
 - `master_password` (String, Sensitive) Password required to unlock a private status page. This value is stored as a secure hash.
@@ -67,6 +69,7 @@ resource "oneuptime_status_page" "example" {
 - `overview_page_description` (String) Overview Page description for your status page. This is a markdown field.
 - `page_description` (String) Description of your Status Page. This is used for SEO.
 - `page_title` (String) Title of your Status Page. This is used for SEO.
+- `private_user_session_length_in_hours` (Number) How long, in hours, a private user stays signed in to this private status page after signing in, however active they are - with a password, SSO or OIDC. When the time is up they sign in again. Applies to readers signed in now too. A whole number from 1 to 8760; empty for no limit, where a reader stays signed in while they open the page at least once every 30 days.
 - `report_data_in_days` (Number) How many days of data should be included in the report? Defaults to `30`.
 - `report_period_type` (String) Should the report cover a rolling number of days, or the previous whole calendar period? Defaults to `Rolling`.
 - `report_recurring_interval` (String) How often a report goes out. Left out when reports are turned on, it is every month. A JSON value: write it with `jsonencode()`.
@@ -74,6 +77,7 @@ resource "oneuptime_status_page" "example" {
 - `report_timezone` (String) The timezone report periods and send times are resolved in. A monthly report in this timezone runs from the 1st at 00:00 to the last day at 23:59. Defaults to `UTC`.
 - `require_sso_for_login` (Boolean) Should SSO be required to login to Private Status Page. Defaults to `false`.
 - `send_next_report_by` (String) When the next report goes out. The server works it out from the schedule.
+- `send_subscriber_notifications` (Boolean) Does this status page tell its subscribers anything? Off, it sends them nothing - no message about an incident, an episode, scheduled maintenance or an announcement, and no report - however the event was created. Its subscribers are kept, and the channel switches still decide how visitors can sign up. Defaults to `true`.
 - `show_announcement_history_in_days` (Number) How many days of announcement history should be shown on the status page (in days)? Defaults to `14`.
 - `show_announcements_on_status_page` (Boolean) Show Announcements on Status Page? Defaults to `true`.
 - `show_episode_history_in_days` (Number) How many days of episode history to show on the status page. Defaults to `14`.

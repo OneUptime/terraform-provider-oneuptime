@@ -42,10 +42,12 @@ type IncidentEpisodeInternalNoteResourceModel struct {
     Note types.String `tfsdk:"note"`
     Attachments types.Set `tfsdk:"attachments"`
     PostedFromSlackMessageId types.String `tfsdk:"posted_from_slack_message_id"`
+    PostedAt RFC3339Value `tfsdk:"posted_at"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
+    SavedFromChatMessage JSONSubsetValue `tfsdk:"saved_from_chat_message"`
 }
 
 func (r *IncidentEpisodeInternalNoteResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -108,6 +110,15 @@ func (r *IncidentEpisodeInternalNoteResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
             },
+            "posted_at": schema.StringAttribute{
+                MarkdownDescription: "Date and time the note belongs to in the timeline: when it was written, or - for a note saved from a Slack or Microsoft Teams message - when that message was posted.",
+                CustomType: RFC3339Type{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -130,6 +141,11 @@ func (r *IncidentEpisodeInternalNoteResource) schemaDefinition() schema.Schema {
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",
+                Computed: true,
+            },
+            "saved_from_chat_message": schema.StringAttribute{
+                MarkdownDescription: "When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
         },
@@ -197,6 +213,9 @@ func (r *IncidentEpisodeInternalNoteResource) Create(ctx context.Context, req re
     if !data.PostedFromSlackMessageId.IsNull() && !data.PostedFromSlackMessageId.IsUnknown() {
         requestDataMap["postedFromSlackMessageId"] = data.PostedFromSlackMessageId.ValueString()
     }
+    if !data.PostedAt.IsNull() && !data.PostedAt.IsUnknown() {
+        requestDataMap["postedAt"] = data.PostedAt.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/incident-episode-internal-note", incidentEpisodeInternalNoteRequest)
@@ -247,10 +266,12 @@ func (r *IncidentEpisodeInternalNoteResource) Create(ctx context.Context, req re
         "note": true,
         "attachments": true,
         "postedFromSlackMessageId": true,
+        "postedAt": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
         "isOwnerNotified": true,
+        "savedFromChatMessage": true,
         "_id": true,
     }
 
@@ -437,6 +458,17 @@ func (r *IncidentEpisodeInternalNoteResource) Create(ctx context.Context, req re
     } else {
         data.PostedFromSlackMessageId = types.StringNull()
     }
+    if obj, ok := dataMap["postedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PostedAt = NewRFC3339Value(val)
+        } else {
+            data.PostedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["postedAt"].(string); ok && val != "" {
+        data.PostedAt = NewRFC3339Value(val)
+    } else {
+        data.PostedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -499,6 +531,43 @@ func (r *IncidentEpisodeInternalNoteResource) Create(ctx context.Context, req re
     if val, ok := dataMap["isOwnerNotified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)
     }
+    if obj, ok := dataMap["savedFromChatMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavedFromChatMessage = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SavedFromChatMessage = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["savedFromChatMessage"].(string); ok {
+        data.SavedFromChatMessage = NewJSONSubsetValue(val)
+    } else {
+        data.SavedFromChatMessage = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -534,10 +603,12 @@ func (r *IncidentEpisodeInternalNoteResource) Read(ctx context.Context, req reso
         "note": true,
         "attachments": true,
         "postedFromSlackMessageId": true,
+        "postedAt": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
         "isOwnerNotified": true,
+        "savedFromChatMessage": true,
         "_id": true,
     }
 
@@ -725,6 +796,17 @@ func (r *IncidentEpisodeInternalNoteResource) Read(ctx context.Context, req reso
     } else {
         data.PostedFromSlackMessageId = types.StringNull()
     }
+    if obj, ok := dataMap["postedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PostedAt = NewRFC3339Value(val)
+        } else {
+            data.PostedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["postedAt"].(string); ok && val != "" {
+        data.PostedAt = NewRFC3339Value(val)
+    } else {
+        data.PostedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -787,6 +869,43 @@ func (r *IncidentEpisodeInternalNoteResource) Read(ctx context.Context, req reso
     if val, ok := dataMap["isOwnerNotified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)
     }
+    if obj, ok := dataMap["savedFromChatMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavedFromChatMessage = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SavedFromChatMessage = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["savedFromChatMessage"].(string); ok {
+        data.SavedFromChatMessage = NewJSONSubsetValue(val)
+    } else {
+        data.SavedFromChatMessage = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -836,6 +955,9 @@ func (r *IncidentEpisodeInternalNoteResource) Update(ctx context.Context, req re
     if !data.Attachments.IsUnknown() && !state.Attachments.IsUnknown() && !data.Attachments.Equal(state.Attachments) {
         requestDataMap["attachments"] = r.convertTerraformSetToInterface(data.Attachments)
     }
+    if !data.PostedAt.IsUnknown() && !state.PostedAt.IsUnknown() && !data.PostedAt.Equal(state.PostedAt) {
+        requestDataMap["postedAt"] = data.PostedAt.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -864,10 +986,12 @@ func (r *IncidentEpisodeInternalNoteResource) Update(ctx context.Context, req re
         "note": true,
         "attachments": true,
         "postedFromSlackMessageId": true,
+        "postedAt": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
         "isOwnerNotified": true,
+        "savedFromChatMessage": true,
         "_id": true,
     }
 
@@ -1049,6 +1173,17 @@ func (r *IncidentEpisodeInternalNoteResource) Update(ctx context.Context, req re
     } else {
         data.PostedFromSlackMessageId = types.StringNull()
     }
+    if obj, ok := dataMap["postedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PostedAt = NewRFC3339Value(val)
+        } else {
+            data.PostedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["postedAt"].(string); ok && val != "" {
+        data.PostedAt = NewRFC3339Value(val)
+    } else {
+        data.PostedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1110,6 +1245,43 @@ func (r *IncidentEpisodeInternalNoteResource) Update(ctx context.Context, req re
     }
     if val, ok := dataMap["isOwnerNotified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["savedFromChatMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavedFromChatMessage = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SavedFromChatMessage = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["savedFromChatMessage"].(string); ok {
+        data.SavedFromChatMessage = NewJSONSubsetValue(val)
+    } else {
+        data.SavedFromChatMessage = NewJSONSubsetNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -1176,6 +1348,9 @@ func (r *IncidentEpisodeInternalNoteResource) keepPlannedValues(data *IncidentEp
     }
     if config.PostedFromSlackMessageId.IsNull() && !plan.PostedFromSlackMessageId.IsUnknown() {
         data.PostedFromSlackMessageId = plan.PostedFromSlackMessageId
+    }
+    if config.PostedAt.IsNull() && !plan.PostedAt.IsUnknown() {
+        data.PostedAt = plan.PostedAt
     }
 }
 

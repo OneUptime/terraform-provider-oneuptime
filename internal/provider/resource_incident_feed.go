@@ -46,7 +46,10 @@ type IncidentFeedResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     AiRunId types.String `tfsdk:"ai_run_id"`
+    ApiKeyId types.String `tfsdk:"api_key_id"`
+    ApiKeyName types.String `tfsdk:"api_key_name"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    SavedFromChatMessage JSONSubsetValue `tfsdk:"saved_from_chat_message"`
 }
 
 func (r *IncidentFeedResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -138,12 +141,25 @@ func (r *IncidentFeedResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "AI investigation run that produced this feed item when the event is a root cause.",
                 Computed: true,
             },
+            "api_key_id": schema.StringAttribute{
+                MarkdownDescription: "The project API key that made this change, when an API key did rather than a person. Kept when the key is revoked or deleted.",
+                Computed: true,
+            },
+            "api_key_name": schema.StringAttribute{
+                MarkdownDescription: "The name the API key that made this change had at the time, shown as the item's author.",
+                Computed: true,
+            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "saved_from_chat_message": schema.StringAttribute{
+                MarkdownDescription: "For a note saved from a Slack or Microsoft Teams message: the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). The feed item's user is whoever saved it. Written by OneUptime. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
             },
         },
     }
@@ -275,7 +291,10 @@ func (r *IncidentFeedResource) Create(ctx context.Context, req resource.CreateRe
         "createdAt": true,
         "updatedAt": true,
         "aiRunId": true,
+        "apiKeyId": true,
+        "apiKeyName": true,
         "createdByUserId": true,
+        "savedFromChatMessage": true,
         "_id": true,
     }
 
@@ -611,6 +630,80 @@ func (r *IncidentFeedResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.AiRunId = types.StringNull()
     }
+    if obj, ok := dataMap["apiKeyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ApiKeyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ApiKeyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApiKeyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ApiKeyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApiKeyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["apiKeyId"].(string); ok {
+        data.ApiKeyId = types.StringValue(val)
+    } else {
+        data.ApiKeyId = types.StringNull()
+    }
+    if obj, ok := dataMap["apiKeyName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApiKeyName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ApiKeyName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ApiKeyName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ApiKeyName = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApiKeyName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ApiKeyName = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApiKeyName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ApiKeyName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyName = types.StringNull()
+        }
+    } else if val, ok := dataMap["apiKeyName"].(string); ok {
+        data.ApiKeyName = types.StringValue(val)
+    } else {
+        data.ApiKeyName = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -647,6 +740,43 @@ func (r *IncidentFeedResource) Create(ctx context.Context, req resource.CreateRe
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["savedFromChatMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavedFromChatMessage = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SavedFromChatMessage = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["savedFromChatMessage"].(string); ok {
+        data.SavedFromChatMessage = NewJSONSubsetValue(val)
+    } else {
+        data.SavedFromChatMessage = NewJSONSubsetNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -689,7 +819,10 @@ func (r *IncidentFeedResource) Read(ctx context.Context, req resource.ReadReques
         "createdAt": true,
         "updatedAt": true,
         "aiRunId": true,
+        "apiKeyId": true,
+        "apiKeyName": true,
         "createdByUserId": true,
+        "savedFromChatMessage": true,
         "_id": true,
     }
 
@@ -1026,6 +1159,80 @@ func (r *IncidentFeedResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.AiRunId = types.StringNull()
     }
+    if obj, ok := dataMap["apiKeyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ApiKeyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ApiKeyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApiKeyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ApiKeyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApiKeyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["apiKeyId"].(string); ok {
+        data.ApiKeyId = types.StringValue(val)
+    } else {
+        data.ApiKeyId = types.StringNull()
+    }
+    if obj, ok := dataMap["apiKeyName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApiKeyName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ApiKeyName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ApiKeyName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ApiKeyName = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApiKeyName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ApiKeyName = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApiKeyName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ApiKeyName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyName = types.StringNull()
+        }
+    } else if val, ok := dataMap["apiKeyName"].(string); ok {
+        data.ApiKeyName = types.StringValue(val)
+    } else {
+        data.ApiKeyName = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1062,6 +1269,43 @@ func (r *IncidentFeedResource) Read(ctx context.Context, req resource.ReadReques
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["savedFromChatMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavedFromChatMessage = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SavedFromChatMessage = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavedFromChatMessage = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["savedFromChatMessage"].(string); ok {
+        data.SavedFromChatMessage = NewJSONSubsetValue(val)
+    } else {
+        data.SavedFromChatMessage = NewJSONSubsetNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

@@ -30,6 +30,7 @@ data "oneuptime_status_page" "by_id" {
 
 - `allow_subscribers_to_choose_event_types` (Boolean) Can subscribers choose which event type like Announcements, Incidents, Scheduled Events to subscribe to?
 - `allow_subscribers_to_choose_resources` (Boolean) Can subscribers choose which resources to subscribe to?
+- `allowed_subscriber_email_domains` (String) The domains an email subscriber's address may be at, one a line, such as acme.com. An address at a subdomain of one matches too. Sign-ups and additions at any other domain are refused, and an email subscriber at another domain is sent nothing. Empty: any domain.
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `call_sms_config_id` (String) ID of your Call/SMS Config Resource which is used to send SMS to subscribers.
 - `copyright_text` (String) Copyright Text.
@@ -61,6 +62,7 @@ data "oneuptime_status_page" "by_id" {
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
 - `is_public_status_page` (Boolean) Is this status page public?
 - `is_report_enabled` (Boolean) Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it.
+- `limit_subscribers_to_private_users` (Boolean) Only people who can sign in to this status page can be its subscribers, each with the email address they sign in with: no other address, and no phone, Slack, Microsoft Teams or webhook. A subscriber whose address is not a private user of this page - one removed since, by SCIM or by hand - is sent nothing.
 - `logo_alt_text` (String) Alternative text for the logo image, read by screen readers for accessibility.
 - `logo_file_id` (String) Status Page Logo File ID. The ID of a `oneuptime_file`.
 - `name` (String) Any friendly name of this object.
@@ -69,10 +71,12 @@ data "oneuptime_status_page" "by_id" {
 - `overview_page_description` (String) Overview Page description for your status page. This is a markdown field.
 - `page_description` (String) Description of your Status Page. This is used for SEO.
 - `page_title` (String) Title of your Status Page. This is used for SEO.
+- `private_user_session_length_in_hours` (Number) How long, in hours, a private user stays signed in to this private status page after signing in, however active they are - with a password, SSO or OIDC. When the time is up they sign in again. Applies to readers signed in now too. A whole number from 1 to 8760; empty for no limit, where a reader stays signed in while they open the page at least once every 30 days.
 - `report_data_in_days` (Number) How many days of data should be included in the report?
 - `report_period_type` (String) Should the report cover a rolling number of days, or the previous whole calendar period?
 - `report_timezone` (String) The timezone report periods and send times are resolved in. A monthly report in this timezone runs from the 1st at 00:00 to the last day at 23:59.
 - `require_sso_for_login` (Boolean) Should SSO be required to login to Private Status Page.
+- `send_subscriber_notifications` (Boolean) Does this status page tell its subscribers anything? Off, it sends them nothing - no message about an incident, an episode, scheduled maintenance or an announcement, and no report - however the event was created. Its subscribers are kept, and the channel switches still decide how visitors can sign up.
 - `show_announcement_history_in_days` (Number) How many days of announcement history should be shown on the status page (in days)?
 - `show_announcements_on_status_page` (Boolean) Show Announcements on Status Page?
 - `show_episode_history_in_days` (Number) How many days of episode history to show on the status page.
