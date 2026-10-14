@@ -13,7 +13,6 @@ Logs for on-call duty policy execution.
 
 ```terraform
 resource "oneuptime_on_call_duty_execution_log" "example" {
-  on_call_duty_policy_id       = oneuptime_on_call_policy.example.id
   status                       = "Example short text"
   status_message               = "This is an example of longer text content that might be stored in this field."
   user_notification_event_type = "Example short text"
@@ -24,7 +23,6 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 
 ### Required
 
-- `on_call_duty_policy_id` (String) ID of your On-Call Policy which belongs to this execution log event. The ID of a `oneuptime_on_call_policy`.
 - `status` (String) Status of this execution.
 - `status_message` (String) Status message of this execution.
 - `user_notification_event_type` (String) Type of event that triggered this on-call duty policy.
@@ -37,6 +35,7 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `last_escalation_rule_executed_at` (String) When was the escalation rule executed?
 - `last_executed_escalation_rule_id` (String) ID of your On-Call Policy Last Executed Escalation Rule. The ID of a `oneuptime_escalation_rule`.
 - `last_executed_escalation_rule_order` (Number) Which escalation rule was executed?
+- `on_call_duty_policy_id` (String) ID of the On-Call Policy this execution log is a run of. Required when you create one. Empty for a direct page: people, a team or an on-call schedule paged without an on-call policy. The ID of a `oneuptime_on_call_policy`.
 - `on_call_policy_execution_repeat_count` (Number) How many times did we execute this on-call policy? Defaults to `1`.
 - `triggered_by_alert_episode_id` (String) ID of the alert episode which triggered this on-call escalation policy. The ID of a `oneuptime_alert_episode`.
 - `triggered_by_alert_id` (String) ID of the incident which triggered this on-call escalation policy. The ID of a `oneuptime_alert`.
@@ -52,6 +51,8 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `schedule_gap_retry_count` (Number) How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.
 - `triggered_by_user_id` (String) User ID who triggered this on-call policy. The ID of a `oneuptime_user` (see the data source).
+- `triggered_by_workflow_id` (String) ID of the workflow whose step started this page, when a workflow did.
+- `triggered_by_workflow_name` (String) Name of the workflow whose step started this page, as it was then.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

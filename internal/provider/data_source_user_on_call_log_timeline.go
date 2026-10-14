@@ -100,7 +100,7 @@ func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime on-call duty policy in which this object belongs. The ID of a `oneuptime_on_call_policy`.",
+                MarkdownDescription: "ID of your OneUptime on-call duty policy in which this object belongs. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
             },
@@ -140,7 +140,7 @@ func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Escalation Rule where this timeline event belongs. The ID of a `oneuptime_escalation_rule`.",
+                MarkdownDescription: "ID of your On-Call Policy Escalation Rule where this timeline event belongs. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_escalation_rule`.",
                 Optional: true,
                 Computed: true,
             },

@@ -31,10 +31,10 @@ data "oneuptime_user_on_call_log_timeline" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_acknowledged` (Boolean)
-- `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule where this timeline event belongs. The ID of a `oneuptime_escalation_rule`.
+- `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule where this timeline event belongs. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_escalation_rule`.
 - `on_call_duty_policy_execution_log_id` (String) ID of your On-Call Policy Execution Log Timeline where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log`.
 - `on_call_duty_policy_execution_log_timeline_id` (String) ID of your On-Call Policy Execution Log where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log_timeline` (see the data source).
-- `on_call_duty_policy_id` (String) ID of your OneUptime on-call duty policy in which this object belongs. The ID of a `oneuptime_on_call_policy`.
+- `on_call_duty_policy_id` (String) ID of your OneUptime on-call duty policy in which this object belongs. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_on_call_policy`.
 - `status` (String) Status of this execution timeline event.
 - `status_message` (String) Status message of this execution timeline event.
 - `triggered_by_alert_episode_id` (String) ID of your OneUptime Alert Episode in which this object belongs. The ID of a `oneuptime_alert_episode`.

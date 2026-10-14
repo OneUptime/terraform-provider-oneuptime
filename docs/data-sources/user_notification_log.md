@@ -31,10 +31,10 @@ data "oneuptime_user_notification_log" "by_id" {
 - `acknowledged_by_user_id` (String) User ID who acknowledged this object (if this object was acknowledged by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule which belongs to this log event. The ID of a `oneuptime_escalation_rule`.
+- `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule which belongs to this log event. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_escalation_rule`.
 - `on_call_duty_policy_execution_log_id` (String) ID of your On-Call Policy execution log which belongs to this log event. The ID of a `oneuptime_on_call_duty_execution_log`.
 - `on_call_duty_policy_execution_log_timeline_id` (String) ID of your On-Call Policy Execution Log where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log_timeline` (see the data source).
-- `on_call_duty_policy_id` (String) ID of your On-Call Policy which belongs to this execution log event. The ID of a `oneuptime_on_call_policy`.
+- `on_call_duty_policy_id` (String) ID of your On-Call Policy which belongs to this execution log event. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_on_call_policy`.
 - `on_call_duty_schedule_id` (String) Which schedule ID did the user belong to when the alert was sent? The ID of a `oneuptime_on_call_policy_schedule`.
 - `overrided_by_user_id` (String) ID of the user this alert would have paged, when a user override sent it to this log's user instead because they were away. Empty when no override applied. The ID of a `oneuptime_user` (see the data source).
 - `status` (String) Status of this execution.

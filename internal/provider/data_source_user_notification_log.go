@@ -86,7 +86,7 @@ func (d *UserNotificationLogDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy which belongs to this execution log event. The ID of a `oneuptime_on_call_policy`.",
+                MarkdownDescription: "ID of your On-Call Policy which belongs to this execution log event. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
             },
@@ -96,7 +96,7 @@ func (d *UserNotificationLogDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Escalation Rule which belongs to this log event. The ID of a `oneuptime_escalation_rule`.",
+                MarkdownDescription: "ID of your On-Call Policy Escalation Rule which belongs to this log event. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_escalation_rule`.",
                 Optional: true,
                 Computed: true,
             },

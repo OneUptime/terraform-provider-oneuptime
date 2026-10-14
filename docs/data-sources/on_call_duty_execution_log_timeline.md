@@ -32,9 +32,9 @@ data "oneuptime_on_call_duty_execution_log_timeline" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_acknowledged` (Boolean) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]
-- `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule where this timeline event belongs. The ID of a `oneuptime_escalation_rule`.
+- `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule where this timeline event belongs. Empty for a step of a direct page, which has no escalation rules. The ID of a `oneuptime_escalation_rule`.
 - `on_call_duty_policy_execution_log_id` (String) ID of your On-Call Policy Execution Log where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log`.
-- `on_call_duty_policy_id` (String) ID of your OneUptime on-call duty policy in which this object belongs. The ID of a `oneuptime_on_call_policy`.
+- `on_call_duty_policy_id` (String) ID of your OneUptime on-call duty policy in which this object belongs. Empty for a step of a direct page, which has no on-call policy. The ID of a `oneuptime_on_call_policy`.
 - `on_call_duty_schedule_id` (String) Which schedule ID did the user belong to when the alert was sent? The ID of a `oneuptime_on_call_policy_schedule`.
 - `overrided_by_user_id` (String) ID of the user this alert would have paged, when a user override sent it to the user in Alert Sent To User ID instead because they were away. Empty when no override applied. The ID of a `oneuptime_user` (see the data source).
 - `status` (String) Status of this execution timeline event.

@@ -58,6 +58,8 @@ type OnCallDutyExecutionLogResourceModel struct {
     AcknowledgedByUserId types.String `tfsdk:"acknowledged_by_user_id"`
     ScheduleGapRetryCount types.Number `tfsdk:"schedule_gap_retry_count"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
+    TriggeredByWorkflowId types.String `tfsdk:"triggered_by_workflow_id"`
+    TriggeredByWorkflowName types.String `tfsdk:"triggered_by_workflow_name"`
 }
 
 func (r *OnCallDutyExecutionLogResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -88,8 +90,12 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 },
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy which belongs to this execution log event. The ID of a `oneuptime_on_call_policy`.",
-                Required: true,
+                MarkdownDescription: "ID of the On-Call Policy this execution log is a run of. Required when you create one. Empty for a direct page: people, a team or an on-call schedule paged without an on-call policy. The ID of a `oneuptime_on_call_policy`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "triggered_by_incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident which triggered this on-call escalation policy. The ID of a `oneuptime_incident`.",
@@ -216,6 +222,14 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
             },
             "triggered_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who triggered this on-call policy. The ID of a `oneuptime_user` (see the data source).",
+                Computed: true,
+            },
+            "triggered_by_workflow_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the workflow whose step started this page, when a workflow did.",
+                Computed: true,
+            },
+            "triggered_by_workflow_name": schema.StringAttribute{
+                MarkdownDescription: "Name of the workflow whose step started this page, as it was then.",
                 Computed: true,
             },
         },
@@ -381,6 +395,8 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
         "acknowledgedByUserId": true,
         "scheduleGapRetryCount": true,
         "triggeredByUserId": true,
+        "triggeredByWorkflowId": true,
+        "triggeredByWorkflowName": true,
         "_id": true,
     }
 
@@ -941,6 +957,80 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     } else {
         data.TriggeredByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["triggeredByWorkflowId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TriggeredByWorkflowId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TriggeredByWorkflowId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TriggeredByWorkflowId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TriggeredByWorkflowId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TriggeredByWorkflowId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TriggeredByWorkflowId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TriggeredByWorkflowId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TriggeredByWorkflowId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggeredByWorkflowId = types.StringNull()
+        }
+    } else if val, ok := dataMap["triggeredByWorkflowId"].(string); ok {
+        data.TriggeredByWorkflowId = types.StringValue(val)
+    } else {
+        data.TriggeredByWorkflowId = types.StringNull()
+    }
+    if obj, ok := dataMap["triggeredByWorkflowName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TriggeredByWorkflowName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TriggeredByWorkflowName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TriggeredByWorkflowName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TriggeredByWorkflowName = types.StringValue(string(jsonBytes))
+            } else {
+                data.TriggeredByWorkflowName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TriggeredByWorkflowName = types.StringValue(string(jsonBytes))
+            } else {
+                data.TriggeredByWorkflowName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TriggeredByWorkflowName = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggeredByWorkflowName = types.StringNull()
+        }
+    } else if val, ok := dataMap["triggeredByWorkflowName"].(string); ok {
+        data.TriggeredByWorkflowName = types.StringValue(val)
+    } else {
+        data.TriggeredByWorkflowName = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -991,6 +1081,8 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         "acknowledgedByUserId": true,
         "scheduleGapRetryCount": true,
         "triggeredByUserId": true,
+        "triggeredByWorkflowId": true,
+        "triggeredByWorkflowName": true,
         "_id": true,
     }
 
@@ -1552,6 +1644,80 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
     } else {
         data.TriggeredByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["triggeredByWorkflowId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TriggeredByWorkflowId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TriggeredByWorkflowId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TriggeredByWorkflowId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TriggeredByWorkflowId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TriggeredByWorkflowId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TriggeredByWorkflowId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TriggeredByWorkflowId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TriggeredByWorkflowId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggeredByWorkflowId = types.StringNull()
+        }
+    } else if val, ok := dataMap["triggeredByWorkflowId"].(string); ok {
+        data.TriggeredByWorkflowId = types.StringValue(val)
+    } else {
+        data.TriggeredByWorkflowId = types.StringNull()
+    }
+    if obj, ok := dataMap["triggeredByWorkflowName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TriggeredByWorkflowName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TriggeredByWorkflowName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TriggeredByWorkflowName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TriggeredByWorkflowName = types.StringValue(string(jsonBytes))
+            } else {
+                data.TriggeredByWorkflowName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TriggeredByWorkflowName = types.StringValue(string(jsonBytes))
+            } else {
+                data.TriggeredByWorkflowName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TriggeredByWorkflowName = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggeredByWorkflowName = types.StringNull()
+        }
+    } else if val, ok := dataMap["triggeredByWorkflowName"].(string); ok {
+        data.TriggeredByWorkflowName = types.StringValue(val)
+    } else {
+        data.TriggeredByWorkflowName = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1600,6 +1766,9 @@ func (r *OnCallDutyExecutionLogResource) ImportState(ctx context.Context, req re
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
 func (r *OnCallDutyExecutionLogResource) keepPlannedValues(data *OnCallDutyExecutionLogResourceModel, plan *OnCallDutyExecutionLogResourceModel, config *OnCallDutyExecutionLogResourceModel) {
+    if config.OnCallDutyPolicyId.IsNull() && !plan.OnCallDutyPolicyId.IsUnknown() {
+        data.OnCallDutyPolicyId = plan.OnCallDutyPolicyId
+    }
     if config.TriggeredByIncidentId.IsNull() && !plan.TriggeredByIncidentId.IsUnknown() {
         data.TriggeredByIncidentId = plan.TriggeredByIncidentId
     }
