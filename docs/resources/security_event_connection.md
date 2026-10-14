@@ -31,6 +31,7 @@ resource "oneuptime_security_event_connection" "example" {
 ### Optional
 
 - `alerting_only` (Boolean) For providers that distinguish alerting from non-alerting records: import only the alerting ones. Defaults to `true`.
+- `case_minimum_severity` (String) Imported alerts at or above this severity (Low, Medium, High or Critical) open security cases. Empty imports them as events only. Defaults to `High`.
 - `config` (String) Provider-specific, non-secret settings such as tenant, workspace, region or base URL. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.
 - `description` (String) What this connection imports and why.
 - `is_enabled` (Boolean) Whether this connection is polled on its schedule. Defaults to `true`.

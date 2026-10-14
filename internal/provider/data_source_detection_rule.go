@@ -41,6 +41,7 @@ type DetectionRuleDataSourceModel struct {
     ShouldCreateAlert types.Bool `tfsdk:"should_create_alert"`
     ShouldWriteDetectionFinding types.Bool `tfsdk:"should_write_detection_finding"`
     ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
+    ShouldCreateCase types.Bool `tfsdk:"should_create_case"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     LastEvaluatedAt types.String `tfsdk:"last_evaluated_at"`
@@ -127,6 +128,11 @@ func (d *DetectionRuleDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "should_create_incident": schema.BoolAttribute{
                 MarkdownDescription: "Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per rule.",
+                Optional: true,
+                Computed: true,
+            },
+            "should_create_case": schema.BoolAttribute{
+                MarkdownDescription: "Whether matches open security cases (or join the open case about the same entity), where the security team works them and playbooks respond.",
                 Optional: true,
                 Computed: true,
             },
@@ -241,6 +247,10 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["shouldCreateIncident"] = data.ShouldCreateIncident.ValueBool()
         filterNames = append(filterNames, "should_create_incident = "+fmt.Sprintf("%t", data.ShouldCreateIncident.ValueBool()))
     }
+    if !data.ShouldCreateCase.IsNull() && !data.ShouldCreateCase.IsUnknown() {
+        filters["shouldCreateCase"] = data.ShouldCreateCase.ValueBool()
+        filterNames = append(filterNames, "should_create_case = "+fmt.Sprintf("%t", data.ShouldCreateCase.ValueBool()))
+    }
     if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
         filters["alertSeverityId"] = data.AlertSeverityId.ValueString()
         filterNames = append(filterNames, "alert_severity_id = "+fmt.Sprintf("%q", data.AlertSeverityId.ValueString()))
@@ -288,6 +298,7 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
+        "shouldCreateCase": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "lastEvaluatedAt": true,
@@ -529,6 +540,11 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         data.ShouldCreateIncident = types.BoolValue(val)
     } else {
         data.ShouldCreateIncident = types.BoolNull()
+    }
+    if val, ok := item["shouldCreateCase"].(bool); ok {
+        data.ShouldCreateCase = types.BoolValue(val)
+    } else {
+        data.ShouldCreateCase = types.BoolNull()
     }
     if obj, ok := item["alertSeverityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

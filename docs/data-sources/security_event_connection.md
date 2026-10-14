@@ -29,6 +29,7 @@ data "oneuptime_security_event_connection" "by_id" {
 ### Optional
 
 - `alerting_only` (Boolean) For providers that distinguish alerting from non-alerting records: import only the alerting ones.
+- `case_minimum_severity` (String) Imported alerts at or above this severity (Low, Medium, High or Critical) open security cases. Empty imports them as events only.
 - `created_by_user_id` (String) ID of the user who created this connection. The ID of a `oneuptime_user` (see the data source).
 - `cursor` (String) Poll cursor: the end of the last completely processed creation-time window, as an ISO string.
 - `description` (String) What this connection imports and why.

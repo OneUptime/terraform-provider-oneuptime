@@ -37,6 +37,7 @@ type SecurityEventConnectionDataSourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     PollIntervalInMinutes types.Number `tfsdk:"poll_interval_in_minutes"`
     AlertingOnly types.Bool `tfsdk:"alerting_only"`
+    CaseMinimumSeverity types.String `tfsdk:"case_minimum_severity"`
     LastSuccessfulPollAt types.String `tfsdk:"last_successful_poll_at"`
     LastEventIngestedAt types.String `tfsdk:"last_event_ingested_at"`
     LastPollResult types.String `tfsdk:"last_poll_result"`
@@ -52,7 +53,7 @@ func (d *SecurityEventConnectionDataSource) Metadata(ctx context.Context, req da
 
 func (d *SecurityEventConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Managed connections to SIEM, EDR, cloud security and identity products. Records are polled on an interval and ingested as security events. Look up an existing security event connection by `id`, or by any of its other arguments (`name`, `alerting_only`, `created_by_user_id`, ...): each one set must match, and exactly one security event connection may match them all.",
+        MarkdownDescription: "Managed connections to SIEM, EDR, cloud security and identity products. Records are polled on an interval and ingested as security events. Look up an existing security event connection by `id`, or by any of its other arguments (`name`, `alerting_only`, `case_minimum_severity`, ...): each one set must match, and exactly one security event connection may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -103,6 +104,11 @@ func (d *SecurityEventConnectionDataSource) Schema(ctx context.Context, req data
             },
             "alerting_only": schema.BoolAttribute{
                 MarkdownDescription: "For providers that distinguish alerting from non-alerting records: import only the alerting ones.",
+                Optional: true,
+                Computed: true,
+            },
+            "case_minimum_severity": schema.StringAttribute{
+                MarkdownDescription: "Imported alerts at or above this severity (Low, Medium, High or Critical) open security cases. Empty imports them as events only.",
                 Optional: true,
                 Computed: true,
             },
@@ -200,6 +206,10 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
         filters["alertingOnly"] = data.AlertingOnly.ValueBool()
         filterNames = append(filterNames, "alerting_only = "+fmt.Sprintf("%t", data.AlertingOnly.ValueBool()))
     }
+    if !data.CaseMinimumSeverity.IsNull() && !data.CaseMinimumSeverity.IsUnknown() {
+        filters["caseMinimumSeverity"] = data.CaseMinimumSeverity.ValueString()
+        filterNames = append(filterNames, "case_minimum_severity = "+fmt.Sprintf("%q", data.CaseMinimumSeverity.ValueString()))
+    }
     if !data.Cursor.IsNull() && !data.Cursor.IsUnknown() {
         filters["cursor"] = data.Cursor.ValueString()
         filterNames = append(filterNames, "cursor = "+fmt.Sprintf("%q", data.Cursor.ValueString()))
@@ -239,6 +249,7 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
         "isEnabled": true,
         "pollIntervalInMinutes": true,
         "alertingOnly": true,
+        "caseMinimumSeverity": true,
         "lastSuccessfulPollAt": true,
         "lastEventIngestedAt": true,
         "lastPollResult": true,
@@ -453,6 +464,23 @@ func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req dataso
         data.AlertingOnly = types.BoolValue(val)
     } else {
         data.AlertingOnly = types.BoolNull()
+    }
+    if obj, ok := item["caseMinimumSeverity"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+        } else {
+            data.CaseMinimumSeverity = types.StringNull()
+        }
+    } else if val, ok := item["caseMinimumSeverity"].(string); ok {
+        data.CaseMinimumSeverity = types.StringValue(val)
+    } else {
+        data.CaseMinimumSeverity = types.StringNull()
     }
     if obj, ok := item["lastSuccessfulPollAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

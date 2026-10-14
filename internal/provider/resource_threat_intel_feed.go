@@ -53,6 +53,7 @@ type ThreatIntelFeedResourceModel struct {
     ShouldCreateAlert types.Bool `tfsdk:"should_create_alert"`
     ShouldWriteDetectionFinding types.Bool `tfsdk:"should_write_detection_finding"`
     ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
+    ShouldCreateCase types.Bool `tfsdk:"should_create_case"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
@@ -187,6 +188,15 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "should_create_case": schema.BoolAttribute{
+                MarkdownDescription: "Whether matches open security cases (or join the open case about the same entity), where the security team works them and playbooks respond.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },
@@ -354,6 +364,9 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
     if !data.ShouldCreateIncident.IsNull() && !data.ShouldCreateIncident.IsUnknown() {
         requestDataMap["shouldCreateIncident"] = data.ShouldCreateIncident.ValueBool()
     }
+    if !data.ShouldCreateCase.IsNull() && !data.ShouldCreateCase.IsUnknown() {
+        requestDataMap["shouldCreateCase"] = data.ShouldCreateCase.ValueBool()
+    }
     if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
@@ -417,6 +430,7 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
+        "shouldCreateCase": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "createdAt": true,
@@ -671,6 +685,9 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
     }
     if val, ok := dataMap["shouldCreateIncident"].(bool); ok {
         data.ShouldCreateIncident = types.BoolValue(val)
+    }
+    if val, ok := dataMap["shouldCreateCase"].(bool); ok {
+        data.ShouldCreateCase = types.BoolValue(val)
     }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1065,6 +1082,7 @@ func (r *ThreatIntelFeedResource) Read(ctx context.Context, req resource.ReadReq
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
+        "shouldCreateCase": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "createdAt": true,
@@ -1320,6 +1338,9 @@ func (r *ThreatIntelFeedResource) Read(ctx context.Context, req resource.ReadReq
     }
     if val, ok := dataMap["shouldCreateIncident"].(bool); ok {
         data.ShouldCreateIncident = types.BoolValue(val)
+    }
+    if val, ok := dataMap["shouldCreateCase"].(bool); ok {
+        data.ShouldCreateCase = types.BoolValue(val)
     }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1759,6 +1780,9 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
     if !data.ShouldCreateIncident.IsUnknown() && !state.ShouldCreateIncident.IsUnknown() && !data.ShouldCreateIncident.Equal(state.ShouldCreateIncident) {
         requestDataMap["shouldCreateIncident"] = data.ShouldCreateIncident.ValueBool()
     }
+    if !data.ShouldCreateCase.IsUnknown() && !state.ShouldCreateCase.IsUnknown() && !data.ShouldCreateCase.Equal(state.ShouldCreateCase) {
+        requestDataMap["shouldCreateCase"] = data.ShouldCreateCase.ValueBool()
+    }
     if !data.AlertSeverityId.IsUnknown() && !state.AlertSeverityId.IsUnknown() && !data.AlertSeverityId.Equal(state.AlertSeverityId) {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
@@ -1800,6 +1824,7 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
+        "shouldCreateCase": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "createdAt": true,
@@ -2049,6 +2074,9 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
     }
     if val, ok := dataMap["shouldCreateIncident"].(bool); ok {
         data.ShouldCreateIncident = types.BoolValue(val)
+    }
+    if val, ok := dataMap["shouldCreateCase"].(bool); ok {
+        data.ShouldCreateCase = types.BoolValue(val)
     }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2481,6 +2509,9 @@ func (r *ThreatIntelFeedResource) keepPlannedValues(data *ThreatIntelFeedResourc
     }
     if config.ShouldCreateIncident.IsNull() && !plan.ShouldCreateIncident.IsUnknown() {
         data.ShouldCreateIncident = plan.ShouldCreateIncident
+    }
+    if config.ShouldCreateCase.IsNull() && !plan.ShouldCreateCase.IsUnknown() {
+        data.ShouldCreateCase = plan.ShouldCreateCase
     }
     if config.AlertSeverityId.IsNull() && !plan.AlertSeverityId.IsUnknown() {
         data.AlertSeverityId = plan.AlertSeverityId

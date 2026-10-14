@@ -37,6 +37,7 @@ resource "oneuptime_detection_rule" "example" {
 - `is_enabled` (Boolean) Whether this detection rule is evaluated. Defaults to `true`.
 - `match_count_threshold` (Number) Fire only when a group's count — distinct values when a distinct count field is set, matching events otherwise — reaches this number within one evaluation window. 1 fires on any match. Defaults to `1`.
 - `should_create_alert` (Boolean) Whether matches open OneUptime alerts. Defaults to `true`.
+- `should_create_case` (Boolean) Whether matches open security cases (or join the open case about the same entity), where the security team works them and playbooks respond. Defaults to `true`.
 - `should_create_incident` (Boolean) Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per rule. Defaults to `false`.
 - `should_write_detection_finding` (Boolean) Whether matches also write a Detection Finding security event back into the events table. Defaults to `true`.
 

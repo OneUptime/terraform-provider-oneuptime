@@ -46,6 +46,7 @@ data "oneuptime_threat_intel_feed" "by_id" {
 - `next_page_token` (String) Resume token for a poll that ended mid-pagination on a server that sends no X-TAXII-Date-Added-Last header. Cleared once the collection drains or the cursor advances.
 - `poll_interval_in_minutes` (Number) How often the collection is polled for new indicators.
 - `should_create_alert` (Boolean) Whether indicator matches open OneUptime alerts.
+- `should_create_case` (Boolean) Whether matches open security cases (or join the open case about the same entity), where the security team works them and playbooks respond.
 - `should_create_incident` (Boolean) Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per feed.
 - `should_write_detection_finding` (Boolean) Whether matches also write a Detection Finding security event back into the events table.
 

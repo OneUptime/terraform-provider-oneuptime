@@ -16,6 +16,7 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberdefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -48,6 +49,7 @@ type SecurityEventConnectionResourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     PollIntervalInMinutes types.Number `tfsdk:"poll_interval_in_minutes"`
     AlertingOnly types.Bool `tfsdk:"alerting_only"`
+    CaseMinimumSeverity types.String `tfsdk:"case_minimum_severity"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     LastSuccessfulPollAt RFC3339Value `tfsdk:"last_successful_poll_at"`
@@ -151,6 +153,15 @@ func (r *SecurityEventConnectionResource) schemaDefinition() schema.Schema {
                 Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "case_minimum_severity": schema.StringAttribute{
+                MarkdownDescription: "Imported alerts at or above this severity (Low, Medium, High or Critical) open security cases. Empty imports them as events only.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("High"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -278,6 +289,9 @@ func (r *SecurityEventConnectionResource) Create(ctx context.Context, req resour
     if !data.AlertingOnly.IsNull() && !data.AlertingOnly.IsUnknown() {
         requestDataMap["alertingOnly"] = data.AlertingOnly.ValueBool()
     }
+    if !data.CaseMinimumSeverity.IsNull() && !data.CaseMinimumSeverity.IsUnknown() {
+        requestDataMap["caseMinimumSeverity"] = data.CaseMinimumSeverity.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/security-event-connection", securityEventConnectionRequest)
@@ -331,6 +345,7 @@ func (r *SecurityEventConnectionResource) Create(ctx context.Context, req resour
         "isEnabled": true,
         "pollIntervalInMinutes": true,
         "alertingOnly": true,
+        "caseMinimumSeverity": true,
         "createdAt": true,
         "updatedAt": true,
         "lastSuccessfulPollAt": true,
@@ -537,6 +552,43 @@ func (r *SecurityEventConnectionResource) Create(ctx context.Context, req resour
     data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, dataMap["pollIntervalInMinutes"])
     if val, ok := dataMap["alertingOnly"].(bool); ok {
         data.AlertingOnly = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["caseMinimumSeverity"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+        } else {
+            data.CaseMinimumSeverity = types.StringNull()
+        }
+    } else if val, ok := dataMap["caseMinimumSeverity"].(string); ok {
+        data.CaseMinimumSeverity = types.StringValue(val)
+    } else {
+        data.CaseMinimumSeverity = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -779,6 +831,7 @@ func (r *SecurityEventConnectionResource) Read(ctx context.Context, req resource
         "isEnabled": true,
         "pollIntervalInMinutes": true,
         "alertingOnly": true,
+        "caseMinimumSeverity": true,
         "createdAt": true,
         "updatedAt": true,
         "lastSuccessfulPollAt": true,
@@ -986,6 +1039,43 @@ func (r *SecurityEventConnectionResource) Read(ctx context.Context, req resource
     data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, dataMap["pollIntervalInMinutes"])
     if val, ok := dataMap["alertingOnly"].(bool); ok {
         data.AlertingOnly = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["caseMinimumSeverity"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+        } else {
+            data.CaseMinimumSeverity = types.StringNull()
+        }
+    } else if val, ok := dataMap["caseMinimumSeverity"].(string); ok {
+        data.CaseMinimumSeverity = types.StringValue(val)
+    } else {
+        data.CaseMinimumSeverity = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1264,6 +1354,9 @@ func (r *SecurityEventConnectionResource) Update(ctx context.Context, req resour
     if !data.AlertingOnly.IsUnknown() && !state.AlertingOnly.IsUnknown() && !data.AlertingOnly.Equal(state.AlertingOnly) {
         requestDataMap["alertingOnly"] = data.AlertingOnly.ValueBool()
     }
+    if !data.CaseMinimumSeverity.IsUnknown() && !state.CaseMinimumSeverity.IsUnknown() && !data.CaseMinimumSeverity.Equal(state.CaseMinimumSeverity) {
+        requestDataMap["caseMinimumSeverity"] = data.CaseMinimumSeverity.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1295,6 +1388,7 @@ func (r *SecurityEventConnectionResource) Update(ctx context.Context, req resour
         "isEnabled": true,
         "pollIntervalInMinutes": true,
         "alertingOnly": true,
+        "caseMinimumSeverity": true,
         "createdAt": true,
         "updatedAt": true,
         "lastSuccessfulPollAt": true,
@@ -1496,6 +1590,43 @@ func (r *SecurityEventConnectionResource) Update(ctx context.Context, req resour
     data.PollIntervalInMinutes = numberFromAPI(data.PollIntervalInMinutes, dataMap["pollIntervalInMinutes"])
     if val, ok := dataMap["alertingOnly"].(bool); ok {
         data.AlertingOnly = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["caseMinimumSeverity"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+        } else {
+            data.CaseMinimumSeverity = types.StringNull()
+        }
+    } else if val, ok := dataMap["caseMinimumSeverity"].(string); ok {
+        data.CaseMinimumSeverity = types.StringValue(val)
+    } else {
+        data.CaseMinimumSeverity = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1771,6 +1902,9 @@ func (r *SecurityEventConnectionResource) keepPlannedValues(data *SecurityEventC
     }
     if config.AlertingOnly.IsNull() && !plan.AlertingOnly.IsUnknown() {
         data.AlertingOnly = plan.AlertingOnly
+    }
+    if config.CaseMinimumSeverity.IsNull() && !plan.CaseMinimumSeverity.IsUnknown() {
+        data.CaseMinimumSeverity = plan.CaseMinimumSeverity
     }
 }
 

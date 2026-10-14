@@ -40,6 +40,7 @@ resource "oneuptime_threat_intel_feed" "example" {
 - `minimum_confidence` (Number) Skip indicators whose STIX confidence is below this (0-100). 0 ingests everything; indicators that carry no confidence always pass. Defaults to `0`.
 - `poll_interval_in_minutes` (Number) How often the collection is polled for new indicators. Defaults to `60`.
 - `should_create_alert` (Boolean) Whether indicator matches open OneUptime alerts. Defaults to `true`.
+- `should_create_case` (Boolean) Whether matches open security cases (or join the open case about the same entity), where the security team works them and playbooks respond. Defaults to `true`.
 - `should_create_incident` (Boolean) Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per feed. Defaults to `false`.
 - `should_write_detection_finding` (Boolean) Whether matches also write a Detection Finding security event back into the events table. Defaults to `true`.
 

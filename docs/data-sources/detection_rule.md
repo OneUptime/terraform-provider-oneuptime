@@ -41,6 +41,7 @@ data "oneuptime_detection_rule" "by_id" {
 - `match_count_threshold` (Number) Fire only when a group's count — distinct values when a distinct count field is set, matching events otherwise — reaches this number within one evaluation window. 1 fires on any match.
 - `name` (String) Friendly name for this detection rule.
 - `should_create_alert` (Boolean) Whether matches open OneUptime alerts.
+- `should_create_case` (Boolean) Whether matches open security cases (or join the open case about the same entity), where the security team works them and playbooks respond.
 - `should_create_incident` (Boolean) Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per rule.
 - `should_write_detection_finding` (Boolean) Whether matches also write a Detection Finding security event back into the events table.
 - `sigma_rule_yaml` (String) The Sigma rule to evaluate, in YAML. detection selections and condition are compiled to a ClickHouse query over security events.
