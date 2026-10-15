@@ -39,6 +39,14 @@ type RunbookDataSourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Steps types.String `tfsdk:"steps"`
     Labels types.Set `tfsdk:"labels"`
+    IsScheduleEnabled types.Bool `tfsdk:"is_schedule_enabled"`
+    ScheduleCron types.String `tfsdk:"schedule_cron"`
+    ScheduleTimezone types.String `tfsdk:"schedule_timezone"`
+    ScheduleOverlapPolicy types.String `tfsdk:"schedule_overlap_policy"`
+    ScheduleMissedRunPolicy types.String `tfsdk:"schedule_missed_run_policy"`
+    ScheduleNextRunAt types.String `tfsdk:"schedule_next_run_at"`
+    ScheduleQueuedRunAt types.String `tfsdk:"schedule_queued_run_at"`
+    IsWebhookEnabled types.Bool `tfsdk:"is_webhook_enabled"`
 }
 
 func (d *RunbookDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -101,6 +109,44 @@ func (d *RunbookDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "is_schedule_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether the runbook runs on its schedule (Schedule Cron, read in Schedule Time Zone). Turning it on takes permission to run the runbook as well as to edit it.",
+                Optional: true,
+                Computed: true,
+            },
+            "schedule_cron": schema.StringAttribute{
+                MarkdownDescription: "When the runbook runs on its schedule: a five-field cron expression (minute, hour, day of month, month, day of week), read on the wall clock of Schedule Time Zone. Runbooks run at most once a minute.",
+                Optional: true,
+                Computed: true,
+            },
+            "schedule_timezone": schema.StringAttribute{
+                MarkdownDescription: "The IANA time zone the schedule is read in, such as Europe/London or America/New_York. A 09:00 schedule runs at 09:00 there all year, also after the clocks change for daylight saving time. Left out, it is UTC.",
+                Optional: true,
+                Computed: true,
+            },
+            "schedule_overlap_policy": schema.StringAttribute{
+                MarkdownDescription: "What a scheduled time does while a run of the runbook is still queued, running or waiting for someone: \"Skip\" (the default) starts nothing for that time, \"RunAfter\" starts one run as soon as the current run ends.",
+                Optional: true,
+                Computed: true,
+            },
+            "schedule_missed_run_policy": schema.StringAttribute{
+                MarkdownDescription: "What happens to scheduled times OneUptime could not start a run at, because it was down: \"RunOnce\" (the default) starts one run when it is back, \"Skip\" starts none.",
+                Optional: true,
+                Computed: true,
+            },
+            "schedule_next_run_at": schema.StringAttribute{
+                MarkdownDescription: "When the runbook's schedule starts its next run. Worked out by OneUptime; empty while the schedule is off.",
+                Computed: true,
+            },
+            "schedule_queued_run_at": schema.StringAttribute{
+                MarkdownDescription: "The scheduled time a run is waiting for the current run to end for, when \"If a Run Is Still Going\" is \"RunAfter\". Set and cleared by OneUptime.",
+                Computed: true,
+            },
+            "is_webhook_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether a POST request to the runbook's webhook URL starts a run. The URL holds a secret key OneUptime generates when this is first turned on, shown on the runbook's Triggers page to people who may edit and run the runbook. Turning it on takes permission to run the runbook as well as to edit it.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -160,6 +206,30 @@ func (d *RunbookDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["isEnabled"] = data.IsEnabled.ValueBool()
         filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
     }
+    if !data.IsScheduleEnabled.IsNull() && !data.IsScheduleEnabled.IsUnknown() {
+        filters["isScheduleEnabled"] = data.IsScheduleEnabled.ValueBool()
+        filterNames = append(filterNames, "is_schedule_enabled = "+fmt.Sprintf("%t", data.IsScheduleEnabled.ValueBool()))
+    }
+    if !data.ScheduleCron.IsNull() && !data.ScheduleCron.IsUnknown() {
+        filters["scheduleCron"] = data.ScheduleCron.ValueString()
+        filterNames = append(filterNames, "schedule_cron = "+fmt.Sprintf("%q", data.ScheduleCron.ValueString()))
+    }
+    if !data.ScheduleTimezone.IsNull() && !data.ScheduleTimezone.IsUnknown() {
+        filters["scheduleTimezone"] = data.ScheduleTimezone.ValueString()
+        filterNames = append(filterNames, "schedule_timezone = "+fmt.Sprintf("%q", data.ScheduleTimezone.ValueString()))
+    }
+    if !data.ScheduleOverlapPolicy.IsNull() && !data.ScheduleOverlapPolicy.IsUnknown() {
+        filters["scheduleOverlapPolicy"] = data.ScheduleOverlapPolicy.ValueString()
+        filterNames = append(filterNames, "schedule_overlap_policy = "+fmt.Sprintf("%q", data.ScheduleOverlapPolicy.ValueString()))
+    }
+    if !data.ScheduleMissedRunPolicy.IsNull() && !data.ScheduleMissedRunPolicy.IsUnknown() {
+        filters["scheduleMissedRunPolicy"] = data.ScheduleMissedRunPolicy.ValueString()
+        filterNames = append(filterNames, "schedule_missed_run_policy = "+fmt.Sprintf("%q", data.ScheduleMissedRunPolicy.ValueString()))
+    }
+    if !data.IsWebhookEnabled.IsNull() && !data.IsWebhookEnabled.IsUnknown() {
+        filters["isWebhookEnabled"] = data.IsWebhookEnabled.ValueBool()
+        filterNames = append(filterNames, "is_webhook_enabled = "+fmt.Sprintf("%t", data.IsWebhookEnabled.ValueBool()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -187,6 +257,14 @@ func (d *RunbookDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "isEnabled": true,
         "steps": true,
         "labels": true,
+        "isScheduleEnabled": true,
+        "scheduleCron": true,
+        "scheduleTimezone": true,
+        "scheduleOverlapPolicy": true,
+        "scheduleMissedRunPolicy": true,
+        "scheduleNextRunAt": true,
+        "scheduleQueuedRunAt": true,
+        "isWebhookEnabled": true,
         "_id": true,
     }
 
@@ -429,6 +507,118 @@ func (d *RunbookDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.Labels = types.SetValueMust(types.StringType, setItems)
     } else {
         data.Labels = types.SetNull(types.StringType)
+    }
+    if val, ok := item["isScheduleEnabled"].(bool); ok {
+        data.IsScheduleEnabled = types.BoolValue(val)
+    } else {
+        data.IsScheduleEnabled = types.BoolNull()
+    }
+    if obj, ok := item["scheduleCron"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ScheduleCron = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleCron = types.StringNull()
+        }
+    } else if val, ok := item["scheduleCron"].(string); ok {
+        data.ScheduleCron = types.StringValue(val)
+    } else {
+        data.ScheduleCron = types.StringNull()
+    }
+    if obj, ok := item["scheduleTimezone"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleTimezone = types.StringNull()
+        }
+    } else if val, ok := item["scheduleTimezone"].(string); ok {
+        data.ScheduleTimezone = types.StringValue(val)
+    } else {
+        data.ScheduleTimezone = types.StringNull()
+    }
+    if obj, ok := item["scheduleOverlapPolicy"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleOverlapPolicy = types.StringNull()
+        }
+    } else if val, ok := item["scheduleOverlapPolicy"].(string); ok {
+        data.ScheduleOverlapPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleOverlapPolicy = types.StringNull()
+    }
+    if obj, ok := item["scheduleMissedRunPolicy"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleMissedRunPolicy = types.StringNull()
+        }
+    } else if val, ok := item["scheduleMissedRunPolicy"].(string); ok {
+        data.ScheduleMissedRunPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleMissedRunPolicy = types.StringNull()
+    }
+    if obj, ok := item["scheduleNextRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleNextRunAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ScheduleNextRunAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ScheduleNextRunAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ScheduleNextRunAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleNextRunAt = types.StringNull()
+        }
+    } else if val, ok := item["scheduleNextRunAt"].(string); ok {
+        data.ScheduleNextRunAt = types.StringValue(val)
+    } else {
+        data.ScheduleNextRunAt = types.StringNull()
+    }
+    if obj, ok := item["scheduleQueuedRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleQueuedRunAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ScheduleQueuedRunAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ScheduleQueuedRunAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ScheduleQueuedRunAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleQueuedRunAt = types.StringNull()
+        }
+    } else if val, ok := item["scheduleQueuedRunAt"].(string); ok {
+        data.ScheduleQueuedRunAt = types.StringValue(val)
+    } else {
+        data.ScheduleQueuedRunAt = types.StringNull()
+    }
+    if val, ok := item["isWebhookEnabled"].(bool); ok {
+        data.IsWebhookEnabled = types.BoolValue(val)
+    } else {
+        data.IsWebhookEnabled = types.BoolNull()
     }
 
     // Write logs using the tflog package

@@ -46,10 +46,18 @@ type RunbookResourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Steps JSONSubsetValue `tfsdk:"steps"`
     Labels types.Set `tfsdk:"labels"`
+    IsScheduleEnabled types.Bool `tfsdk:"is_schedule_enabled"`
+    ScheduleCron types.String `tfsdk:"schedule_cron"`
+    ScheduleTimezone types.String `tfsdk:"schedule_timezone"`
+    ScheduleOverlapPolicy types.String `tfsdk:"schedule_overlap_policy"`
+    ScheduleMissedRunPolicy types.String `tfsdk:"schedule_missed_run_policy"`
+    IsWebhookEnabled types.Bool `tfsdk:"is_webhook_enabled"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    ScheduleNextRunAt RFC3339Value `tfsdk:"schedule_next_run_at"`
+    ScheduleQueuedRunAt RFC3339Value `tfsdk:"schedule_queued_run_at"`
 }
 
 func (r *RunbookResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -121,6 +129,56 @@ func (r *RunbookResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_schedule_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether the runbook runs on its schedule (Schedule Cron, read in Schedule Time Zone). Turning it on takes permission to run the runbook as well as to edit it.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "schedule_cron": schema.StringAttribute{
+                MarkdownDescription: "When the runbook runs on its schedule: a five-field cron expression (minute, hour, day of month, month, day of week), read on the wall clock of Schedule Time Zone. Runbooks run at most once a minute.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "schedule_timezone": schema.StringAttribute{
+                MarkdownDescription: "The IANA time zone the schedule is read in, such as Europe/London or America/New_York. A 09:00 schedule runs at 09:00 there all year, also after the clocks change for daylight saving time. Left out, it is UTC.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "schedule_overlap_policy": schema.StringAttribute{
+                MarkdownDescription: "What a scheduled time does while a run of the runbook is still queued, running or waiting for someone: \"Skip\" (the default) starts nothing for that time, \"RunAfter\" starts one run as soon as the current run ends.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "schedule_missed_run_policy": schema.StringAttribute{
+                MarkdownDescription: "What happens to scheduled times OneUptime could not start a run at, because it was down: \"RunOnce\" (the default) starts one run when it is back, \"Skip\" starts none.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_webhook_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether a POST request to the runbook's webhook URL starts a run. The URL holds a secret key OneUptime generates when this is first turned on, shown on the runbook's Triggers page to people who may edit and run the runbook. Turning it on takes permission to run the runbook as well as to edit it.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -144,6 +202,16 @@ func (r *RunbookResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "schedule_next_run_at": schema.StringAttribute{
+                MarkdownDescription: "When the runbook's schedule starts its next run. Worked out by OneUptime; empty while the schedule is off.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "schedule_queued_run_at": schema.StringAttribute{
+                MarkdownDescription: "The scheduled time a run is waiting for the current run to end for, when \"If a Run Is Still Going\" is \"RunAfter\". Set and cleared by OneUptime.",
+                CustomType: RFC3339Type{},
+                Computed: true,
             },
         },
     }
@@ -213,6 +281,24 @@ func (r *RunbookResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
+    if !data.IsScheduleEnabled.IsNull() && !data.IsScheduleEnabled.IsUnknown() {
+        requestDataMap["isScheduleEnabled"] = data.IsScheduleEnabled.ValueBool()
+    }
+    if !data.ScheduleCron.IsNull() && !data.ScheduleCron.IsUnknown() {
+        requestDataMap["scheduleCron"] = data.ScheduleCron.ValueString()
+    }
+    if !data.ScheduleTimezone.IsNull() && !data.ScheduleTimezone.IsUnknown() {
+        requestDataMap["scheduleTimezone"] = data.ScheduleTimezone.ValueString()
+    }
+    if !data.ScheduleOverlapPolicy.IsNull() && !data.ScheduleOverlapPolicy.IsUnknown() {
+        requestDataMap["scheduleOverlapPolicy"] = data.ScheduleOverlapPolicy.ValueString()
+    }
+    if !data.ScheduleMissedRunPolicy.IsNull() && !data.ScheduleMissedRunPolicy.IsUnknown() {
+        requestDataMap["scheduleMissedRunPolicy"] = data.ScheduleMissedRunPolicy.ValueString()
+    }
+    if !data.IsWebhookEnabled.IsNull() && !data.IsWebhookEnabled.IsUnknown() {
+        requestDataMap["isWebhookEnabled"] = data.IsWebhookEnabled.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/runbook", runbookRequest)
@@ -264,10 +350,18 @@ func (r *RunbookResource) Create(ctx context.Context, req resource.CreateRequest
         "isEnabled": true,
         "steps": true,
         "labels": true,
+        "isScheduleEnabled": true,
+        "scheduleCron": true,
+        "scheduleTimezone": true,
+        "scheduleOverlapPolicy": true,
+        "scheduleMissedRunPolicy": true,
+        "isWebhookEnabled": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "createdByUserId": true,
+        "scheduleNextRunAt": true,
+        "scheduleQueuedRunAt": true,
         "_id": true,
     }
 
@@ -457,6 +551,160 @@ func (r *RunbookResource) Create(ctx context.Context, req resource.CreateRequest
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["isScheduleEnabled"].(bool); ok {
+        data.IsScheduleEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["scheduleCron"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleCron = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleCron = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleCron"].(string); ok {
+        data.ScheduleCron = types.StringValue(val)
+    } else {
+        data.ScheduleCron = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleTimezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleTimezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleTimezone"].(string); ok {
+        data.ScheduleTimezone = types.StringValue(val)
+    } else {
+        data.ScheduleTimezone = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleOverlapPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleOverlapPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleOverlapPolicy"].(string); ok {
+        data.ScheduleOverlapPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleOverlapPolicy = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleMissedRunPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleMissedRunPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleMissedRunPolicy"].(string); ok {
+        data.ScheduleMissedRunPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleMissedRunPolicy = types.StringNull()
+    }
+    if val, ok := dataMap["isWebhookEnabled"].(bool); ok {
+        data.IsWebhookEnabled = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -553,6 +801,28 @@ func (r *RunbookResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["scheduleNextRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleNextRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleNextRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleNextRunAt"].(string); ok && val != "" {
+        data.ScheduleNextRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleNextRunAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["scheduleQueuedRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleQueuedRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleQueuedRunAt"].(string); ok && val != "" {
+        data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleQueuedRunAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -589,10 +859,18 @@ func (r *RunbookResource) Read(ctx context.Context, req resource.ReadRequest, re
         "isEnabled": true,
         "steps": true,
         "labels": true,
+        "isScheduleEnabled": true,
+        "scheduleCron": true,
+        "scheduleTimezone": true,
+        "scheduleOverlapPolicy": true,
+        "scheduleMissedRunPolicy": true,
+        "isWebhookEnabled": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "createdByUserId": true,
+        "scheduleNextRunAt": true,
+        "scheduleQueuedRunAt": true,
         "_id": true,
     }
 
@@ -783,6 +1061,160 @@ func (r *RunbookResource) Read(ctx context.Context, req resource.ReadRequest, re
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["isScheduleEnabled"].(bool); ok {
+        data.IsScheduleEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["scheduleCron"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleCron = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleCron = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleCron"].(string); ok {
+        data.ScheduleCron = types.StringValue(val)
+    } else {
+        data.ScheduleCron = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleTimezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleTimezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleTimezone"].(string); ok {
+        data.ScheduleTimezone = types.StringValue(val)
+    } else {
+        data.ScheduleTimezone = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleOverlapPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleOverlapPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleOverlapPolicy"].(string); ok {
+        data.ScheduleOverlapPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleOverlapPolicy = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleMissedRunPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleMissedRunPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleMissedRunPolicy"].(string); ok {
+        data.ScheduleMissedRunPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleMissedRunPolicy = types.StringNull()
+    }
+    if val, ok := dataMap["isWebhookEnabled"].(bool); ok {
+        data.IsWebhookEnabled = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -879,6 +1311,28 @@ func (r *RunbookResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["scheduleNextRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleNextRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleNextRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleNextRunAt"].(string); ok && val != "" {
+        data.ScheduleNextRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleNextRunAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["scheduleQueuedRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleQueuedRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleQueuedRunAt"].(string); ok && val != "" {
+        data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleQueuedRunAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -942,6 +1396,24 @@ func (r *RunbookResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
+    if !data.IsScheduleEnabled.IsUnknown() && !state.IsScheduleEnabled.IsUnknown() && !data.IsScheduleEnabled.Equal(state.IsScheduleEnabled) {
+        requestDataMap["isScheduleEnabled"] = data.IsScheduleEnabled.ValueBool()
+    }
+    if !data.ScheduleCron.IsUnknown() && !state.ScheduleCron.IsUnknown() && !data.ScheduleCron.Equal(state.ScheduleCron) {
+        requestDataMap["scheduleCron"] = data.ScheduleCron.ValueString()
+    }
+    if !data.ScheduleTimezone.IsUnknown() && !state.ScheduleTimezone.IsUnknown() && !data.ScheduleTimezone.Equal(state.ScheduleTimezone) {
+        requestDataMap["scheduleTimezone"] = data.ScheduleTimezone.ValueString()
+    }
+    if !data.ScheduleOverlapPolicy.IsUnknown() && !state.ScheduleOverlapPolicy.IsUnknown() && !data.ScheduleOverlapPolicy.Equal(state.ScheduleOverlapPolicy) {
+        requestDataMap["scheduleOverlapPolicy"] = data.ScheduleOverlapPolicy.ValueString()
+    }
+    if !data.ScheduleMissedRunPolicy.IsUnknown() && !state.ScheduleMissedRunPolicy.IsUnknown() && !data.ScheduleMissedRunPolicy.Equal(state.ScheduleMissedRunPolicy) {
+        requestDataMap["scheduleMissedRunPolicy"] = data.ScheduleMissedRunPolicy.ValueString()
+    }
+    if !data.IsWebhookEnabled.IsUnknown() && !state.IsWebhookEnabled.IsUnknown() && !data.IsWebhookEnabled.Equal(state.IsWebhookEnabled) {
+        requestDataMap["isWebhookEnabled"] = data.IsWebhookEnabled.ValueBool()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -971,10 +1443,18 @@ func (r *RunbookResource) Update(ctx context.Context, req resource.UpdateRequest
         "isEnabled": true,
         "steps": true,
         "labels": true,
+        "isScheduleEnabled": true,
+        "scheduleCron": true,
+        "scheduleTimezone": true,
+        "scheduleOverlapPolicy": true,
+        "scheduleMissedRunPolicy": true,
+        "isWebhookEnabled": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "createdByUserId": true,
+        "scheduleNextRunAt": true,
+        "scheduleQueuedRunAt": true,
         "_id": true,
     }
 
@@ -1159,6 +1639,160 @@ func (r *RunbookResource) Update(ctx context.Context, req resource.UpdateRequest
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["isScheduleEnabled"].(bool); ok {
+        data.IsScheduleEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["scheduleCron"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleCron = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleCron = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleCron"].(string); ok {
+        data.ScheduleCron = types.StringValue(val)
+    } else {
+        data.ScheduleCron = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleTimezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleTimezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleTimezone"].(string); ok {
+        data.ScheduleTimezone = types.StringValue(val)
+    } else {
+        data.ScheduleTimezone = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleOverlapPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleOverlapPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleOverlapPolicy"].(string); ok {
+        data.ScheduleOverlapPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleOverlapPolicy = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleMissedRunPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleMissedRunPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleMissedRunPolicy"].(string); ok {
+        data.ScheduleMissedRunPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleMissedRunPolicy = types.StringNull()
+    }
+    if val, ok := dataMap["isWebhookEnabled"].(bool); ok {
+        data.IsWebhookEnabled = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1255,6 +1889,28 @@ func (r *RunbookResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["scheduleNextRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleNextRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleNextRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleNextRunAt"].(string); ok && val != "" {
+        data.ScheduleNextRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleNextRunAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["scheduleQueuedRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleQueuedRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleQueuedRunAt"].(string); ok && val != "" {
+        data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleQueuedRunAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1323,6 +1979,24 @@ func (r *RunbookResource) keepPlannedValues(data *RunbookResourceModel, plan *Ru
     }
     if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
         data.Labels = plan.Labels
+    }
+    if config.IsScheduleEnabled.IsNull() && !plan.IsScheduleEnabled.IsUnknown() {
+        data.IsScheduleEnabled = plan.IsScheduleEnabled
+    }
+    if config.ScheduleCron.IsNull() && !plan.ScheduleCron.IsUnknown() {
+        data.ScheduleCron = plan.ScheduleCron
+    }
+    if config.ScheduleTimezone.IsNull() && !plan.ScheduleTimezone.IsUnknown() {
+        data.ScheduleTimezone = plan.ScheduleTimezone
+    }
+    if config.ScheduleOverlapPolicy.IsNull() && !plan.ScheduleOverlapPolicy.IsUnknown() {
+        data.ScheduleOverlapPolicy = plan.ScheduleOverlapPolicy
+    }
+    if config.ScheduleMissedRunPolicy.IsNull() && !plan.ScheduleMissedRunPolicy.IsUnknown() {
+        data.ScheduleMissedRunPolicy = plan.ScheduleMissedRunPolicy
+    }
+    if config.IsWebhookEnabled.IsNull() && !plan.IsWebhookEnabled.IsUnknown() {
+        data.IsWebhookEnabled = plan.IsWebhookEnabled
     }
 }
 

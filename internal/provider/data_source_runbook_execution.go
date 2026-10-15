@@ -38,6 +38,9 @@ type RunbookExecutionDataSourceModel struct {
     AlertId types.String `tfsdk:"alert_id"`
     ScheduledMaintenanceId types.String `tfsdk:"scheduled_maintenance_id"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
+    TriggerType types.String `tfsdk:"trigger_type"`
+    TriggerDetails types.String `tfsdk:"trigger_details"`
+    Inputs types.String `tfsdk:"inputs"`
     StartedAt types.String `tfsdk:"started_at"`
     CompletedAt types.String `tfsdk:"completed_at"`
     FailureReason types.String `tfsdk:"failure_reason"`
@@ -106,6 +109,19 @@ func (d *RunbookExecutionDataSource) Schema(ctx context.Context, req datasource.
             "triggered_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the User who triggered this runbook execution. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
+                Computed: true,
+            },
+            "trigger_type": schema.StringAttribute{
+                MarkdownDescription: "What started this run: \"Manual\" (a person, or the API), \"Rule\" (a runbook rule), \"AutoRemediation\", \"AI\" (OneUptime AI), \"Schedule\" (the runbook's schedule) or \"Webhook\" (a call to the runbook's webhook URL). Empty for runs started before it was recorded.",
+                Optional: true,
+                Computed: true,
+            },
+            "trigger_details": schema.StringAttribute{
+                MarkdownDescription: "More about what started this run: for a scheduled run, the time it was due (scheduledFor) and whether it made up for times OneUptime missed (isCatchUp) or waited for the run before it (waitedForPreviousRun); for a webhook call, the address it came from (callerIp). A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "inputs": schema.StringAttribute{
+                MarkdownDescription: "The values this run was started with: the JSON body of the webhook call that started it. Steps read them as data - Bash as ONEUPTIME_INPUT_<NAME> environment variables, JavaScript as args.inputs - never as script text. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
@@ -188,6 +204,10 @@ func (d *RunbookExecutionDataSource) Read(ctx context.Context, req datasource.Re
         filters["triggeredByUserId"] = data.TriggeredByUserId.ValueString()
         filterNames = append(filterNames, "triggered_by_user_id = "+fmt.Sprintf("%q", data.TriggeredByUserId.ValueString()))
     }
+    if !data.TriggerType.IsNull() && !data.TriggerType.IsUnknown() {
+        filters["triggerType"] = data.TriggerType.ValueString()
+        filterNames = append(filterNames, "trigger_type = "+fmt.Sprintf("%q", data.TriggerType.ValueString()))
+    }
     if !data.FailureReason.IsNull() && !data.FailureReason.IsUnknown() {
         filters["failureReason"] = data.FailureReason.ValueString()
         filterNames = append(filterNames, "failure_reason = "+fmt.Sprintf("%q", data.FailureReason.ValueString()))
@@ -220,6 +240,9 @@ func (d *RunbookExecutionDataSource) Read(ctx context.Context, req datasource.Re
         "alertId": true,
         "scheduledMaintenanceId": true,
         "triggeredByUserId": true,
+        "triggerType": true,
+        "triggerDetails": true,
+        "inputs": true,
         "startedAt": true,
         "completedAt": true,
         "failureReason": true,
@@ -487,6 +510,57 @@ func (d *RunbookExecutionDataSource) Read(ctx context.Context, req datasource.Re
         data.TriggeredByUserId = types.StringValue(val)
     } else {
         data.TriggeredByUserId = types.StringNull()
+    }
+    if obj, ok := item["triggerType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TriggerType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TriggerType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TriggerType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TriggerType = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggerType = types.StringNull()
+        }
+    } else if val, ok := item["triggerType"].(string); ok {
+        data.TriggerType = types.StringValue(val)
+    } else {
+        data.TriggerType = types.StringNull()
+    }
+    if obj, ok := item["triggerDetails"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TriggerDetails = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TriggerDetails = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TriggerDetails = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TriggerDetails = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggerDetails = types.StringNull()
+        }
+    } else if val, ok := item["triggerDetails"].(string); ok {
+        data.TriggerDetails = types.StringValue(val)
+    } else {
+        data.TriggerDetails = types.StringNull()
+    }
+    if obj, ok := item["inputs"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Inputs = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Inputs = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Inputs = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Inputs = types.StringValue(string(jsonBytes))
+        } else {
+            data.Inputs = types.StringNull()
+        }
+    } else if val, ok := item["inputs"].(string); ok {
+        data.Inputs = types.StringValue(val)
+    } else {
+        data.Inputs = types.StringNull()
     }
     if obj, ok := item["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

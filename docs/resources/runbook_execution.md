@@ -39,8 +39,11 @@ resource "oneuptime_runbook_execution" "example" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `id` (String) Unique identifier for the resource.
+- `inputs` (String) The values this run was started with: the JSON body of the webhook call that started it. Steps read them as data - Bash as ONEUPTIME_INPUT_<NAME> environment variables, JavaScript as args.inputs - never as script text. A JSON value: write it with `jsonencode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `status` (String) Current status of this runbook execution.
+- `trigger_details` (String) More about what started this run: for a scheduled run, the time it was due (scheduledFor) and whether it made up for times OneUptime missed (isCatchUp) or waited for the run before it (waitedForPreviousRun); for a webhook call, the address it came from (callerIp). A JSON value: write it with `jsonencode()`.
+- `trigger_type` (String) What started this run: "Manual" (a person, or the API), "Rule" (a runbook rule), "AutoRemediation", "AI" (OneUptime AI), "Schedule" (the runbook's schedule) or "Webhook" (a call to the runbook's webhook URL). Empty for runs started before it was recorded.
 - `triggered_by_user_id` (String) ID of the User who triggered this runbook execution. The ID of a `oneuptime_user` (see the data source).
 - `updated_at` (String) Date and Time when the object was updated.
 

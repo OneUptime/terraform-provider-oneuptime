@@ -39,6 +39,7 @@ type NetworkDeviceAutoImportRuleDataSourceModel struct {
     SysDescrPattern types.String `tfsdk:"sys_descr_pattern"`
     SysObjectIdPattern types.String `tfsdk:"sys_object_id_pattern"`
     IncludePingOnlyHosts types.Bool `tfsdk:"include_ping_only_hosts"`
+    PollingIntervalInMinutes types.Number `tfsdk:"polling_interval_in_minutes"`
     IsExclusion types.Bool `tfsdk:"is_exclusion"`
     MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
     OidTemplateId types.String `tfsdk:"oid_template_id"`
@@ -112,6 +113,11 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Schema(ctx context.Context, req 
             },
             "include_ping_only_hosts": schema.BoolAttribute{
                 MarkdownDescription: "Also import hosts that answered ping but not SNMP. Off by default: a wrong SNMP credential makes every host on a subnet report as ping-only, and this rule would then import all of them as half-identified devices.",
+                Optional: true,
+                Computed: true,
+            },
+            "polling_interval_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How often the scan's probe polls each device this rule imports, in minutes: 1, 2, 5, 10, 15, 30 or 60. The probe pings every device and walks the ones that answered SNMP. Leave it empty for the devices' default, every 5 minutes. The same choice as Check every when importing from Review Results.",
                 Optional: true,
                 Computed: true,
             },
@@ -206,6 +212,10 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         filters["includePingOnlyHosts"] = data.IncludePingOnlyHosts.ValueBool()
         filterNames = append(filterNames, "include_ping_only_hosts = "+fmt.Sprintf("%t", data.IncludePingOnlyHosts.ValueBool()))
     }
+    if !data.PollingIntervalInMinutes.IsNull() && !data.PollingIntervalInMinutes.IsUnknown() {
+        filters["pollingIntervalInMinutes"] = lookupNumber(data.PollingIntervalInMinutes)
+        filterNames = append(filterNames, "polling_interval_in_minutes = "+data.PollingIntervalInMinutes.ValueBigFloat().String())
+    }
     if !data.IsExclusion.IsNull() && !data.IsExclusion.IsUnknown() {
         filters["isExclusion"] = data.IsExclusion.ValueBool()
         filterNames = append(filterNames, "is_exclusion = "+fmt.Sprintf("%t", data.IsExclusion.ValueBool()))
@@ -251,6 +261,7 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         "sysDescrPattern": true,
         "sysObjectIdPattern": true,
         "includePingOnlyHosts": true,
+        "pollingIntervalInMinutes": true,
         "isExclusion": true,
         "monitorTemplateId": true,
         "oidTemplateId": true,
@@ -513,6 +524,7 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
     } else {
         data.IncludePingOnlyHosts = types.BoolNull()
     }
+    data.PollingIntervalInMinutes = numberFromAPI(data.PollingIntervalInMinutes, item["pollingIntervalInMinutes"])
     if val, ok := item["isExclusion"].(bool); ok {
         data.IsExclusion = types.BoolValue(val)
     } else {

@@ -18,6 +18,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
@@ -47,6 +48,7 @@ type NetworkDeviceAutoImportRuleResourceModel struct {
     SysDescrPattern types.String `tfsdk:"sys_descr_pattern"`
     SysObjectIdPattern types.String `tfsdk:"sys_object_id_pattern"`
     IncludePingOnlyHosts types.Bool `tfsdk:"include_ping_only_hosts"`
+    PollingIntervalInMinutes types.Number `tfsdk:"polling_interval_in_minutes"`
     IsExclusion types.Bool `tfsdk:"is_exclusion"`
     MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
     OidTemplateId types.String `tfsdk:"oid_template_id"`
@@ -154,6 +156,14 @@ func (r *NetworkDeviceAutoImportRuleResource) schemaDefinition() schema.Schema {
                 Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "polling_interval_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How often the scan's probe polls each device this rule imports, in minutes: 1, 2, 5, 10, 15, 30 or 60. The probe pings every device and walks the ones that answered SNMP. Leave it empty for the devices' default, every 5 minutes. The same choice as Check every when importing from Review Results.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "is_exclusion": schema.BoolAttribute{
@@ -281,6 +291,9 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
     if !data.IncludePingOnlyHosts.IsNull() && !data.IncludePingOnlyHosts.IsUnknown() {
         requestDataMap["includePingOnlyHosts"] = data.IncludePingOnlyHosts.ValueBool()
     }
+    if !data.PollingIntervalInMinutes.IsNull() && !data.PollingIntervalInMinutes.IsUnknown() {
+        requestDataMap["pollingIntervalInMinutes"] = r.bigFloatToFloat64(data.PollingIntervalInMinutes.ValueBigFloat())
+    }
     if !data.IsExclusion.IsNull() && !data.IsExclusion.IsUnknown() {
         requestDataMap["isExclusion"] = data.IsExclusion.ValueBool()
     }
@@ -345,6 +358,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
         "sysDescrPattern": true,
         "sysObjectIdPattern": true,
         "includePingOnlyHosts": true,
+        "pollingIntervalInMinutes": true,
         "isExclusion": true,
         "monitorTemplateId": true,
         "oidTemplateId": true,
@@ -659,6 +673,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
     if val, ok := dataMap["includePingOnlyHosts"].(bool); ok {
         data.IncludePingOnlyHosts = types.BoolValue(val)
     }
+    data.PollingIntervalInMinutes = numberFromAPI(data.PollingIntervalInMinutes, dataMap["pollingIntervalInMinutes"])
     if val, ok := dataMap["isExclusion"].(bool); ok {
         data.IsExclusion = types.BoolValue(val)
     }
@@ -835,6 +850,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
         "sysDescrPattern": true,
         "sysObjectIdPattern": true,
         "includePingOnlyHosts": true,
+        "pollingIntervalInMinutes": true,
         "isExclusion": true,
         "monitorTemplateId": true,
         "oidTemplateId": true,
@@ -1150,6 +1166,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
     if val, ok := dataMap["includePingOnlyHosts"].(bool); ok {
         data.IncludePingOnlyHosts = types.BoolValue(val)
     }
+    data.PollingIntervalInMinutes = numberFromAPI(data.PollingIntervalInMinutes, dataMap["pollingIntervalInMinutes"])
     if val, ok := dataMap["isExclusion"].(bool); ok {
         data.IsExclusion = types.BoolValue(val)
     }
@@ -1361,6 +1378,9 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
     if !data.IncludePingOnlyHosts.IsUnknown() && !state.IncludePingOnlyHosts.IsUnknown() && !data.IncludePingOnlyHosts.Equal(state.IncludePingOnlyHosts) {
         requestDataMap["includePingOnlyHosts"] = data.IncludePingOnlyHosts.ValueBool()
     }
+    if !data.PollingIntervalInMinutes.IsUnknown() && !state.PollingIntervalInMinutes.IsUnknown() && !data.PollingIntervalInMinutes.Equal(state.PollingIntervalInMinutes) {
+        requestDataMap["pollingIntervalInMinutes"] = r.bigFloatToFloat64(data.PollingIntervalInMinutes.ValueBigFloat())
+    }
     if !data.IsExclusion.IsUnknown() && !state.IsExclusion.IsUnknown() && !data.IsExclusion.Equal(state.IsExclusion) {
         requestDataMap["isExclusion"] = data.IsExclusion.ValueBool()
     }
@@ -1403,6 +1423,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
         "sysDescrPattern": true,
         "sysObjectIdPattern": true,
         "includePingOnlyHosts": true,
+        "pollingIntervalInMinutes": true,
         "isExclusion": true,
         "monitorTemplateId": true,
         "oidTemplateId": true,
@@ -1712,6 +1733,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
     if val, ok := dataMap["includePingOnlyHosts"].(bool); ok {
         data.IncludePingOnlyHosts = types.BoolValue(val)
     }
+    data.PollingIntervalInMinutes = numberFromAPI(data.PollingIntervalInMinutes, dataMap["pollingIntervalInMinutes"])
     if val, ok := dataMap["isExclusion"].(bool); ok {
         data.IsExclusion = types.BoolValue(val)
     }
@@ -1928,6 +1950,9 @@ func (r *NetworkDeviceAutoImportRuleResource) keepPlannedValues(data *NetworkDev
     }
     if config.IncludePingOnlyHosts.IsNull() && !plan.IncludePingOnlyHosts.IsUnknown() {
         data.IncludePingOnlyHosts = plan.IncludePingOnlyHosts
+    }
+    if config.PollingIntervalInMinutes.IsNull() && !plan.PollingIntervalInMinutes.IsUnknown() {
+        data.PollingIntervalInMinutes = plan.PollingIntervalInMinutes
     }
     if config.IsExclusion.IsNull() && !plan.IsExclusion.IsUnknown() {
         data.IsExclusion = plan.IsExclusion

@@ -38,6 +38,7 @@ data "oneuptime_network_device_auto_import_rule" "by_id" {
 - `monitor_template_id` (String) ID of the optional Network Device monitor template to apply to devices imported by this rule. The ID of a `oneuptime_monitor_template`.
 - `name` (String) Name of this network device auto import rule.
 - `oid_template_id` (String) ID of the optional OID Collection Template to link to devices imported by this rule. The ID of a `oneuptime_oid_collection_template`.
+- `polling_interval_in_minutes` (Number) How often the scan's probe polls each device this rule imports, in minutes: 1, 2, 5, 10, 15, 30 or 60. The probe pings every device and walks the ones that answered SNMP. Leave it empty for the devices' default, every 5 minutes. The same choice as Check every when importing from Review Results.
 - `sys_descr_pattern` (String) Regex or * wildcard pattern (case-insensitive) matched against the discovered host's SNMP sysDescr. Leave empty to match any description.
 - `sys_name_pattern` (String) Regex or * wildcard pattern (case-insensitive) matched against the discovered host's SNMP sysName. Leave empty to match any name.
 - `sys_object_id_pattern` (String) An OID prefix (1.3.6.1.4.1.9) or a '*' wildcard OID pattern with literal dots (1.3.6.1.4.1.9.* for Cisco) matched against the discovered host's SNMP sysObjectID — the vendor's registered enterprise OID. Not regex: dots match dots, so 1.3.6.1.4.1.9.* can never match enterprise 94. Leave empty to match any vendor. Only hosts reported by probes new enough to carry sysObjectID can match.
