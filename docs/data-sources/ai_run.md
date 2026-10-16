@@ -36,6 +36,7 @@ data "oneuptime_ai_run" "by_id" {
 - `code_fix_task_type` (String) For CodeFix runs: which task recipe this run executes (fix the exception, write a regression test, ...). Null means FixException — rows created before task recipes existed.
 - `conversation_id` (String) ID of the conversation this run belongs to. The ID of a `oneuptime_ai_conversation`.
 - `error_message` (String) Error message if the run failed.
+- `follow_up_for_alert_id` (String) For a follow-up check of an incident: the alert that opened on the incident's linked infrastructure after its first investigation and made OneUptime AI check it again.
 - `human_verdict` (String) For investigation runs: the one-click human verdict on the posted analysis (Confirmed or Rejected). Null until a user weighs in.
 - `human_verdict_by_user_id` (String) The user who recorded (or last changed) the human verdict.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.

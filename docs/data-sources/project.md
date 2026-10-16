@@ -51,6 +51,7 @@ data "oneuptime_project" "by_id" {
 - `auto_recharge_ai_when_current_balance_falls_in_usd` (Number) Auto recharge is triggered when current balance falls to this amount in USD for AI services.
 - `auto_recharge_sms_or_call_by_balance_in_usd` (Number) Auto recharge amount in USD for SMS, Call, and WhatsApp.
 - `auto_recharge_sms_or_call_when_current_balance_falls_in_usd` (Number) Auto recharge is triggered when current balance falls to this amount in USD for SMS, Call, and WhatsApp.
+- `billing_marketplace` (String) The cloud marketplace that bills this project (AWS, Azure or GoogleCloud). Empty when the project is billed by a card on file.
 - `business_details` (String) Business legal name, address and any tax information to appear on invoices.
 - `business_details_country` (String) Two-letter ISO country code for billing address (e.g., US, GB, DE).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).

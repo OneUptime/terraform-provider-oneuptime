@@ -39,6 +39,7 @@ type AiRunDataSourceModel struct {
     ConversationId types.String `tfsdk:"conversation_id"`
     TriggeredByIncidentId types.String `tfsdk:"triggered_by_incident_id"`
     TriggeredByAlertId types.String `tfsdk:"triggered_by_alert_id"`
+    FollowUpForAlertId types.String `tfsdk:"follow_up_for_alert_id"`
     TriggeredByTelemetryExceptionId types.String `tfsdk:"triggered_by_telemetry_exception_id"`
     TriggeredByAiInsightId types.String `tfsdk:"triggered_by_ai_insight_id"`
     TriggeredByAutoRemediationSuggestionId types.String `tfsdk:"triggered_by_auto_remediation_suggestion_id"`
@@ -130,6 +131,11 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             },
             "triggered_by_alert_id": schema.StringAttribute{
                 MarkdownDescription: "The alert that triggered this run (for autonomous investigations).",
+                Optional: true,
+                Computed: true,
+            },
+            "follow_up_for_alert_id": schema.StringAttribute{
+                MarkdownDescription: "For a follow-up check of an incident: the alert that opened on the incident's linked infrastructure after its first investigation and made OneUptime AI check it again.",
                 Optional: true,
                 Computed: true,
             },
@@ -307,6 +313,10 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         filters["triggeredByAlertId"] = data.TriggeredByAlertId.ValueString()
         filterNames = append(filterNames, "triggered_by_alert_id = "+fmt.Sprintf("%q", data.TriggeredByAlertId.ValueString()))
     }
+    if !data.FollowUpForAlertId.IsNull() && !data.FollowUpForAlertId.IsUnknown() {
+        filters["followUpForAlertId"] = data.FollowUpForAlertId.ValueString()
+        filterNames = append(filterNames, "follow_up_for_alert_id = "+fmt.Sprintf("%q", data.FollowUpForAlertId.ValueString()))
+    }
     if !data.TriggeredByTelemetryExceptionId.IsNull() && !data.TriggeredByTelemetryExceptionId.IsUnknown() {
         filters["triggeredByTelemetryExceptionId"] = data.TriggeredByTelemetryExceptionId.ValueString()
         filterNames = append(filterNames, "triggered_by_telemetry_exception_id = "+fmt.Sprintf("%q", data.TriggeredByTelemetryExceptionId.ValueString()))
@@ -396,6 +406,7 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "conversationId": true,
         "triggeredByIncidentId": true,
         "triggeredByAlertId": true,
+        "followUpForAlertId": true,
         "triggeredByTelemetryExceptionId": true,
         "triggeredByAiInsightId": true,
         "triggeredByAutoRemediationSuggestionId": true,
@@ -682,6 +693,23 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.TriggeredByAlertId = types.StringValue(val)
     } else {
         data.TriggeredByAlertId = types.StringNull()
+    }
+    if obj, ok := item["followUpForAlertId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FollowUpForAlertId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FollowUpForAlertId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FollowUpForAlertId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FollowUpForAlertId = types.StringValue(string(jsonBytes))
+        } else {
+            data.FollowUpForAlertId = types.StringNull()
+        }
+    } else if val, ok := item["followUpForAlertId"].(string); ok {
+        data.FollowUpForAlertId = types.StringValue(val)
+    } else {
+        data.FollowUpForAlertId = types.StringNull()
     }
     if obj, ok := item["triggeredByTelemetryExceptionId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

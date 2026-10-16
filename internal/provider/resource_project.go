@@ -132,6 +132,7 @@ type ProjectResourceModel struct {
     DataResidency types.String `tfsdk:"data_residency"`
     ResellerId types.String `tfsdk:"reseller_id"`
     ResellerPlanId types.String `tfsdk:"reseller_plan_id"`
+    BillingMarketplace types.String `tfsdk:"billing_marketplace"`
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
 }
@@ -867,6 +868,10 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "ID of your OneUptime Reseller Plan in which this object belongs.",
                 Computed: true,
             },
+            "billing_marketplace": schema.StringAttribute{
+                MarkdownDescription: "The cloud marketplace that bills this project (AWS, Azure or GoogleCloud). Empty when the project is billed by a card on file.",
+                Computed: true,
+            },
             "let_customer_support_access_project": schema.BoolAttribute{
                 MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes.",
                 Computed: true,
@@ -1174,6 +1179,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "dataResidency": true,
         "resellerId": true,
         "resellerPlanId": true,
+        "billingMarketplace": true,
         "letCustomerSupportAccessProject": true,
         "gitHubAppInstallationId": true,
         "_id": true,
@@ -2358,6 +2364,43 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.ResellerPlanId = types.StringNull()
     }
+    if obj, ok := dataMap["billingMarketplace"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BillingMarketplace = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.BillingMarketplace = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.BillingMarketplace = types.StringValue(string(jsonBytes))
+            } else {
+                data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.BillingMarketplace = types.StringValue(string(jsonBytes))
+            } else {
+                data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.BillingMarketplace = types.StringValue(string(jsonBytes))
+        } else {
+            data.BillingMarketplace = types.StringNull()
+        }
+    } else if val, ok := dataMap["billingMarketplace"].(string); ok {
+        data.BillingMarketplace = types.StringValue(val)
+    } else {
+        data.BillingMarketplace = types.StringNull()
+    }
     if val, ok := dataMap["letCustomerSupportAccessProject"].(bool); ok {
         data.LetCustomerSupportAccessProject = types.BoolValue(val)
     }
@@ -2518,6 +2561,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "dataResidency": true,
         "resellerId": true,
         "resellerPlanId": true,
+        "billingMarketplace": true,
         "letCustomerSupportAccessProject": true,
         "gitHubAppInstallationId": true,
         "_id": true,
@@ -3703,6 +3747,43 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.ResellerPlanId = types.StringNull()
     }
+    if obj, ok := dataMap["billingMarketplace"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BillingMarketplace = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.BillingMarketplace = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.BillingMarketplace = types.StringValue(string(jsonBytes))
+            } else {
+                data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.BillingMarketplace = types.StringValue(string(jsonBytes))
+            } else {
+                data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.BillingMarketplace = types.StringValue(string(jsonBytes))
+        } else {
+            data.BillingMarketplace = types.StringNull()
+        }
+    } else if val, ok := dataMap["billingMarketplace"].(string); ok {
+        data.BillingMarketplace = types.StringValue(val)
+    } else {
+        data.BillingMarketplace = types.StringNull()
+    }
     if val, ok := dataMap["letCustomerSupportAccessProject"].(bool); ok {
         data.LetCustomerSupportAccessProject = types.BoolValue(val)
     }
@@ -4122,6 +4203,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "dataResidency": true,
         "resellerId": true,
         "resellerPlanId": true,
+        "billingMarketplace": true,
         "letCustomerSupportAccessProject": true,
         "gitHubAppInstallationId": true,
         "_id": true,
@@ -5300,6 +5382,43 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.ResellerPlanId = types.StringValue(val)
     } else {
         data.ResellerPlanId = types.StringNull()
+    }
+    if obj, ok := dataMap["billingMarketplace"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BillingMarketplace = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.BillingMarketplace = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.BillingMarketplace = types.StringValue(string(jsonBytes))
+            } else {
+                data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.BillingMarketplace = types.StringValue(string(jsonBytes))
+            } else {
+                data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.BillingMarketplace = types.StringValue(string(jsonBytes))
+        } else {
+            data.BillingMarketplace = types.StringNull()
+        }
+    } else if val, ok := dataMap["billingMarketplace"].(string); ok {
+        data.BillingMarketplace = types.StringValue(val)
+    } else {
+        data.BillingMarketplace = types.StringNull()
     }
     if val, ok := dataMap["letCustomerSupportAccessProject"].(bool); ok {
         data.LetCustomerSupportAccessProject = types.BoolValue(val)

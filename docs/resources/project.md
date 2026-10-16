@@ -103,6 +103,7 @@ resource "oneuptime_project" "example" {
 ### Read-Only
 
 - `ai_current_balance_in_usd_cents` (Number) Balance in USD for AI services.
+- `billing_marketplace` (String) The cloud marketplace that bills this project (AWS, Azure or GoogleCloud). Empty when the project is billed by a card on file.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `data_residency` (String) Where this project's data is hosted. Set by OneUptime staff on OneUptime Cloud.

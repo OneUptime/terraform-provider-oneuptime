@@ -108,6 +108,7 @@ type ProjectDataSourceModel struct {
     DataResidency types.String `tfsdk:"data_residency"`
     ResellerId types.String `tfsdk:"reseller_id"`
     ResellerPlanId types.String `tfsdk:"reseller_plan_id"`
+    BillingMarketplace types.String `tfsdk:"billing_marketplace"`
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
@@ -537,6 +538,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "billing_marketplace": schema.StringAttribute{
+                MarkdownDescription: "The cloud marketplace that bills this project (AWS, Azure or GoogleCloud). Empty when the project is billed by a card on file.",
+                Optional: true,
+                Computed: true,
+            },
             "let_customer_support_access_project": schema.BoolAttribute{
                 MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes.",
                 Optional: true,
@@ -941,6 +947,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["resellerPlanId"] = data.ResellerPlanId.ValueString()
         filterNames = append(filterNames, "reseller_plan_id = "+fmt.Sprintf("%q", data.ResellerPlanId.ValueString()))
     }
+    if !data.BillingMarketplace.IsNull() && !data.BillingMarketplace.IsUnknown() {
+        filters["billingMarketplace"] = data.BillingMarketplace.ValueString()
+        filterNames = append(filterNames, "billing_marketplace = "+fmt.Sprintf("%q", data.BillingMarketplace.ValueString()))
+    }
     if !data.LetCustomerSupportAccessProject.IsNull() && !data.LetCustomerSupportAccessProject.IsUnknown() {
         filters["letCustomerSupportAccessProject"] = data.LetCustomerSupportAccessProject.ValueBool()
         filterNames = append(filterNames, "let_customer_support_access_project = "+fmt.Sprintf("%t", data.LetCustomerSupportAccessProject.ValueBool()))
@@ -1075,6 +1085,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "dataResidency": true,
         "resellerId": true,
         "resellerPlanId": true,
+        "billingMarketplace": true,
         "letCustomerSupportAccessProject": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "gitHubAppInstallationId": true,
@@ -1792,6 +1803,23 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.ResellerPlanId = types.StringValue(val)
     } else {
         data.ResellerPlanId = types.StringNull()
+    }
+    if obj, ok := item["billingMarketplace"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BillingMarketplace = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.BillingMarketplace = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.BillingMarketplace = types.StringValue(string(jsonBytes))
+        } else {
+            data.BillingMarketplace = types.StringNull()
+        }
+    } else if val, ok := item["billingMarketplace"].(string); ok {
+        data.BillingMarketplace = types.StringValue(val)
+    } else {
+        data.BillingMarketplace = types.StringNull()
     }
     if val, ok := item["letCustomerSupportAccessProject"].(bool); ok {
         data.LetCustomerSupportAccessProject = types.BoolValue(val)
