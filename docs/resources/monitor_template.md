@@ -116,6 +116,7 @@ Optional:
 - `incidents` (Attributes List) Incident templates created when this criteria matches and `create_incidents` is true. Omit instead of passing an empty list. (see [below for nested schema](#nestedatt--monitor_steps--criteria--incidents))
 - `is_enabled` (Boolean) Whether this criteria is evaluated. Defaults to true server-side.
 - `monitor_status_id` (String) ID of the monitor status (e.g. Operational, Offline) to set when this criteria matches.
+- `open_for_every_email` (Boolean) Incoming Email monitors only: every email that matches opens an incident (and an alert) of its own, instead of one at a time. A reply is added as a note to what its email opened, and the same email delivered twice opens one. Defaults to false server-side.
 
 <a id="nestedatt--monitor_steps--criteria--filters"></a>
 ### Nested Schema for `monitor_steps.criteria.filters`
