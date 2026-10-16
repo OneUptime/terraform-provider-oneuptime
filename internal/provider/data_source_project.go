@@ -53,6 +53,11 @@ type ProjectDataSourceModel struct {
     ScheduledMaintenanceNumberPrefix types.String `tfsdk:"scheduled_maintenance_number_prefix"`
     IncidentEpisodeNumberPrefix types.String `tfsdk:"incident_episode_number_prefix"`
     AlertEpisodeNumberPrefix types.String `tfsdk:"alert_episode_number_prefix"`
+    IncidentNumbersStartAt types.Number `tfsdk:"incident_numbers_start_at"`
+    IncidentEpisodeNumbersStartAt types.Number `tfsdk:"incident_episode_numbers_start_at"`
+    AlertNumbersStartAt types.Number `tfsdk:"alert_numbers_start_at"`
+    AlertEpisodeNumbersStartAt types.Number `tfsdk:"alert_episode_numbers_start_at"`
+    ScheduledMaintenanceNumbersStartAt types.Number `tfsdk:"scheduled_maintenance_numbers_start_at"`
     SmsOrCallCurrentBalanceInUsdCents types.Number `tfsdk:"sms_or_call_current_balance_in_usd_cents"`
     AutoRechargeSmsOrCallByBalanceInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_by_balance_in_usd"`
     AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_when_current_balance_falls_in_usd"`
@@ -254,6 +259,31 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "alert_episode_number_prefix": schema.StringAttribute{
                 MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber alert episodes that already exist.",
+                Optional: true,
+                Computed: true,
+            },
+            "incident_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where incident numbers start: the next incident gets this number if no incident has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every incident number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing incidents keep their numbers.",
+                Optional: true,
+                Computed: true,
+            },
+            "incident_episode_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where incident episode numbers start: the next incident episode gets this number if no incident episode has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every incident episode number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing incident episodes keep their numbers.",
+                Optional: true,
+                Computed: true,
+            },
+            "alert_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where alert numbers start: the next alert gets this number if no alert has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every alert number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing alerts keep their numbers.",
+                Optional: true,
+                Computed: true,
+            },
+            "alert_episode_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where alert episode numbers start: the next alert episode gets this number if no alert episode has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every alert episode number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing alert episodes keep their numbers.",
+                Optional: true,
+                Computed: true,
+            },
+            "scheduled_maintenance_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where scheduled maintenance event numbers start: the next scheduled maintenance event gets this number if no scheduled maintenance event has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every scheduled maintenance event number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing scheduled maintenance events keep their numbers.",
                 Optional: true,
                 Computed: true,
             },
@@ -691,6 +721,26 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["alertEpisodeNumberPrefix"] = data.AlertEpisodeNumberPrefix.ValueString()
         filterNames = append(filterNames, "alert_episode_number_prefix = "+fmt.Sprintf("%q", data.AlertEpisodeNumberPrefix.ValueString()))
     }
+    if !data.IncidentNumbersStartAt.IsNull() && !data.IncidentNumbersStartAt.IsUnknown() {
+        filters["incidentNumbersStartAt"] = lookupNumber(data.IncidentNumbersStartAt)
+        filterNames = append(filterNames, "incident_numbers_start_at = "+data.IncidentNumbersStartAt.ValueBigFloat().String())
+    }
+    if !data.IncidentEpisodeNumbersStartAt.IsNull() && !data.IncidentEpisodeNumbersStartAt.IsUnknown() {
+        filters["incidentEpisodeNumbersStartAt"] = lookupNumber(data.IncidentEpisodeNumbersStartAt)
+        filterNames = append(filterNames, "incident_episode_numbers_start_at = "+data.IncidentEpisodeNumbersStartAt.ValueBigFloat().String())
+    }
+    if !data.AlertNumbersStartAt.IsNull() && !data.AlertNumbersStartAt.IsUnknown() {
+        filters["alertNumbersStartAt"] = lookupNumber(data.AlertNumbersStartAt)
+        filterNames = append(filterNames, "alert_numbers_start_at = "+data.AlertNumbersStartAt.ValueBigFloat().String())
+    }
+    if !data.AlertEpisodeNumbersStartAt.IsNull() && !data.AlertEpisodeNumbersStartAt.IsUnknown() {
+        filters["alertEpisodeNumbersStartAt"] = lookupNumber(data.AlertEpisodeNumbersStartAt)
+        filterNames = append(filterNames, "alert_episode_numbers_start_at = "+data.AlertEpisodeNumbersStartAt.ValueBigFloat().String())
+    }
+    if !data.ScheduledMaintenanceNumbersStartAt.IsNull() && !data.ScheduledMaintenanceNumbersStartAt.IsUnknown() {
+        filters["scheduledMaintenanceNumbersStartAt"] = lookupNumber(data.ScheduledMaintenanceNumbersStartAt)
+        filterNames = append(filterNames, "scheduled_maintenance_numbers_start_at = "+data.ScheduledMaintenanceNumbersStartAt.ValueBigFloat().String())
+    }
     if !data.SmsOrCallCurrentBalanceInUsdCents.IsNull() && !data.SmsOrCallCurrentBalanceInUsdCents.IsUnknown() {
         filters["smsOrCallCurrentBalanceInUSDCents"] = lookupNumber(data.SmsOrCallCurrentBalanceInUsdCents)
         filterNames = append(filterNames, "sms_or_call_current_balance_in_usd_cents = "+data.SmsOrCallCurrentBalanceInUsdCents.ValueBigFloat().String())
@@ -970,6 +1020,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "scheduledMaintenanceNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
+        "incidentNumbersStartAt": true,
+        "incidentEpisodeNumbersStartAt": true,
+        "alertNumbersStartAt": true,
+        "alertEpisodeNumbersStartAt": true,
+        "scheduledMaintenanceNumbersStartAt": true,
         "smsOrCallCurrentBalanceInUSDCents": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
@@ -1495,6 +1550,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
     }
+    data.IncidentNumbersStartAt = numberFromAPI(data.IncidentNumbersStartAt, item["incidentNumbersStartAt"])
+    data.IncidentEpisodeNumbersStartAt = numberFromAPI(data.IncidentEpisodeNumbersStartAt, item["incidentEpisodeNumbersStartAt"])
+    data.AlertNumbersStartAt = numberFromAPI(data.AlertNumbersStartAt, item["alertNumbersStartAt"])
+    data.AlertEpisodeNumbersStartAt = numberFromAPI(data.AlertEpisodeNumbersStartAt, item["alertEpisodeNumbersStartAt"])
+    data.ScheduledMaintenanceNumbersStartAt = numberFromAPI(data.ScheduledMaintenanceNumbersStartAt, item["scheduledMaintenanceNumbersStartAt"])
     data.SmsOrCallCurrentBalanceInUsdCents = numberFromAPI(data.SmsOrCallCurrentBalanceInUsdCents, item["smsOrCallCurrentBalanceInUSDCents"])
     data.AutoRechargeSmsOrCallByBalanceInUsd = numberFromAPI(data.AutoRechargeSmsOrCallByBalanceInUsd, item["autoRechargeSmsOrCallByBalanceInUSD"])
     data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd, item["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"])

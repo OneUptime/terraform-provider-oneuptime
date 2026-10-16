@@ -14,8 +14,10 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -38,6 +40,7 @@ type SchedulesOnCallDutyEscalationRuleResourceModel struct {
     OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
     OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
     OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
+    PageNextInRotation types.Bool `tfsdk:"page_next_in_rotation"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -91,6 +94,16 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) schemaDefinition() schema.Sc
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "page_next_in_rotation": schema.BoolAttribute{
+                MarkdownDescription: "When true, the escalation rule pages the next person in this schedule's rotation - the person after whoever is on call, passing over anyone who is away - instead of whoever is on call. Use it on the level after the one that pages the schedule, so a page nobody acknowledges goes to the backup from the same rotation.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                    boolplanmodifier.RequiresReplace(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -175,6 +188,9 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Create(ctx context.Context, 
     if !data.OnCallDutyPolicyEscalationRuleId.IsNull() && !data.OnCallDutyPolicyEscalationRuleId.IsUnknown() {
         requestDataMap["onCallDutyPolicyEscalationRuleId"] = data.OnCallDutyPolicyEscalationRuleId.ValueString()
     }
+    if !data.PageNextInRotation.IsNull() && !data.PageNextInRotation.IsUnknown() {
+        requestDataMap["pageNextInRotation"] = data.PageNextInRotation.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/on-call-duty-policy-escalation-rule-schedule", schedulesOnCallDutyEscalationRuleRequest)
@@ -224,6 +240,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Create(ctx context.Context, 
         "onCallDutyPolicyId": true,
         "onCallDutyPolicyScheduleId": true,
         "onCallDutyPolicyEscalationRuleId": true,
+        "pageNextInRotation": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -381,6 +398,9 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Create(ctx context.Context, 
     } else {
         data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
     }
+    if val, ok := dataMap["pageNextInRotation"].(bool); ok {
+        data.PageNextInRotation = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -474,6 +494,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Read(ctx context.Context, re
         "onCallDutyPolicyId": true,
         "onCallDutyPolicyScheduleId": true,
         "onCallDutyPolicyEscalationRuleId": true,
+        "pageNextInRotation": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -632,6 +653,9 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Read(ctx context.Context, re
     } else {
         data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
     }
+    if val, ok := dataMap["pageNextInRotation"].(bool); ok {
+        data.PageNextInRotation = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -760,6 +784,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Update(ctx context.Context, 
         "onCallDutyPolicyId": true,
         "onCallDutyPolicyScheduleId": true,
         "onCallDutyPolicyEscalationRuleId": true,
+        "pageNextInRotation": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -912,6 +937,9 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Update(ctx context.Context, 
     } else {
         data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
     }
+    if val, ok := dataMap["pageNextInRotation"].(bool); ok {
+        data.PageNextInRotation = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1030,6 +1058,9 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) ImportState(ctx context.Cont
 func (r *SchedulesOnCallDutyEscalationRuleResource) keepPlannedValues(data *SchedulesOnCallDutyEscalationRuleResourceModel, plan *SchedulesOnCallDutyEscalationRuleResourceModel, config *SchedulesOnCallDutyEscalationRuleResourceModel) {
     if config.OnCallDutyPolicyScheduleId.IsNull() && !plan.OnCallDutyPolicyScheduleId.IsUnknown() {
         data.OnCallDutyPolicyScheduleId = plan.OnCallDutyPolicyScheduleId
+    }
+    if config.PageNextInRotation.IsNull() && !plan.PageNextInRotation.IsUnknown() {
+        data.PageNextInRotation = plan.PageNextInRotation
     }
 }
 

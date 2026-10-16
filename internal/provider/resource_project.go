@@ -53,6 +53,11 @@ type ProjectResourceModel struct {
     ScheduledMaintenanceNumberPrefix types.String `tfsdk:"scheduled_maintenance_number_prefix"`
     IncidentEpisodeNumberPrefix types.String `tfsdk:"incident_episode_number_prefix"`
     AlertEpisodeNumberPrefix types.String `tfsdk:"alert_episode_number_prefix"`
+    IncidentNumbersStartAt types.Number `tfsdk:"incident_numbers_start_at"`
+    IncidentEpisodeNumbersStartAt types.Number `tfsdk:"incident_episode_numbers_start_at"`
+    AlertNumbersStartAt types.Number `tfsdk:"alert_numbers_start_at"`
+    AlertEpisodeNumbersStartAt types.Number `tfsdk:"alert_episode_numbers_start_at"`
+    ScheduledMaintenanceNumbersStartAt types.Number `tfsdk:"scheduled_maintenance_numbers_start_at"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     EnableAutomaticIncidentRemediation types.Bool `tfsdk:"enable_automatic_incident_remediation"`
@@ -253,6 +258,46 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where incident numbers start: the next incident gets this number if no incident has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every incident number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing incidents keep their numbers.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_episode_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where incident episode numbers start: the next incident episode gets this number if no incident episode has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every incident episode number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing incident episodes keep their numbers.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where alert numbers start: the next alert gets this number if no alert has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every alert number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing alerts keep their numbers.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_episode_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where alert episode numbers start: the next alert episode gets this number if no alert episode has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every alert episode number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing alert episodes keep their numbers.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "scheduled_maintenance_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where scheduled maintenance event numbers start: the next scheduled maintenance event gets this number if no scheduled maintenance event has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every scheduled maintenance event number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing scheduled maintenance events keep their numbers.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "enable_automatic_incident_investigation": schema.BoolAttribute{
@@ -925,6 +970,21 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.AlertEpisodeNumberPrefix.IsNull() && !data.AlertEpisodeNumberPrefix.IsUnknown() {
         requestDataMap["alertEpisodeNumberPrefix"] = data.AlertEpisodeNumberPrefix.ValueString()
     }
+    if !data.IncidentNumbersStartAt.IsNull() && !data.IncidentNumbersStartAt.IsUnknown() {
+        requestDataMap["incidentNumbersStartAt"] = r.bigFloatToFloat64(data.IncidentNumbersStartAt.ValueBigFloat())
+    }
+    if !data.IncidentEpisodeNumbersStartAt.IsNull() && !data.IncidentEpisodeNumbersStartAt.IsUnknown() {
+        requestDataMap["incidentEpisodeNumbersStartAt"] = r.bigFloatToFloat64(data.IncidentEpisodeNumbersStartAt.ValueBigFloat())
+    }
+    if !data.AlertNumbersStartAt.IsNull() && !data.AlertNumbersStartAt.IsUnknown() {
+        requestDataMap["alertNumbersStartAt"] = r.bigFloatToFloat64(data.AlertNumbersStartAt.ValueBigFloat())
+    }
+    if !data.AlertEpisodeNumbersStartAt.IsNull() && !data.AlertEpisodeNumbersStartAt.IsUnknown() {
+        requestDataMap["alertEpisodeNumbersStartAt"] = r.bigFloatToFloat64(data.AlertEpisodeNumbersStartAt.ValueBigFloat())
+    }
+    if !data.ScheduledMaintenanceNumbersStartAt.IsNull() && !data.ScheduledMaintenanceNumbersStartAt.IsUnknown() {
+        requestDataMap["scheduledMaintenanceNumbersStartAt"] = r.bigFloatToFloat64(data.ScheduledMaintenanceNumbersStartAt.ValueBigFloat())
+    }
     if !data.EnableAutomaticIncidentInvestigation.IsNull() && !data.EnableAutomaticIncidentInvestigation.IsUnknown() {
         requestDataMap["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
     }
@@ -1036,6 +1096,11 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "scheduledMaintenanceNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
+        "incidentNumbersStartAt": true,
+        "incidentEpisodeNumbersStartAt": true,
+        "alertNumbersStartAt": true,
+        "alertEpisodeNumbersStartAt": true,
+        "scheduledMaintenanceNumbersStartAt": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticIncidentRemediation": true,
@@ -1553,6 +1618,11 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
     }
+    data.IncidentNumbersStartAt = numberFromAPI(data.IncidentNumbersStartAt, dataMap["incidentNumbersStartAt"])
+    data.IncidentEpisodeNumbersStartAt = numberFromAPI(data.IncidentEpisodeNumbersStartAt, dataMap["incidentEpisodeNumbersStartAt"])
+    data.AlertNumbersStartAt = numberFromAPI(data.AlertNumbersStartAt, dataMap["alertNumbersStartAt"])
+    data.AlertEpisodeNumbersStartAt = numberFromAPI(data.AlertEpisodeNumbersStartAt, dataMap["alertEpisodeNumbersStartAt"])
+    data.ScheduledMaintenanceNumbersStartAt = numberFromAPI(data.ScheduledMaintenanceNumbersStartAt, dataMap["scheduledMaintenanceNumbersStartAt"])
     if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
     }
@@ -2370,6 +2440,11 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "scheduledMaintenanceNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
+        "incidentNumbersStartAt": true,
+        "incidentEpisodeNumbersStartAt": true,
+        "alertNumbersStartAt": true,
+        "alertEpisodeNumbersStartAt": true,
+        "scheduledMaintenanceNumbersStartAt": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticIncidentRemediation": true,
@@ -2888,6 +2963,11 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
     }
+    data.IncidentNumbersStartAt = numberFromAPI(data.IncidentNumbersStartAt, dataMap["incidentNumbersStartAt"])
+    data.IncidentEpisodeNumbersStartAt = numberFromAPI(data.IncidentEpisodeNumbersStartAt, dataMap["incidentEpisodeNumbersStartAt"])
+    data.AlertNumbersStartAt = numberFromAPI(data.AlertNumbersStartAt, dataMap["alertNumbersStartAt"])
+    data.AlertEpisodeNumbersStartAt = numberFromAPI(data.AlertEpisodeNumbersStartAt, dataMap["alertEpisodeNumbersStartAt"])
+    data.ScheduledMaintenanceNumbersStartAt = numberFromAPI(data.ScheduledMaintenanceNumbersStartAt, dataMap["scheduledMaintenanceNumbersStartAt"])
     if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
     }
@@ -3745,6 +3825,21 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.AlertEpisodeNumberPrefix.IsUnknown() && !state.AlertEpisodeNumberPrefix.IsUnknown() && !data.AlertEpisodeNumberPrefix.Equal(state.AlertEpisodeNumberPrefix) {
         requestDataMap["alertEpisodeNumberPrefix"] = data.AlertEpisodeNumberPrefix.ValueString()
     }
+    if !data.IncidentNumbersStartAt.IsUnknown() && !state.IncidentNumbersStartAt.IsUnknown() && !data.IncidentNumbersStartAt.Equal(state.IncidentNumbersStartAt) {
+        requestDataMap["incidentNumbersStartAt"] = r.bigFloatToFloat64(data.IncidentNumbersStartAt.ValueBigFloat())
+    }
+    if !data.IncidentEpisodeNumbersStartAt.IsUnknown() && !state.IncidentEpisodeNumbersStartAt.IsUnknown() && !data.IncidentEpisodeNumbersStartAt.Equal(state.IncidentEpisodeNumbersStartAt) {
+        requestDataMap["incidentEpisodeNumbersStartAt"] = r.bigFloatToFloat64(data.IncidentEpisodeNumbersStartAt.ValueBigFloat())
+    }
+    if !data.AlertNumbersStartAt.IsUnknown() && !state.AlertNumbersStartAt.IsUnknown() && !data.AlertNumbersStartAt.Equal(state.AlertNumbersStartAt) {
+        requestDataMap["alertNumbersStartAt"] = r.bigFloatToFloat64(data.AlertNumbersStartAt.ValueBigFloat())
+    }
+    if !data.AlertEpisodeNumbersStartAt.IsUnknown() && !state.AlertEpisodeNumbersStartAt.IsUnknown() && !data.AlertEpisodeNumbersStartAt.Equal(state.AlertEpisodeNumbersStartAt) {
+        requestDataMap["alertEpisodeNumbersStartAt"] = r.bigFloatToFloat64(data.AlertEpisodeNumbersStartAt.ValueBigFloat())
+    }
+    if !data.ScheduledMaintenanceNumbersStartAt.IsUnknown() && !state.ScheduledMaintenanceNumbersStartAt.IsUnknown() && !data.ScheduledMaintenanceNumbersStartAt.Equal(state.ScheduledMaintenanceNumbersStartAt) {
+        requestDataMap["scheduledMaintenanceNumbersStartAt"] = r.bigFloatToFloat64(data.ScheduledMaintenanceNumbersStartAt.ValueBigFloat())
+    }
     if !data.AutoRechargeSmsOrCallByBalanceInUsd.IsUnknown() && !state.AutoRechargeSmsOrCallByBalanceInUsd.IsUnknown() && !data.AutoRechargeSmsOrCallByBalanceInUsd.Equal(state.AutoRechargeSmsOrCallByBalanceInUsd) {
         requestDataMap["autoRechargeSmsOrCallByBalanceInUSD"] = r.bigFloatToFloat64(data.AutoRechargeSmsOrCallByBalanceInUsd.ValueBigFloat())
     }
@@ -3949,6 +4044,11 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "scheduledMaintenanceNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
+        "incidentNumbersStartAt": true,
+        "incidentEpisodeNumbersStartAt": true,
+        "alertNumbersStartAt": true,
+        "alertEpisodeNumbersStartAt": true,
+        "scheduledMaintenanceNumbersStartAt": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticIncidentRemediation": true,
@@ -4461,6 +4561,11 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
     }
+    data.IncidentNumbersStartAt = numberFromAPI(data.IncidentNumbersStartAt, dataMap["incidentNumbersStartAt"])
+    data.IncidentEpisodeNumbersStartAt = numberFromAPI(data.IncidentEpisodeNumbersStartAt, dataMap["incidentEpisodeNumbersStartAt"])
+    data.AlertNumbersStartAt = numberFromAPI(data.AlertNumbersStartAt, dataMap["alertNumbersStartAt"])
+    data.AlertEpisodeNumbersStartAt = numberFromAPI(data.AlertEpisodeNumbersStartAt, dataMap["alertEpisodeNumbersStartAt"])
+    data.ScheduledMaintenanceNumbersStartAt = numberFromAPI(data.ScheduledMaintenanceNumbersStartAt, dataMap["scheduledMaintenanceNumbersStartAt"])
     if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
     }
@@ -5325,6 +5430,21 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.AlertEpisodeNumberPrefix.IsNull() && !plan.AlertEpisodeNumberPrefix.IsUnknown() {
         data.AlertEpisodeNumberPrefix = plan.AlertEpisodeNumberPrefix
+    }
+    if config.IncidentNumbersStartAt.IsNull() && !plan.IncidentNumbersStartAt.IsUnknown() {
+        data.IncidentNumbersStartAt = plan.IncidentNumbersStartAt
+    }
+    if config.IncidentEpisodeNumbersStartAt.IsNull() && !plan.IncidentEpisodeNumbersStartAt.IsUnknown() {
+        data.IncidentEpisodeNumbersStartAt = plan.IncidentEpisodeNumbersStartAt
+    }
+    if config.AlertNumbersStartAt.IsNull() && !plan.AlertNumbersStartAt.IsUnknown() {
+        data.AlertNumbersStartAt = plan.AlertNumbersStartAt
+    }
+    if config.AlertEpisodeNumbersStartAt.IsNull() && !plan.AlertEpisodeNumbersStartAt.IsUnknown() {
+        data.AlertEpisodeNumbersStartAt = plan.AlertEpisodeNumbersStartAt
+    }
+    if config.ScheduledMaintenanceNumbersStartAt.IsNull() && !plan.ScheduledMaintenanceNumbersStartAt.IsUnknown() {
+        data.ScheduledMaintenanceNumbersStartAt = plan.ScheduledMaintenanceNumbersStartAt
     }
     if config.EnableAutomaticIncidentInvestigation.IsNull() && !plan.EnableAutomaticIncidentInvestigation.IsUnknown() {
         data.EnableAutomaticIncidentInvestigation = plan.EnableAutomaticIncidentInvestigation

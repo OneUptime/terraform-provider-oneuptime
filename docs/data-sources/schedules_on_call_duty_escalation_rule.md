@@ -33,6 +33,7 @@ data "oneuptime_schedules_on_call_duty_escalation_rule" "by_id" {
 - `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule where this user belongs. The ID of a `oneuptime_escalation_rule`.
 - `on_call_duty_policy_id` (String) ID of your On-Call Policy where this escalation rule belongs. The ID of a `oneuptime_on_call_policy`.
 - `on_call_duty_policy_schedule_id` (String) ID of the on call schedule which is in this escalation rule. The ID of a `oneuptime_on_call_policy_schedule`.
+- `page_next_in_rotation` (Boolean) When true, the escalation rule pages the next person in this schedule's rotation - the person after whoever is on call, passing over anyone who is away - instead of whoever is on call. Use it on the level after the one that pages the schedule, so a page nobody acknowledges goes to the backup from the same rotation.
 
 ### Read-Only
 

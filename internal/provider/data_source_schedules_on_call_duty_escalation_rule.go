@@ -33,6 +33,7 @@ type SchedulesOnCallDutyEscalationRuleDataSourceModel struct {
     OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
     OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
     OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
+    PageNextInRotation types.Bool `tfsdk:"page_next_in_rotation"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -74,6 +75,11 @@ func (d *SchedulesOnCallDutyEscalationRuleDataSource) Schema(ctx context.Context
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your On-Call Policy Escalation Rule where this user belongs. The ID of a `oneuptime_escalation_rule`.",
+                Optional: true,
+                Computed: true,
+            },
+            "page_next_in_rotation": schema.BoolAttribute{
+                MarkdownDescription: "When true, the escalation rule pages the next person in this schedule's rotation - the person after whoever is on call, passing over anyone who is away - instead of whoever is on call. Use it on the level after the one that pages the schedule, so a page nobody acknowledges goes to the backup from the same rotation.",
                 Optional: true,
                 Computed: true,
             },
@@ -133,6 +139,10 @@ func (d *SchedulesOnCallDutyEscalationRuleDataSource) Read(ctx context.Context, 
         filters["onCallDutyPolicyEscalationRuleId"] = data.OnCallDutyPolicyEscalationRuleId.ValueString()
         filterNames = append(filterNames, "on_call_duty_policy_escalation_rule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyEscalationRuleId.ValueString()))
     }
+    if !data.PageNextInRotation.IsNull() && !data.PageNextInRotation.IsUnknown() {
+        filters["pageNextInRotation"] = data.PageNextInRotation.ValueBool()
+        filterNames = append(filterNames, "page_next_in_rotation = "+fmt.Sprintf("%t", data.PageNextInRotation.ValueBool()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -160,6 +170,7 @@ func (d *SchedulesOnCallDutyEscalationRuleDataSource) Read(ctx context.Context, 
         "onCallDutyPolicyId": true,
         "onCallDutyPolicyScheduleId": true,
         "onCallDutyPolicyEscalationRuleId": true,
+        "pageNextInRotation": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -340,6 +351,11 @@ func (d *SchedulesOnCallDutyEscalationRuleDataSource) Read(ctx context.Context, 
         data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
     } else {
         data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
+    }
+    if val, ok := item["pageNextInRotation"].(bool); ok {
+        data.PageNextInRotation = types.BoolValue(val)
+    } else {
+        data.PageNextInRotation = types.BoolNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

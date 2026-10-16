@@ -41,6 +41,7 @@ type OnCallDutyExecutionLogTimelineDataSourceModel struct {
     AlertSentToUserId types.String `tfsdk:"alert_sent_to_user_id"`
     UserBelongsToTeamId types.String `tfsdk:"user_belongs_to_team_id"`
     OnCallDutyScheduleId types.String `tfsdk:"on_call_duty_schedule_id"`
+    IsNextInRotation types.Bool `tfsdk:"is_next_in_rotation"`
     StatusMessage types.String `tfsdk:"status_message"`
     Status types.String `tfsdk:"status"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -127,6 +128,11 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, r
             },
             "on_call_duty_schedule_id": schema.StringAttribute{
                 MarkdownDescription: "Which schedule ID did the user belong to when the alert was sent? The ID of a `oneuptime_on_call_policy_schedule`.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_next_in_rotation": schema.BoolAttribute{
+                MarkdownDescription: "True when this step paged the person because they are next in the schedule's rotation - after whoever is on call - rather than on call themselves. Paired with the step's schedule. A step with this set and nobody paged means nobody was next in the rotation.",
                 Optional: true,
                 Computed: true,
             },
@@ -242,6 +248,10 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         filters["onCallDutyScheduleId"] = data.OnCallDutyScheduleId.ValueString()
         filterNames = append(filterNames, "on_call_duty_schedule_id = "+fmt.Sprintf("%q", data.OnCallDutyScheduleId.ValueString()))
     }
+    if !data.IsNextInRotation.IsNull() && !data.IsNextInRotation.IsUnknown() {
+        filters["isNextInRotation"] = data.IsNextInRotation.ValueBool()
+        filterNames = append(filterNames, "is_next_in_rotation = "+fmt.Sprintf("%t", data.IsNextInRotation.ValueBool()))
+    }
     if !data.StatusMessage.IsNull() && !data.StatusMessage.IsUnknown() {
         filters["statusMessage"] = data.StatusMessage.ValueString()
         filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
@@ -293,6 +303,7 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         "alertSentToUserId": true,
         "userBelongsToTeamId": true,
         "onCallDutyScheduleId": true,
+        "isNextInRotation": true,
         "statusMessage": true,
         "status": true,
         "createdByUserId": true,
@@ -614,6 +625,11 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         data.OnCallDutyScheduleId = types.StringValue(val)
     } else {
         data.OnCallDutyScheduleId = types.StringNull()
+    }
+    if val, ok := item["isNextInRotation"].(bool); ok {
+        data.IsNextInRotation = types.BoolValue(val)
+    } else {
+        data.IsNextInRotation = types.BoolNull()
     }
     if obj, ok := item["statusMessage"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
