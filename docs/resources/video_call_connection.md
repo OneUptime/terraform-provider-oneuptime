@@ -28,7 +28,7 @@ resource "oneuptime_video_call_connection" "example" {
 
 ### Optional
 
-- `auth_method` (String) How this connection signs in to its provider: OAuth when someone connected it by signing in to Zoom, Google or Microsoft (Connect in Project Settings > Video Calls), AppCredentials when it uses the project's own app - a Zoom Server-to-Server OAuth app, a Google service account or a Microsoft Entra app registration. Empty for a meeting link. Fixed once created. A connection made by signing in is created by signing in, never through the API.
+- `auth_method` (String) How this connection signs in to its provider: OAuth when someone connected it by signing in to Zoom, Google or Microsoft (Connect in Project Settings > Workspace > Video Calls), AppCredentials when it uses the project's own app - a Zoom Server-to-Server OAuth app, a Google service account or a Microsoft Entra app registration. Empty for a meeting link. Fixed once created. A connection made by signing in is created by signing in, never through the API.
 - `config` (String) Provider-specific, non-secret settings such as the Zoom account and meeting host, the Google Workspace user or the Microsoft Entra tenant and organizer. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.
 - `description` (String) What this connection is for.
 - `secrets` (String, Sensitive) Provider-specific secrets (a client secret or a service account key) as a JSON object. Encrypted at rest and never returned by the API. A connection made by signing in keeps its sign-in's tokens here, which only OneUptime writes.

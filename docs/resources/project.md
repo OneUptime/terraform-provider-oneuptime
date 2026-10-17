@@ -87,6 +87,8 @@ resource "oneuptime_project" "example" {
 - `incident_numbers_start_at` (Number) Where incident numbers start: the next incident gets this number if no incident has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every incident number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing incidents keep their numbers.
 - `is_feature_flag_monitor_groups_enabled` (Boolean) Is Feature Flag Monitor Groups Enabled. Defaults to `false`.
 - `is_session_replay_allowed` (Boolean) When enabled, RUM applications in this project may record session replays if they are individually enabled too. On by default; switch it off here to stop session replay across the entire project in one place. Defaults to `true`.
+- `limit_alerts_to_one_episode` (Boolean) When enabled, an alert can be in only one alert episode: adding an alert that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Alerts that are already in several episodes stay in them. Off by default. Defaults to `false`.
+- `limit_incidents_to_one_episode` (Boolean) When enabled, an incident can be in only one incident episode: adding an incident that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Incidents that are already in several episodes stay in them. Off by default. Defaults to `false`.
 - `payment_provider_plan_id` (String)
 - `payment_provider_promo_code` (String)
 - `require_sso_for_login` (Boolean) Defaults to `false`.

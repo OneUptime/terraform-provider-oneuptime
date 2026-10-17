@@ -93,6 +93,8 @@ type ProjectResourceModel struct {
     AiDailySpendLimitInUsd types.Number `tfsdk:"ai_daily_spend_limit_in_usd"`
     AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
+    LimitIncidentsToOneEpisode types.Bool `tfsdk:"limit_incidents_to_one_episode"`
+    LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
     IncidentAiDailyAutonomousTokenLimit types.Number `tfsdk:"incident_ai_daily_autonomous_token_limit"`
@@ -605,6 +607,24 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "limit_incidents_to_one_episode": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, an incident can be in only one incident episode: adding an incident that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Incidents that are already in several episodes stay in them. Off by default.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "limit_alerts_to_one_episode": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, an alert can be in only one alert episode: adding an alert that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Alerts that are already in several episodes stay in them. Off by default.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },
@@ -1140,6 +1160,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "aiDailySpendLimitInUSD": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
+        "limitIncidentsToOneEpisode": true,
+        "limitAlertsToOneEpisode": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "incidentAiDailyAutonomousTokenLimit": true,
@@ -1750,6 +1772,12 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["resolveLinkedAlertsWhenIncidentResolved"].(bool); ok {
         data.ResolveLinkedAlertsWhenIncidentResolved = types.BoolValue(val)
+    }
+    if val, ok := dataMap["limitIncidentsToOneEpisode"].(bool); ok {
+        data.LimitIncidentsToOneEpisode = types.BoolValue(val)
+    }
+    if val, ok := dataMap["limitAlertsToOneEpisode"].(bool); ok {
+        data.LimitAlertsToOneEpisode = types.BoolValue(val)
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2522,6 +2550,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "aiDailySpendLimitInUSD": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
+        "limitIncidentsToOneEpisode": true,
+        "limitAlertsToOneEpisode": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "incidentAiDailyAutonomousTokenLimit": true,
@@ -3133,6 +3163,12 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["resolveLinkedAlertsWhenIncidentResolved"].(bool); ok {
         data.ResolveLinkedAlertsWhenIncidentResolved = types.BoolValue(val)
+    }
+    if val, ok := dataMap["limitIncidentsToOneEpisode"].(bool); ok {
+        data.LimitIncidentsToOneEpisode = types.BoolValue(val)
+    }
+    if val, ok := dataMap["limitAlertsToOneEpisode"].(bool); ok {
+        data.LimitAlertsToOneEpisode = types.BoolValue(val)
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3981,6 +4017,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.ResolveLinkedAlertsWhenIncidentResolved.IsUnknown() && !state.ResolveLinkedAlertsWhenIncidentResolved.IsUnknown() && !data.ResolveLinkedAlertsWhenIncidentResolved.Equal(state.ResolveLinkedAlertsWhenIncidentResolved) {
         requestDataMap["resolveLinkedAlertsWhenIncidentResolved"] = data.ResolveLinkedAlertsWhenIncidentResolved.ValueBool()
     }
+    if !data.LimitIncidentsToOneEpisode.IsUnknown() && !state.LimitIncidentsToOneEpisode.IsUnknown() && !data.LimitIncidentsToOneEpisode.Equal(state.LimitIncidentsToOneEpisode) {
+        requestDataMap["limitIncidentsToOneEpisode"] = data.LimitIncidentsToOneEpisode.ValueBool()
+    }
+    if !data.LimitAlertsToOneEpisode.IsUnknown() && !state.LimitAlertsToOneEpisode.IsUnknown() && !data.LimitAlertsToOneEpisode.Equal(state.LimitAlertsToOneEpisode) {
+        requestDataMap["limitAlertsToOneEpisode"] = data.LimitAlertsToOneEpisode.ValueBool()
+    }
     if !data.EnableIncidentInstrumentationFixTasks.IsUnknown() && !state.EnableIncidentInstrumentationFixTasks.IsUnknown() && !data.EnableIncidentInstrumentationFixTasks.Equal(state.EnableIncidentInstrumentationFixTasks) {
         requestDataMap["enableIncidentInstrumentationFixTasks"] = data.EnableIncidentInstrumentationFixTasks.ValueBool()
     }
@@ -4164,6 +4206,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "aiDailySpendLimitInUSD": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
+        "limitIncidentsToOneEpisode": true,
+        "limitAlertsToOneEpisode": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "incidentAiDailyAutonomousTokenLimit": true,
@@ -4769,6 +4813,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["resolveLinkedAlertsWhenIncidentResolved"].(bool); ok {
         data.ResolveLinkedAlertsWhenIncidentResolved = types.BoolValue(val)
+    }
+    if val, ok := dataMap["limitIncidentsToOneEpisode"].(bool); ok {
+        data.LimitIncidentsToOneEpisode = types.BoolValue(val)
+    }
+    if val, ok := dataMap["limitAlertsToOneEpisode"].(bool); ok {
+        data.LimitAlertsToOneEpisode = types.BoolValue(val)
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -5666,6 +5716,12 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.ResolveLinkedAlertsWhenIncidentResolved.IsNull() && !plan.ResolveLinkedAlertsWhenIncidentResolved.IsUnknown() {
         data.ResolveLinkedAlertsWhenIncidentResolved = plan.ResolveLinkedAlertsWhenIncidentResolved
+    }
+    if config.LimitIncidentsToOneEpisode.IsNull() && !plan.LimitIncidentsToOneEpisode.IsUnknown() {
+        data.LimitIncidentsToOneEpisode = plan.LimitIncidentsToOneEpisode
+    }
+    if config.LimitAlertsToOneEpisode.IsNull() && !plan.LimitAlertsToOneEpisode.IsUnknown() {
+        data.LimitAlertsToOneEpisode = plan.LimitAlertsToOneEpisode
     }
     if config.AlertInvestigationMinimumSeverityId.IsNull() && !plan.AlertInvestigationMinimumSeverityId.IsUnknown() {
         data.AlertInvestigationMinimumSeverityId = plan.AlertInvestigationMinimumSeverityId

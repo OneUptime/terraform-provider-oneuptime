@@ -80,6 +80,8 @@ type ProjectDataSourceModel struct {
     EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
     AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
+    LimitIncidentsToOneEpisode types.Bool `tfsdk:"limit_incidents_to_one_episode"`
+    LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
     EnableIncidentInstrumentationFixTasks types.Bool `tfsdk:"enable_incident_instrumentation_fix_tasks"`
     EnableAlertInstrumentationFixTasks types.Bool `tfsdk:"enable_alert_instrumentation_fix_tasks"`
     EnableAutomaticIncidentCodeFixes types.Bool `tfsdk:"enable_automatic_incident_code_fixes"`
@@ -395,6 +397,16 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "resolve_linked_alerts_when_incident_resolved": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, resolving an incident also resolves every alert linked to it, except alerts that are still linked to another incident that is not resolved yet. Alerts linked to an incident that is already resolved are resolved as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting.",
+                Optional: true,
+                Computed: true,
+            },
+            "limit_incidents_to_one_episode": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, an incident can be in only one incident episode: adding an incident that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Incidents that are already in several episodes stay in them. Off by default.",
+                Optional: true,
+                Computed: true,
+            },
+            "limit_alerts_to_one_episode": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, an alert can be in only one alert episode: adding an alert that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Alerts that are already in several episodes stay in them. Off by default.",
                 Optional: true,
                 Computed: true,
             },
@@ -835,6 +847,14 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["resolveLinkedAlertsWhenIncidentResolved"] = data.ResolveLinkedAlertsWhenIncidentResolved.ValueBool()
         filterNames = append(filterNames, "resolve_linked_alerts_when_incident_resolved = "+fmt.Sprintf("%t", data.ResolveLinkedAlertsWhenIncidentResolved.ValueBool()))
     }
+    if !data.LimitIncidentsToOneEpisode.IsNull() && !data.LimitIncidentsToOneEpisode.IsUnknown() {
+        filters["limitIncidentsToOneEpisode"] = data.LimitIncidentsToOneEpisode.ValueBool()
+        filterNames = append(filterNames, "limit_incidents_to_one_episode = "+fmt.Sprintf("%t", data.LimitIncidentsToOneEpisode.ValueBool()))
+    }
+    if !data.LimitAlertsToOneEpisode.IsNull() && !data.LimitAlertsToOneEpisode.IsUnknown() {
+        filters["limitAlertsToOneEpisode"] = data.LimitAlertsToOneEpisode.ValueBool()
+        filterNames = append(filterNames, "limit_alerts_to_one_episode = "+fmt.Sprintf("%t", data.LimitAlertsToOneEpisode.ValueBool()))
+    }
     if !data.EnableIncidentInstrumentationFixTasks.IsNull() && !data.EnableIncidentInstrumentationFixTasks.IsUnknown() {
         filters["enableIncidentInstrumentationFixTasks"] = data.EnableIncidentInstrumentationFixTasks.ValueBool()
         filterNames = append(filterNames, "enable_incident_instrumentation_fix_tasks = "+fmt.Sprintf("%t", data.EnableIncidentInstrumentationFixTasks.ValueBool()))
@@ -1057,6 +1077,8 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "enableAutomaticPostmortemDraft": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
+        "limitIncidentsToOneEpisode": true,
+        "limitAlertsToOneEpisode": true,
         "enableIncidentInstrumentationFixTasks": true,
         "enableAlertInstrumentationFixTasks": true,
         "enableAutomaticIncidentCodeFixes": true,
@@ -1643,6 +1665,16 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.ResolveLinkedAlertsWhenIncidentResolved = types.BoolValue(val)
     } else {
         data.ResolveLinkedAlertsWhenIncidentResolved = types.BoolNull()
+    }
+    if val, ok := item["limitIncidentsToOneEpisode"].(bool); ok {
+        data.LimitIncidentsToOneEpisode = types.BoolValue(val)
+    } else {
+        data.LimitIncidentsToOneEpisode = types.BoolNull()
+    }
+    if val, ok := item["limitAlertsToOneEpisode"].(bool); ok {
+        data.LimitAlertsToOneEpisode = types.BoolValue(val)
+    } else {
+        data.LimitAlertsToOneEpisode = types.BoolNull()
     }
     if val, ok := item["enableIncidentInstrumentationFixTasks"].(bool); ok {
         data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
