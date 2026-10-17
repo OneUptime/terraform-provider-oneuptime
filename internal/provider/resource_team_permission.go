@@ -50,6 +50,9 @@ type TeamPermissionResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    CustomRoleId types.String `tfsdk:"custom_role_id"`
+    TeamCustomRoleId types.String `tfsdk:"team_custom_role_id"`
+    CustomRolePermissionId types.String `tfsdk:"custom_role_permission_id"`
 }
 
 func (r *TeamPermissionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -145,6 +148,18 @@ func (r *TeamPermissionResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "custom_role_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role this permission comes from. Empty when the permission was given to the team directly. The ID of a `oneuptime_custom_role`.",
+                Computed: true,
+            },
+            "team_custom_role_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role given to the team that brought this permission. Empty when the permission was given to the team directly. The ID of a `oneuptime_team_custom_role`.",
+                Computed: true,
+            },
+            "custom_role_permission_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role's own permission this one copies. Empty when the permission was given to the team directly. The ID of a `oneuptime_custom_role_permission`.",
+                Computed: true,
             },
         },
     }
@@ -268,6 +283,9 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "customRoleId": true,
+        "teamCustomRoleId": true,
+        "customRolePermissionId": true,
         "_id": true,
     }
 
@@ -516,6 +534,117 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["customRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["customRoleId"].(string); ok {
+        data.CustomRoleId = types.StringValue(val)
+    } else {
+        data.CustomRoleId = types.StringNull()
+    }
+    if obj, ok := dataMap["teamCustomRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TeamCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TeamCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TeamCustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TeamCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TeamCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamCustomRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["teamCustomRoleId"].(string); ok {
+        data.TeamCustomRoleId = types.StringValue(val)
+    } else {
+        data.TeamCustomRoleId = types.StringNull()
+    }
+    if obj, ok := dataMap["customRolePermissionId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomRolePermissionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomRolePermissionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if val, ok := dataMap["customRolePermissionId"].(string); ok {
+        data.CustomRolePermissionId = types.StringValue(val)
+    } else {
+        data.CustomRolePermissionId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -555,6 +684,9 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "customRoleId": true,
+        "teamCustomRoleId": true,
+        "customRolePermissionId": true,
         "_id": true,
     }
 
@@ -804,6 +936,117 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["customRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["customRoleId"].(string); ok {
+        data.CustomRoleId = types.StringValue(val)
+    } else {
+        data.CustomRoleId = types.StringNull()
+    }
+    if obj, ok := dataMap["teamCustomRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TeamCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TeamCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TeamCustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TeamCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TeamCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamCustomRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["teamCustomRoleId"].(string); ok {
+        data.TeamCustomRoleId = types.StringValue(val)
+    } else {
+        data.TeamCustomRoleId = types.StringNull()
+    }
+    if obj, ok := dataMap["customRolePermissionId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomRolePermissionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomRolePermissionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if val, ok := dataMap["customRolePermissionId"].(string); ok {
+        data.CustomRolePermissionId = types.StringValue(val)
+    } else {
+        data.CustomRolePermissionId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -896,6 +1139,9 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "customRoleId": true,
+        "teamCustomRoleId": true,
+        "customRolePermissionId": true,
         "_id": true,
     }
 
@@ -1138,6 +1384,117 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["customRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["customRoleId"].(string); ok {
+        data.CustomRoleId = types.StringValue(val)
+    } else {
+        data.CustomRoleId = types.StringNull()
+    }
+    if obj, ok := dataMap["teamCustomRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TeamCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TeamCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TeamCustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TeamCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TeamCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamCustomRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["teamCustomRoleId"].(string); ok {
+        data.TeamCustomRoleId = types.StringValue(val)
+    } else {
+        data.TeamCustomRoleId = types.StringNull()
+    }
+    if obj, ok := dataMap["customRolePermissionId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomRolePermissionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomRolePermissionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if val, ok := dataMap["customRolePermissionId"].(string); ok {
+        data.CustomRolePermissionId = types.StringValue(val)
+    } else {
+        data.CustomRolePermissionId = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

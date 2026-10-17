@@ -31,8 +31,11 @@ resource "oneuptime_team_permission" "example" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `custom_role_id` (String) ID of the custom role this permission comes from. Empty when the permission was given to the team directly. The ID of a `oneuptime_custom_role`.
+- `custom_role_permission_id` (String) ID of the custom role's own permission this one copies. Empty when the permission was given to the team directly. The ID of a `oneuptime_custom_role_permission`.
 - `id` (String) Unique identifier for the resource.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `team_custom_role_id` (String) ID of the custom role given to the team that brought this permission. Empty when the permission was given to the team directly. The ID of a `oneuptime_team_custom_role`.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

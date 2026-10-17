@@ -38,6 +38,9 @@ type TeamPermissionDataSourceModel struct {
     Labels types.Set `tfsdk:"labels"`
     IsBlockPermission types.Bool `tfsdk:"is_block_permission"`
     Scope types.String `tfsdk:"scope"`
+    CustomRoleId types.String `tfsdk:"custom_role_id"`
+    TeamCustomRoleId types.String `tfsdk:"team_custom_role_id"`
+    CustomRolePermissionId types.String `tfsdk:"custom_role_permission_id"`
 }
 
 func (d *TeamPermissionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -46,7 +49,7 @@ func (d *TeamPermissionDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *TeamPermissionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Permissions for your OneUptime team Look up an existing team permission by `id`, or by any of its other arguments (`created_by_user_id`, `is_block_permission`, `scope`, ...): each one set must match, and exactly one team permission may match them all.",
+        MarkdownDescription: "Permissions for your OneUptime team Look up an existing team permission by `id`, or by any of its other arguments (`created_by_user_id`, `custom_role_id`, `custom_role_permission_id`, ...): each one set must match, and exactly one team permission may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -92,6 +95,21 @@ func (d *TeamPermissionDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "scope": schema.StringAttribute{
                 MarkdownDescription: "Scope of this permission row. One of: All, Owned, Labels. Defaults to All so new permissions apply to every resource in the project unless explicitly narrowed.",
+                Optional: true,
+                Computed: true,
+            },
+            "custom_role_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role this permission comes from. Empty when the permission was given to the team directly. The ID of a `oneuptime_custom_role`.",
+                Optional: true,
+                Computed: true,
+            },
+            "team_custom_role_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role given to the team that brought this permission. Empty when the permission was given to the team directly. The ID of a `oneuptime_team_custom_role`.",
+                Optional: true,
+                Computed: true,
+            },
+            "custom_role_permission_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role's own permission this one copies. Empty when the permission was given to the team directly. The ID of a `oneuptime_custom_role_permission`.",
                 Optional: true,
                 Computed: true,
             },
@@ -150,6 +168,18 @@ func (d *TeamPermissionDataSource) Read(ctx context.Context, req datasource.Read
         filters["scope"] = data.Scope.ValueString()
         filterNames = append(filterNames, "scope = "+fmt.Sprintf("%q", data.Scope.ValueString()))
     }
+    if !data.CustomRoleId.IsNull() && !data.CustomRoleId.IsUnknown() {
+        filters["customRoleId"] = data.CustomRoleId.ValueString()
+        filterNames = append(filterNames, "custom_role_id = "+fmt.Sprintf("%q", data.CustomRoleId.ValueString()))
+    }
+    if !data.TeamCustomRoleId.IsNull() && !data.TeamCustomRoleId.IsUnknown() {
+        filters["teamCustomRoleId"] = data.TeamCustomRoleId.ValueString()
+        filterNames = append(filterNames, "team_custom_role_id = "+fmt.Sprintf("%q", data.TeamCustomRoleId.ValueString()))
+    }
+    if !data.CustomRolePermissionId.IsNull() && !data.CustomRolePermissionId.IsUnknown() {
+        filters["customRolePermissionId"] = data.CustomRolePermissionId.ValueString()
+        filterNames = append(filterNames, "custom_role_permission_id = "+fmt.Sprintf("%q", data.CustomRolePermissionId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -176,6 +206,9 @@ func (d *TeamPermissionDataSource) Read(ctx context.Context, req datasource.Read
         "labels": true,
         "isBlockPermission": true,
         "scope": true,
+        "customRoleId": true,
+        "teamCustomRoleId": true,
+        "customRolePermissionId": true,
         "_id": true,
     }
 
@@ -401,6 +434,57 @@ func (d *TeamPermissionDataSource) Read(ctx context.Context, req datasource.Read
         data.Scope = types.StringValue(val)
     } else {
         data.Scope = types.StringNull()
+    }
+    if obj, ok := item["customRoleId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if val, ok := item["customRoleId"].(string); ok {
+        data.CustomRoleId = types.StringValue(val)
+    } else {
+        data.CustomRoleId = types.StringNull()
+    }
+    if obj, ok := item["teamCustomRoleId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TeamCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TeamCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TeamCustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamCustomRoleId = types.StringNull()
+        }
+    } else if val, ok := item["teamCustomRoleId"].(string); ok {
+        data.TeamCustomRoleId = types.StringValue(val)
+    } else {
+        data.TeamCustomRoleId = types.StringNull()
+    }
+    if obj, ok := item["customRolePermissionId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomRolePermissionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CustomRolePermissionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if val, ok := item["customRolePermissionId"].(string); ok {
+        data.CustomRolePermissionId = types.StringValue(val)
+    } else {
+        data.CustomRolePermissionId = types.StringNull()
     }
 
     // Write logs using the tflog package
