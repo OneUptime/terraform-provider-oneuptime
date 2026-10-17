@@ -47,6 +47,7 @@ type WorkflowResourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Graph JSONSubsetValue `tfsdk:"graph"`
     Labels types.Set `tfsdk:"labels"`
+    WebhookSigningSecret types.String `tfsdk:"webhook_signing_secret"`
     WebhookSecretKey types.String `tfsdk:"webhook_secret_key"`
     IncomingEmailSecretKey types.String `tfsdk:"incoming_email_secret_key"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
@@ -55,6 +56,10 @@ type WorkflowResourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
+    IsWebhookSigningSecretSet types.Bool `tfsdk:"is_webhook_signing_secret_set"`
+    LastWebhookRequestAt RFC3339Value `tfsdk:"last_webhook_request_at"`
+    LastWebhookError types.String `tfsdk:"last_webhook_error"`
+    LastWebhookErrorAt RFC3339Value `tfsdk:"last_webhook_error_at"`
 }
 
 func (r *WorkflowResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -135,6 +140,11 @@ func (r *WorkflowResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
+            "webhook_signing_secret": schema.StringAttribute{
+                MarkdownDescription: "The signing secret of a trigger that checks the signature of each request, such as the Huntress trigger's endpoint secret (whsec_...). A request that is not signed with it starts nothing. Encrypted at rest and never returned by the API.",
+                Optional: true,
+                Sensitive: true,
+            },
             "webhook_secret_key": schema.StringAttribute{
                 MarkdownDescription: "The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL.",
                 Optional: true,
@@ -182,6 +192,24 @@ func (r *WorkflowResource) schemaDefinition() schema.Schema {
             },
             "archived_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Computed: true,
+            },
+            "is_webhook_signing_secret_set": schema.BoolAttribute{
+                MarkdownDescription: "Whether a webhook signing secret is saved. A trigger that checks signatures refuses every request until it is. Set by the server from the signing secret itself.",
+                Computed: true,
+            },
+            "last_webhook_request_at": schema.StringAttribute{
+                MarkdownDescription: "When a request signed with the webhook signing secret last arrived. Empty until the sender's first one.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_webhook_error": schema.StringAttribute{
+                MarkdownDescription: "Why the last request to a trigger that checks signatures was refused, if it was. Cleared by the next request that is accepted, and by saving a new signing secret.",
+                Computed: true,
+            },
+            "last_webhook_error_at": schema.StringAttribute{
+                MarkdownDescription: "When the last webhook error happened.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
         },
@@ -255,6 +283,9 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
     if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
+    if !data.WebhookSigningSecret.IsNull() && !data.WebhookSigningSecret.IsUnknown() {
+        requestDataMap["webhookSigningSecret"] = data.WebhookSigningSecret.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/workflow", workflowRequest)
@@ -315,6 +346,10 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "isWebhookSigningSecretSet": true,
+        "lastWebhookRequestAt": true,
+        "lastWebhookError": true,
+        "lastWebhookErrorAt": true,
         "_id": true,
     }
 
@@ -725,6 +760,68 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isWebhookSigningSecretSet"].(bool); ok {
+        data.IsWebhookSigningSecretSet = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["lastWebhookRequestAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastWebhookRequestAt = NewRFC3339Value(val)
+        } else {
+            data.LastWebhookRequestAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastWebhookRequestAt"].(string); ok && val != "" {
+        data.LastWebhookRequestAt = NewRFC3339Value(val)
+    } else {
+        data.LastWebhookRequestAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastWebhookError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastWebhookError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastWebhookError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastWebhookError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastWebhookError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastWebhookError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastWebhookError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastWebhookError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastWebhookError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookError = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastWebhookError"].(string); ok {
+        data.LastWebhookError = types.StringValue(val)
+    } else {
+        data.LastWebhookError = types.StringNull()
+    }
+    if obj, ok := dataMap["lastWebhookErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastWebhookErrorAt = NewRFC3339Value(val)
+        } else {
+            data.LastWebhookErrorAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastWebhookErrorAt"].(string); ok && val != "" {
+        data.LastWebhookErrorAt = NewRFC3339Value(val)
+    } else {
+        data.LastWebhookErrorAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -770,6 +867,10 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "isWebhookSigningSecretSet": true,
+        "lastWebhookRequestAt": true,
+        "lastWebhookError": true,
+        "lastWebhookErrorAt": true,
         "_id": true,
     }
 
@@ -1181,6 +1282,68 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isWebhookSigningSecretSet"].(bool); ok {
+        data.IsWebhookSigningSecretSet = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["lastWebhookRequestAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastWebhookRequestAt = NewRFC3339Value(val)
+        } else {
+            data.LastWebhookRequestAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastWebhookRequestAt"].(string); ok && val != "" {
+        data.LastWebhookRequestAt = NewRFC3339Value(val)
+    } else {
+        data.LastWebhookRequestAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastWebhookError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastWebhookError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastWebhookError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastWebhookError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastWebhookError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastWebhookError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastWebhookError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastWebhookError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastWebhookError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookError = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastWebhookError"].(string); ok {
+        data.LastWebhookError = types.StringValue(val)
+    } else {
+        data.LastWebhookError = types.StringNull()
+    }
+    if obj, ok := dataMap["lastWebhookErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastWebhookErrorAt = NewRFC3339Value(val)
+        } else {
+            data.LastWebhookErrorAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastWebhookErrorAt"].(string); ok && val != "" {
+        data.LastWebhookErrorAt = NewRFC3339Value(val)
+    } else {
+        data.LastWebhookErrorAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1253,6 +1416,9 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.IncomingEmailSecretKey.IsUnknown() && !state.IncomingEmailSecretKey.IsUnknown() && !data.IncomingEmailSecretKey.Equal(state.IncomingEmailSecretKey) {
         requestDataMap["incomingEmailSecretKey"] = data.IncomingEmailSecretKey.ValueString()
     }
+    if !data.WebhookSigningSecret.IsUnknown() && !state.WebhookSigningSecret.IsUnknown() && !data.WebhookSigningSecret.Equal(state.WebhookSigningSecret) {
+        requestDataMap["webhookSigningSecret"] = data.WebhookSigningSecret.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1291,6 +1457,10 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "isWebhookSigningSecretSet": true,
+        "lastWebhookRequestAt": true,
+        "lastWebhookError": true,
+        "lastWebhookErrorAt": true,
         "_id": true,
     }
 
@@ -1695,6 +1865,68 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
+    }
+    if val, ok := dataMap["isWebhookSigningSecretSet"].(bool); ok {
+        data.IsWebhookSigningSecretSet = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["lastWebhookRequestAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastWebhookRequestAt = NewRFC3339Value(val)
+        } else {
+            data.LastWebhookRequestAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastWebhookRequestAt"].(string); ok && val != "" {
+        data.LastWebhookRequestAt = NewRFC3339Value(val)
+    } else {
+        data.LastWebhookRequestAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastWebhookError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastWebhookError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastWebhookError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastWebhookError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastWebhookError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastWebhookError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastWebhookError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastWebhookError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastWebhookError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookError = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastWebhookError"].(string); ok {
+        data.LastWebhookError = types.StringValue(val)
+    } else {
+        data.LastWebhookError = types.StringNull()
+    }
+    if obj, ok := dataMap["lastWebhookErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastWebhookErrorAt = NewRFC3339Value(val)
+        } else {
+            data.LastWebhookErrorAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastWebhookErrorAt"].(string); ok && val != "" {
+        data.LastWebhookErrorAt = NewRFC3339Value(val)
+    } else {
+        data.LastWebhookErrorAt = NewRFC3339Null()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

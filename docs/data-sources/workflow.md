@@ -35,6 +35,8 @@ data "oneuptime_workflow" "by_id" {
 - `incoming_email_secret_key` (String) The secret part of the Incoming Email trigger's address (workflow-<key>@<inbound email domain>). Anyone who has the address can start the workflow, so only people who can edit the workflow can read the key. Given to the workflow when its graph first has an Incoming Email trigger; set a new UUID to reset the address. Unique across all workflows.
 - `is_archived` (Boolean) Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were.
 - `is_enabled` (Boolean) Is this workflow enabled?
+- `is_webhook_signing_secret_set` (Boolean) Whether a webhook signing secret is saved. A trigger that checks signatures refuses every request until it is. Set by the server from the signing secret itself.
+- `last_webhook_error` (String) Why the last request to a trigger that checks signatures was refused, if it was. Cleared by the next request that is accepted, and by saving a new signing secret.
 - `name` (String) Any friendly name of this object.
 - `slug` (String) Friendly globally unique name for your object.
 - `webhook_secret_key` (String) The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL.
@@ -45,5 +47,7 @@ data "oneuptime_workflow" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `graph` (String) Workflow Graph in JSON. Ideally, create this via UI and not via API. A JSON value: write it with `jsonencode()`.
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `last_webhook_error_at` (String) When the last webhook error happened.
+- `last_webhook_request_at` (String) When a request signed with the webhook signing secret last arrived. Empty until the sender's first one.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

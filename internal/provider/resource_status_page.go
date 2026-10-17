@@ -88,6 +88,7 @@ type StatusPageResourceModel struct {
     OverviewPageDescription types.String `tfsdk:"overview_page_description"`
     HidePoweredByOneUptimeBranding types.Bool `tfsdk:"hide_powered_by_one_uptime_branding"`
     DefaultBarColor JSONSubsetValue `tfsdk:"default_bar_color"`
+    Theme types.String `tfsdk:"theme"`
     SubscriberTimezones JSONSubsetValue `tfsdk:"subscriber_timezones"`
     IsReportEnabled types.Bool `tfsdk:"is_report_enabled"`
     ReportStartDateTime RFC3339Value `tfsdk:"report_start_date_time"`
@@ -528,6 +529,15 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 },
                 Validators: []validator.String{
                     JSONEnvelopeValidator(),
+                },
+            },
+            "theme": schema.StringAttribute{
+                MarkdownDescription: "How the status page looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). A status page created without a theme starts with System.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("Light"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "subscriber_timezones": schema.StringAttribute{
@@ -997,6 +1007,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if parsedDefaultBarColor := r.parseJSONField(data.DefaultBarColor); parsedDefaultBarColor != nil {
         requestDataMap["defaultBarColor"] = parsedDefaultBarColor
     }
+    if !data.Theme.IsNull() && !data.Theme.IsUnknown() {
+        requestDataMap["theme"] = data.Theme.ValueString()
+    }
     if parsedSubscriberTimezones := r.parseJSONField(data.SubscriberTimezones); parsedSubscriberTimezones != nil {
         requestDataMap["subscriberTimezones"] = parsedSubscriberTimezones
     }
@@ -1165,6 +1178,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "overviewPageDescription": true,
         "hidePoweredByOneUptimeBranding": true,
         "defaultBarColor": true,
+        "theme": true,
         "subscriberTimezones": true,
         "isReportEnabled": true,
         "reportStartDateTime": true,
@@ -2109,6 +2123,43 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.DefaultBarColor = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["theme"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Theme = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Theme = types.StringValue(string(jsonBytes))
+        } else {
+            data.Theme = types.StringNull()
+        }
+    } else if val, ok := dataMap["theme"].(string); ok {
+        data.Theme = types.StringValue(val)
+    } else {
+        data.Theme = types.StringNull()
+    }
     if obj, ok := dataMap["subscriberTimezones"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2791,6 +2842,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "overviewPageDescription": true,
         "hidePoweredByOneUptimeBranding": true,
         "defaultBarColor": true,
+        "theme": true,
         "subscriberTimezones": true,
         "isReportEnabled": true,
         "reportStartDateTime": true,
@@ -3736,6 +3788,43 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.DefaultBarColor = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["theme"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Theme = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Theme = types.StringValue(string(jsonBytes))
+        } else {
+            data.Theme = types.StringNull()
+        }
+    } else if val, ok := dataMap["theme"].(string); ok {
+        data.Theme = types.StringValue(val)
+    } else {
+        data.Theme = types.StringNull()
+    }
     if obj, ok := dataMap["subscriberTimezones"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4528,6 +4617,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
             requestDataMap["defaultBarColor"] = data.DefaultBarColor.ValueString()
         }
     }
+    if !data.Theme.IsUnknown() && !state.Theme.IsUnknown() && !data.Theme.Equal(state.Theme) {
+        requestDataMap["theme"] = data.Theme.ValueString()
+    }
     if !data.SubscriberTimezones.IsUnknown() && !state.SubscriberTimezones.IsUnknown() && !data.SubscriberTimezones.Equal(state.SubscriberTimezones) {
         var subscribertimezonesData interface{}
         if err := json.Unmarshal([]byte(data.SubscriberTimezones.ValueString()), &subscribertimezonesData); err == nil {
@@ -4689,6 +4781,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "overviewPageDescription": true,
         "hidePoweredByOneUptimeBranding": true,
         "defaultBarColor": true,
+        "theme": true,
         "subscriberTimezones": true,
         "isReportEnabled": true,
         "reportStartDateTime": true,
@@ -5628,6 +5721,43 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.DefaultBarColor = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["theme"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Theme = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Theme = types.StringValue(string(jsonBytes))
+        } else {
+            data.Theme = types.StringNull()
+        }
+    } else if val, ok := dataMap["theme"].(string); ok {
+        data.Theme = types.StringValue(val)
+    } else {
+        data.Theme = types.StringNull()
+    }
     if obj, ok := dataMap["subscriberTimezones"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6420,6 +6550,9 @@ func (r *StatusPageResource) keepPlannedValues(data *StatusPageResourceModel, pl
     }
     if config.DefaultBarColor.IsNull() && !plan.DefaultBarColor.IsUnknown() {
         data.DefaultBarColor = plan.DefaultBarColor
+    }
+    if config.Theme.IsNull() && !plan.Theme.IsUnknown() {
+        data.Theme = plan.Theme
     }
     if config.SubscriberTimezones.IsNull() && !plan.SubscriberTimezones.IsUnknown() {
         data.SubscriberTimezones = plan.SubscriberTimezones

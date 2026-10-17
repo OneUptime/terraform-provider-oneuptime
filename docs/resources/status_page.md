@@ -95,6 +95,7 @@ resource "oneuptime_status_page" "example" {
 - `smtp_config_id` (String) ID of your SMTP Config Resource which is used to send email to subscribers.
 - `subscriber_email_notification_footer_text` (String) Text to send to subscribers in the footer of the email.
 - `subscriber_timezones` (String) Timezones of subscribers to this status page. A JSON value: write it with `jsonencode()`.
+- `theme` (String) How the status page looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). A status page created without a theme starts with System. Defaults to `Light`.
 
 ### Read-Only
 

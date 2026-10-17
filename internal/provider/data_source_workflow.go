@@ -44,6 +44,10 @@ type WorkflowDataSourceModel struct {
     Labels types.Set `tfsdk:"labels"`
     WebhookSecretKey types.String `tfsdk:"webhook_secret_key"`
     IncomingEmailSecretKey types.String `tfsdk:"incoming_email_secret_key"`
+    IsWebhookSigningSecretSet types.Bool `tfsdk:"is_webhook_signing_secret_set"`
+    LastWebhookRequestAt types.String `tfsdk:"last_webhook_request_at"`
+    LastWebhookError types.String `tfsdk:"last_webhook_error"`
+    LastWebhookErrorAt types.String `tfsdk:"last_webhook_error_at"`
 }
 
 func (d *WorkflowDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -130,6 +134,24 @@ func (d *WorkflowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Optional: true,
                 Computed: true,
             },
+            "is_webhook_signing_secret_set": schema.BoolAttribute{
+                MarkdownDescription: "Whether a webhook signing secret is saved. A trigger that checks signatures refuses every request until it is. Set by the server from the signing secret itself.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_webhook_request_at": schema.StringAttribute{
+                MarkdownDescription: "When a request signed with the webhook signing secret last arrived. Empty until the sender's first one.",
+                Computed: true,
+            },
+            "last_webhook_error": schema.StringAttribute{
+                MarkdownDescription: "Why the last request to a trigger that checks signatures was refused, if it was. Cleared by the next request that is accepted, and by saving a new signing secret.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_webhook_error_at": schema.StringAttribute{
+                MarkdownDescription: "When the last webhook error happened.",
+                Computed: true,
+            },
         },
     }
 }
@@ -205,6 +227,14 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         filters["incomingEmailSecretKey"] = data.IncomingEmailSecretKey.ValueString()
         filterNames = append(filterNames, "incoming_email_secret_key = "+fmt.Sprintf("%q", data.IncomingEmailSecretKey.ValueString()))
     }
+    if !data.IsWebhookSigningSecretSet.IsNull() && !data.IsWebhookSigningSecretSet.IsUnknown() {
+        filters["isWebhookSigningSecretSet"] = data.IsWebhookSigningSecretSet.ValueBool()
+        filterNames = append(filterNames, "is_webhook_signing_secret_set = "+fmt.Sprintf("%t", data.IsWebhookSigningSecretSet.ValueBool()))
+    }
+    if !data.LastWebhookError.IsNull() && !data.LastWebhookError.IsUnknown() {
+        filters["lastWebhookError"] = data.LastWebhookError.ValueString()
+        filterNames = append(filterNames, "last_webhook_error = "+fmt.Sprintf("%q", data.LastWebhookError.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -237,6 +267,10 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         "labels": true,
         "webhookSecretKey": true,
         "incomingEmailSecretKey": true,
+        "isWebhookSigningSecretSet": true,
+        "lastWebhookRequestAt": true,
+        "lastWebhookError": true,
+        "lastWebhookErrorAt": true,
         "_id": true,
     }
 
@@ -552,6 +586,62 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.IncomingEmailSecretKey = types.StringValue(val)
     } else {
         data.IncomingEmailSecretKey = types.StringNull()
+    }
+    if val, ok := item["isWebhookSigningSecretSet"].(bool); ok {
+        data.IsWebhookSigningSecretSet = types.BoolValue(val)
+    } else {
+        data.IsWebhookSigningSecretSet = types.BoolNull()
+    }
+    if obj, ok := item["lastWebhookRequestAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastWebhookRequestAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastWebhookRequestAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastWebhookRequestAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastWebhookRequestAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookRequestAt = types.StringNull()
+        }
+    } else if val, ok := item["lastWebhookRequestAt"].(string); ok {
+        data.LastWebhookRequestAt = types.StringValue(val)
+    } else {
+        data.LastWebhookRequestAt = types.StringNull()
+    }
+    if obj, ok := item["lastWebhookError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastWebhookError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastWebhookError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastWebhookError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastWebhookError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookError = types.StringNull()
+        }
+    } else if val, ok := item["lastWebhookError"].(string); ok {
+        data.LastWebhookError = types.StringValue(val)
+    } else {
+        data.LastWebhookError = types.StringNull()
+    }
+    if obj, ok := item["lastWebhookErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastWebhookErrorAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastWebhookErrorAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastWebhookErrorAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastWebhookErrorAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookErrorAt = types.StringNull()
+        }
+    } else if val, ok := item["lastWebhookErrorAt"].(string); ok {
+        data.LastWebhookErrorAt = types.StringValue(val)
+    } else {
+        data.LastWebhookErrorAt = types.StringNull()
     }
 
     // Write logs using the tflog package

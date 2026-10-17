@@ -81,6 +81,7 @@ type StatusPageDataSourceModel struct {
     OverviewPageDescription types.String `tfsdk:"overview_page_description"`
     HidePoweredByOneUptimeBranding types.Bool `tfsdk:"hide_powered_by_one_uptime_branding"`
     DefaultBarColor types.String `tfsdk:"default_bar_color"`
+    Theme types.String `tfsdk:"theme"`
     DowntimeMonitorStatuses types.Set `tfsdk:"downtime_monitor_statuses"`
     SubscriberTimezones types.String `tfsdk:"subscriber_timezones"`
     IsReportEnabled types.Bool `tfsdk:"is_report_enabled"`
@@ -376,6 +377,11 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "default_bar_color": schema.StringAttribute{
                 MarkdownDescription: "Default color of the bar on the overview page.",
+                Computed: true,
+            },
+            "theme": schema.StringAttribute{
+                MarkdownDescription: "How the status page looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). A status page created without a theme starts with System.",
+                Optional: true,
                 Computed: true,
             },
             "downtime_monitor_statuses": schema.SetAttribute{
@@ -723,6 +729,10 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         filters["hidePoweredByOneUptimeBranding"] = data.HidePoweredByOneUptimeBranding.ValueBool()
         filterNames = append(filterNames, "hide_powered_by_one_uptime_branding = "+fmt.Sprintf("%t", data.HidePoweredByOneUptimeBranding.ValueBool()))
     }
+    if !data.Theme.IsNull() && !data.Theme.IsUnknown() {
+        filters["theme"] = data.Theme.ValueString()
+        filterNames = append(filterNames, "theme = "+fmt.Sprintf("%q", data.Theme.ValueString()))
+    }
     if !data.IsReportEnabled.IsNull() && !data.IsReportEnabled.IsUnknown() {
         filters["isReportEnabled"] = data.IsReportEnabled.ValueBool()
         filterNames = append(filterNames, "is_report_enabled = "+fmt.Sprintf("%t", data.IsReportEnabled.ValueBool()))
@@ -876,6 +886,7 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "overviewPageDescription": true,
         "hidePoweredByOneUptimeBranding": true,
         "defaultBarColor": true,
+        "theme": true,
         "downtimeMonitorStatuses": true,
         "subscriberTimezones": true,
         "isReportEnabled": true,
@@ -1579,6 +1590,23 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.DefaultBarColor = types.StringValue(val)
     } else {
         data.DefaultBarColor = types.StringNull()
+    }
+    if obj, ok := item["theme"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Theme = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Theme = types.StringValue(string(jsonBytes))
+        } else {
+            data.Theme = types.StringNull()
+        }
+    } else if val, ok := item["theme"].(string); ok {
+        data.Theme = types.StringValue(val)
+    } else {
+        data.Theme = types.StringNull()
     }
     if val, ok := item["downtimeMonitorStatuses"].([]interface{}); ok {
         var setItems []attr.Value

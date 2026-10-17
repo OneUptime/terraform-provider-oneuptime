@@ -33,6 +33,7 @@ resource "oneuptime_workflow" "example" {
 - `is_enabled` (Boolean) Is this workflow enabled? Defaults to `false`.
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 - `webhook_secret_key` (String) The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL.
+- `webhook_signing_secret` (String, Sensitive) The signing secret of a trigger that checks the signature of each request, such as the Huntress trigger's endpoint secret (whsec_...). A request that is not signed with it starts nothing. Encrypted at rest and never returned by the API.
 
 ### Read-Only
 
@@ -41,6 +42,10 @@ resource "oneuptime_workflow" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
+- `is_webhook_signing_secret_set` (Boolean) Whether a webhook signing secret is saved. A trigger that checks signatures refuses every request until it is. Set by the server from the signing secret itself.
+- `last_webhook_error` (String) Why the last request to a trigger that checks signatures was refused, if it was. Cleared by the next request that is accepted, and by saving a new signing secret.
+- `last_webhook_error_at` (String) When the last webhook error happened.
+- `last_webhook_request_at` (String) When a request signed with the webhook signing secret last arrived. Empty until the sender's first one.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.

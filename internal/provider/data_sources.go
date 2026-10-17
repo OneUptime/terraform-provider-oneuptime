@@ -30,8 +30,6 @@ func GetDataSources() []func() datasource.DataSource {
         NewDetectionRuleDataSource,
         NewSecurityEventConnectionDataSource,
         NewSecurityEventConnectionRunDataSource,
-        NewHuntressConnectionDataSource,
-        NewHuntressIncidentReportDataSource,
         NewThreatIntelFeedDataSource,
         NewSecurityCaseDataSource,
         NewSecurityCaseFeedItemDataSource,

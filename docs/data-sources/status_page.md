@@ -94,6 +94,7 @@ data "oneuptime_status_page" "by_id" {
 - `slug` (String) Friendly globally unique name for your object.
 - `smtp_config_id` (String) ID of your SMTP Config Resource which is used to send email to subscribers.
 - `subscriber_email_notification_footer_text` (String) Text to send to subscribers in the footer of the email.
+- `theme` (String) How the status page looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). A status page created without a theme starts with System.
 
 ### Read-Only
 
