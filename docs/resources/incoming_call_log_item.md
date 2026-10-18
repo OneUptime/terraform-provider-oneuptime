@@ -13,8 +13,9 @@ Child log for each escalation attempt / user ring within a call.
 
 ```terraform
 resource "oneuptime_incoming_call_log_item" "example" {
-  incoming_call_log_id = data.oneuptime_incoming_call_log.example.id
-  status               = "Example short text"
+  incoming_call_log_id    = data.oneuptime_incoming_call_log.example.id
+  incoming_call_policy_id = oneuptime_incoming_call_policy.example.id
+  status                  = "Example short text"
 }
 ```
 
@@ -23,6 +24,7 @@ resource "oneuptime_incoming_call_log_item" "example" {
 ### Required
 
 - `incoming_call_log_id` (String) ID of the parent Incoming Call Log. The ID of a `oneuptime_incoming_call_log` (see the data source).
+- `incoming_call_policy_id` (String) ID of the incoming call policy whose number took the call this attempt is part of. The ID of a `oneuptime_incoming_call_policy`.
 - `status` (String) Status of this dial attempt.
 
 ### Optional

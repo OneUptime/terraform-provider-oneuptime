@@ -40,6 +40,7 @@ type IncomingCallLogItemResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     IncomingCallLogId types.String `tfsdk:"incoming_call_log_id"`
+    IncomingCallPolicyId types.String `tfsdk:"incoming_call_policy_id"`
     IncomingCallPolicyEscalationRuleId types.String `tfsdk:"incoming_call_policy_escalation_rule_id"`
     UserId types.String `tfsdk:"user_id"`
     UserPhoneNumber JSONSubsetValue `tfsdk:"user_phone_number"`
@@ -83,6 +84,13 @@ func (r *IncomingCallLogItemResource) schemaDefinition() schema.Schema {
             },
             "incoming_call_log_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the parent Incoming Call Log. The ID of a `oneuptime_incoming_call_log` (see the data source).",
+                Required: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "incoming_call_policy_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the incoming call policy whose number took the call this attempt is part of. The ID of a `oneuptime_incoming_call_policy`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -243,6 +251,9 @@ func (r *IncomingCallLogItemResource) Create(ctx context.Context, req resource.C
     if !data.IncomingCallLogId.IsNull() && !data.IncomingCallLogId.IsUnknown() {
         requestDataMap["incomingCallLogId"] = data.IncomingCallLogId.ValueString()
     }
+    if !data.IncomingCallPolicyId.IsNull() && !data.IncomingCallPolicyId.IsUnknown() {
+        requestDataMap["incomingCallPolicyId"] = data.IncomingCallPolicyId.ValueString()
+    }
     if !data.IncomingCallPolicyEscalationRuleId.IsNull() && !data.IncomingCallPolicyEscalationRuleId.IsUnknown() {
         requestDataMap["incomingCallPolicyEscalationRuleId"] = data.IncomingCallPolicyEscalationRuleId.ValueString()
     }
@@ -320,6 +331,7 @@ func (r *IncomingCallLogItemResource) Create(ctx context.Context, req resource.C
     selectParam := map[string]interface{}{
         "projectId": true,
         "incomingCallLogId": true,
+        "incomingCallPolicyId": true,
         "incomingCallPolicyEscalationRuleId": true,
         "userId": true,
         "userPhoneNumber": true,
@@ -411,6 +423,43 @@ func (r *IncomingCallLogItemResource) Create(ctx context.Context, req resource.C
         data.IncomingCallLogId = types.StringValue(val)
     } else {
         data.IncomingCallLogId = types.StringNull()
+    }
+    if obj, ok := dataMap["incomingCallPolicyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingCallPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingCallPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingCallPolicyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incomingCallPolicyId"].(string); ok {
+        data.IncomingCallPolicyId = types.StringValue(val)
+    } else {
+        data.IncomingCallPolicyId = types.StringNull()
     }
     if obj, ok := dataMap["incomingCallPolicyEscalationRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -678,6 +727,7 @@ func (r *IncomingCallLogItemResource) Read(ctx context.Context, req resource.Rea
     selectParam := map[string]interface{}{
         "projectId": true,
         "incomingCallLogId": true,
+        "incomingCallPolicyId": true,
         "incomingCallPolicyEscalationRuleId": true,
         "userId": true,
         "userPhoneNumber": true,
@@ -770,6 +820,43 @@ func (r *IncomingCallLogItemResource) Read(ctx context.Context, req resource.Rea
         data.IncomingCallLogId = types.StringValue(val)
     } else {
         data.IncomingCallLogId = types.StringNull()
+    }
+    if obj, ok := dataMap["incomingCallPolicyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingCallPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingCallPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingCallPolicyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incomingCallPolicyId"].(string); ok {
+        data.IncomingCallPolicyId = types.StringValue(val)
+    } else {
+        data.IncomingCallPolicyId = types.StringNull()
     }
     if obj, ok := dataMap["incomingCallPolicyEscalationRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1094,6 +1181,7 @@ func (r *IncomingCallLogItemResource) Update(ctx context.Context, req resource.U
     selectParam := map[string]interface{}{
         "projectId": true,
         "incomingCallLogId": true,
+        "incomingCallPolicyId": true,
         "incomingCallPolicyEscalationRuleId": true,
         "userId": true,
         "userPhoneNumber": true,
@@ -1180,6 +1268,43 @@ func (r *IncomingCallLogItemResource) Update(ctx context.Context, req resource.U
         data.IncomingCallLogId = types.StringValue(val)
     } else {
         data.IncomingCallLogId = types.StringNull()
+    }
+    if obj, ok := dataMap["incomingCallPolicyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingCallPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingCallPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingCallPolicyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incomingCallPolicyId"].(string); ok {
+        data.IncomingCallPolicyId = types.StringValue(val)
+    } else {
+        data.IncomingCallPolicyId = types.StringNull()
     }
     if obj, ok := dataMap["incomingCallPolicyEscalationRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

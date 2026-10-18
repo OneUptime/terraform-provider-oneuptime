@@ -31,6 +31,7 @@ type IncomingCallLogItemDataSourceModel struct {
     UpdatedAt types.String `tfsdk:"updated_at"`
     ProjectId types.String `tfsdk:"project_id"`
     IncomingCallLogId types.String `tfsdk:"incoming_call_log_id"`
+    IncomingCallPolicyId types.String `tfsdk:"incoming_call_policy_id"`
     IncomingCallPolicyEscalationRuleId types.String `tfsdk:"incoming_call_policy_escalation_rule_id"`
     UserId types.String `tfsdk:"user_id"`
     UserPhoneNumber types.String `tfsdk:"user_phone_number"`
@@ -71,6 +72,11 @@ func (d *IncomingCallLogItemDataSource) Schema(ctx context.Context, req datasour
             },
             "incoming_call_log_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the parent Incoming Call Log. The ID of a `oneuptime_incoming_call_log` (see the data source).",
+                Optional: true,
+                Computed: true,
+            },
+            "incoming_call_policy_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the incoming call policy whose number took the call this attempt is part of. The ID of a `oneuptime_incoming_call_policy`.",
                 Optional: true,
                 Computed: true,
             },
@@ -164,6 +170,10 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
         filters["incomingCallLogId"] = data.IncomingCallLogId.ValueString()
         filterNames = append(filterNames, "incoming_call_log_id = "+fmt.Sprintf("%q", data.IncomingCallLogId.ValueString()))
     }
+    if !data.IncomingCallPolicyId.IsNull() && !data.IncomingCallPolicyId.IsUnknown() {
+        filters["incomingCallPolicyId"] = data.IncomingCallPolicyId.ValueString()
+        filterNames = append(filterNames, "incoming_call_policy_id = "+fmt.Sprintf("%q", data.IncomingCallPolicyId.ValueString()))
+    }
     if !data.IncomingCallPolicyEscalationRuleId.IsNull() && !data.IncomingCallPolicyEscalationRuleId.IsUnknown() {
         filters["incomingCallPolicyEscalationRuleId"] = data.IncomingCallPolicyEscalationRuleId.ValueString()
         filterNames = append(filterNames, "incoming_call_policy_escalation_rule_id = "+fmt.Sprintf("%q", data.IncomingCallPolicyEscalationRuleId.ValueString()))
@@ -213,6 +223,7 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
         "updatedAt": true,
         "projectId": true,
         "incomingCallLogId": true,
+        "incomingCallPolicyId": true,
         "incomingCallPolicyEscalationRuleId": true,
         "userId": true,
         "userPhoneNumber": true,
@@ -368,6 +379,23 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
         data.IncomingCallLogId = types.StringValue(val)
     } else {
         data.IncomingCallLogId = types.StringNull()
+    }
+    if obj, ok := item["incomingCallPolicyId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingCallPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IncomingCallPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingCallPolicyId = types.StringNull()
+        }
+    } else if val, ok := item["incomingCallPolicyId"].(string); ok {
+        data.IncomingCallPolicyId = types.StringValue(val)
+    } else {
+        data.IncomingCallPolicyId = types.StringNull()
     }
     if obj, ok := item["incomingCallPolicyEscalationRuleId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

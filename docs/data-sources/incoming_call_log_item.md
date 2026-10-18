@@ -33,6 +33,7 @@ data "oneuptime_incoming_call_log_item" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incoming_call_log_id` (String) ID of the parent Incoming Call Log. The ID of a `oneuptime_incoming_call_log` (see the data source).
 - `incoming_call_policy_escalation_rule_id` (String) ID of the escalation rule used. The ID of a `oneuptime_incoming_call_policy_escalation_rule`.
+- `incoming_call_policy_id` (String) ID of the incoming call policy whose number took the call this attempt is part of. The ID of a `oneuptime_incoming_call_policy`.
 - `is_answered` (Boolean) Whether this user answered the call.
 - `status` (String) Status of this dial attempt.
 - `status_message` (String) Additional status information.
