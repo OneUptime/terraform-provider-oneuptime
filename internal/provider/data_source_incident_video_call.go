@@ -37,6 +37,18 @@ type IncidentVideoCallDataSourceModel struct {
     JoinUrl types.String `tfsdk:"join_url"`
     ExternalMeetingId types.String `tfsdk:"external_meeting_id"`
     WorkspaceNotificationRuleId types.String `tfsdk:"workspace_notification_rule_id"`
+    Transcript types.String `tfsdk:"transcript"`
+    TranscriptSource types.String `tfsdk:"transcript_source"`
+    TranscriptInfo types.String `tfsdk:"transcript_info"`
+    TranscriptAddedAt types.String `tfsdk:"transcript_added_at"`
+    TranscriptAddedByUserId types.String `tfsdk:"transcript_added_by_user_id"`
+    CallSummary types.String `tfsdk:"call_summary"`
+    CallSummaryStatus types.String `tfsdk:"call_summary_status"`
+    CallSummaryStatusMessage types.String `tfsdk:"call_summary_status_message"`
+    CallSummaryUpdatedAt types.String `tfsdk:"call_summary_updated_at"`
+    RootCauseSuggestionStatus types.String `tfsdk:"root_cause_suggestion_status"`
+    RootCauseSuggestionReviewedAt types.String `tfsdk:"root_cause_suggestion_reviewed_at"`
+    RootCauseSuggestionReviewedByUserId types.String `tfsdk:"root_cause_suggestion_reviewed_by_user_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -46,7 +58,7 @@ func (d *IncidentVideoCallDataSource) Metadata(ctx context.Context, req datasour
 
 func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Video calls for an incident: a Zoom, Google Meet or Microsoft Teams meeting, a Slack huddle, or a meeting link. Look up an existing incident video call by `id`, or by any of its other arguments (`created_by_user_id`, `external_meeting_id`, `incident_id`, ...): each one set must match, and exactly one incident video call may match them all.",
+        MarkdownDescription: "Video calls for an incident: a Zoom, Google Meet or Microsoft Teams meeting, a Slack huddle, or a meeting link. Look up an existing incident video call by `id`, or by any of its other arguments (`call_summary_status`, `call_summary_status_message`, `created_by_user_id`, ...): each one set must match, and exactly one incident video call may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -98,6 +110,61 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
             },
             "workspace_notification_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Slack or Microsoft Teams notification rule that started this call. The ID of a `oneuptime_workspace_notification_rule`.",
+                Optional: true,
+                Computed: true,
+            },
+            "transcript": schema.StringAttribute{
+                MarkdownDescription: "What was said on the call, one remark a line: how far into the call (HH:MM:SS, empty when unknown), a tab, who spoke (empty when unknown), a tab, and the words. Read from Zoom or Google Meet, or added by a person, through the call's transcript routes.",
+                Optional: true,
+                Computed: true,
+            },
+            "transcript_source": schema.StringAttribute{
+                MarkdownDescription: "Where the transcript came from: Provider when OneUptime read it from Zoom or Google Meet, Upload when a person added it.",
+                Optional: true,
+                Computed: true,
+            },
+            "transcript_info": schema.StringAttribute{
+                MarkdownDescription: "How long the transcript is - remarks, speakers, characters and how many seconds it spans - and the name of the file it was added from, so the call can be described without reading the transcript. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "transcript_added_at": schema.StringAttribute{
+                MarkdownDescription: "When the transcript was added to the call.",
+                Computed: true,
+            },
+            "transcript_added_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person who added the transcript. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+            },
+            "call_summary": schema.StringAttribute{
+                MarkdownDescription: "What OneUptime AI read in the transcript: the root cause the call points at (a suggestion, or that the call did not discuss it enough), what was found, tried, decided and left to do, and open questions - each with the transcript lines it rests on. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "call_summary_status": schema.StringAttribute{
+                MarkdownDescription: "Where OneUptime AI's reading of the transcript stands: Pending while it reads, Ready, Failed (Call Summary Status Message says why), or Skipped when AI is off for the project.",
+                Optional: true,
+                Computed: true,
+            },
+            "call_summary_status_message": schema.StringAttribute{
+                MarkdownDescription: "Why OneUptime AI did not read the transcript, or could not finish reading it.",
+                Optional: true,
+                Computed: true,
+            },
+            "call_summary_updated_at": schema.StringAttribute{
+                MarkdownDescription: "When the Call Summary Status last changed: when OneUptime AI started reading the transcript, or finished.",
+                Computed: true,
+            },
+            "root_cause_suggestion_status": schema.StringAttribute{
+                MarkdownDescription: "What a person did with the root cause OneUptime AI suggested from the call: Suggested while it waits, Accepted once used as the incident's root cause, Dismissed. Empty when nothing was suggested.",
+                Optional: true,
+                Computed: true,
+            },
+            "root_cause_suggestion_reviewed_at": schema.StringAttribute{
+                MarkdownDescription: "When a person accepted or dismissed the root cause suggested from the call.",
+                Computed: true,
+            },
+            "root_cause_suggestion_reviewed_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person who accepted or dismissed the root cause suggested from the call. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
             },
@@ -173,6 +240,34 @@ func (d *IncidentVideoCallDataSource) Read(ctx context.Context, req datasource.R
         filters["workspaceNotificationRuleId"] = data.WorkspaceNotificationRuleId.ValueString()
         filterNames = append(filterNames, "workspace_notification_rule_id = "+fmt.Sprintf("%q", data.WorkspaceNotificationRuleId.ValueString()))
     }
+    if !data.Transcript.IsNull() && !data.Transcript.IsUnknown() {
+        filters["transcript"] = data.Transcript.ValueString()
+        filterNames = append(filterNames, "transcript = "+fmt.Sprintf("%q", data.Transcript.ValueString()))
+    }
+    if !data.TranscriptSource.IsNull() && !data.TranscriptSource.IsUnknown() {
+        filters["transcriptSource"] = data.TranscriptSource.ValueString()
+        filterNames = append(filterNames, "transcript_source = "+fmt.Sprintf("%q", data.TranscriptSource.ValueString()))
+    }
+    if !data.TranscriptAddedByUserId.IsNull() && !data.TranscriptAddedByUserId.IsUnknown() {
+        filters["transcriptAddedByUserId"] = data.TranscriptAddedByUserId.ValueString()
+        filterNames = append(filterNames, "transcript_added_by_user_id = "+fmt.Sprintf("%q", data.TranscriptAddedByUserId.ValueString()))
+    }
+    if !data.CallSummaryStatus.IsNull() && !data.CallSummaryStatus.IsUnknown() {
+        filters["callSummaryStatus"] = data.CallSummaryStatus.ValueString()
+        filterNames = append(filterNames, "call_summary_status = "+fmt.Sprintf("%q", data.CallSummaryStatus.ValueString()))
+    }
+    if !data.CallSummaryStatusMessage.IsNull() && !data.CallSummaryStatusMessage.IsUnknown() {
+        filters["callSummaryStatusMessage"] = data.CallSummaryStatusMessage.ValueString()
+        filterNames = append(filterNames, "call_summary_status_message = "+fmt.Sprintf("%q", data.CallSummaryStatusMessage.ValueString()))
+    }
+    if !data.RootCauseSuggestionStatus.IsNull() && !data.RootCauseSuggestionStatus.IsUnknown() {
+        filters["rootCauseSuggestionStatus"] = data.RootCauseSuggestionStatus.ValueString()
+        filterNames = append(filterNames, "root_cause_suggestion_status = "+fmt.Sprintf("%q", data.RootCauseSuggestionStatus.ValueString()))
+    }
+    if !data.RootCauseSuggestionReviewedByUserId.IsNull() && !data.RootCauseSuggestionReviewedByUserId.IsUnknown() {
+        filters["rootCauseSuggestionReviewedByUserId"] = data.RootCauseSuggestionReviewedByUserId.ValueString()
+        filterNames = append(filterNames, "root_cause_suggestion_reviewed_by_user_id = "+fmt.Sprintf("%q", data.RootCauseSuggestionReviewedByUserId.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -204,6 +299,18 @@ func (d *IncidentVideoCallDataSource) Read(ctx context.Context, req datasource.R
         "joinUrl": true,
         "externalMeetingId": true,
         "workspaceNotificationRuleId": true,
+        "transcript": true,
+        "transcriptSource": true,
+        "transcriptInfo": true,
+        "transcriptAddedAt": true,
+        "transcriptAddedByUserId": true,
+        "callSummary": true,
+        "callSummaryStatus": true,
+        "callSummaryStatusMessage": true,
+        "callSummaryUpdatedAt": true,
+        "rootCauseSuggestionStatus": true,
+        "rootCauseSuggestionReviewedAt": true,
+        "rootCauseSuggestionReviewedByUserId": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -452,6 +559,210 @@ func (d *IncidentVideoCallDataSource) Read(ctx context.Context, req datasource.R
         data.WorkspaceNotificationRuleId = types.StringValue(val)
     } else {
         data.WorkspaceNotificationRuleId = types.StringNull()
+    }
+    if obj, ok := item["transcript"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Transcript = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Transcript = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Transcript = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Transcript = types.StringValue(string(jsonBytes))
+        } else {
+            data.Transcript = types.StringNull()
+        }
+    } else if val, ok := item["transcript"].(string); ok {
+        data.Transcript = types.StringValue(val)
+    } else {
+        data.Transcript = types.StringNull()
+    }
+    if obj, ok := item["transcriptSource"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TranscriptSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TranscriptSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TranscriptSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptSource = types.StringNull()
+        }
+    } else if val, ok := item["transcriptSource"].(string); ok {
+        data.TranscriptSource = types.StringValue(val)
+    } else {
+        data.TranscriptSource = types.StringNull()
+    }
+    if obj, ok := item["transcriptInfo"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptInfo = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TranscriptInfo = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TranscriptInfo = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TranscriptInfo = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptInfo = types.StringNull()
+        }
+    } else if val, ok := item["transcriptInfo"].(string); ok {
+        data.TranscriptInfo = types.StringValue(val)
+    } else {
+        data.TranscriptInfo = types.StringNull()
+    }
+    if obj, ok := item["transcriptAddedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptAddedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TranscriptAddedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TranscriptAddedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TranscriptAddedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptAddedAt = types.StringNull()
+        }
+    } else if val, ok := item["transcriptAddedAt"].(string); ok {
+        data.TranscriptAddedAt = types.StringValue(val)
+    } else {
+        data.TranscriptAddedAt = types.StringNull()
+    }
+    if obj, ok := item["transcriptAddedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptAddedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TranscriptAddedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TranscriptAddedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TranscriptAddedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptAddedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["transcriptAddedByUserId"].(string); ok {
+        data.TranscriptAddedByUserId = types.StringValue(val)
+    } else {
+        data.TranscriptAddedByUserId = types.StringNull()
+    }
+    if obj, ok := item["callSummary"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CallSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CallSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CallSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CallSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.CallSummary = types.StringNull()
+        }
+    } else if val, ok := item["callSummary"].(string); ok {
+        data.CallSummary = types.StringValue(val)
+    } else {
+        data.CallSummary = types.StringNull()
+    }
+    if obj, ok := item["callSummaryStatus"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CallSummaryStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CallSummaryStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CallSummaryStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CallSummaryStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CallSummaryStatus = types.StringNull()
+        }
+    } else if val, ok := item["callSummaryStatus"].(string); ok {
+        data.CallSummaryStatus = types.StringValue(val)
+    } else {
+        data.CallSummaryStatus = types.StringNull()
+    }
+    if obj, ok := item["callSummaryStatusMessage"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CallSummaryStatusMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CallSummaryStatusMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CallSummaryStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CallSummaryStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.CallSummaryStatusMessage = types.StringNull()
+        }
+    } else if val, ok := item["callSummaryStatusMessage"].(string); ok {
+        data.CallSummaryStatusMessage = types.StringValue(val)
+    } else {
+        data.CallSummaryStatusMessage = types.StringNull()
+    }
+    if obj, ok := item["callSummaryUpdatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CallSummaryUpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CallSummaryUpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CallSummaryUpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CallSummaryUpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CallSummaryUpdatedAt = types.StringNull()
+        }
+    } else if val, ok := item["callSummaryUpdatedAt"].(string); ok {
+        data.CallSummaryUpdatedAt = types.StringValue(val)
+    } else {
+        data.CallSummaryUpdatedAt = types.StringNull()
+    }
+    if obj, ok := item["rootCauseSuggestionStatus"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RootCauseSuggestionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RootCauseSuggestionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RootCauseSuggestionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RootCauseSuggestionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.RootCauseSuggestionStatus = types.StringNull()
+        }
+    } else if val, ok := item["rootCauseSuggestionStatus"].(string); ok {
+        data.RootCauseSuggestionStatus = types.StringValue(val)
+    } else {
+        data.RootCauseSuggestionStatus = types.StringNull()
+    }
+    if obj, ok := item["rootCauseSuggestionReviewedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RootCauseSuggestionReviewedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RootCauseSuggestionReviewedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RootCauseSuggestionReviewedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RootCauseSuggestionReviewedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.RootCauseSuggestionReviewedAt = types.StringNull()
+        }
+    } else if val, ok := item["rootCauseSuggestionReviewedAt"].(string); ok {
+        data.RootCauseSuggestionReviewedAt = types.StringValue(val)
+    } else {
+        data.RootCauseSuggestionReviewedAt = types.StringNull()
+    }
+    if obj, ok := item["rootCauseSuggestionReviewedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RootCauseSuggestionReviewedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RootCauseSuggestionReviewedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RootCauseSuggestionReviewedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RootCauseSuggestionReviewedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RootCauseSuggestionReviewedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["rootCauseSuggestionReviewedByUserId"].(string); ok {
+        data.RootCauseSuggestionReviewedByUserId = types.StringValue(val)
+    } else {
+        data.RootCauseSuggestionReviewedByUserId = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

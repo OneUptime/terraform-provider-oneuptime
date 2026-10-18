@@ -32,11 +32,23 @@ resource "oneuptime_incident_video_call" "example" {
 
 ### Read-Only
 
+- `call_summary` (String) What OneUptime AI read in the transcript: the root cause the call points at (a suggestion, or that the call did not discuss it enough), what was found, tried, decided and left to do, and open questions - each with the transcript lines it rests on. A JSON value: write it with `jsonencode()`.
+- `call_summary_status` (String) Where OneUptime AI's reading of the transcript stands: Pending while it reads, Ready, Failed (Call Summary Status Message says why), or Skipped when AI is off for the project.
+- `call_summary_status_message` (String) Why OneUptime AI did not read the transcript, or could not finish reading it.
+- `call_summary_updated_at` (String) When the Call Summary Status last changed: when OneUptime AI started reading the transcript, or finished.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `external_meeting_id` (String) The provider's own id for the meeting: a Zoom meeting id, a Google Meet space name, a Microsoft Teams online meeting id or a Slack channel id.
 - `id` (String) Unique identifier for the resource.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `root_cause_suggestion_reviewed_at` (String) When a person accepted or dismissed the root cause suggested from the call.
+- `root_cause_suggestion_reviewed_by_user_id` (String) ID of the person who accepted or dismissed the root cause suggested from the call. The ID of a `oneuptime_user` (see the data source).
+- `root_cause_suggestion_status` (String) What a person did with the root cause OneUptime AI suggested from the call: Suggested while it waits, Accepted once used as the incident's root cause, Dismissed. Empty when nothing was suggested.
+- `transcript` (String) What was said on the call, one remark a line: how far into the call (HH:MM:SS, empty when unknown), a tab, who spoke (empty when unknown), a tab, and the words. Read from Zoom or Google Meet, or added by a person, through the call's transcript routes.
+- `transcript_added_at` (String) When the transcript was added to the call.
+- `transcript_added_by_user_id` (String) ID of the person who added the transcript. The ID of a `oneuptime_user` (see the data source).
+- `transcript_info` (String) How long the transcript is - remarks, speakers, characters and how many seconds it spans - and the name of the file it was added from, so the call can be described without reading the transcript. A JSON value: write it with `jsonencode()`.
+- `transcript_source` (String) Where the transcript came from: Provider when OneUptime read it from Zoom or Google Meet, Upload when a person added it.
 - `updated_at` (String) Date and Time when the object was updated.
 - `workspace_notification_rule_id` (String) ID of the Slack or Microsoft Teams notification rule that started this call. The ID of a `oneuptime_workspace_notification_rule`.
 
