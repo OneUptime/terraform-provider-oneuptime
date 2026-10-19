@@ -34,6 +34,8 @@ type StatusPageScimDataSourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     BearerToken types.String `tfsdk:"bearer_token"`
+    OauthClientSecretExpiresAt types.String `tfsdk:"oauth_client_secret_expires_at"`
+    OauthPreviousClientSecretExpiresAt types.String `tfsdk:"oauth_previous_client_secret_expires_at"`
     AutoProvisionUsers types.Bool `tfsdk:"auto_provision_users"`
     AutoDeprovisionUsers types.Bool `tfsdk:"auto_deprovision_users"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -83,6 +85,14 @@ func (d *StatusPageScimDataSource) Schema(ctx context.Context, req datasource.Sc
             "bearer_token": schema.StringAttribute{
                 MarkdownDescription: "Bearer token for SCIM authentication. Keep this secure.",
                 Optional: true,
+                Computed: true,
+            },
+            "oauth_client_secret_expires_at": schema.StringAttribute{
+                MarkdownDescription: "When the connection's OAuth 2.0 client secret stops working. No access token is issued with an expired secret.",
+                Computed: true,
+            },
+            "oauth_previous_client_secret_expires_at": schema.StringAttribute{
+                MarkdownDescription: "When the previous OAuth 2.0 client secret stops working, unless it is deleted before.",
                 Computed: true,
             },
             "auto_provision_users": schema.BoolAttribute{
@@ -191,6 +201,8 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
         "name": true,
         "description": true,
         "bearerToken": true,
+        "oauthClientSecretExpiresAt": true,
+        "oauthPreviousClientSecretExpiresAt": true,
         "autoProvisionUsers": true,
         "autoDeprovisionUsers": true,
         "createdByUserId": true,
@@ -390,6 +402,40 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
         data.BearerToken = types.StringValue(val)
     } else {
         data.BearerToken = types.StringNull()
+    }
+    if obj, ok := item["oauthClientSecretExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthClientSecretExpiresAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthClientSecretExpiresAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthClientSecretExpiresAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthClientSecretExpiresAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientSecretExpiresAt = types.StringNull()
+        }
+    } else if val, ok := item["oauthClientSecretExpiresAt"].(string); ok {
+        data.OauthClientSecretExpiresAt = types.StringValue(val)
+    } else {
+        data.OauthClientSecretExpiresAt = types.StringNull()
+    }
+    if obj, ok := item["oauthPreviousClientSecretExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthPreviousClientSecretExpiresAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthPreviousClientSecretExpiresAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthPreviousClientSecretExpiresAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthPreviousClientSecretExpiresAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthPreviousClientSecretExpiresAt = types.StringNull()
+        }
+    } else if val, ok := item["oauthPreviousClientSecretExpiresAt"].(string); ok {
+        data.OauthPreviousClientSecretExpiresAt = types.StringValue(val)
+    } else {
+        data.OauthPreviousClientSecretExpiresAt = types.StringNull()
     }
     if val, ok := item["autoProvisionUsers"].(bool); ok {
         data.AutoProvisionUsers = types.BoolValue(val)

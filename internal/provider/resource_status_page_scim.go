@@ -41,6 +41,8 @@ type StatusPageScimResourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     BearerToken types.String `tfsdk:"bearer_token"`
+    OauthClientSecretExpiresAt RFC3339Value `tfsdk:"oauth_client_secret_expires_at"`
+    OauthPreviousClientSecretExpiresAt RFC3339Value `tfsdk:"oauth_previous_client_secret_expires_at"`
     AutoProvisionUsers types.Bool `tfsdk:"auto_provision_users"`
     AutoDeprovisionUsers types.Bool `tfsdk:"auto_deprovision_users"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
@@ -97,6 +99,24 @@ func (r *StatusPageScimResource) schemaDefinition() schema.Schema {
             "bearer_token": schema.StringAttribute{
                 MarkdownDescription: "Bearer token for SCIM authentication. Keep this secure.",
                 Required: true,
+            },
+            "oauth_client_secret_expires_at": schema.StringAttribute{
+                MarkdownDescription: "When the connection's OAuth 2.0 client secret stops working. No access token is issued with an expired secret.",
+                CustomType: RFC3339Type{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "oauth_previous_client_secret_expires_at": schema.StringAttribute{
+                MarkdownDescription: "When the previous OAuth 2.0 client secret stops working, unless it is deleted before.",
+                CustomType: RFC3339Type{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "auto_provision_users": schema.BoolAttribute{
                 MarkdownDescription: "Automatically create status page users when they are added via SCIM.",
@@ -201,6 +221,12 @@ func (r *StatusPageScimResource) Create(ctx context.Context, req resource.Create
     if !data.BearerToken.IsNull() && !data.BearerToken.IsUnknown() {
         requestDataMap["bearerToken"] = data.BearerToken.ValueString()
     }
+    if !data.OauthClientSecretExpiresAt.IsNull() && !data.OauthClientSecretExpiresAt.IsUnknown() {
+        requestDataMap["oauthClientSecretExpiresAt"] = data.OauthClientSecretExpiresAt.ValueString()
+    }
+    if !data.OauthPreviousClientSecretExpiresAt.IsNull() && !data.OauthPreviousClientSecretExpiresAt.IsUnknown() {
+        requestDataMap["oauthPreviousClientSecretExpiresAt"] = data.OauthPreviousClientSecretExpiresAt.ValueString()
+    }
     if !data.AutoProvisionUsers.IsNull() && !data.AutoProvisionUsers.IsUnknown() {
         requestDataMap["autoProvisionUsers"] = data.AutoProvisionUsers.ValueBool()
     }
@@ -257,6 +283,8 @@ func (r *StatusPageScimResource) Create(ctx context.Context, req resource.Create
         "name": true,
         "description": true,
         "bearerToken": true,
+        "oauthClientSecretExpiresAt": true,
+        "oauthPreviousClientSecretExpiresAt": true,
         "autoProvisionUsers": true,
         "autoDeprovisionUsers": true,
         "createdAt": true,
@@ -453,6 +481,28 @@ func (r *StatusPageScimResource) Create(ctx context.Context, req resource.Create
     } else {
         data.BearerToken = types.StringNull()
     }
+    if obj, ok := dataMap["oauthClientSecretExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthClientSecretExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.OauthClientSecretExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthClientSecretExpiresAt"].(string); ok && val != "" {
+        data.OauthClientSecretExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.OauthClientSecretExpiresAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["oauthPreviousClientSecretExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthPreviousClientSecretExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.OauthPreviousClientSecretExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthPreviousClientSecretExpiresAt"].(string); ok && val != "" {
+        data.OauthPreviousClientSecretExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.OauthPreviousClientSecretExpiresAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["autoProvisionUsers"].(bool); ok {
         data.AutoProvisionUsers = types.BoolValue(val)
     }
@@ -553,6 +603,8 @@ func (r *StatusPageScimResource) Read(ctx context.Context, req resource.ReadRequ
         "name": true,
         "description": true,
         "bearerToken": true,
+        "oauthClientSecretExpiresAt": true,
+        "oauthPreviousClientSecretExpiresAt": true,
         "autoProvisionUsers": true,
         "autoDeprovisionUsers": true,
         "createdAt": true,
@@ -750,6 +802,28 @@ func (r *StatusPageScimResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.BearerToken = types.StringNull()
     }
+    if obj, ok := dataMap["oauthClientSecretExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthClientSecretExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.OauthClientSecretExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthClientSecretExpiresAt"].(string); ok && val != "" {
+        data.OauthClientSecretExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.OauthClientSecretExpiresAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["oauthPreviousClientSecretExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthPreviousClientSecretExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.OauthPreviousClientSecretExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthPreviousClientSecretExpiresAt"].(string); ok && val != "" {
+        data.OauthPreviousClientSecretExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.OauthPreviousClientSecretExpiresAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["autoProvisionUsers"].(bool); ok {
         data.AutoProvisionUsers = types.BoolValue(val)
     }
@@ -867,6 +941,12 @@ func (r *StatusPageScimResource) Update(ctx context.Context, req resource.Update
     if !data.BearerToken.IsUnknown() && !state.BearerToken.IsUnknown() && !data.BearerToken.Equal(state.BearerToken) {
         requestDataMap["bearerToken"] = data.BearerToken.ValueString()
     }
+    if !data.OauthClientSecretExpiresAt.IsUnknown() && !state.OauthClientSecretExpiresAt.IsUnknown() && !data.OauthClientSecretExpiresAt.Equal(state.OauthClientSecretExpiresAt) {
+        requestDataMap["oauthClientSecretExpiresAt"] = data.OauthClientSecretExpiresAt.ValueString()
+    }
+    if !data.OauthPreviousClientSecretExpiresAt.IsUnknown() && !state.OauthPreviousClientSecretExpiresAt.IsUnknown() && !data.OauthPreviousClientSecretExpiresAt.Equal(state.OauthPreviousClientSecretExpiresAt) {
+        requestDataMap["oauthPreviousClientSecretExpiresAt"] = data.OauthPreviousClientSecretExpiresAt.ValueString()
+    }
     if !data.AutoProvisionUsers.IsUnknown() && !state.AutoProvisionUsers.IsUnknown() && !data.AutoProvisionUsers.Equal(state.AutoProvisionUsers) {
         requestDataMap["autoProvisionUsers"] = data.AutoProvisionUsers.ValueBool()
     }
@@ -901,6 +981,8 @@ func (r *StatusPageScimResource) Update(ctx context.Context, req resource.Update
         "name": true,
         "description": true,
         "bearerToken": true,
+        "oauthClientSecretExpiresAt": true,
+        "oauthPreviousClientSecretExpiresAt": true,
         "autoProvisionUsers": true,
         "autoDeprovisionUsers": true,
         "createdAt": true,
@@ -1092,6 +1174,28 @@ func (r *StatusPageScimResource) Update(ctx context.Context, req resource.Update
     } else {
         data.BearerToken = types.StringNull()
     }
+    if obj, ok := dataMap["oauthClientSecretExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthClientSecretExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.OauthClientSecretExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthClientSecretExpiresAt"].(string); ok && val != "" {
+        data.OauthClientSecretExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.OauthClientSecretExpiresAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["oauthPreviousClientSecretExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthPreviousClientSecretExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.OauthPreviousClientSecretExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthPreviousClientSecretExpiresAt"].(string); ok && val != "" {
+        data.OauthPreviousClientSecretExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.OauthPreviousClientSecretExpiresAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["autoProvisionUsers"].(bool); ok {
         data.AutoProvisionUsers = types.BoolValue(val)
     }
@@ -1216,6 +1320,12 @@ func (r *StatusPageScimResource) ImportState(ctx context.Context, req resource.I
 func (r *StatusPageScimResource) keepPlannedValues(data *StatusPageScimResourceModel, plan *StatusPageScimResourceModel, config *StatusPageScimResourceModel) {
     if config.Description.IsNull() && !plan.Description.IsUnknown() {
         data.Description = plan.Description
+    }
+    if config.OauthClientSecretExpiresAt.IsNull() && !plan.OauthClientSecretExpiresAt.IsUnknown() {
+        data.OauthClientSecretExpiresAt = plan.OauthClientSecretExpiresAt
+    }
+    if config.OauthPreviousClientSecretExpiresAt.IsNull() && !plan.OauthPreviousClientSecretExpiresAt.IsUnknown() {
+        data.OauthPreviousClientSecretExpiresAt = plan.OauthPreviousClientSecretExpiresAt
     }
     if config.AutoProvisionUsers.IsNull() && !plan.AutoProvisionUsers.IsUnknown() {
         data.AutoProvisionUsers = plan.AutoProvisionUsers

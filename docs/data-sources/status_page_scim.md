@@ -40,5 +40,7 @@ data "oneuptime_status_page_scim" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `oauth_client_secret_expires_at` (String) When the connection's OAuth 2.0 client secret stops working. No access token is issued with an expired secret.
+- `oauth_previous_client_secret_expires_at` (String) When the previous OAuth 2.0 client secret stops working, unless it is deleted before.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

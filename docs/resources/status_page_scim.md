@@ -33,6 +33,8 @@ resource "oneuptime_status_page_scim" "example" {
 - `auto_deprovision_users` (Boolean) Automatically remove status page users when they are removed via SCIM. Defaults to `true`.
 - `auto_provision_users` (Boolean) Automatically create status page users when they are added via SCIM. Defaults to `true`.
 - `description` (String) Friendly description to help you remember.
+- `oauth_client_secret_expires_at` (String) When the connection's OAuth 2.0 client secret stops working. No access token is issued with an expired secret.
+- `oauth_previous_client_secret_expires_at` (String) When the previous OAuth 2.0 client secret stops working, unless it is deleted before.
 
 ### Read-Only
 
