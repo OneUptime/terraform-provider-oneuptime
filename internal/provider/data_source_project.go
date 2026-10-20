@@ -122,6 +122,7 @@ type ProjectDataSourceModel struct {
     IsSessionReplayAllowed types.Bool `tfsdk:"is_session_replay_allowed"`
     AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
     StoreSystemEventsInAuditLogs types.Bool `tfsdk:"store_system_events_in_audit_logs"`
+    RecordAndTranscribeIncidentCalls types.Bool `tfsdk:"record_and_transcribe_incident_calls"`
 }
 
 func (d *ProjectDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -608,6 +609,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "record_and_transcribe_incident_calls": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime asks Zoom and Google Meet to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Microsoft Teams calls, Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -1007,6 +1013,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["storeSystemEventsInAuditLogs"] = data.StoreSystemEventsInAuditLogs.ValueBool()
         filterNames = append(filterNames, "store_system_events_in_audit_logs = "+fmt.Sprintf("%t", data.StoreSystemEventsInAuditLogs.ValueBool()))
     }
+    if !data.RecordAndTranscribeIncidentCalls.IsNull() && !data.RecordAndTranscribeIncidentCalls.IsUnknown() {
+        filters["recordAndTranscribeIncidentCalls"] = data.RecordAndTranscribeIncidentCalls.ValueBool()
+        filterNames = append(filterNames, "record_and_transcribe_incident_calls = "+fmt.Sprintf("%t", data.RecordAndTranscribeIncidentCalls.ValueBool()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -1119,6 +1129,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "isSessionReplayAllowed": true,
         "auditLogsRetentionInDays": true,
         "storeSystemEventsInAuditLogs": true,
+        "recordAndTranscribeIncidentCalls": true,
         "_id": true,
     }
 
@@ -1931,6 +1942,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
     } else {
         data.StoreSystemEventsInAuditLogs = types.BoolNull()
+    }
+    if val, ok := item["recordAndTranscribeIncidentCalls"].(bool); ok {
+        data.RecordAndTranscribeIncidentCalls = types.BoolValue(val)
+    } else {
+        data.RecordAndTranscribeIncidentCalls = types.BoolNull()
     }
 
     // Write logs using the tflog package

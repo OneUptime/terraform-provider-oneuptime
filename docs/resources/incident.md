@@ -86,6 +86,7 @@ resource "oneuptime_incident" "example" {
 - `is_scoped_to_status_pages` (Boolean) Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored.
 - `monitor_summary` (String) The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.
 - `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this incident? This is set automatically based on the reminder rules configured for this project.
+- `postmortem_draft_waiting_since` (String) When the automatic postmortem draft started waiting for the transcript of the incident's call, so that the draft reads what was said on it: set when the incident resolves while a call's transcript is still on its way, and cleared once the draft is written. Empty the rest of the time. Set by OneUptime; it cannot be written.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `reminder_notification_sent_count` (Number) How many reminder notifications have been sent to owners of this incident so far.
 - `series_fingerprint` (String) For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one incident is created per affected series.

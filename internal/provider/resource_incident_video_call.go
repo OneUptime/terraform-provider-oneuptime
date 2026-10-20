@@ -56,6 +56,10 @@ type IncidentVideoCallResourceModel struct {
     RootCauseSuggestionStatus types.String `tfsdk:"root_cause_suggestion_status"`
     RootCauseSuggestionReviewedAt RFC3339Value `tfsdk:"root_cause_suggestion_reviewed_at"`
     RootCauseSuggestionReviewedByUserId types.String `tfsdk:"root_cause_suggestion_reviewed_by_user_id"`
+    TranscriptFetchStatus types.String `tfsdk:"transcript_fetch_status"`
+    TranscriptFetchReason types.String `tfsdk:"transcript_fetch_reason"`
+    TranscriptFetchCheckedAt RFC3339Value `tfsdk:"transcript_fetch_checked_at"`
+    TranscriptFetchNextAttemptAt RFC3339Value `tfsdk:"transcript_fetch_next_attempt_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -194,6 +198,24 @@ func (r *IncidentVideoCallResource) schemaDefinition() schema.Schema {
             },
             "root_cause_suggestion_reviewed_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the person who accepted or dismissed the root cause suggested from the call. The ID of a `oneuptime_user` (see the data source).",
+                Computed: true,
+            },
+            "transcript_fetch_status": schema.StringAttribute{
+                MarkdownDescription: "Whether OneUptime gets the call's transcript from Zoom or Google Meet by itself, as it does for the calls it starts while Record and transcribe incident calls is on: Waiting while it asks the provider (again at Transcript Fetch Next Attempt At), Stopped once it no longer asks (Transcript Fetch Reason says why). Empty for a call it does not ask about, and once it has the transcript.",
+                Computed: true,
+            },
+            "transcript_fetch_reason": schema.StringAttribute{
+                MarkdownDescription: "Why the provider had no transcript to give when OneUptime last asked: NotReady (still preparing it), NotTranscribed (nothing recorded or transcribed yet), NoMeeting, Expired, PermissionMissing, ConnectionProblem or NotSupported. Empty when the provider did not answer.",
+                Computed: true,
+            },
+            "transcript_fetch_checked_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime last asked the provider for the call's transcript.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "transcript_fetch_next_attempt_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime next asks the provider for the call's transcript, while the Transcript Fetch Status is Waiting.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -338,6 +360,10 @@ func (r *IncidentVideoCallResource) Create(ctx context.Context, req resource.Cre
         "rootCauseSuggestionStatus": true,
         "rootCauseSuggestionReviewedAt": true,
         "rootCauseSuggestionReviewedByUserId": true,
+        "transcriptFetchStatus": true,
+        "transcriptFetchReason": true,
+        "transcriptFetchCheckedAt": true,
+        "transcriptFetchNextAttemptAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1029,6 +1055,102 @@ func (r *IncidentVideoCallResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.RootCauseSuggestionReviewedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["transcriptFetchStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptFetchStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TranscriptFetchStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TranscriptFetchStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TranscriptFetchStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.TranscriptFetchStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TranscriptFetchStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.TranscriptFetchStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TranscriptFetchStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptFetchStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["transcriptFetchStatus"].(string); ok {
+        data.TranscriptFetchStatus = types.StringValue(val)
+    } else {
+        data.TranscriptFetchStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["transcriptFetchReason"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptFetchReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TranscriptFetchReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TranscriptFetchReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TranscriptFetchReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.TranscriptFetchReason = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TranscriptFetchReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.TranscriptFetchReason = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TranscriptFetchReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptFetchReason = types.StringNull()
+        }
+    } else if val, ok := dataMap["transcriptFetchReason"].(string); ok {
+        data.TranscriptFetchReason = types.StringValue(val)
+    } else {
+        data.TranscriptFetchReason = types.StringNull()
+    }
+    if obj, ok := dataMap["transcriptFetchCheckedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TranscriptFetchCheckedAt = NewRFC3339Value(val)
+        } else {
+            data.TranscriptFetchCheckedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["transcriptFetchCheckedAt"].(string); ok && val != "" {
+        data.TranscriptFetchCheckedAt = NewRFC3339Value(val)
+    } else {
+        data.TranscriptFetchCheckedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["transcriptFetchNextAttemptAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TranscriptFetchNextAttemptAt = NewRFC3339Value(val)
+        } else {
+            data.TranscriptFetchNextAttemptAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["transcriptFetchNextAttemptAt"].(string); ok && val != "" {
+        data.TranscriptFetchNextAttemptAt = NewRFC3339Value(val)
+    } else {
+        data.TranscriptFetchNextAttemptAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1118,6 +1240,10 @@ func (r *IncidentVideoCallResource) Read(ctx context.Context, req resource.ReadR
         "rootCauseSuggestionStatus": true,
         "rootCauseSuggestionReviewedAt": true,
         "rootCauseSuggestionReviewedByUserId": true,
+        "transcriptFetchStatus": true,
+        "transcriptFetchReason": true,
+        "transcriptFetchCheckedAt": true,
+        "transcriptFetchNextAttemptAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1809,6 +1935,102 @@ func (r *IncidentVideoCallResource) Read(ctx context.Context, req resource.ReadR
         data.RootCauseSuggestionReviewedByUserId = types.StringValue(val)
     } else {
         data.RootCauseSuggestionReviewedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["transcriptFetchStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptFetchStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TranscriptFetchStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TranscriptFetchStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TranscriptFetchStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.TranscriptFetchStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TranscriptFetchStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.TranscriptFetchStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TranscriptFetchStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptFetchStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["transcriptFetchStatus"].(string); ok {
+        data.TranscriptFetchStatus = types.StringValue(val)
+    } else {
+        data.TranscriptFetchStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["transcriptFetchReason"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptFetchReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TranscriptFetchReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TranscriptFetchReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TranscriptFetchReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.TranscriptFetchReason = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TranscriptFetchReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.TranscriptFetchReason = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TranscriptFetchReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptFetchReason = types.StringNull()
+        }
+    } else if val, ok := dataMap["transcriptFetchReason"].(string); ok {
+        data.TranscriptFetchReason = types.StringValue(val)
+    } else {
+        data.TranscriptFetchReason = types.StringNull()
+    }
+    if obj, ok := dataMap["transcriptFetchCheckedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TranscriptFetchCheckedAt = NewRFC3339Value(val)
+        } else {
+            data.TranscriptFetchCheckedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["transcriptFetchCheckedAt"].(string); ok && val != "" {
+        data.TranscriptFetchCheckedAt = NewRFC3339Value(val)
+    } else {
+        data.TranscriptFetchCheckedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["transcriptFetchNextAttemptAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TranscriptFetchNextAttemptAt = NewRFC3339Value(val)
+        } else {
+            data.TranscriptFetchNextAttemptAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["transcriptFetchNextAttemptAt"].(string); ok && val != "" {
+        data.TranscriptFetchNextAttemptAt = NewRFC3339Value(val)
+    } else {
+        data.TranscriptFetchNextAttemptAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -83,6 +83,7 @@ type IncidentDataSourceModel struct {
     CreatedByProbeId types.String `tfsdk:"created_by_probe_id"`
     IsCreatedAutomatically types.Bool `tfsdk:"is_created_automatically"`
     HoldsMonitors types.Bool `tfsdk:"holds_monitors"`
+    PostmortemDraftWaitingSince types.String `tfsdk:"postmortem_draft_waiting_since"`
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     TelemetryQuery types.String `tfsdk:"telemetry_query"`
     IncidentNumber types.Number `tfsdk:"incident_number"`
@@ -370,6 +371,10 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             "holds_monitors": schema.BoolAttribute{
                 MarkdownDescription: "Whether this incident is holding its monitors - keeping them in its monitor status, or their monitoring paused - so that resolving it gives them back: their monitoring resumes and their status returns to operational. True from when the incident is declared open, or from when an edit while it is open puts its monitors in its monitor status. False for an incident declared already resolved, which never held them, and once a resolve has given them back. Empty for incidents from before it was recorded, which give their monitors back when they are resolved. Set by OneUptime; it cannot be written.",
                 Optional: true,
+                Computed: true,
+            },
+            "postmortem_draft_waiting_since": schema.StringAttribute{
+                MarkdownDescription: "When the automatic postmortem draft started waiting for the transcript of the incident's call, so that the draft reads what was said on it: set when the incident resolves while a call's transcript is still on its way, and cleared once the draft is written. Empty the rest of the time. Set by OneUptime; it cannot be written.",
                 Computed: true,
             },
             "remediation_notes": schema.StringAttribute{
@@ -672,6 +677,7 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
         "holdsMonitors": true,
+        "postmortemDraftWaitingSince": true,
         "remediationNotes": true,
         "telemetryQuery": true,
         "incidentNumber": true,
@@ -1755,6 +1761,23 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.HoldsMonitors = types.BoolValue(val)
     } else {
         data.HoldsMonitors = types.BoolNull()
+    }
+    if obj, ok := item["postmortemDraftWaitingSince"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PostmortemDraftWaitingSince = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PostmortemDraftWaitingSince = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PostmortemDraftWaitingSince = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PostmortemDraftWaitingSince = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostmortemDraftWaitingSince = types.StringNull()
+        }
+    } else if val, ok := item["postmortemDraftWaitingSince"].(string); ok {
+        data.PostmortemDraftWaitingSince = types.StringValue(val)
+    } else {
+        data.PostmortemDraftWaitingSince = types.StringNull()
     }
     if obj, ok := item["remediationNotes"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

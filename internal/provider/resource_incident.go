@@ -100,6 +100,7 @@ type IncidentResourceModel struct {
     CreatedByProbeId types.String `tfsdk:"created_by_probe_id"`
     IsCreatedAutomatically types.Bool `tfsdk:"is_created_automatically"`
     HoldsMonitors types.Bool `tfsdk:"holds_monitors"`
+    PostmortemDraftWaitingSince RFC3339Value `tfsdk:"postmortem_draft_waiting_since"`
     IncidentNumber types.Number `tfsdk:"incident_number"`
     IncidentNumberWithPrefix types.String `tfsdk:"incident_number_with_prefix"`
     IsScopedToStatusPages types.Bool `tfsdk:"is_scoped_to_status_pages"`
@@ -579,6 +580,11 @@ func (r *IncidentResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Whether this incident is holding its monitors - keeping them in its monitor status, or their monitoring paused - so that resolving it gives them back: their monitoring resumes and their status returns to operational. True from when the incident is declared open, or from when an edit while it is open puts its monitors in its monitor status. False for an incident declared already resolved, which never held them, and once a resolve has given them back. Empty for incidents from before it was recorded, which give their monitors back when they are resolved. Set by OneUptime; it cannot be written.",
                 Computed: true,
             },
+            "postmortem_draft_waiting_since": schema.StringAttribute{
+                MarkdownDescription: "When the automatic postmortem draft started waiting for the transcript of the incident's call, so that the draft reads what was said on it: set when the incident resolves while a call's transcript is still on its way, and cleared once the draft is written. Empty the rest of the time. Set by OneUptime; it cannot be written.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
             "incident_number": schema.NumberAttribute{
                 MarkdownDescription: "Incident Number.",
                 Computed: true,
@@ -890,6 +896,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
         "holdsMonitors": true,
+        "postmortemDraftWaitingSince": true,
         "incidentNumber": true,
         "incidentNumberWithPrefix": true,
         "isScopedToStatusPages": true,
@@ -2579,6 +2586,17 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.HoldsMonitors = types.BoolNull()
     }
+    if obj, ok := dataMap["postmortemDraftWaitingSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PostmortemDraftWaitingSince = NewRFC3339Value(val)
+        } else {
+            data.PostmortemDraftWaitingSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["postmortemDraftWaitingSince"].(string); ok && val != "" {
+        data.PostmortemDraftWaitingSince = NewRFC3339Value(val)
+    } else {
+        data.PostmortemDraftWaitingSince = NewRFC3339Null()
+    }
     data.IncidentNumber = numberFromAPI(data.IncidentNumber, dataMap["incidentNumber"])
     if obj, ok := dataMap["incidentNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2796,6 +2814,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
         "holdsMonitors": true,
+        "postmortemDraftWaitingSince": true,
         "incidentNumber": true,
         "incidentNumberWithPrefix": true,
         "isScopedToStatusPages": true,
@@ -4486,6 +4505,17 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.HoldsMonitors = types.BoolNull()
     }
+    if obj, ok := dataMap["postmortemDraftWaitingSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PostmortemDraftWaitingSince = NewRFC3339Value(val)
+        } else {
+            data.PostmortemDraftWaitingSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["postmortemDraftWaitingSince"].(string); ok && val != "" {
+        data.PostmortemDraftWaitingSince = NewRFC3339Value(val)
+    } else {
+        data.PostmortemDraftWaitingSince = NewRFC3339Null()
+    }
     data.IncidentNumber = numberFromAPI(data.IncidentNumber, dataMap["incidentNumber"])
     if obj, ok := dataMap["incidentNumberWithPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4869,6 +4899,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
         "holdsMonitors": true,
+        "postmortemDraftWaitingSince": true,
         "incidentNumber": true,
         "incidentNumberWithPrefix": true,
         "isScopedToStatusPages": true,
@@ -6552,6 +6583,17 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         data.HoldsMonitors = types.BoolValue(val)
     } else {
         data.HoldsMonitors = types.BoolNull()
+    }
+    if obj, ok := dataMap["postmortemDraftWaitingSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PostmortemDraftWaitingSince = NewRFC3339Value(val)
+        } else {
+            data.PostmortemDraftWaitingSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["postmortemDraftWaitingSince"].(string); ok && val != "" {
+        data.PostmortemDraftWaitingSince = NewRFC3339Value(val)
+    } else {
+        data.PostmortemDraftWaitingSince = NewRFC3339Null()
     }
     data.IncidentNumber = numberFromAPI(data.IncidentNumber, dataMap["incidentNumber"])
     if obj, ok := dataMap["incidentNumberWithPrefix"].(map[string]interface{}); ok {

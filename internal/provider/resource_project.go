@@ -76,6 +76,7 @@ type ProjectResourceModel struct {
     IsSessionReplayAllowed types.Bool `tfsdk:"is_session_replay_allowed"`
     AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
     StoreSystemEventsInAuditLogs types.Bool `tfsdk:"store_system_events_in_audit_logs"`
+    RecordAndTranscribeIncidentCalls types.Bool `tfsdk:"record_and_transcribe_incident_calls"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
     RequireSsoWithSsoProviderId types.String `tfsdk:"require_sso_with_sso_provider_id"`
     AutoRechargeSmsOrCallByBalanceInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_by_balance_in_usd"`
@@ -455,6 +456,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
             },
             "store_system_events_in_audit_logs": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "record_and_transcribe_incident_calls": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime asks Zoom and Google Meet to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Microsoft Teams calls, Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -1064,6 +1074,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.StoreSystemEventsInAuditLogs.IsNull() && !data.StoreSystemEventsInAuditLogs.IsUnknown() {
         requestDataMap["storeSystemEventsInAuditLogs"] = data.StoreSystemEventsInAuditLogs.ValueBool()
     }
+    if !data.RecordAndTranscribeIncidentCalls.IsNull() && !data.RecordAndTranscribeIncidentCalls.IsUnknown() {
+        requestDataMap["recordAndTranscribeIncidentCalls"] = data.RecordAndTranscribeIncidentCalls.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/project", projectRequest)
@@ -1143,6 +1156,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "isSessionReplayAllowed": true,
         "auditLogsRetentionInDays": true,
         "storeSystemEventsInAuditLogs": true,
+        "recordAndTranscribeIncidentCalls": true,
         "requireSsoForLogin": true,
         "requireSsoWithSsoProviderId": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
@@ -1699,6 +1713,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     data.AuditLogsRetentionInDays = numberFromAPI(data.AuditLogsRetentionInDays, dataMap["auditLogsRetentionInDays"])
     if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
         data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
+    }
+    if val, ok := dataMap["recordAndTranscribeIncidentCalls"].(bool); ok {
+        data.RecordAndTranscribeIncidentCalls = types.BoolValue(val)
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
@@ -2533,6 +2550,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "isSessionReplayAllowed": true,
         "auditLogsRetentionInDays": true,
         "storeSystemEventsInAuditLogs": true,
+        "recordAndTranscribeIncidentCalls": true,
         "requireSsoForLogin": true,
         "requireSsoWithSsoProviderId": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
@@ -3090,6 +3108,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     data.AuditLogsRetentionInDays = numberFromAPI(data.AuditLogsRetentionInDays, dataMap["auditLogsRetentionInDays"])
     if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
         data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
+    }
+    if val, ok := dataMap["recordAndTranscribeIncidentCalls"].(bool); ok {
+        data.RecordAndTranscribeIncidentCalls = types.BoolValue(val)
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
@@ -4132,6 +4153,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.StoreSystemEventsInAuditLogs.IsUnknown() && !state.StoreSystemEventsInAuditLogs.IsUnknown() && !data.StoreSystemEventsInAuditLogs.Equal(state.StoreSystemEventsInAuditLogs) {
         requestDataMap["storeSystemEventsInAuditLogs"] = data.StoreSystemEventsInAuditLogs.ValueBool()
     }
+    if !data.RecordAndTranscribeIncidentCalls.IsUnknown() && !state.RecordAndTranscribeIncidentCalls.IsUnknown() && !data.RecordAndTranscribeIncidentCalls.Equal(state.RecordAndTranscribeIncidentCalls) {
+        requestDataMap["recordAndTranscribeIncidentCalls"] = data.RecordAndTranscribeIncidentCalls.ValueBool()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -4189,6 +4213,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "isSessionReplayAllowed": true,
         "auditLogsRetentionInDays": true,
         "storeSystemEventsInAuditLogs": true,
+        "recordAndTranscribeIncidentCalls": true,
         "requireSsoForLogin": true,
         "requireSsoWithSsoProviderId": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
@@ -4740,6 +4765,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     data.AuditLogsRetentionInDays = numberFromAPI(data.AuditLogsRetentionInDays, dataMap["auditLogsRetentionInDays"])
     if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
         data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
+    }
+    if val, ok := dataMap["recordAndTranscribeIncidentCalls"].(bool); ok {
+        data.RecordAndTranscribeIncidentCalls = types.BoolValue(val)
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
@@ -5665,6 +5693,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.StoreSystemEventsInAuditLogs.IsNull() && !plan.StoreSystemEventsInAuditLogs.IsUnknown() {
         data.StoreSystemEventsInAuditLogs = plan.StoreSystemEventsInAuditLogs
+    }
+    if config.RecordAndTranscribeIncidentCalls.IsNull() && !plan.RecordAndTranscribeIncidentCalls.IsUnknown() {
+        data.RecordAndTranscribeIncidentCalls = plan.RecordAndTranscribeIncidentCalls
     }
     if config.RequireSsoForLogin.IsNull() && !plan.RequireSsoForLogin.IsUnknown() {
         data.RequireSsoForLogin = plan.RequireSsoForLogin

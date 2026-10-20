@@ -87,6 +87,7 @@ data "oneuptime_incident" "by_id" {
 - `podman_hosts` (Set of String) List of Podman hosts affected by this incident. IDs of `oneuptime_podman_host` resources.
 - `podman_resources` (Set of String) List of Podman resources (containers, images, networks, volumes) affected by this incident.
 - `postmortem_attachments` (Set of String) Files that accompany the postmortem note and can be shared publicly when enabled. IDs of `oneuptime_file` resources.
+- `postmortem_draft_waiting_since` (String) When the automatic postmortem draft started waiting for the transcript of the incident's call, so that the draft reads what was said on it: set when the incident resolves while a call's transcript is still on its way, and cleared once the draft is written. Empty the rest of the time. Set by OneUptime; it cannot be written.
 - `postmortem_posted_at` (String) Timestamp that will be shown alongside the published postmortem on the status page.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `proxmox_clusters` (Set of String) List of Proxmox clusters affected by this incident. IDs of `oneuptime_proxmox_cluster` resources.

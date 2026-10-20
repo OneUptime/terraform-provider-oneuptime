@@ -49,6 +49,10 @@ type IncidentVideoCallDataSourceModel struct {
     RootCauseSuggestionStatus types.String `tfsdk:"root_cause_suggestion_status"`
     RootCauseSuggestionReviewedAt types.String `tfsdk:"root_cause_suggestion_reviewed_at"`
     RootCauseSuggestionReviewedByUserId types.String `tfsdk:"root_cause_suggestion_reviewed_by_user_id"`
+    TranscriptFetchStatus types.String `tfsdk:"transcript_fetch_status"`
+    TranscriptFetchReason types.String `tfsdk:"transcript_fetch_reason"`
+    TranscriptFetchCheckedAt types.String `tfsdk:"transcript_fetch_checked_at"`
+    TranscriptFetchNextAttemptAt types.String `tfsdk:"transcript_fetch_next_attempt_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -168,6 +172,24 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
                 Optional: true,
                 Computed: true,
             },
+            "transcript_fetch_status": schema.StringAttribute{
+                MarkdownDescription: "Whether OneUptime gets the call's transcript from Zoom or Google Meet by itself, as it does for the calls it starts while Record and transcribe incident calls is on: Waiting while it asks the provider (again at Transcript Fetch Next Attempt At), Stopped once it no longer asks (Transcript Fetch Reason says why). Empty for a call it does not ask about, and once it has the transcript.",
+                Optional: true,
+                Computed: true,
+            },
+            "transcript_fetch_reason": schema.StringAttribute{
+                MarkdownDescription: "Why the provider had no transcript to give when OneUptime last asked: NotReady (still preparing it), NotTranscribed (nothing recorded or transcribed yet), NoMeeting, Expired, PermissionMissing, ConnectionProblem or NotSupported. Empty when the provider did not answer.",
+                Optional: true,
+                Computed: true,
+            },
+            "transcript_fetch_checked_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime last asked the provider for the call's transcript.",
+                Computed: true,
+            },
+            "transcript_fetch_next_attempt_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime next asks the provider for the call's transcript, while the Transcript Fetch Status is Waiting.",
+                Computed: true,
+            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
@@ -268,6 +290,14 @@ func (d *IncidentVideoCallDataSource) Read(ctx context.Context, req datasource.R
         filters["rootCauseSuggestionReviewedByUserId"] = data.RootCauseSuggestionReviewedByUserId.ValueString()
         filterNames = append(filterNames, "root_cause_suggestion_reviewed_by_user_id = "+fmt.Sprintf("%q", data.RootCauseSuggestionReviewedByUserId.ValueString()))
     }
+    if !data.TranscriptFetchStatus.IsNull() && !data.TranscriptFetchStatus.IsUnknown() {
+        filters["transcriptFetchStatus"] = data.TranscriptFetchStatus.ValueString()
+        filterNames = append(filterNames, "transcript_fetch_status = "+fmt.Sprintf("%q", data.TranscriptFetchStatus.ValueString()))
+    }
+    if !data.TranscriptFetchReason.IsNull() && !data.TranscriptFetchReason.IsUnknown() {
+        filters["transcriptFetchReason"] = data.TranscriptFetchReason.ValueString()
+        filterNames = append(filterNames, "transcript_fetch_reason = "+fmt.Sprintf("%q", data.TranscriptFetchReason.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -311,6 +341,10 @@ func (d *IncidentVideoCallDataSource) Read(ctx context.Context, req datasource.R
         "rootCauseSuggestionStatus": true,
         "rootCauseSuggestionReviewedAt": true,
         "rootCauseSuggestionReviewedByUserId": true,
+        "transcriptFetchStatus": true,
+        "transcriptFetchReason": true,
+        "transcriptFetchCheckedAt": true,
+        "transcriptFetchNextAttemptAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -763,6 +797,74 @@ func (d *IncidentVideoCallDataSource) Read(ctx context.Context, req datasource.R
         data.RootCauseSuggestionReviewedByUserId = types.StringValue(val)
     } else {
         data.RootCauseSuggestionReviewedByUserId = types.StringNull()
+    }
+    if obj, ok := item["transcriptFetchStatus"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptFetchStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TranscriptFetchStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TranscriptFetchStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TranscriptFetchStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptFetchStatus = types.StringNull()
+        }
+    } else if val, ok := item["transcriptFetchStatus"].(string); ok {
+        data.TranscriptFetchStatus = types.StringValue(val)
+    } else {
+        data.TranscriptFetchStatus = types.StringNull()
+    }
+    if obj, ok := item["transcriptFetchReason"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptFetchReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TranscriptFetchReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TranscriptFetchReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TranscriptFetchReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptFetchReason = types.StringNull()
+        }
+    } else if val, ok := item["transcriptFetchReason"].(string); ok {
+        data.TranscriptFetchReason = types.StringValue(val)
+    } else {
+        data.TranscriptFetchReason = types.StringNull()
+    }
+    if obj, ok := item["transcriptFetchCheckedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptFetchCheckedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TranscriptFetchCheckedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TranscriptFetchCheckedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TranscriptFetchCheckedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptFetchCheckedAt = types.StringNull()
+        }
+    } else if val, ok := item["transcriptFetchCheckedAt"].(string); ok {
+        data.TranscriptFetchCheckedAt = types.StringValue(val)
+    } else {
+        data.TranscriptFetchCheckedAt = types.StringNull()
+    }
+    if obj, ok := item["transcriptFetchNextAttemptAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TranscriptFetchNextAttemptAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TranscriptFetchNextAttemptAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TranscriptFetchNextAttemptAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TranscriptFetchNextAttemptAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TranscriptFetchNextAttemptAt = types.StringNull()
+        }
+    } else if val, ok := item["transcriptFetchNextAttemptAt"].(string); ok {
+        data.TranscriptFetchNextAttemptAt = types.StringValue(val)
+    } else {
+        data.TranscriptFetchNextAttemptAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
