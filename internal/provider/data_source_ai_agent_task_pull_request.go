@@ -43,6 +43,14 @@ type AiAgentTaskPullRequestDataSourceModel struct {
     CiStatusAt types.String `tfsdk:"ci_status_at"`
     RunnerVerificationStatus types.String `tfsdk:"runner_verification_status"`
     RunnerVerificationSummary types.String `tfsdk:"runner_verification_summary"`
+    MergeCommitSha types.String `tfsdk:"merge_commit_sha"`
+    MergedAt types.String `tfsdk:"merged_at"`
+    ProductionStatus types.String `tfsdk:"production_status"`
+    ProductionStatusAt types.String `tfsdk:"production_status_at"`
+    DeployedAt types.String `tfsdk:"deployed_at"`
+    DeployedVersion types.String `tfsdk:"deployed_version"`
+    DeployedCommitSha types.String `tfsdk:"deployed_commit_sha"`
+    ProductionSummary types.String `tfsdk:"production_summary"`
     HeadRefName types.String `tfsdk:"head_ref_name"`
     BaseRefName types.String `tfsdk:"base_ref_name"`
     RepoOrganizationName types.String `tfsdk:"repo_organization_name"`
@@ -137,6 +145,43 @@ func (d *AiAgentTaskPullRequestDataSource) Schema(ctx context.Context, req datas
             },
             "runner_verification_summary": schema.StringAttribute{
                 MarkdownDescription: "Human-readable summary of the Runner-side verification (which commands ran, what failed, how many repair attempts were used). Written by the Runner at record time.",
+                Optional: true,
+                Computed: true,
+            },
+            "merge_commit_sha": schema.StringAttribute{
+                MarkdownDescription: "The commit GitHub merged the pull request as. The fix is in production once a recorded deploy contains this commit. Written by the server when the pull request merges.",
+                Optional: true,
+                Computed: true,
+            },
+            "merged_at": schema.StringAttribute{
+                MarkdownDescription: "When GitHub merged the pull request. Written by the server.",
+                Computed: true,
+            },
+            "production_status": schema.StringAttribute{
+                MarkdownDescription: "Whether the merged fix fixed its exception in production: AwaitingDeploy, Watching, Verified, Regressed or Unverifiable. Written by the server, which watches the exception once a recorded deploy contains the fix.",
+                Optional: true,
+                Computed: true,
+            },
+            "production_status_at": schema.StringAttribute{
+                MarkdownDescription: "When the production status last changed. Written by the server.",
+                Computed: true,
+            },
+            "deployed_at": schema.StringAttribute{
+                MarkdownDescription: "When the first recorded deploy that contains the fix ran. Written by the server.",
+                Computed: true,
+            },
+            "deployed_version": schema.StringAttribute{
+                MarkdownDescription: "The version that deploy reported, when it reported one. Written by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "deployed_commit_sha": schema.StringAttribute{
+                MarkdownDescription: "The commit that deploy ran: the fix's merge commit or a later one. Written by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "production_summary": schema.StringAttribute{
+                MarkdownDescription: "What the production check found, in a sentence: the deploy that shipped the fix and how often the exception happened before and since. Written by the server.",
                 Optional: true,
                 Computed: true,
             },
@@ -252,6 +297,26 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         filters["runnerVerificationSummary"] = data.RunnerVerificationSummary.ValueString()
         filterNames = append(filterNames, "runner_verification_summary = "+fmt.Sprintf("%q", data.RunnerVerificationSummary.ValueString()))
     }
+    if !data.MergeCommitSha.IsNull() && !data.MergeCommitSha.IsUnknown() {
+        filters["mergeCommitSha"] = data.MergeCommitSha.ValueString()
+        filterNames = append(filterNames, "merge_commit_sha = "+fmt.Sprintf("%q", data.MergeCommitSha.ValueString()))
+    }
+    if !data.ProductionStatus.IsNull() && !data.ProductionStatus.IsUnknown() {
+        filters["productionStatus"] = data.ProductionStatus.ValueString()
+        filterNames = append(filterNames, "production_status = "+fmt.Sprintf("%q", data.ProductionStatus.ValueString()))
+    }
+    if !data.DeployedVersion.IsNull() && !data.DeployedVersion.IsUnknown() {
+        filters["deployedVersion"] = data.DeployedVersion.ValueString()
+        filterNames = append(filterNames, "deployed_version = "+fmt.Sprintf("%q", data.DeployedVersion.ValueString()))
+    }
+    if !data.DeployedCommitSha.IsNull() && !data.DeployedCommitSha.IsUnknown() {
+        filters["deployedCommitSha"] = data.DeployedCommitSha.ValueString()
+        filterNames = append(filterNames, "deployed_commit_sha = "+fmt.Sprintf("%q", data.DeployedCommitSha.ValueString()))
+    }
+    if !data.ProductionSummary.IsNull() && !data.ProductionSummary.IsUnknown() {
+        filters["productionSummary"] = data.ProductionSummary.ValueString()
+        filterNames = append(filterNames, "production_summary = "+fmt.Sprintf("%q", data.ProductionSummary.ValueString()))
+    }
     if !data.HeadRefName.IsNull() && !data.HeadRefName.IsUnknown() {
         filters["headRefName"] = data.HeadRefName.ValueString()
         filterNames = append(filterNames, "head_ref_name = "+fmt.Sprintf("%q", data.HeadRefName.ValueString()))
@@ -305,6 +370,14 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         "ciStatusAt": true,
         "runnerVerificationStatus": true,
         "runnerVerificationSummary": true,
+        "mergeCommitSha": true,
+        "mergedAt": true,
+        "productionStatus": true,
+        "productionStatusAt": true,
+        "deployedAt": true,
+        "deployedVersion": true,
+        "deployedCommitSha": true,
+        "productionSummary": true,
         "headRefName": true,
         "baseRefName": true,
         "repoOrganizationName": true,
@@ -627,6 +700,142 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         data.RunnerVerificationSummary = types.StringValue(val)
     } else {
         data.RunnerVerificationSummary = types.StringNull()
+    }
+    if obj, ok := item["mergeCommitSha"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergeCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MergeCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MergeCommitSha = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergeCommitSha = types.StringNull()
+        }
+    } else if val, ok := item["mergeCommitSha"].(string); ok {
+        data.MergeCommitSha = types.StringValue(val)
+    } else {
+        data.MergeCommitSha = types.StringNull()
+    }
+    if obj, ok := item["mergedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MergedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MergedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MergedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedAt = types.StringNull()
+        }
+    } else if val, ok := item["mergedAt"].(string); ok {
+        data.MergedAt = types.StringValue(val)
+    } else {
+        data.MergedAt = types.StringNull()
+    }
+    if obj, ok := item["productionStatus"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionStatus = types.StringNull()
+        }
+    } else if val, ok := item["productionStatus"].(string); ok {
+        data.ProductionStatus = types.StringValue(val)
+    } else {
+        data.ProductionStatus = types.StringNull()
+    }
+    if obj, ok := item["productionStatusAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionStatusAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductionStatusAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductionStatusAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductionStatusAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionStatusAt = types.StringNull()
+        }
+    } else if val, ok := item["productionStatusAt"].(string); ok {
+        data.ProductionStatusAt = types.StringValue(val)
+    } else {
+        data.ProductionStatusAt = types.StringNull()
+    }
+    if obj, ok := item["deployedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeployedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DeployedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DeployedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DeployedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedAt = types.StringNull()
+        }
+    } else if val, ok := item["deployedAt"].(string); ok {
+        data.DeployedAt = types.StringValue(val)
+    } else {
+        data.DeployedAt = types.StringNull()
+    }
+    if obj, ok := item["deployedVersion"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeployedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DeployedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DeployedVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DeployedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedVersion = types.StringNull()
+        }
+    } else if val, ok := item["deployedVersion"].(string); ok {
+        data.DeployedVersion = types.StringValue(val)
+    } else {
+        data.DeployedVersion = types.StringNull()
+    }
+    if obj, ok := item["deployedCommitSha"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeployedCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DeployedCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedCommitSha = types.StringNull()
+        }
+    } else if val, ok := item["deployedCommitSha"].(string); ok {
+        data.DeployedCommitSha = types.StringValue(val)
+    } else {
+        data.DeployedCommitSha = types.StringNull()
+    }
+    if obj, ok := item["productionSummary"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductionSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductionSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductionSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionSummary = types.StringNull()
+        }
+    } else if val, ok := item["productionSummary"].(string); ok {
+        data.ProductionSummary = types.StringValue(val)
+    } else {
+        data.ProductionSummary = types.StringNull()
     }
     if obj, ok := item["headRefName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

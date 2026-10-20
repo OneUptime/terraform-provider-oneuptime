@@ -47,7 +47,6 @@ type RunnerResourceModel struct {
     AgentVersion JSONSubsetValue `tfsdk:"agent_version"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
     CanRunRunbooks types.Bool `tfsdk:"can_run_runbooks"`
-    CanRunCodeFixTasks types.Bool `tfsdk:"can_run_code_fix_tasks"`
     CanRunAiCommands types.Bool `tfsdk:"can_run_ai_commands"`
     Labels types.Set `tfsdk:"labels"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
@@ -69,7 +68,7 @@ func (r *RunnerResource) Schema(ctx context.Context, req resource.SchemaRequest,
 
 func (r *RunnerResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "A self-hosted OneUptime Runner: it executes runbook steps in your own infrastructure and, when the capability is enabled, works in your code repository to open AI fix pull requests. Runbook steps pick the Runner that should execute them.",
+        MarkdownDescription: "A self-hosted OneUptime Runner: it executes runbook steps in your own infrastructure, and AI works on it in the code repositories that pick it. Runbook steps and code repositories each pick the Runner that runs them.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -129,15 +128,6 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "can_run_code_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "Whether this Runner works in your code repository to open AI fix pull requests. Off by default; it requires a connected code repository. It cannot be turned on for an in-cluster Runner the Kubernetes agent chart registered, which runs kubectl only.",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },
@@ -269,9 +259,6 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
     if !data.CanRunRunbooks.IsNull() && !data.CanRunRunbooks.IsUnknown() {
         requestDataMap["canRunRunbooks"] = data.CanRunRunbooks.ValueBool()
     }
-    if !data.CanRunCodeFixTasks.IsNull() && !data.CanRunCodeFixTasks.IsUnknown() {
-        requestDataMap["canRunCodeFixTasks"] = data.CanRunCodeFixTasks.ValueBool()
-    }
     if !data.CanRunAiCommands.IsNull() && !data.CanRunAiCommands.IsUnknown() {
         requestDataMap["canRunAiCommands"] = data.CanRunAiCommands.ValueBool()
     }
@@ -330,7 +317,6 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
         "agentVersion": true,
         "connectionStatus": true,
         "canRunRunbooks": true,
-        "canRunCodeFixTasks": true,
         "canRunAiCommands": true,
         "labels": true,
         "createdAt": true,
@@ -571,9 +557,6 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
     if val, ok := dataMap["canRunRunbooks"].(bool); ok {
         data.CanRunRunbooks = types.BoolValue(val)
     }
-    if val, ok := dataMap["canRunCodeFixTasks"].(bool); ok {
-        data.CanRunCodeFixTasks = types.BoolValue(val)
-    }
     if val, ok := dataMap["canRunAiCommands"].(bool); ok {
         data.CanRunAiCommands = types.BoolValue(val)
     }
@@ -793,7 +776,6 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
         "agentVersion": true,
         "connectionStatus": true,
         "canRunRunbooks": true,
-        "canRunCodeFixTasks": true,
         "canRunAiCommands": true,
         "labels": true,
         "createdAt": true,
@@ -1035,9 +1017,6 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
     if val, ok := dataMap["canRunRunbooks"].(bool); ok {
         data.CanRunRunbooks = types.BoolValue(val)
     }
-    if val, ok := dataMap["canRunCodeFixTasks"].(bool); ok {
-        data.CanRunCodeFixTasks = types.BoolValue(val)
-    }
     if val, ok := dataMap["canRunAiCommands"].(bool); ok {
         data.CanRunAiCommands = types.BoolValue(val)
     }
@@ -1275,9 +1254,6 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
     if !data.CanRunRunbooks.IsUnknown() && !state.CanRunRunbooks.IsUnknown() && !data.CanRunRunbooks.Equal(state.CanRunRunbooks) {
         requestDataMap["canRunRunbooks"] = data.CanRunRunbooks.ValueBool()
     }
-    if !data.CanRunCodeFixTasks.IsUnknown() && !state.CanRunCodeFixTasks.IsUnknown() && !data.CanRunCodeFixTasks.Equal(state.CanRunCodeFixTasks) {
-        requestDataMap["canRunCodeFixTasks"] = data.CanRunCodeFixTasks.ValueBool()
-    }
     if !data.CanRunAiCommands.IsUnknown() && !state.CanRunAiCommands.IsUnknown() && !data.CanRunAiCommands.Equal(state.CanRunAiCommands) {
         requestDataMap["canRunAiCommands"] = data.CanRunAiCommands.ValueBool()
     }
@@ -1314,7 +1290,6 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
         "agentVersion": true,
         "connectionStatus": true,
         "canRunRunbooks": true,
-        "canRunCodeFixTasks": true,
         "canRunAiCommands": true,
         "labels": true,
         "createdAt": true,
@@ -1549,9 +1524,6 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
     }
     if val, ok := dataMap["canRunRunbooks"].(bool); ok {
         data.CanRunRunbooks = types.BoolValue(val)
-    }
-    if val, ok := dataMap["canRunCodeFixTasks"].(bool); ok {
-        data.CanRunCodeFixTasks = types.BoolValue(val)
     }
     if val, ok := dataMap["canRunAiCommands"].(bool); ok {
         data.CanRunAiCommands = types.BoolValue(val)
@@ -1803,9 +1775,6 @@ func (r *RunnerResource) keepPlannedValues(data *RunnerResourceModel, plan *Runn
     }
     if config.CanRunRunbooks.IsNull() && !plan.CanRunRunbooks.IsUnknown() {
         data.CanRunRunbooks = plan.CanRunRunbooks
-    }
-    if config.CanRunCodeFixTasks.IsNull() && !plan.CanRunCodeFixTasks.IsUnknown() {
-        data.CanRunCodeFixTasks = plan.CanRunCodeFixTasks
     }
     if config.CanRunAiCommands.IsNull() && !plan.CanRunAiCommands.IsUnknown() {
         data.CanRunAiCommands = plan.CanRunAiCommands

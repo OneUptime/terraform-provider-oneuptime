@@ -67,7 +67,7 @@ func (r *RunbookCredentialResource) Schema(ctx context.Context, req resource.Sch
 
 func (r *RunbookCredentialResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Access to a system a runbook needs to act on — an SSH host, or a Kubernetes cluster. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a step.",
+        MarkdownDescription: "What OneUptime AI's commands reach through your Runners: an SSH host, or a Kubernetes cluster's API server. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a command.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -164,7 +164,7 @@ func (r *RunbookCredentialResource) schemaDefinition() schema.Schema {
                 },
             },
             "runners": schema.SetAttribute{
-                MarkdownDescription: "The Runners allowed to use this credential. A step referencing it must target one of them. IDs of `oneuptime_runner` resources.",
+                MarkdownDescription: "The Runners allowed to use this credential. A command that uses it must run on one of them. IDs of `oneuptime_runner` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

@@ -15,37 +15,40 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &RunbookSecretDataSource{}
+var _ datasource.DataSource = &RunbookVariableDataSource{}
 
-func NewRunbookSecretDataSource() datasource.DataSource {
-    return &RunbookSecretDataSource{}
+func NewRunbookVariableDataSource() datasource.DataSource {
+    return &RunbookVariableDataSource{}
 }
 
-// RunbookSecretDataSource defines the data source implementation.
-type RunbookSecretDataSource struct {
+// RunbookVariableDataSource defines the data source implementation.
+type RunbookVariableDataSource struct {
     client *Client
 }
 
-// RunbookSecretDataSourceModel describes the data source data model.
-type RunbookSecretDataSourceModel struct {
+// RunbookVariableDataSourceModel describes the data source data model.
+type RunbookVariableDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     ProjectId types.String `tfsdk:"project_id"`
+    RunbookId types.String `tfsdk:"runbook_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
+    IsSecret types.Bool `tfsdk:"is_secret"`
+    Value types.String `tfsdk:"value"`
     Runners types.Set `tfsdk:"runners"`
     IsAvailableToGlobalRunners types.Bool `tfsdk:"is_available_to_global_runners"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
-func (d *RunbookSecretDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_runbook_secret"
+func (d *RunbookVariableDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_runbook_variable"
 }
 
-func (d *RunbookSecretDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *RunbookVariableDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Runbook Secret is a secret variable that can be used by runbook agents. For example you can store auth tokens, passwords, etc. in Runbook Secret and use them in your runbook steps. Runbook Secret is encrypted and only accessible by the assigned agent. Look up an existing runbook secret by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one runbook secret may match them all.",
+        MarkdownDescription: "A value runbook steps use: a host, a namespace or a URL, or a secret such as an SSH key, a password, a kubeconfig or an API token. It belongs to the project, which every runbook can use, or to one runbook. A secret value is encrypted and can never be read back through the API; it reaches only the Runners it lets use it, when they take a step that names it. Look up an existing runbook variable by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one runbook variable may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -65,8 +68,13 @@ func (d *RunbookSecretDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
+            "runbook_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the runbook this variable belongs to. Empty for a global variable, which every runbook of the project can use. The ID of a `oneuptime_runbook`.",
+                Optional: true,
+                Computed: true,
+            },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object.",
+                MarkdownDescription: "Letters, numbers, hyphens and underscores. Steps use the variable by this name: {{global.variables.NAME}} for a global variable, {{local.variables.NAME}} for one of the runbook's own.",
                 Optional: true,
                 Computed: true,
             },
@@ -75,8 +83,18 @@ func (d *RunbookSecretDataSource) Schema(ctx context.Context, req datasource.Sch
                 Optional: true,
                 Computed: true,
             },
+            "is_secret": schema.BoolAttribute{
+                MarkdownDescription: "A secret is encrypted, can never be read back, and is hidden in step output. It cannot be changed later.",
+                Optional: true,
+                Computed: true,
+            },
+            "value": schema.StringAttribute{
+                MarkdownDescription: "The value of a variable that is not a secret. A secret's value is Secret Value.",
+                Optional: true,
+                Computed: true,
+            },
             "runners": schema.SetAttribute{
-                MarkdownDescription: "List of runbook agents that can access this secret. IDs of `oneuptime_runner` resources.",
+                MarkdownDescription: "The Runners of your own that may use this secret. A step that names it must run on one of them. IDs of `oneuptime_runner` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -94,7 +112,7 @@ func (d *RunbookSecretDataSource) Schema(ctx context.Context, req datasource.Sch
     }
 }
 
-func (d *RunbookSecretDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *RunbookVariableDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -114,8 +132,8 @@ func (d *RunbookSecretDataSource) Configure(ctx context.Context, req datasource.
     d.client = client
 }
 
-func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data RunbookSecretDataSourceModel
+func (d *RunbookVariableDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data RunbookVariableDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -129,6 +147,10 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
+    if !data.RunbookId.IsNull() && !data.RunbookId.IsUnknown() {
+        filters["runbookId"] = data.RunbookId.ValueString()
+        filterNames = append(filterNames, "runbook_id = "+fmt.Sprintf("%q", data.RunbookId.ValueString()))
+    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
@@ -136,6 +158,14 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         filters["description"] = data.Description.ValueString()
         filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.IsSecret.IsNull() && !data.IsSecret.IsUnknown() {
+        filters["isSecret"] = data.IsSecret.ValueBool()
+        filterNames = append(filterNames, "is_secret = "+fmt.Sprintf("%t", data.IsSecret.ValueBool()))
+    }
+    if !data.Value.IsNull() && !data.Value.IsUnknown() {
+        filters["value"] = data.Value.ValueString()
+        filterNames = append(filterNames, "value = "+fmt.Sprintf("%q", data.Value.ValueString()))
     }
     if !data.IsAvailableToGlobalRunners.IsNull() && !data.IsAvailableToGlobalRunners.IsUnknown() {
         filters["isAvailableToGlobalRunners"] = data.IsAvailableToGlobalRunners.ValueBool()
@@ -149,14 +179,14 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Look the runbook secret up either by `id` or by its other arguments, not both.",
+            "Look the runbook variable up either by `id` or by its other arguments, not both.",
         )
         return
     }
     if !hasId && len(filters) == 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Set `id`, or at least one other argument to look the runbook secret up by.",
+            "Set `id`, or at least one other argument to look the runbook variable up by.",
         )
         return
     }
@@ -165,8 +195,11 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
         "createdAt": true,
         "updatedAt": true,
         "projectId": true,
+        "runbookId": true,
         "name": true,
         "description": true,
+        "isSecret": true,
+        "value": true,
         "runners": true,
         "isAvailableToGlobalRunners": true,
         "createdByUserId": true,
@@ -175,19 +208,19 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/runbook-secret/" + data.Id.ValueString() + "/get-item"
+        readPath := "/runbook-variable/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read runbook_secret, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read runbook_variable, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook secret found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook variable found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read runbook_secret: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read runbook_variable: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -203,28 +236,28 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/runbook-secret/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/runbook-variable/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list runbook_secret, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list runbook_variable, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list runbook_secret: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list runbook_variable: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook secret matches %s.", describeLookup(filterNames)))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No runbook variable matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one runbook secret matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one runbook variable matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for runbook_secret.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for runbook_variable.")
             return
         }
         item = first
@@ -299,6 +332,23 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.ProjectId = types.StringNull()
     }
+    if obj, ok := item["runbookId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunbookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunbookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunbookId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunbookId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunbookId = types.StringNull()
+        }
+    } else if val, ok := item["runbookId"].(string); ok {
+        data.RunbookId = types.StringValue(val)
+    } else {
+        data.RunbookId = types.StringNull()
+    }
     if obj, ok := item["name"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Name = types.StringValue(val)
@@ -332,6 +382,28 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if val, ok := item["isSecret"].(bool); ok {
+        data.IsSecret = types.BoolValue(val)
+    } else {
+        data.IsSecret = types.BoolNull()
+    }
+    if obj, ok := item["value"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Value = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Value = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Value = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Value = types.StringValue(string(jsonBytes))
+        } else {
+            data.Value = types.StringNull()
+        }
+    } else if val, ok := item["value"].(string); ok {
+        data.Value = types.StringValue(val)
+    } else {
+        data.Value = types.StringNull()
     }
     if val, ok := item["runners"].([]interface{}); ok {
         var setItems []attr.Value

@@ -214,7 +214,7 @@ func GetResources() []func() resource.Resource {
         NewRunnerTeamOwnerResource,
         NewRunnerUserOwnerResource,
         NewRunbookCredentialResource,
-        NewRunbookSecretResource,
+        NewRunbookVariableResource,
         NewStatusPageSsoResource,
         NewStatusPageOidcResource,
         NewStatusPageScimResource,

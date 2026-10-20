@@ -50,7 +50,7 @@ func (d *RunbookCredentialDataSource) Metadata(ctx context.Context, req datasour
 
 func (d *RunbookCredentialDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Access to a system a runbook needs to act on — an SSH host, or a Kubernetes cluster. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a step. Look up an existing runbook credential by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `credential_type`, ...): each one set must match, and exactly one runbook credential may match them all.",
+        MarkdownDescription: "What OneUptime AI's commands reach through your Runners: an SSH host, or a Kubernetes cluster's API server. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a command. Look up an existing runbook credential by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `credential_type`, ...): each one set must match, and exactly one runbook credential may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -111,7 +111,7 @@ func (d *RunbookCredentialDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "runners": schema.SetAttribute{
-                MarkdownDescription: "The Runners allowed to use this credential. A step referencing it must target one of them. IDs of `oneuptime_runner` resources.",
+                MarkdownDescription: "The Runners allowed to use this credential. A command that uses it must run on one of them. IDs of `oneuptime_runner` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

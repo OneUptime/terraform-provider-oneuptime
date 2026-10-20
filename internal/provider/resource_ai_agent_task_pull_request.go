@@ -55,6 +55,14 @@ type AiAgentTaskPullRequestResourceModel struct {
     CiStatusAt RFC3339Value `tfsdk:"ci_status_at"`
     RunnerVerificationStatus types.String `tfsdk:"runner_verification_status"`
     RunnerVerificationSummary types.String `tfsdk:"runner_verification_summary"`
+    MergeCommitSha types.String `tfsdk:"merge_commit_sha"`
+    MergedAt RFC3339Value `tfsdk:"merged_at"`
+    ProductionStatus types.String `tfsdk:"production_status"`
+    ProductionStatusAt RFC3339Value `tfsdk:"production_status_at"`
+    DeployedAt RFC3339Value `tfsdk:"deployed_at"`
+    DeployedVersion types.String `tfsdk:"deployed_version"`
+    DeployedCommitSha types.String `tfsdk:"deployed_commit_sha"`
+    ProductionSummary types.String `tfsdk:"production_summary"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -218,6 +226,41 @@ func (r *AiAgentTaskPullRequestResource) schemaDefinition() schema.Schema {
             },
             "runner_verification_summary": schema.StringAttribute{
                 MarkdownDescription: "Human-readable summary of the Runner-side verification (which commands ran, what failed, how many repair attempts were used). Written by the Runner at record time.",
+                Computed: true,
+            },
+            "merge_commit_sha": schema.StringAttribute{
+                MarkdownDescription: "The commit GitHub merged the pull request as. The fix is in production once a recorded deploy contains this commit. Written by the server when the pull request merges.",
+                Computed: true,
+            },
+            "merged_at": schema.StringAttribute{
+                MarkdownDescription: "When GitHub merged the pull request. Written by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "production_status": schema.StringAttribute{
+                MarkdownDescription: "Whether the merged fix fixed its exception in production: AwaitingDeploy, Watching, Verified, Regressed or Unverifiable. Written by the server, which watches the exception once a recorded deploy contains the fix.",
+                Computed: true,
+            },
+            "production_status_at": schema.StringAttribute{
+                MarkdownDescription: "When the production status last changed. Written by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "deployed_at": schema.StringAttribute{
+                MarkdownDescription: "When the first recorded deploy that contains the fix ran. Written by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "deployed_version": schema.StringAttribute{
+                MarkdownDescription: "The version that deploy reported, when it reported one. Written by the server.",
+                Computed: true,
+            },
+            "deployed_commit_sha": schema.StringAttribute{
+                MarkdownDescription: "The commit that deploy ran: the fix's merge commit or a later one. Written by the server.",
+                Computed: true,
+            },
+            "production_summary": schema.StringAttribute{
+                MarkdownDescription: "What the production check found, in a sentence: the deploy that shipped the fix and how often the exception happened before and since. Written by the server.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -384,6 +427,14 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         "ciStatusAt": true,
         "runnerVerificationStatus": true,
         "runnerVerificationSummary": true,
+        "mergeCommitSha": true,
+        "mergedAt": true,
+        "productionStatus": true,
+        "productionStatusAt": true,
+        "deployedAt": true,
+        "deployedVersion": true,
+        "deployedCommitSha": true,
+        "productionSummary": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -981,6 +1032,224 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
     } else {
         data.RunnerVerificationSummary = types.StringNull()
     }
+    if obj, ok := dataMap["mergeCommitSha"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergeCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MergeCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MergeCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MergeCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MergeCommitSha = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergeCommitSha = types.StringNull()
+        }
+    } else if val, ok := dataMap["mergeCommitSha"].(string); ok {
+        data.MergeCommitSha = types.StringValue(val)
+    } else {
+        data.MergeCommitSha = types.StringNull()
+    }
+    if obj, ok := dataMap["mergedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MergedAt = NewRFC3339Value(val)
+        } else {
+            data.MergedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["mergedAt"].(string); ok && val != "" {
+        data.MergedAt = NewRFC3339Value(val)
+    } else {
+        data.MergedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["productionStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionStatus"].(string); ok {
+        data.ProductionStatus = types.StringValue(val)
+    } else {
+        data.ProductionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["productionStatusAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ProductionStatusAt = NewRFC3339Value(val)
+        } else {
+            data.ProductionStatusAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["productionStatusAt"].(string); ok && val != "" {
+        data.ProductionStatusAt = NewRFC3339Value(val)
+    } else {
+        data.ProductionStatusAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deployedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeployedAt = NewRFC3339Value(val)
+        } else {
+            data.DeployedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deployedAt"].(string); ok && val != "" {
+        data.DeployedAt = NewRFC3339Value(val)
+    } else {
+        data.DeployedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deployedVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeployedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DeployedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DeployedVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DeployedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DeployedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DeployedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedVersion = types.StringNull()
+        }
+    } else if val, ok := dataMap["deployedVersion"].(string); ok {
+        data.DeployedVersion = types.StringValue(val)
+    } else {
+        data.DeployedVersion = types.StringNull()
+    }
+    if obj, ok := dataMap["deployedCommitSha"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeployedCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DeployedCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedCommitSha = types.StringNull()
+        }
+    } else if val, ok := dataMap["deployedCommitSha"].(string); ok {
+        data.DeployedCommitSha = types.StringValue(val)
+    } else {
+        data.DeployedCommitSha = types.StringNull()
+    }
+    if obj, ok := dataMap["productionSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionSummary = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionSummary = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionSummary = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionSummary"].(string); ok {
+        data.ProductionSummary = types.StringValue(val)
+    } else {
+        data.ProductionSummary = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1068,6 +1337,14 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         "ciStatusAt": true,
         "runnerVerificationStatus": true,
         "runnerVerificationSummary": true,
+        "mergeCommitSha": true,
+        "mergedAt": true,
+        "productionStatus": true,
+        "productionStatusAt": true,
+        "deployedAt": true,
+        "deployedVersion": true,
+        "deployedCommitSha": true,
+        "productionSummary": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1666,6 +1943,224 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
     } else {
         data.RunnerVerificationSummary = types.StringNull()
     }
+    if obj, ok := dataMap["mergeCommitSha"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergeCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MergeCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MergeCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MergeCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MergeCommitSha = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergeCommitSha = types.StringNull()
+        }
+    } else if val, ok := dataMap["mergeCommitSha"].(string); ok {
+        data.MergeCommitSha = types.StringValue(val)
+    } else {
+        data.MergeCommitSha = types.StringNull()
+    }
+    if obj, ok := dataMap["mergedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MergedAt = NewRFC3339Value(val)
+        } else {
+            data.MergedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["mergedAt"].(string); ok && val != "" {
+        data.MergedAt = NewRFC3339Value(val)
+    } else {
+        data.MergedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["productionStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionStatus"].(string); ok {
+        data.ProductionStatus = types.StringValue(val)
+    } else {
+        data.ProductionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["productionStatusAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ProductionStatusAt = NewRFC3339Value(val)
+        } else {
+            data.ProductionStatusAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["productionStatusAt"].(string); ok && val != "" {
+        data.ProductionStatusAt = NewRFC3339Value(val)
+    } else {
+        data.ProductionStatusAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deployedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeployedAt = NewRFC3339Value(val)
+        } else {
+            data.DeployedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deployedAt"].(string); ok && val != "" {
+        data.DeployedAt = NewRFC3339Value(val)
+    } else {
+        data.DeployedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deployedVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeployedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DeployedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DeployedVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DeployedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DeployedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DeployedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedVersion = types.StringNull()
+        }
+    } else if val, ok := dataMap["deployedVersion"].(string); ok {
+        data.DeployedVersion = types.StringValue(val)
+    } else {
+        data.DeployedVersion = types.StringNull()
+    }
+    if obj, ok := dataMap["deployedCommitSha"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeployedCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DeployedCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedCommitSha = types.StringNull()
+        }
+    } else if val, ok := dataMap["deployedCommitSha"].(string); ok {
+        data.DeployedCommitSha = types.StringValue(val)
+    } else {
+        data.DeployedCommitSha = types.StringNull()
+    }
+    if obj, ok := dataMap["productionSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionSummary = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionSummary = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionSummary = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionSummary"].(string); ok {
+        data.ProductionSummary = types.StringValue(val)
+    } else {
+        data.ProductionSummary = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1801,6 +2296,14 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         "ciStatusAt": true,
         "runnerVerificationStatus": true,
         "runnerVerificationSummary": true,
+        "mergeCommitSha": true,
+        "mergedAt": true,
+        "productionStatus": true,
+        "productionStatusAt": true,
+        "deployedAt": true,
+        "deployedVersion": true,
+        "deployedCommitSha": true,
+        "productionSummary": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -2392,6 +2895,224 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         data.RunnerVerificationSummary = types.StringValue(val)
     } else {
         data.RunnerVerificationSummary = types.StringNull()
+    }
+    if obj, ok := dataMap["mergeCommitSha"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergeCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MergeCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MergeCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MergeCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MergeCommitSha = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergeCommitSha = types.StringNull()
+        }
+    } else if val, ok := dataMap["mergeCommitSha"].(string); ok {
+        data.MergeCommitSha = types.StringValue(val)
+    } else {
+        data.MergeCommitSha = types.StringNull()
+    }
+    if obj, ok := dataMap["mergedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MergedAt = NewRFC3339Value(val)
+        } else {
+            data.MergedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["mergedAt"].(string); ok && val != "" {
+        data.MergedAt = NewRFC3339Value(val)
+    } else {
+        data.MergedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["productionStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionStatus"].(string); ok {
+        data.ProductionStatus = types.StringValue(val)
+    } else {
+        data.ProductionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["productionStatusAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ProductionStatusAt = NewRFC3339Value(val)
+        } else {
+            data.ProductionStatusAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["productionStatusAt"].(string); ok && val != "" {
+        data.ProductionStatusAt = NewRFC3339Value(val)
+    } else {
+        data.ProductionStatusAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deployedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeployedAt = NewRFC3339Value(val)
+        } else {
+            data.DeployedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deployedAt"].(string); ok && val != "" {
+        data.DeployedAt = NewRFC3339Value(val)
+    } else {
+        data.DeployedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deployedVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeployedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DeployedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DeployedVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DeployedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DeployedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DeployedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedVersion = types.StringNull()
+        }
+    } else if val, ok := dataMap["deployedVersion"].(string); ok {
+        data.DeployedVersion = types.StringValue(val)
+    } else {
+        data.DeployedVersion = types.StringNull()
+    }
+    if obj, ok := dataMap["deployedCommitSha"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeployedCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DeployedCommitSha = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+            } else {
+                data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedCommitSha = types.StringNull()
+        }
+    } else if val, ok := dataMap["deployedCommitSha"].(string); ok {
+        data.DeployedCommitSha = types.StringValue(val)
+    } else {
+        data.DeployedCommitSha = types.StringNull()
+    }
+    if obj, ok := dataMap["productionSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionSummary = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionSummary = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionSummary = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionSummary"].(string); ok {
+        data.ProductionSummary = types.StringValue(val)
+    } else {
+        data.ProductionSummary = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

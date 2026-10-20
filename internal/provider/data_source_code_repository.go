@@ -42,6 +42,7 @@ type CodeRepositoryDataSourceModel struct {
     SetupCommand types.String `tfsdk:"setup_command"`
     BuildCommand types.String `tfsdk:"build_command"`
     TestCommand types.String `tfsdk:"test_command"`
+    RunnerId types.String `tfsdk:"runner_id"`
     MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
     IsGitHubCommandsEnabled types.Bool `tfsdk:"is_git_hub_commands_enabled"`
     GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
@@ -125,6 +126,11 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "test_command": schema.StringAttribute{
                 MarkdownDescription: "Command the AI fix Runner executes at the repository root to run the test suite against an AI-authored fix (e.g. 'npm test'). A failure is fed back to the code agent for bounded repair attempts before the pull request opens. Leave empty to skip the test check.",
+                Optional: true,
+                Computed: true,
+            },
+            "runner_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.",
                 Optional: true,
                 Computed: true,
             },
@@ -247,6 +253,10 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         filters["testCommand"] = data.TestCommand.ValueString()
         filterNames = append(filterNames, "test_command = "+fmt.Sprintf("%q", data.TestCommand.ValueString()))
     }
+    if !data.RunnerId.IsNull() && !data.RunnerId.IsUnknown() {
+        filters["runnerId"] = data.RunnerId.ValueString()
+        filterNames = append(filterNames, "runner_id = "+fmt.Sprintf("%q", data.RunnerId.ValueString()))
+    }
     if !data.MaxOpenFixPullRequests.IsNull() && !data.MaxOpenFixPullRequests.IsUnknown() {
         filters["maxOpenFixPullRequests"] = lookupNumber(data.MaxOpenFixPullRequests)
         filterNames = append(filterNames, "max_open_fix_pull_requests = "+data.MaxOpenFixPullRequests.ValueBigFloat().String())
@@ -305,6 +315,7 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         "setupCommand": true,
         "buildCommand": true,
         "testCommand": true,
+        "runnerId": true,
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
@@ -611,6 +622,23 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         data.TestCommand = types.StringValue(val)
     } else {
         data.TestCommand = types.StringNull()
+    }
+    if obj, ok := item["runnerId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunnerId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
+    } else if val, ok := item["runnerId"].(string); ok {
+        data.RunnerId = types.StringValue(val)
+    } else {
+        data.RunnerId = types.StringNull()
     }
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, item["maxOpenFixPullRequests"])
     if val, ok := item["isGitHubCommandsEnabled"].(bool); ok {

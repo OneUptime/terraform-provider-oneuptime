@@ -49,6 +49,7 @@ type CodeRepositoryResourceModel struct {
     SetupCommand types.String `tfsdk:"setup_command"`
     BuildCommand types.String `tfsdk:"build_command"`
     TestCommand types.String `tfsdk:"test_command"`
+    RunnerId types.String `tfsdk:"runner_id"`
     MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
     IsGitHubCommandsEnabled types.Bool `tfsdk:"is_git_hub_commands_enabled"`
     GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
@@ -149,6 +150,14 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
             },
             "test_command": schema.StringAttribute{
                 MarkdownDescription: "Command the AI fix Runner executes at the repository root to run the test suite against an AI-authored fix (e.g. 'npm test'). A failure is fed back to the code agent for bounded repair attempts before the pull request opens. Leave empty to skip the test check.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "runner_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -318,6 +327,9 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     if !data.TestCommand.IsNull() && !data.TestCommand.IsUnknown() {
         requestDataMap["testCommand"] = data.TestCommand.ValueString()
     }
+    if !data.RunnerId.IsNull() && !data.RunnerId.IsUnknown() {
+        requestDataMap["runnerId"] = data.RunnerId.ValueString()
+    }
     if !data.MaxOpenFixPullRequests.IsNull() && !data.MaxOpenFixPullRequests.IsUnknown() {
         requestDataMap["maxOpenFixPullRequests"] = r.bigFloatToFloat64(data.MaxOpenFixPullRequests.ValueBigFloat())
     }
@@ -394,6 +406,7 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
         "setupCommand": true,
         "buildCommand": true,
         "testCommand": true,
+        "runnerId": true,
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
@@ -781,6 +794,43 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     } else {
         data.TestCommand = types.StringNull()
     }
+    if obj, ok := dataMap["runnerId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunnerId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runnerId"].(string); ok {
+        data.RunnerId = types.StringValue(val)
+    } else {
+        data.RunnerId = types.StringNull()
+    }
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
@@ -1103,6 +1153,7 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         "setupCommand": true,
         "buildCommand": true,
         "testCommand": true,
+        "runnerId": true,
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
@@ -1491,6 +1542,43 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.TestCommand = types.StringNull()
     }
+    if obj, ok := dataMap["runnerId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunnerId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runnerId"].(string); ok {
+        data.RunnerId = types.StringValue(val)
+    } else {
+        data.RunnerId = types.StringNull()
+    }
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
@@ -1834,6 +1922,9 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     if !data.TestCommand.IsUnknown() && !state.TestCommand.IsUnknown() && !data.TestCommand.Equal(state.TestCommand) {
         requestDataMap["testCommand"] = data.TestCommand.ValueString()
     }
+    if !data.RunnerId.IsUnknown() && !state.RunnerId.IsUnknown() && !data.RunnerId.Equal(state.RunnerId) {
+        requestDataMap["runnerId"] = data.RunnerId.ValueString()
+    }
     if !data.MaxOpenFixPullRequests.IsUnknown() && !state.MaxOpenFixPullRequests.IsUnknown() && !data.MaxOpenFixPullRequests.Equal(state.MaxOpenFixPullRequests) {
         requestDataMap["maxOpenFixPullRequests"] = r.bigFloatToFloat64(data.MaxOpenFixPullRequests.ValueBigFloat())
     }
@@ -1882,6 +1973,7 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         "setupCommand": true,
         "buildCommand": true,
         "testCommand": true,
+        "runnerId": true,
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
@@ -2264,6 +2356,43 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     } else {
         data.TestCommand = types.StringNull()
     }
+    if obj, ok := dataMap["runnerId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunnerId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runnerId"].(string); ok {
+        data.RunnerId = types.StringValue(val)
+    } else {
+        data.RunnerId = types.StringNull()
+    }
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
@@ -2617,6 +2746,9 @@ func (r *CodeRepositoryResource) keepPlannedValues(data *CodeRepositoryResourceM
     }
     if config.TestCommand.IsNull() && !plan.TestCommand.IsUnknown() {
         data.TestCommand = plan.TestCommand
+    }
+    if config.RunnerId.IsNull() && !plan.RunnerId.IsUnknown() {
+        data.RunnerId = plan.RunnerId
     }
     if config.MaxOpenFixPullRequests.IsNull() && !plan.MaxOpenFixPullRequests.IsUnknown() {
         data.MaxOpenFixPullRequests = plan.MaxOpenFixPullRequests

@@ -24,24 +24,27 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &RunbookSecretResource{}
-var _ resource.ResourceWithImportState = &RunbookSecretResource{}
+var _ resource.Resource = &RunbookVariableResource{}
+var _ resource.ResourceWithImportState = &RunbookVariableResource{}
 
-func NewRunbookSecretResource() resource.Resource {
-    return &RunbookSecretResource{}
+func NewRunbookVariableResource() resource.Resource {
+    return &RunbookVariableResource{}
 }
 
-// RunbookSecretResource defines the resource implementation.
-type RunbookSecretResource struct {
+// RunbookVariableResource defines the resource implementation.
+type RunbookVariableResource struct {
     client *Client
 }
 
-// RunbookSecretResourceModel describes the resource data model.
-type RunbookSecretResourceModel struct {
+// RunbookVariableResourceModel describes the resource data model.
+type RunbookVariableResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
+    RunbookId types.String `tfsdk:"runbook_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
+    IsSecret types.Bool `tfsdk:"is_secret"`
+    Value types.String `tfsdk:"value"`
     SecretValue types.String `tfsdk:"secret_value"`
     Runners types.Set `tfsdk:"runners"`
     IsAvailableToGlobalRunners types.Bool `tfsdk:"is_available_to_global_runners"`
@@ -50,17 +53,17 @@ type RunbookSecretResourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
-func (r *RunbookSecretResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_runbook_secret"
+func (r *RunbookVariableResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_runbook_variable"
 }
 
-func (r *RunbookSecretResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *RunbookVariableResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = r.schemaDefinition()
 }
 
-func (r *RunbookSecretResource) schemaDefinition() schema.Schema {
+func (r *RunbookVariableResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Runbook Secret is a secret variable that can be used by runbook agents. For example you can store auth tokens, passwords, etc. in Runbook Secret and use them in your runbook steps. Runbook Secret is encrypted and only accessible by the assigned agent.",
+        MarkdownDescription: "A value runbook steps use: a host, a namespace or a URL, or a secret such as an SSH key, a password, a kubeconfig or an API token. It belongs to the project, which every runbook can use, or to one runbook. A secret value is encrypted and can never be read back through the API; it reaches only the Runners it lets use it, when they take a step that names it.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -77,8 +80,17 @@ func (r *RunbookSecretResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "runbook_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the runbook this variable belongs to. Empty for a global variable, which every runbook of the project can use. The ID of a `oneuptime_runbook`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object.",
+                MarkdownDescription: "Letters, numbers, hyphens and underscores. Steps use the variable by this name: {{global.variables.NAME}} for a global variable, {{local.variables.NAME}} for one of the runbook's own.",
                 Required: true,
             },
             "description": schema.StringAttribute{
@@ -89,13 +101,31 @@ func (r *RunbookSecretResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_secret": schema.BoolAttribute{
+                MarkdownDescription: "A secret is encrypted, can never be read back, and is hidden in step output. It cannot be changed later.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                    boolplanmodifier.RequiresReplace(),
+                },
+            },
+            "value": schema.StringAttribute{
+                MarkdownDescription: "The value of a variable that is not a secret. A secret's value is Secret Value.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "secret_value": schema.StringAttribute{
-                MarkdownDescription: "Secret value that you want to store in this object. This value will be encrypted and only accessible by the assigned runbook agent.",
+                MarkdownDescription: "The value of a secret variable. Encrypted at rest and never returned by the API.",
                 Optional: true,
                 Sensitive: true,
             },
             "runners": schema.SetAttribute{
-                MarkdownDescription: "List of runbook agents that can access this secret. IDs of `oneuptime_runner` resources.",
+                MarkdownDescription: "The Runners of your own that may use this secret. A step that names it must run on one of them. IDs of `oneuptime_runner` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -136,7 +166,7 @@ func (r *RunbookSecretResource) schemaDefinition() schema.Schema {
     }
 }
 
-func (r *RunbookSecretResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *RunbookVariableResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -157,8 +187,8 @@ func (r *RunbookSecretResource) Configure(ctx context.Context, req resource.Conf
 }
 
 
-func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data RunbookSecretResourceModel
+func (r *RunbookVariableResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data RunbookVariableResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -168,7 +198,7 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
     }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
-    var config RunbookSecretResourceModel
+    var config RunbookVariableResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
     if resp.Diagnostics.HasError() {
         return
@@ -180,16 +210,25 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    runbookSecretRequest := map[string]interface{}{
+    runbookVariableRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := runbookSecretRequest["data"].(map[string]interface{})
+    requestDataMap := runbookVariableRequest["data"].(map[string]interface{})
 
+    if !data.RunbookId.IsNull() && !data.RunbookId.IsUnknown() {
+        requestDataMap["runbookId"] = data.RunbookId.ValueString()
+    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         requestDataMap["name"] = data.Name.ValueString()
     }
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.IsSecret.IsNull() && !data.IsSecret.IsUnknown() {
+        requestDataMap["isSecret"] = data.IsSecret.ValueBool()
+    }
+    if !data.Value.IsNull() && !data.Value.IsUnknown() {
+        requestDataMap["value"] = data.Value.ValueString()
     }
     if !data.SecretValue.IsNull() && !data.SecretValue.IsUnknown() {
         requestDataMap["secretValue"] = data.SecretValue.ValueString()
@@ -202,30 +241,30 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/runbook-secret", runbookSecretRequest)
+    httpResp, err := r.client.Post(ctx, "/runbook-variable", runbookVariableRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create runbook_secret, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create runbook_variable, got error: %s", err))
         return
     }
 
-    var runbookSecretResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &runbookSecretResponse)
+    var runbookVariableResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &runbookVariableResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create runbook_secret: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create runbook_variable: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := runbookSecretResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := runbookVariableResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := runbookSecretResponse["_id"].(string); ok {
+    } else if val, ok := runbookVariableResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for runbook_secret did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for runbook_variable did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -234,7 +273,7 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * runbook_secret is orphaned server-side — never refreshed, never
+     * runbook_variable is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -246,8 +285,11 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
     // Re-read the resource so state reflects server-normalized values.
     selectParam := map[string]interface{}{
         "projectId": true,
+        "runbookId": true,
         "name": true,
         "description": true,
+        "isSecret": true,
+        "value": true,
         "runners": true,
         "isAvailableToGlobalRunners": true,
         "createdAt": true,
@@ -256,21 +298,21 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/runbook-secret/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/runbook-variable/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created runbook_secret but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created runbook_variable but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created runbook_secret but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created runbook_variable but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -295,6 +337,43 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := dataMap["runbookId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunbookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunbookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunbookId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunbookId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunbookId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunbookId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunbookId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunbookId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunbookId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runbookId"].(string); ok {
+        data.RunbookId = types.StringValue(val)
+    } else {
+        data.RunbookId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -369,6 +448,46 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if val, ok := dataMap["isSecret"].(bool); ok {
+        data.IsSecret = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["value"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Value = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Value = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Value = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Value = types.StringValue(string(jsonBytes))
+            } else {
+                data.Value = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Value = types.StringValue(string(jsonBytes))
+            } else {
+                data.Value = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Value = types.StringValue(string(jsonBytes))
+        } else {
+            data.Value = types.StringNull()
+        }
+    } else if val, ok := dataMap["value"].(string); ok {
+        data.Value = types.StringValue(val)
+    } else {
+        data.Value = types.StringNull()
     }
     if val, ok := dataMap["runners"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -482,8 +601,8 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *RunbookSecretResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data RunbookSecretResourceModel
+func (r *RunbookVariableResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data RunbookVariableResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -495,8 +614,11 @@ func (r *RunbookSecretResource) Read(ctx context.Context, req resource.ReadReque
     // Create select parameter to get full object
     selectParam := map[string]interface{}{
         "projectId": true,
+        "runbookId": true,
         "name": true,
         "description": true,
+        "isSecret": true,
+        "value": true,
         "runners": true,
         "isAvailableToGlobalRunners": true,
         "createdAt": true,
@@ -506,9 +628,9 @@ func (r *RunbookSecretResource) Read(ctx context.Context, req resource.ReadReque
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/runbook-secret/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/runbook-variable/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read runbook_secret, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read runbook_variable, got error: %s", err))
         return
     }
 
@@ -517,22 +639,22 @@ func (r *RunbookSecretResource) Read(ctx context.Context, req resource.ReadReque
         return
     }
 
-    var runbookSecretResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &runbookSecretResponse)
+    var runbookVariableResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &runbookVariableResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse runbook_secret response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse runbook_variable response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := runbookSecretResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := runbookVariableResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = runbookSecretResponse
+        dataMap = runbookVariableResponse
     }
 
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
@@ -545,6 +667,43 @@ func (r *RunbookSecretResource) Read(ctx context.Context, req resource.ReadReque
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := dataMap["runbookId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunbookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunbookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunbookId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunbookId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunbookId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunbookId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunbookId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunbookId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunbookId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runbookId"].(string); ok {
+        data.RunbookId = types.StringValue(val)
+    } else {
+        data.RunbookId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -619,6 +778,46 @@ func (r *RunbookSecretResource) Read(ctx context.Context, req resource.ReadReque
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if val, ok := dataMap["isSecret"].(bool); ok {
+        data.IsSecret = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["value"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Value = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Value = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Value = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Value = types.StringValue(string(jsonBytes))
+            } else {
+                data.Value = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Value = types.StringValue(string(jsonBytes))
+            } else {
+                data.Value = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Value = types.StringValue(string(jsonBytes))
+        } else {
+            data.Value = types.StringNull()
+        }
+    } else if val, ok := dataMap["value"].(string); ok {
+        data.Value = types.StringValue(val)
+    } else {
+        data.Value = types.StringNull()
     }
     if val, ok := dataMap["runners"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -724,9 +923,9 @@ func (r *RunbookSecretResource) Read(ctx context.Context, req resource.ReadReque
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data RunbookSecretResourceModel
-    var state RunbookSecretResourceModel
+func (r *RunbookVariableResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data RunbookVariableResourceModel
+    var state RunbookVariableResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -744,7 +943,7 @@ func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateR
     data.Id = state.Id
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
-    var config RunbookSecretResourceModel
+    var config RunbookVariableResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
     if resp.Diagnostics.HasError() {
         return
@@ -752,16 +951,19 @@ func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateR
     plan := data
 
     // Create API request body
-    runbookSecretRequest := map[string]interface{}{
+    runbookVariableRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := runbookSecretRequest["data"].(map[string]interface{})
+    requestDataMap := runbookVariableRequest["data"].(map[string]interface{})
 
     if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
         requestDataMap["name"] = data.Name.ValueString()
     }
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.Value.IsUnknown() && !state.Value.IsUnknown() && !data.Value.Equal(state.Value) {
+        requestDataMap["value"] = data.Value.ValueString()
     }
     if !data.SecretValue.IsUnknown() && !state.SecretValue.IsUnknown() && !data.SecretValue.Equal(state.SecretValue) {
         requestDataMap["secretValue"] = data.SecretValue.ValueString()
@@ -776,28 +978,31 @@ func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateR
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(runbookSecretRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/runbook-secret/" + data.Id.ValueString() + "", runbookSecretRequest)
+    if len(runbookVariableRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/runbook-variable/" + data.Id.ValueString() + "", runbookVariableRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update runbook_secret, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update runbook_variable, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var runbookSecretResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &runbookSecretResponse)
+        var runbookVariableResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &runbookVariableResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update runbook_secret: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update runbook_variable: %s", err))
             return
         }
-        _ = runbookSecretResponse
+        _ = runbookVariableResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
     selectParam := map[string]interface{}{
         "projectId": true,
+        "runbookId": true,
         "name": true,
         "description": true,
+        "isSecret": true,
+        "value": true,
         "runners": true,
         "isAvailableToGlobalRunners": true,
         "createdAt": true,
@@ -806,16 +1011,16 @@ func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateR
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/runbook-secret/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/runbook-variable/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read runbook_secret after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read runbook_variable after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read runbook_secret after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read runbook_variable after update: %s", err))
         return
     }
 
@@ -840,6 +1045,43 @@ func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateR
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
+    }
+    if obj, ok := dataMap["runbookId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunbookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunbookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunbookId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunbookId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunbookId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunbookId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunbookId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunbookId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunbookId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runbookId"].(string); ok {
+        data.RunbookId = types.StringValue(val)
+    } else {
+        data.RunbookId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -914,6 +1156,46 @@ func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateR
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if val, ok := dataMap["isSecret"].(bool); ok {
+        data.IsSecret = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["value"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Value = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Value = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Value = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Value = types.StringValue(string(jsonBytes))
+            } else {
+                data.Value = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Value = types.StringValue(string(jsonBytes))
+            } else {
+                data.Value = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Value = types.StringValue(string(jsonBytes))
+        } else {
+            data.Value = types.StringNull()
+        }
+    } else if val, ok := dataMap["value"].(string); ok {
+        data.Value = types.StringValue(val)
+    } else {
+        data.Value = types.StringNull()
     }
     if val, ok := dataMap["runners"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1023,8 +1305,8 @@ func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateR
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *RunbookSecretResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data RunbookSecretResourceModel
+func (r *RunbookVariableResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data RunbookVariableResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -1034,9 +1316,9 @@ func (r *RunbookSecretResource) Delete(ctx context.Context, req resource.DeleteR
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/runbook-secret/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/runbook-variable/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete runbook_secret, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete runbook_variable, got error: %s", err))
         return
     }
 
@@ -1044,7 +1326,7 @@ func (r *RunbookSecretResource) Delete(ctx context.Context, req resource.DeleteR
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete runbook_secret: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete runbook_variable: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -1053,7 +1335,7 @@ func (r *RunbookSecretResource) Delete(ctx context.Context, req resource.DeleteR
 }
 
 
-func (r *RunbookSecretResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *RunbookVariableResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
@@ -1065,9 +1347,18 @@ func (r *RunbookSecretResource) ImportState(ctx context.Context, req resource.Im
 // already differ from the plan, and Terraform would fail the apply with
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
-func (r *RunbookSecretResource) keepPlannedValues(data *RunbookSecretResourceModel, plan *RunbookSecretResourceModel, config *RunbookSecretResourceModel) {
+func (r *RunbookVariableResource) keepPlannedValues(data *RunbookVariableResourceModel, plan *RunbookVariableResourceModel, config *RunbookVariableResourceModel) {
+    if config.RunbookId.IsNull() && !plan.RunbookId.IsUnknown() {
+        data.RunbookId = plan.RunbookId
+    }
     if config.Description.IsNull() && !plan.Description.IsUnknown() {
         data.Description = plan.Description
+    }
+    if config.IsSecret.IsNull() && !plan.IsSecret.IsUnknown() {
+        data.IsSecret = plan.IsSecret
+    }
+    if config.Value.IsNull() && !plan.Value.IsUnknown() {
+        data.Value = plan.Value
     }
     if config.Runners.IsNull() && !plan.Runners.IsUnknown() {
         data.Runners = plan.Runners
@@ -1078,7 +1369,7 @@ func (r *RunbookSecretResource) keepPlannedValues(data *RunbookSecretResourceMod
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *RunbookSecretResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *RunbookVariableResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -1096,7 +1387,7 @@ func (r *RunbookSecretResource) convertTerraformMapToInterface(terraformMap type
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *RunbookSecretResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *RunbookVariableResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -1117,7 +1408,7 @@ func (r *RunbookSecretResource) convertTerraformListToInterface(terraformList ty
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *RunbookSecretResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *RunbookVariableResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -1139,7 +1430,7 @@ func (r *RunbookSecretResource) convertTerraformSetToInterface(terraformSet type
 
 
 // Helper method to parse JSON field for complex objects
-func (r *RunbookSecretResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *RunbookVariableResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -1155,7 +1446,7 @@ func (r *RunbookSecretResource) parseJSONField(terraformString basetypes.StringV
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *RunbookSecretResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *RunbookVariableResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -1177,7 +1468,7 @@ func (r *RunbookSecretResource) normalizeURLWrappers(value interface{}) interfac
     }
 }
 
-func (r *RunbookSecretResource) normalizeURLString(value string) string {
+func (r *RunbookVariableResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -1189,7 +1480,7 @@ func (r *RunbookSecretResource) normalizeURLString(value string) string {
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *RunbookSecretResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *RunbookVariableResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -1199,6 +1490,6 @@ func (r *RunbookSecretResource) bigFloatToFloat64(bf *big.Float) interface{} {
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *RunbookSecretResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *RunbookVariableResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

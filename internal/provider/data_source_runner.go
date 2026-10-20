@@ -40,7 +40,6 @@ type RunnerDataSourceModel struct {
     LastAlive types.String `tfsdk:"last_alive"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
     CanRunRunbooks types.Bool `tfsdk:"can_run_runbooks"`
-    CanRunCodeFixTasks types.Bool `tfsdk:"can_run_code_fix_tasks"`
     CanRunAiCommands types.Bool `tfsdk:"can_run_ai_commands"`
     IsGlobalRunner types.Bool `tfsdk:"is_global_runner"`
     HostInfo types.String `tfsdk:"host_info"`
@@ -54,7 +53,7 @@ func (d *RunnerDataSource) Metadata(ctx context.Context, req datasource.Metadata
 
 func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A self-hosted OneUptime Runner: it executes runbook steps in your own infrastructure and, when the capability is enabled, works in your code repository to open AI fix pull requests. Runbook steps pick the Runner that should execute them. Look up an existing runner by `id`, or by any of its other arguments (`name`, `can_run_ai_commands`, `can_run_code_fix_tasks`, ...): each one set must match, and exactly one runner may match them all.",
+        MarkdownDescription: "A self-hosted OneUptime Runner: it executes runbook steps in your own infrastructure, and AI works on it in the code repositories that pick it. Runbook steps and code repositories each pick the Runner that runs them. Look up an existing runner by `id`, or by any of its other arguments (`name`, `can_run_ai_commands`, `can_run_runbooks`, ...): each one set must match, and exactly one runner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -109,11 +108,6 @@ func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
             },
             "can_run_runbooks": schema.BoolAttribute{
                 MarkdownDescription: "Whether this Runner executes runbook steps. On by default — this is why most Runners are installed. It cannot be turned on for an in-cluster Runner the Kubernetes agent chart registered, which runs kubectl only.",
-                Optional: true,
-                Computed: true,
-            },
-            "can_run_code_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "Whether this Runner works in your code repository to open AI fix pull requests. Off by default; it requires a connected code repository. It cannot be turned on for an in-cluster Runner the Kubernetes agent chart registered, which runs kubectl only.",
                 Optional: true,
                 Computed: true,
             },
@@ -204,10 +198,6 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         filters["canRunRunbooks"] = data.CanRunRunbooks.ValueBool()
         filterNames = append(filterNames, "can_run_runbooks = "+fmt.Sprintf("%t", data.CanRunRunbooks.ValueBool()))
     }
-    if !data.CanRunCodeFixTasks.IsNull() && !data.CanRunCodeFixTasks.IsUnknown() {
-        filters["canRunCodeFixTasks"] = data.CanRunCodeFixTasks.ValueBool()
-        filterNames = append(filterNames, "can_run_code_fix_tasks = "+fmt.Sprintf("%t", data.CanRunCodeFixTasks.ValueBool()))
-    }
     if !data.CanRunAiCommands.IsNull() && !data.CanRunAiCommands.IsUnknown() {
         filters["canRunAiCommands"] = data.CanRunAiCommands.ValueBool()
         filterNames = append(filterNames, "can_run_ai_commands = "+fmt.Sprintf("%t", data.CanRunAiCommands.ValueBool()))
@@ -248,7 +238,6 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         "lastAlive": true,
         "connectionStatus": true,
         "canRunRunbooks": true,
-        "canRunCodeFixTasks": true,
         "canRunAiCommands": true,
         "isGlobalRunner": true,
         "hostInfo": true,
@@ -506,11 +495,6 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         data.CanRunRunbooks = types.BoolValue(val)
     } else {
         data.CanRunRunbooks = types.BoolNull()
-    }
-    if val, ok := item["canRunCodeFixTasks"].(bool); ok {
-        data.CanRunCodeFixTasks = types.BoolValue(val)
-    } else {
-        data.CanRunCodeFixTasks = types.BoolNull()
     }
     if val, ok := item["canRunAiCommands"].(bool); ok {
         data.CanRunAiCommands = types.BoolValue(val)

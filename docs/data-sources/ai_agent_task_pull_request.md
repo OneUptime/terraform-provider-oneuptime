@@ -34,9 +34,14 @@ data "oneuptime_ai_agent_task_pull_request" "by_id" {
 - `ci_status` (String) Rolled-up conclusion of the repository's own CI check runs on this pull request (Pending, Green, Red, ExpectedFailureObserved for should-fail regression-test PRs, NoCiConfigured). Null until the sync job first polls check runs. Written by AIAgent:SyncPullRequestStates — never by users.
 - `code_repository_id` (String) ID of the Code Repository this pull request was created in. The ID of a `oneuptime_code_repository`.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
+- `deployed_commit_sha` (String) The commit that deploy ran: the fix's merge commit or a later one. Written by the server.
+- `deployed_version` (String) The version that deploy reported, when it reported one. Written by the server.
 - `description` (String) Description/body of the pull request.
 - `head_ref_name` (String) The branch name of the pull request (source branch).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `merge_commit_sha` (String) The commit GitHub merged the pull request as. The fix is in production once a recorded deploy contains this commit. Written by the server when the pull request merges.
+- `production_status` (String) Whether the merged fix fixed its exception in production: AwaitingDeploy, Watching, Verified, Regressed or Unverifiable. Written by the server, which watches the exception once a recorded deploy contains the fix.
+- `production_summary` (String) What the production check found, in a sentence: the deploy that shipped the fix and how often the exception happened before and since. Written by the server.
 - `pull_request_id` (Number) The unique ID of the pull request from the hosting platform.
 - `pull_request_number` (Number) The pull request number (e.g., #123).
 - `pull_request_state` (String) Current state of the pull request (open, closed, merged).
@@ -51,5 +56,8 @@ data "oneuptime_ai_agent_task_pull_request" "by_id" {
 
 - `ci_status_at` (String) When the CI status last changed.
 - `created_at` (String) Date and Time when the object was created.
+- `deployed_at` (String) When the first recorded deploy that contains the fix ran. Written by the server.
+- `merged_at` (String) When GitHub merged the pull request. Written by the server.
+- `production_status_at` (String) When the production status last changed. Written by the server.
 - `project_id` (String) ID of the project this pull request belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

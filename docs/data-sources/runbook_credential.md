@@ -2,12 +2,12 @@
 page_title: "oneuptime_runbook_credential Data Source - oneuptime"
 subcategory: "Other"
 description: |-
-  Access to a system a runbook needs to act on — an SSH host, or a Kubernetes cluster. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a step.
+  What OneUptime AI's commands reach through your Runners: an SSH host, or a Kubernetes cluster's API server. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a command.
 ---
 
 # oneuptime_runbook_credential (Data Source)
 
-Access to a system a runbook needs to act on — an SSH host, or a Kubernetes cluster. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a step.
+What OneUptime AI's commands reach through your Runners: an SSH host, or a Kubernetes cluster's API server. Secret material is encrypted at rest and can never be read back through the API; it is decrypted only when handed to an assigned Runner as it claims a command.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one runbook credential may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -43,5 +43,5 @@ data "oneuptime_runbook_credential" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `runners` (Set of String) The Runners allowed to use this credential. A step referencing it must target one of them. IDs of `oneuptime_runner` resources.
+- `runners` (Set of String) The Runners allowed to use this credential. A command that uses it must run on one of them. IDs of `oneuptime_runner` resources.
 - `updated_at` (String) Date and Time when the object was updated.
