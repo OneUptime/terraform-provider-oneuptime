@@ -54,6 +54,7 @@ type RunnerResourceModel struct {
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
     LastAlive RFC3339Value `tfsdk:"last_alive"`
+    IsGlobalRunner types.Bool `tfsdk:"is_global_runner"`
     HostInfo JSONSubsetValue `tfsdk:"host_info"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -179,6 +180,10 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
             "last_alive": schema.StringAttribute{
                 MarkdownDescription: "Most recent heartbeat from this agent.",
                 CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "is_global_runner": schema.BoolAttribute{
+                MarkdownDescription: "Whether OneUptime runs this Runner for every project. Global Runners run JavaScript steps in a sandbox that can reach the internet but not your network. Only a master admin creates them.",
                 Computed: true,
             },
             "host_info": schema.StringAttribute{
@@ -332,6 +337,7 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
         "updatedAt": true,
         "slug": true,
         "lastAlive": true,
+        "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
         "_id": true,
@@ -673,6 +679,9 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.LastAlive = NewRFC3339Null()
     }
+    if val, ok := dataMap["isGlobalRunner"].(bool); ok {
+        data.IsGlobalRunner = types.BoolValue(val)
+    }
     if obj, ok := dataMap["hostInfo"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -791,6 +800,7 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
         "updatedAt": true,
         "slug": true,
         "lastAlive": true,
+        "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
         "_id": true,
@@ -1133,6 +1143,9 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else {
         data.LastAlive = NewRFC3339Null()
     }
+    if val, ok := dataMap["isGlobalRunner"].(bool); ok {
+        data.IsGlobalRunner = types.BoolValue(val)
+    }
     if obj, ok := dataMap["hostInfo"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1308,6 +1321,7 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
         "updatedAt": true,
         "slug": true,
         "lastAlive": true,
+        "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
         "_id": true,
@@ -1643,6 +1657,9 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
         data.LastAlive = NewRFC3339Value(val)
     } else {
         data.LastAlive = NewRFC3339Null()
+    }
+    if val, ok := dataMap["isGlobalRunner"].(bool); ok {
+        data.IsGlobalRunner = types.BoolValue(val)
     }
     if obj, ok := dataMap["hostInfo"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)

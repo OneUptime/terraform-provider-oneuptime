@@ -54,6 +54,9 @@ type AiRunDataSourceModel struct {
     TotalTokens types.Number `tfsdk:"total_tokens"`
     TotalCostInUsdCents types.Number `tfsdk:"total_cost_in_usd_cents"`
     EgressManifest types.String `tfsdk:"egress_manifest"`
+    CodeRepositoryId types.String `tfsdk:"code_repository_id"`
+    CodeTaskId types.String `tfsdk:"code_task_id"`
+    NeedsUserInput types.Bool `tfsdk:"needs_user_input"`
     ErrorMessage types.String `tfsdk:"error_message"`
     AnalysisTldr types.String `tfsdk:"analysis_tldr"`
     HumanVerdict types.String `tfsdk:"human_verdict"`
@@ -203,6 +206,21 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             },
             "egress_manifest": schema.StringAttribute{
                 MarkdownDescription: "What data was sent to which LLM during this run: provider, model, and per-tool row/byte/redaction counts. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "code_repository_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the repository this code task works in. The ID of a `oneuptime_code_repository`.",
+                Optional: true,
+                Computed: true,
+            },
+            "code_task_id": schema.StringAttribute{
+                MarkdownDescription: "For a reply in a code task's conversation: the task it continues (the id of the task's first run).",
+                Optional: true,
+                Computed: true,
+            },
+            "needs_user_input": schema.BoolAttribute{
+                MarkdownDescription: "True when the run ended by asking the person who started it a question, and waits for their answer.",
+                Optional: true,
                 Computed: true,
             },
             "error_message": schema.StringAttribute{
@@ -357,6 +375,18 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         filters["totalCostInUSDCents"] = lookupNumber(data.TotalCostInUsdCents)
         filterNames = append(filterNames, "total_cost_in_usd_cents = "+data.TotalCostInUsdCents.ValueBigFloat().String())
     }
+    if !data.CodeRepositoryId.IsNull() && !data.CodeRepositoryId.IsUnknown() {
+        filters["codeRepositoryId"] = data.CodeRepositoryId.ValueString()
+        filterNames = append(filterNames, "code_repository_id = "+fmt.Sprintf("%q", data.CodeRepositoryId.ValueString()))
+    }
+    if !data.CodeTaskId.IsNull() && !data.CodeTaskId.IsUnknown() {
+        filters["codeTaskId"] = data.CodeTaskId.ValueString()
+        filterNames = append(filterNames, "code_task_id = "+fmt.Sprintf("%q", data.CodeTaskId.ValueString()))
+    }
+    if !data.NeedsUserInput.IsNull() && !data.NeedsUserInput.IsUnknown() {
+        filters["needsUserInput"] = data.NeedsUserInput.ValueBool()
+        filterNames = append(filterNames, "needs_user_input = "+fmt.Sprintf("%t", data.NeedsUserInput.ValueBool()))
+    }
     if !data.ErrorMessage.IsNull() && !data.ErrorMessage.IsUnknown() {
         filters["errorMessage"] = data.ErrorMessage.ValueString()
         filterNames = append(filterNames, "error_message = "+fmt.Sprintf("%q", data.ErrorMessage.ValueString()))
@@ -421,6 +451,9 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "totalTokens": true,
         "totalCostInUSDCents": true,
         "egressManifest": true,
+        "codeRepositoryId": true,
+        "codeTaskId": true,
+        "needsUserInput": true,
         "errorMessage": true,
         "analysisTldr": true,
         "humanVerdict": true,
@@ -868,6 +901,45 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.EgressManifest = types.StringValue(val)
     } else {
         data.EgressManifest = types.StringNull()
+    }
+    if obj, ok := item["codeRepositoryId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CodeRepositoryId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CodeRepositoryId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CodeRepositoryId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CodeRepositoryId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CodeRepositoryId = types.StringNull()
+        }
+    } else if val, ok := item["codeRepositoryId"].(string); ok {
+        data.CodeRepositoryId = types.StringValue(val)
+    } else {
+        data.CodeRepositoryId = types.StringNull()
+    }
+    if obj, ok := item["codeTaskId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CodeTaskId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CodeTaskId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CodeTaskId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CodeTaskId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CodeTaskId = types.StringNull()
+        }
+    } else if val, ok := item["codeTaskId"].(string); ok {
+        data.CodeTaskId = types.StringValue(val)
+    } else {
+        data.CodeTaskId = types.StringNull()
+    }
+    if val, ok := item["needsUserInput"].(bool); ok {
+        data.NeedsUserInput = types.BoolValue(val)
+    } else {
+        data.NeedsUserInput = types.BoolNull()
     }
     if obj, ok := item["errorMessage"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

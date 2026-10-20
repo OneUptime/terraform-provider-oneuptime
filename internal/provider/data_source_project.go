@@ -113,6 +113,7 @@ type ProjectDataSourceModel struct {
     BillingMarketplace types.String `tfsdk:"billing_marketplace"`
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
+    UseGlobalRunners types.Bool `tfsdk:"use_global_runners"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
     DefaultTelemetryRetentionInDays types.Number `tfsdk:"default_telemetry_retention_in_days"`
@@ -566,6 +567,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "use_global_runners": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, runbook steps that do not pick a Runner of their own run on OneUptime's global Runners, in a sandbox that can reach the internet but not your network. Turn it off to keep every step on the Runners you install. On by default.",
+                Optional: true,
+                Computed: true,
+            },
             "git_hub_app_installation_id": schema.StringAttribute{
                 MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.",
                 Optional: true,
@@ -610,7 +616,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "record_and_transcribe_incident_calls": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime asks Zoom and Google Meet to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Microsoft Teams calls, Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default.",
+                MarkdownDescription: "When enabled, OneUptime asks Zoom, Google Meet and Microsoft Teams to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default.",
                 Optional: true,
                 Computed: true,
             },
@@ -985,6 +991,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["doNotAddGlobalProbesByDefaultOnNewMonitors"] = data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool()
         filterNames = append(filterNames, "do_not_add_global_probes_by_default_on_new_monitors = "+fmt.Sprintf("%t", data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool()))
     }
+    if !data.UseGlobalRunners.IsNull() && !data.UseGlobalRunners.IsUnknown() {
+        filters["useGlobalRunners"] = data.UseGlobalRunners.ValueBool()
+        filterNames = append(filterNames, "use_global_runners = "+fmt.Sprintf("%t", data.UseGlobalRunners.ValueBool()))
+    }
     if !data.GitHubAppInstallationId.IsNull() && !data.GitHubAppInstallationId.IsUnknown() {
         filters["gitHubAppInstallationId"] = data.GitHubAppInstallationId.ValueString()
         filterNames = append(filterNames, "git_hub_app_installation_id = "+fmt.Sprintf("%q", data.GitHubAppInstallationId.ValueString()))
@@ -1120,6 +1130,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "billingMarketplace": true,
         "letCustomerSupportAccessProject": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
+        "useGlobalRunners": true,
         "gitHubAppInstallationId": true,
         "defaultMetricCardinalityBudget": true,
         "defaultTelemetryRetentionInDays": true,
@@ -1873,6 +1884,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
     } else {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolNull()
+    }
+    if val, ok := item["useGlobalRunners"].(bool); ok {
+        data.UseGlobalRunners = types.BoolValue(val)
+    } else {
+        data.UseGlobalRunners = types.BoolNull()
     }
     if obj, ok := item["gitHubAppInstallationId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

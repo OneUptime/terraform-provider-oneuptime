@@ -42,6 +42,7 @@ type RunnerDataSourceModel struct {
     CanRunRunbooks types.Bool `tfsdk:"can_run_runbooks"`
     CanRunCodeFixTasks types.Bool `tfsdk:"can_run_code_fix_tasks"`
     CanRunAiCommands types.Bool `tfsdk:"can_run_ai_commands"`
+    IsGlobalRunner types.Bool `tfsdk:"is_global_runner"`
     HostInfo types.String `tfsdk:"host_info"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
@@ -118,6 +119,11 @@ func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
             },
             "can_run_ai_commands": schema.BoolAttribute{
                 MarkdownDescription: "Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, SSH, kubectl) that either match an allowlist or wait for one-click human approval. Off by default; the in-cluster Runner installed by the Kubernetes agent chart turns it on.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_global_runner": schema.BoolAttribute{
+                MarkdownDescription: "Whether OneUptime runs this Runner for every project. Global Runners run JavaScript steps in a sandbox that can reach the internet but not your network. Only a master admin creates them.",
                 Optional: true,
                 Computed: true,
             },
@@ -206,6 +212,10 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         filters["canRunAiCommands"] = data.CanRunAiCommands.ValueBool()
         filterNames = append(filterNames, "can_run_ai_commands = "+fmt.Sprintf("%t", data.CanRunAiCommands.ValueBool()))
     }
+    if !data.IsGlobalRunner.IsNull() && !data.IsGlobalRunner.IsUnknown() {
+        filters["isGlobalRunner"] = data.IsGlobalRunner.ValueBool()
+        filterNames = append(filterNames, "is_global_runner = "+fmt.Sprintf("%t", data.IsGlobalRunner.ValueBool()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -240,6 +250,7 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         "canRunRunbooks": true,
         "canRunCodeFixTasks": true,
         "canRunAiCommands": true,
+        "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
         "labels": true,
@@ -505,6 +516,11 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         data.CanRunAiCommands = types.BoolValue(val)
     } else {
         data.CanRunAiCommands = types.BoolNull()
+    }
+    if val, ok := item["isGlobalRunner"].(bool); ok {
+        data.IsGlobalRunner = types.BoolValue(val)
+    } else {
+        data.IsGlobalRunner = types.BoolNull()
     }
     if obj, ok := item["hostInfo"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

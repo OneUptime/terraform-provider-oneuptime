@@ -14,10 +14,12 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 )
 
@@ -42,6 +44,7 @@ type RunbookSecretResourceModel struct {
     Description types.String `tfsdk:"description"`
     SecretValue types.String `tfsdk:"secret_value"`
     Runners types.Set `tfsdk:"runners"`
+    IsAvailableToGlobalRunners types.Bool `tfsdk:"is_available_to_global_runners"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -98,6 +101,15 @@ func (r *RunbookSecretResource) schemaDefinition() schema.Schema {
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_available_to_global_runners": schema.BoolAttribute{
+                MarkdownDescription: "Whether steps of this project that run on a global Runner get this secret. Global Runners are the ones OneUptime runs for every project; a step of another project never gets it.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -185,6 +197,9 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
     if !data.Runners.IsNull() && !data.Runners.IsUnknown() {
         requestDataMap["runners"] = r.convertTerraformSetToInterface(data.Runners)
     }
+    if !data.IsAvailableToGlobalRunners.IsNull() && !data.IsAvailableToGlobalRunners.IsUnknown() {
+        requestDataMap["isAvailableToGlobalRunners"] = data.IsAvailableToGlobalRunners.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/runbook-secret", runbookSecretRequest)
@@ -234,6 +249,7 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
         "name": true,
         "description": true,
         "runners": true,
+        "isAvailableToGlobalRunners": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -386,6 +402,9 @@ func (r *RunbookSecretResource) Create(ctx context.Context, req resource.CreateR
         // For sets, always use empty set instead of null to match default values
         data.Runners = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["isAvailableToGlobalRunners"].(bool); ok {
+        data.IsAvailableToGlobalRunners = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -479,6 +498,7 @@ func (r *RunbookSecretResource) Read(ctx context.Context, req resource.ReadReque
         "name": true,
         "description": true,
         "runners": true,
+        "isAvailableToGlobalRunners": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -632,6 +652,9 @@ func (r *RunbookSecretResource) Read(ctx context.Context, req resource.ReadReque
         // For sets, always use empty set instead of null to match default values
         data.Runners = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["isAvailableToGlobalRunners"].(bool); ok {
+        data.IsAvailableToGlobalRunners = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -746,6 +769,9 @@ func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateR
     if !data.Runners.IsUnknown() && !state.Runners.IsUnknown() && !data.Runners.Equal(state.Runners) {
         requestDataMap["runners"] = r.convertTerraformSetToInterface(data.Runners)
     }
+    if !data.IsAvailableToGlobalRunners.IsUnknown() && !state.IsAvailableToGlobalRunners.IsUnknown() && !data.IsAvailableToGlobalRunners.Equal(state.IsAvailableToGlobalRunners) {
+        requestDataMap["isAvailableToGlobalRunners"] = data.IsAvailableToGlobalRunners.ValueBool()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -773,6 +799,7 @@ func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateR
         "name": true,
         "description": true,
         "runners": true,
+        "isAvailableToGlobalRunners": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -920,6 +947,9 @@ func (r *RunbookSecretResource) Update(ctx context.Context, req resource.UpdateR
         // For sets, always use empty set instead of null to match default values
         data.Runners = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["isAvailableToGlobalRunners"].(bool); ok {
+        data.IsAvailableToGlobalRunners = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1041,6 +1071,9 @@ func (r *RunbookSecretResource) keepPlannedValues(data *RunbookSecretResourceMod
     }
     if config.Runners.IsNull() && !plan.Runners.IsUnknown() {
         data.Runners = plan.Runners
+    }
+    if config.IsAvailableToGlobalRunners.IsNull() && !plan.IsAvailableToGlobalRunners.IsUnknown() {
+        data.IsAvailableToGlobalRunners = plan.IsAvailableToGlobalRunners
     }
 }
 

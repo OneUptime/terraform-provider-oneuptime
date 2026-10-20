@@ -35,6 +35,7 @@ type RunbookSecretDataSourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     Runners types.Set `tfsdk:"runners"`
+    IsAvailableToGlobalRunners types.Bool `tfsdk:"is_available_to_global_runners"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -44,7 +45,7 @@ func (d *RunbookSecretDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *RunbookSecretDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Runbook Secret is a secret variable that can be used by runbook agents. For example you can store auth tokens, passwords, etc. in Runbook Secret and use them in your runbook steps. Runbook Secret is encrypted and only accessible by the assigned agent. Look up an existing runbook secret by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`): each one set must match, and exactly one runbook secret may match them all.",
+        MarkdownDescription: "Runbook Secret is a secret variable that can be used by runbook agents. For example you can store auth tokens, passwords, etc. in Runbook Secret and use them in your runbook steps. Runbook Secret is encrypted and only accessible by the assigned agent. Look up an existing runbook secret by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one runbook secret may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -78,6 +79,11 @@ func (d *RunbookSecretDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "List of runbook agents that can access this secret. IDs of `oneuptime_runner` resources.",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "is_available_to_global_runners": schema.BoolAttribute{
+                MarkdownDescription: "Whether steps of this project that run on a global Runner get this secret. Global Runners are the ones OneUptime runs for every project; a step of another project never gets it.",
+                Optional: true,
+                Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -131,6 +137,10 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["description"] = data.Description.ValueString()
         filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
     }
+    if !data.IsAvailableToGlobalRunners.IsNull() && !data.IsAvailableToGlobalRunners.IsUnknown() {
+        filters["isAvailableToGlobalRunners"] = data.IsAvailableToGlobalRunners.ValueBool()
+        filterNames = append(filterNames, "is_available_to_global_runners = "+fmt.Sprintf("%t", data.IsAvailableToGlobalRunners.ValueBool()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -158,6 +168,7 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
         "name": true,
         "description": true,
         "runners": true,
+        "isAvailableToGlobalRunners": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -345,6 +356,11 @@ func (d *RunbookSecretDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Runners = types.SetValueMust(types.StringType, setItems)
     } else {
         data.Runners = types.SetNull(types.StringType)
+    }
+    if val, ok := item["isAvailableToGlobalRunners"].(bool); ok {
+        data.IsAvailableToGlobalRunners = types.BoolValue(val)
+    } else {
+        data.IsAvailableToGlobalRunners = types.BoolNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

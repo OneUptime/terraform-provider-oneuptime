@@ -72,6 +72,7 @@ type ProjectResourceModel struct {
     AutoArchiveNonActionableExceptions types.Bool `tfsdk:"auto_archive_non_actionable_exceptions"`
     SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     UtmContent types.String `tfsdk:"utm_content"`
+    UseGlobalRunners types.Bool `tfsdk:"use_global_runners"`
     EnableAuditLogs types.Bool `tfsdk:"enable_audit_logs"`
     IsSessionReplayAllowed types.Bool `tfsdk:"is_session_replay_allowed"`
     AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
@@ -427,6 +428,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
             },
+            "use_global_runners": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, runbook steps that do not pick a Runner of their own run on OneUptime's global Runners, in a sandbox that can reach the internet but not your network. Turn it off to keep every step on the Runners you install. On by default.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "enable_audit_logs": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries.",
                 Optional: true,
@@ -464,7 +474,7 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 },
             },
             "record_and_transcribe_incident_calls": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime asks Zoom and Google Meet to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Microsoft Teams calls, Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default.",
+                MarkdownDescription: "When enabled, OneUptime asks Zoom, Google Meet and Microsoft Teams to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -1062,6 +1072,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.UtmContent.IsNull() && !data.UtmContent.IsUnknown() {
         requestDataMap["utmContent"] = data.UtmContent.ValueString()
     }
+    if !data.UseGlobalRunners.IsNull() && !data.UseGlobalRunners.IsUnknown() {
+        requestDataMap["useGlobalRunners"] = data.UseGlobalRunners.ValueBool()
+    }
     if !data.EnableAuditLogs.IsNull() && !data.EnableAuditLogs.IsUnknown() {
         requestDataMap["enableAuditLogs"] = data.EnableAuditLogs.ValueBool()
     }
@@ -1152,6 +1165,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableInsightFixTasks": true,
         "autoArchiveNonActionableExceptions": true,
         "sendInvoicesByEmail": true,
+        "useGlobalRunners": true,
         "enableAuditLogs": true,
         "isSessionReplayAllowed": true,
         "auditLogsRetentionInDays": true,
@@ -1703,6 +1717,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
+    }
+    if val, ok := dataMap["useGlobalRunners"].(bool); ok {
+        data.UseGlobalRunners = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAuditLogs"].(bool); ok {
         data.EnableAuditLogs = types.BoolValue(val)
@@ -2546,6 +2563,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableInsightFixTasks": true,
         "autoArchiveNonActionableExceptions": true,
         "sendInvoicesByEmail": true,
+        "useGlobalRunners": true,
         "enableAuditLogs": true,
         "isSessionReplayAllowed": true,
         "auditLogsRetentionInDays": true,
@@ -3098,6 +3116,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
+    }
+    if val, ok := dataMap["useGlobalRunners"].(bool); ok {
+        data.UseGlobalRunners = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAuditLogs"].(bool); ok {
         data.EnableAuditLogs = types.BoolValue(val)
@@ -4119,6 +4140,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() && !state.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() && !data.DoNotAddGlobalProbesByDefaultOnNewMonitors.Equal(state.DoNotAddGlobalProbesByDefaultOnNewMonitors) {
         requestDataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"] = data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool()
     }
+    if !data.UseGlobalRunners.IsUnknown() && !state.UseGlobalRunners.IsUnknown() && !data.UseGlobalRunners.Equal(state.UseGlobalRunners) {
+        requestDataMap["useGlobalRunners"] = data.UseGlobalRunners.ValueBool()
+    }
     if !data.DefaultMetricCardinalityBudget.IsUnknown() && !state.DefaultMetricCardinalityBudget.IsUnknown() && !data.DefaultMetricCardinalityBudget.Equal(state.DefaultMetricCardinalityBudget) {
         requestDataMap["defaultMetricCardinalityBudget"] = r.bigFloatToFloat64(data.DefaultMetricCardinalityBudget.ValueBigFloat())
     }
@@ -4209,6 +4233,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableInsightFixTasks": true,
         "autoArchiveNonActionableExceptions": true,
         "sendInvoicesByEmail": true,
+        "useGlobalRunners": true,
         "enableAuditLogs": true,
         "isSessionReplayAllowed": true,
         "auditLogsRetentionInDays": true,
@@ -4755,6 +4780,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
+    }
+    if val, ok := dataMap["useGlobalRunners"].(bool); ok {
+        data.UseGlobalRunners = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAuditLogs"].(bool); ok {
         data.EnableAuditLogs = types.BoolValue(val)
@@ -5681,6 +5709,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.SendInvoicesByEmail.IsNull() && !plan.SendInvoicesByEmail.IsUnknown() {
         data.SendInvoicesByEmail = plan.SendInvoicesByEmail
+    }
+    if config.UseGlobalRunners.IsNull() && !plan.UseGlobalRunners.IsUnknown() {
+        data.UseGlobalRunners = plan.UseGlobalRunners
     }
     if config.EnableAuditLogs.IsNull() && !plan.EnableAuditLogs.IsUnknown() {
         data.EnableAuditLogs = plan.EnableAuditLogs

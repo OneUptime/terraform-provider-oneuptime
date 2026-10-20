@@ -36,6 +36,7 @@ type IncidentVideoCallDataSourceModel struct {
     Title types.String `tfsdk:"title"`
     JoinUrl types.String `tfsdk:"join_url"`
     ExternalMeetingId types.String `tfsdk:"external_meeting_id"`
+    ExternalCalendarEventId types.String `tfsdk:"external_calendar_event_id"`
     WorkspaceNotificationRuleId types.String `tfsdk:"workspace_notification_rule_id"`
     Transcript types.String `tfsdk:"transcript"`
     TranscriptSource types.String `tfsdk:"transcript_source"`
@@ -112,6 +113,11 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
                 Optional: true,
                 Computed: true,
             },
+            "external_calendar_event_id": schema.StringAttribute{
+                MarkdownDescription: "The calendar event the meeting belongs to: a Microsoft Teams meeting OneUptime put on its organizer's calendar, as it does while Record and transcribe incident calls is on, so that it can read the meeting's transcript. Empty for every other call.",
+                Optional: true,
+                Computed: true,
+            },
             "workspace_notification_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Slack or Microsoft Teams notification rule that started this call. The ID of a `oneuptime_workspace_notification_rule`.",
                 Optional: true,
@@ -173,7 +179,7 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "transcript_fetch_status": schema.StringAttribute{
-                MarkdownDescription: "Whether OneUptime gets the call's transcript from Zoom or Google Meet by itself, as it does for the calls it starts while Record and transcribe incident calls is on: Waiting while it asks the provider (again at Transcript Fetch Next Attempt At), Stopped once it no longer asks (Transcript Fetch Reason says why). Empty for a call it does not ask about, and once it has the transcript.",
+                MarkdownDescription: "Whether OneUptime gets the call's transcript from Zoom, Google Meet or Microsoft Teams by itself, as it does for the calls it starts while Record and transcribe incident calls is on: Waiting while it asks the provider (again at Transcript Fetch Next Attempt At), Stopped once it no longer asks, or when the provider could not be set up to record the call (Transcript Fetch Reason says why). Empty for a call it does not ask about, and once it has the transcript.",
                 Optional: true,
                 Computed: true,
             },
@@ -258,6 +264,10 @@ func (d *IncidentVideoCallDataSource) Read(ctx context.Context, req datasource.R
         filters["externalMeetingId"] = data.ExternalMeetingId.ValueString()
         filterNames = append(filterNames, "external_meeting_id = "+fmt.Sprintf("%q", data.ExternalMeetingId.ValueString()))
     }
+    if !data.ExternalCalendarEventId.IsNull() && !data.ExternalCalendarEventId.IsUnknown() {
+        filters["externalCalendarEventId"] = data.ExternalCalendarEventId.ValueString()
+        filterNames = append(filterNames, "external_calendar_event_id = "+fmt.Sprintf("%q", data.ExternalCalendarEventId.ValueString()))
+    }
     if !data.WorkspaceNotificationRuleId.IsNull() && !data.WorkspaceNotificationRuleId.IsUnknown() {
         filters["workspaceNotificationRuleId"] = data.WorkspaceNotificationRuleId.ValueString()
         filterNames = append(filterNames, "workspace_notification_rule_id = "+fmt.Sprintf("%q", data.WorkspaceNotificationRuleId.ValueString()))
@@ -328,6 +338,7 @@ func (d *IncidentVideoCallDataSource) Read(ctx context.Context, req datasource.R
         "title": true,
         "joinUrl": true,
         "externalMeetingId": true,
+        "externalCalendarEventId": true,
         "workspaceNotificationRuleId": true,
         "transcript": true,
         "transcriptSource": true,
@@ -576,6 +587,23 @@ func (d *IncidentVideoCallDataSource) Read(ctx context.Context, req datasource.R
         data.ExternalMeetingId = types.StringValue(val)
     } else {
         data.ExternalMeetingId = types.StringNull()
+    }
+    if obj, ok := item["externalCalendarEventId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ExternalCalendarEventId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ExternalCalendarEventId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ExternalCalendarEventId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ExternalCalendarEventId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExternalCalendarEventId = types.StringNull()
+        }
+    } else if val, ok := item["externalCalendarEventId"].(string); ok {
+        data.ExternalCalendarEventId = types.StringValue(val)
+    } else {
+        data.ExternalCalendarEventId = types.StringNull()
     }
     if obj, ok := item["workspaceNotificationRuleId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

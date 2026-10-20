@@ -34,6 +34,8 @@ data "oneuptime_ai_run" "by_id" {
 - `auto_grade` (String) For investigation runs: how the posted analysis compared to the incident's final recorded root cause (Match, Partial or Mismatch).
 - `code_fix_recommendation` (String) For incident/alert investigations: whether the structured investigation outcome recommends opening a code-fix pull request.
 - `code_fix_task_type` (String) For CodeFix runs: which task recipe this run executes (fix the exception, write a regression test, ...). Null means FixException — rows created before task recipes existed.
+- `code_repository_id` (String) ID of the repository this code task works in. The ID of a `oneuptime_code_repository`.
+- `code_task_id` (String) For a reply in a code task's conversation: the task it continues (the id of the task's first run).
 - `conversation_id` (String) ID of the conversation this run belongs to. The ID of a `oneuptime_ai_conversation`.
 - `error_message` (String) Error message if the run failed.
 - `follow_up_for_alert_id` (String) For a follow-up check of an incident: the alert that opened on the incident's linked infrastructure after its first investigation and made OneUptime AI check it again.
@@ -42,6 +44,7 @@ data "oneuptime_ai_run" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `llm_call_count` (Number) Number of LLM calls made during this run.
 - `monitor_id` (String) The monitor behind the alert that triggered this run — the dedupe key for per-monitor investigation windows.
+- `needs_user_input` (Boolean) True when the run ended by asking the person who started it a question, and waits for their answer.
 - `run_type` (String) Type of AI run: Chat or Investigation.
 - `status` (String) Current status of this run.
 - `task_number` (Number) Per-project sequential number for this AI task (code-fix runs only).

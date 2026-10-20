@@ -38,6 +38,7 @@ resource "oneuptime_incident_video_call" "example" {
 - `call_summary_updated_at` (String) When the Call Summary Status last changed: when OneUptime AI started reading the transcript, or finished.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `external_calendar_event_id` (String) The calendar event the meeting belongs to: a Microsoft Teams meeting OneUptime put on its organizer's calendar, as it does while Record and transcribe incident calls is on, so that it can read the meeting's transcript. Empty for every other call.
 - `external_meeting_id` (String) The provider's own id for the meeting: a Zoom meeting id, a Google Meet space name, a Microsoft Teams online meeting id or a Slack channel id.
 - `id` (String) Unique identifier for the resource.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
@@ -50,7 +51,7 @@ resource "oneuptime_incident_video_call" "example" {
 - `transcript_fetch_checked_at` (String) When OneUptime last asked the provider for the call's transcript.
 - `transcript_fetch_next_attempt_at` (String) When OneUptime next asks the provider for the call's transcript, while the Transcript Fetch Status is Waiting.
 - `transcript_fetch_reason` (String) Why the provider had no transcript to give when OneUptime last asked: NotReady (still preparing it), NotTranscribed (nothing recorded or transcribed yet), NoMeeting, Expired, PermissionMissing, ConnectionProblem or NotSupported. Empty when the provider did not answer.
-- `transcript_fetch_status` (String) Whether OneUptime gets the call's transcript from Zoom or Google Meet by itself, as it does for the calls it starts while Record and transcribe incident calls is on: Waiting while it asks the provider (again at Transcript Fetch Next Attempt At), Stopped once it no longer asks (Transcript Fetch Reason says why). Empty for a call it does not ask about, and once it has the transcript.
+- `transcript_fetch_status` (String) Whether OneUptime gets the call's transcript from Zoom, Google Meet or Microsoft Teams by itself, as it does for the calls it starts while Record and transcribe incident calls is on: Waiting while it asks the provider (again at Transcript Fetch Next Attempt At), Stopped once it no longer asks, or when the provider could not be set up to record the call (Transcript Fetch Reason says why). Empty for a call it does not ask about, and once it has the transcript.
 - `transcript_info` (String) How long the transcript is - remarks, speakers, characters and how many seconds it spans - and the name of the file it was added from, so the call can be described without reading the transcript. A JSON value: write it with `jsonencode()`.
 - `transcript_source` (String) Where the transcript came from: Provider when OneUptime read it from Zoom or Google Meet, Upload when a person added it.
 - `updated_at` (String) Date and Time when the object was updated.

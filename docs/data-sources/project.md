@@ -107,7 +107,7 @@ data "oneuptime_project" "by_id" {
 - `payment_provider_subscription_seats` (Number) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]
 - `payment_provider_subscription_status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]
 - `plan_name` (String) Name of the plan this project is subscribed to.
-- `record_and_transcribe_incident_calls` (Boolean) When enabled, OneUptime asks Zoom and Google Meet to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Microsoft Teams calls, Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default.
+- `record_and_transcribe_incident_calls` (Boolean) When enabled, OneUptime asks Zoom, Google Meet and Microsoft Teams to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default.
 - `require_sso_for_login` (Boolean) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]
 - `require_sso_with_sso_provider_id` (String) If set, SSO-enforced login for this project is only satisfied by an SSO token issued by this specific provider id (a Project SSO/OIDC or a Global SSO/OIDC). When null, any trusted SSO provider satisfies enforcement.
 - `reseller_id` (String) ID of your OneUptime Reseller in which this object belongs.
@@ -119,6 +119,7 @@ data "oneuptime_project" "by_id" {
 - `slug` (String) Friendly globally unique name for your object.
 - `sms_or_call_current_balance_in_usd_cents` (Number) Balance in USD for SMS, Call, and WhatsApp.
 - `store_system_events_in_audit_logs` (Boolean) When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded.
+- `use_global_runners` (Boolean) When enabled, runbook steps that do not pick a Runner of their own run on OneUptime's global Runners, in a sandbox that can reach the internet but not your network. Turn it off to keep every step on the Runners you install. On by default.
 - `workflow_runs_in_last30_days` (Number) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]
 
 ### Read-Only

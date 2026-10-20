@@ -31,6 +31,7 @@ data "oneuptime_runbook_secret" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_available_to_global_runners` (Boolean) Whether steps of this project that run on a global Runner get this secret. Global Runners are the ones OneUptime runs for every project; a step of another project never gets it.
 - `name` (String) Any friendly name of this object.
 
 ### Read-Only

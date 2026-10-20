@@ -91,7 +91,7 @@ resource "oneuptime_project" "example" {
 - `limit_incidents_to_one_episode` (Boolean) When enabled, an incident can be in only one incident episode: adding an incident that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Incidents that are already in several episodes stay in them. Off by default. Defaults to `false`.
 - `payment_provider_plan_id` (String)
 - `payment_provider_promo_code` (String)
-- `record_and_transcribe_incident_calls` (Boolean) When enabled, OneUptime asks Zoom and Google Meet to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Microsoft Teams calls, Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default. Defaults to `false`.
+- `record_and_transcribe_incident_calls` (Boolean) When enabled, OneUptime asks Zoom, Google Meet and Microsoft Teams to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default. Defaults to `false`.
 - `require_sso_for_login` (Boolean) Defaults to `false`.
 - `require_sso_with_sso_provider_id` (String) If set, SSO-enforced login for this project is only satisfied by an SSO token issued by this specific provider id (a Project SSO/OIDC or a Global SSO/OIDC). When null, any trusted SSO provider satisfies enforcement.
 - `resolve_linked_alerts_when_incident_resolved` (Boolean) When enabled, resolving an incident also resolves every alert linked to it, except alerts that are still linked to another incident that is not resolved yet. Alerts linked to an incident that is already resolved are resolved as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting. Defaults to `true`.
@@ -101,6 +101,7 @@ resource "oneuptime_project" "example" {
 - `send_invoices_by_email` (Boolean) When enabled, invoices will be automatically sent to the finance/accounting email when they are generated. Defaults to `false`.
 - `store_system_events_in_audit_logs` (Boolean) When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded. Defaults to `false`.
 - `telemetry_retention_config` (String) Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set. A JSON value: write it with `jsonencode()`.
+- `use_global_runners` (Boolean) When enabled, runbook steps that do not pick a Runner of their own run on OneUptime's global Runners, in a sandbox that can reach the internet but not your network. Turn it off to keep every step on the Runners you install. On by default. Defaults to `true`.
 - `utm_content` (String)
 
 ### Read-Only

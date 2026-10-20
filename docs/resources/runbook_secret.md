@@ -27,6 +27,7 @@ resource "oneuptime_runbook_secret" "example" {
 ### Optional
 
 - `description` (String) Friendly description that will help you remember.
+- `is_available_to_global_runners` (Boolean) Whether steps of this project that run on a global Runner get this secret. Global Runners are the ones OneUptime runs for every project; a step of another project never gets it. Defaults to `false`.
 - `runners` (Set of String) List of runbook agents that can access this secret. IDs of `oneuptime_runner` resources.
 - `secret_value` (String, Sensitive) Secret value that you want to store in this object. This value will be encrypted and only accessible by the assigned runbook agent.
 

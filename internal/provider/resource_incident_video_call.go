@@ -43,6 +43,7 @@ type IncidentVideoCallResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     ExternalMeetingId types.String `tfsdk:"external_meeting_id"`
+    ExternalCalendarEventId types.String `tfsdk:"external_calendar_event_id"`
     WorkspaceNotificationRuleId types.String `tfsdk:"workspace_notification_rule_id"`
     Transcript types.String `tfsdk:"transcript"`
     TranscriptSource types.String `tfsdk:"transcript_source"`
@@ -143,6 +144,10 @@ func (r *IncidentVideoCallResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "The provider's own id for the meeting: a Zoom meeting id, a Google Meet space name, a Microsoft Teams online meeting id or a Slack channel id.",
                 Computed: true,
             },
+            "external_calendar_event_id": schema.StringAttribute{
+                MarkdownDescription: "The calendar event the meeting belongs to: a Microsoft Teams meeting OneUptime put on its organizer's calendar, as it does while Record and transcribe incident calls is on, so that it can read the meeting's transcript. Empty for every other call.",
+                Computed: true,
+            },
             "workspace_notification_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Slack or Microsoft Teams notification rule that started this call. The ID of a `oneuptime_workspace_notification_rule`.",
                 Computed: true,
@@ -201,7 +206,7 @@ func (r *IncidentVideoCallResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "transcript_fetch_status": schema.StringAttribute{
-                MarkdownDescription: "Whether OneUptime gets the call's transcript from Zoom or Google Meet by itself, as it does for the calls it starts while Record and transcribe incident calls is on: Waiting while it asks the provider (again at Transcript Fetch Next Attempt At), Stopped once it no longer asks (Transcript Fetch Reason says why). Empty for a call it does not ask about, and once it has the transcript.",
+                MarkdownDescription: "Whether OneUptime gets the call's transcript from Zoom, Google Meet or Microsoft Teams by itself, as it does for the calls it starts while Record and transcribe incident calls is on: Waiting while it asks the provider (again at Transcript Fetch Next Attempt At), Stopped once it no longer asks, or when the provider could not be set up to record the call (Transcript Fetch Reason says why). Empty for a call it does not ask about, and once it has the transcript.",
                 Computed: true,
             },
             "transcript_fetch_reason": schema.StringAttribute{
@@ -347,6 +352,7 @@ func (r *IncidentVideoCallResource) Create(ctx context.Context, req resource.Cre
         "createdAt": true,
         "updatedAt": true,
         "externalMeetingId": true,
+        "externalCalendarEventId": true,
         "workspaceNotificationRuleId": true,
         "transcript": true,
         "transcriptSource": true,
@@ -651,6 +657,43 @@ func (r *IncidentVideoCallResource) Create(ctx context.Context, req resource.Cre
         data.ExternalMeetingId = types.StringValue(val)
     } else {
         data.ExternalMeetingId = types.StringNull()
+    }
+    if obj, ok := dataMap["externalCalendarEventId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ExternalCalendarEventId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ExternalCalendarEventId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ExternalCalendarEventId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ExternalCalendarEventId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ExternalCalendarEventId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ExternalCalendarEventId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ExternalCalendarEventId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ExternalCalendarEventId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExternalCalendarEventId = types.StringNull()
+        }
+    } else if val, ok := dataMap["externalCalendarEventId"].(string); ok {
+        data.ExternalCalendarEventId = types.StringValue(val)
+    } else {
+        data.ExternalCalendarEventId = types.StringNull()
     }
     if obj, ok := dataMap["workspaceNotificationRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1227,6 +1270,7 @@ func (r *IncidentVideoCallResource) Read(ctx context.Context, req resource.ReadR
         "createdAt": true,
         "updatedAt": true,
         "externalMeetingId": true,
+        "externalCalendarEventId": true,
         "workspaceNotificationRuleId": true,
         "transcript": true,
         "transcriptSource": true,
@@ -1532,6 +1576,43 @@ func (r *IncidentVideoCallResource) Read(ctx context.Context, req resource.ReadR
         data.ExternalMeetingId = types.StringValue(val)
     } else {
         data.ExternalMeetingId = types.StringNull()
+    }
+    if obj, ok := dataMap["externalCalendarEventId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ExternalCalendarEventId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ExternalCalendarEventId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ExternalCalendarEventId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ExternalCalendarEventId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ExternalCalendarEventId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ExternalCalendarEventId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ExternalCalendarEventId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ExternalCalendarEventId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExternalCalendarEventId = types.StringNull()
+        }
+    } else if val, ok := dataMap["externalCalendarEventId"].(string); ok {
+        data.ExternalCalendarEventId = types.StringValue(val)
+    } else {
+        data.ExternalCalendarEventId = types.StringNull()
     }
     if obj, ok := dataMap["workspaceNotificationRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

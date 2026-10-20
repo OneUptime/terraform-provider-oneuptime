@@ -35,6 +35,7 @@ data "oneuptime_runner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Optional description for this agent.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_global_runner` (Boolean) Whether OneUptime runs this Runner for every project. Global Runners run JavaScript steps in a sandbox that can reach the internet but not your network. Only a master admin creates them.
 - `key` (String) Secret key the agent presents on every request. Anyone who can read this key can claim work as this Runner and receive its secrets in plaintext. Never share it; reset it to revoke the agent.
 - `name` (String) Friendly name for this agent. Names starting with "kubernetes-agent/" are reserved for the in-cluster Runners the Kubernetes agent chart registers, and such a Runner cannot be renamed.
 - `slug` (String) Friendly globally unique name for your object.
