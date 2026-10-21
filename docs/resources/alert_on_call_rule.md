@@ -38,6 +38,9 @@ resource "oneuptime_alert_on_call_rule" "example" {
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.
 - `monitors` (Set of String) Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor. IDs of `oneuptime_monitor` resources.
 - `on_call_duty_policies` (Set of String) On-call duty policies to execute when an alert matches this rule. IDs of `oneuptime_on_call_policy` resources.
+- `when_to_page` (String) When the on-call policies of this rule page: Right Away, as soon as a record matches it, or Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin. Defaults to `Right Away`.
+- `working_hours` (String) When this rule may page, when When to Page is Working Hours: the same daily or weekly windows as an on-call schedule layer's restriction times, read in the time zone of this rule. A JSON value: write it with `jsonencode()`.
+- `working_hours_timezone` (String) The IANA time zone the working hours of this rule are in: Europe/London.
 
 ### Read-Only
 

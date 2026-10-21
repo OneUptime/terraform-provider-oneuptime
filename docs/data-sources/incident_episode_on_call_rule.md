@@ -35,6 +35,8 @@ data "oneuptime_incident_episode_on_call_rule" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Whether this rule is enabled.
 - `name` (String) Name of this incident episode on-call rule.
+- `when_to_page` (String) When the on-call policies of this rule page: Right Away, as soon as a record matches it, or Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin.
+- `working_hours_timezone` (String) The IANA time zone the working hours of this rule are in: Europe/London.
 
 ### Read-Only
 
@@ -45,3 +47,4 @@ data "oneuptime_incident_episode_on_call_rule" "by_id" {
 - `on_call_duty_policies` (Set of String) On-call duty policies to execute when an incident episode matches this rule. IDs of `oneuptime_on_call_policy` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
+- `working_hours` (String) When this rule may page, when When to Page is Working Hours: the same daily or weekly windows as an on-call schedule layer's restriction times, read in the time zone of this rule. A JSON value: write it with `jsonencode()`.

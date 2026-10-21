@@ -15,6 +15,7 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -41,6 +42,9 @@ type AlertEpisodeOnCallRuleResource struct {
 type AlertEpisodeOnCallRuleResourceModel struct {
     Id types.String `tfsdk:"id"`
     Criteria JSONSubsetValue `tfsdk:"criteria"`
+    WhenToPage types.String `tfsdk:"when_to_page"`
+    WorkingHours JSONSubsetValue `tfsdk:"working_hours"`
+    WorkingHoursTimezone types.String `tfsdk:"working_hours_timezone"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
@@ -85,6 +89,35 @@ func (r *AlertEpisodeOnCallRuleResource) schemaDefinition() schema.Schema {
                 },
                 Validators: []validator.String{
                     JSONEnvelopeValidator(),
+                },
+            },
+            "when_to_page": schema.StringAttribute{
+                MarkdownDescription: "When the on-call policies of this rule page: Right Away, as soon as a record matches it, or Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("Right Away"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "working_hours": schema.StringAttribute{
+                MarkdownDescription: "When this rule may page, when When to Page is Working Hours: the same daily or weekly windows as an on-call schedule layer's restriction times, read in the time zone of this rule. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "working_hours_timezone": schema.StringAttribute{
+                MarkdownDescription: "The IANA time zone the working hours of this rule are in: Europe/London.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
@@ -234,6 +267,15 @@ func (r *AlertEpisodeOnCallRuleResource) Create(ctx context.Context, req resourc
     if parsedCriteria := r.parseJSONField(data.Criteria); parsedCriteria != nil {
         requestDataMap["criteria"] = parsedCriteria
     }
+    if !data.WhenToPage.IsNull() && !data.WhenToPage.IsUnknown() {
+        requestDataMap["whenToPage"] = data.WhenToPage.ValueString()
+    }
+    if parsedWorkingHours := r.parseJSONField(data.WorkingHours); parsedWorkingHours != nil {
+        requestDataMap["workingHours"] = parsedWorkingHours
+    }
+    if !data.WorkingHoursTimezone.IsNull() && !data.WorkingHoursTimezone.IsUnknown() {
+        requestDataMap["workingHoursTimezone"] = data.WorkingHoursTimezone.ValueString()
+    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         requestDataMap["name"] = data.Name.ValueString()
     }
@@ -304,6 +346,9 @@ func (r *AlertEpisodeOnCallRuleResource) Create(ctx context.Context, req resourc
     // Re-read the resource so state reflects server-normalized values.
     selectParam := map[string]interface{}{
         "criteria": true,
+        "whenToPage": true,
+        "workingHours": true,
+        "workingHoursTimezone": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -384,6 +429,117 @@ func (r *AlertEpisodeOnCallRuleResource) Create(ctx context.Context, req resourc
         data.Criteria = NewJSONSubsetValue(val)
     } else {
         data.Criteria = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["whenToPage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WhenToPage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WhenToPage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WhenToPage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WhenToPage = types.StringValue(string(jsonBytes))
+            } else {
+                data.WhenToPage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WhenToPage = types.StringValue(string(jsonBytes))
+            } else {
+                data.WhenToPage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WhenToPage = types.StringValue(string(jsonBytes))
+        } else {
+            data.WhenToPage = types.StringNull()
+        }
+    } else if val, ok := dataMap["whenToPage"].(string); ok {
+        data.WhenToPage = types.StringValue(val)
+    } else {
+        data.WhenToPage = types.StringNull()
+    }
+    if obj, ok := dataMap["workingHours"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkingHours = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WorkingHours = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WorkingHours = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WorkingHours = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.WorkingHours = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WorkingHours = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.WorkingHours = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WorkingHours = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.WorkingHours = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["workingHours"].(string); ok {
+        data.WorkingHours = NewJSONSubsetValue(val)
+    } else {
+        data.WorkingHours = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["workingHoursTimezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkingHoursTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WorkingHoursTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WorkingHoursTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WorkingHoursTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.WorkingHoursTimezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WorkingHoursTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.WorkingHoursTimezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WorkingHoursTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkingHoursTimezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["workingHoursTimezone"].(string); ok {
+        data.WorkingHoursTimezone = types.StringValue(val)
+    } else {
+        data.WorkingHoursTimezone = types.StringNull()
     }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
@@ -733,6 +889,9 @@ func (r *AlertEpisodeOnCallRuleResource) Read(ctx context.Context, req resource.
     // Create select parameter to get full object
     selectParam := map[string]interface{}{
         "criteria": true,
+        "whenToPage": true,
+        "workingHours": true,
+        "workingHoursTimezone": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -814,6 +973,117 @@ func (r *AlertEpisodeOnCallRuleResource) Read(ctx context.Context, req resource.
         data.Criteria = NewJSONSubsetValue(val)
     } else {
         data.Criteria = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["whenToPage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WhenToPage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WhenToPage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WhenToPage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WhenToPage = types.StringValue(string(jsonBytes))
+            } else {
+                data.WhenToPage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WhenToPage = types.StringValue(string(jsonBytes))
+            } else {
+                data.WhenToPage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WhenToPage = types.StringValue(string(jsonBytes))
+        } else {
+            data.WhenToPage = types.StringNull()
+        }
+    } else if val, ok := dataMap["whenToPage"].(string); ok {
+        data.WhenToPage = types.StringValue(val)
+    } else {
+        data.WhenToPage = types.StringNull()
+    }
+    if obj, ok := dataMap["workingHours"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkingHours = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WorkingHours = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WorkingHours = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WorkingHours = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.WorkingHours = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WorkingHours = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.WorkingHours = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WorkingHours = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.WorkingHours = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["workingHours"].(string); ok {
+        data.WorkingHours = NewJSONSubsetValue(val)
+    } else {
+        data.WorkingHours = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["workingHoursTimezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkingHoursTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WorkingHoursTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WorkingHoursTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WorkingHoursTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.WorkingHoursTimezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WorkingHoursTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.WorkingHoursTimezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WorkingHoursTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkingHoursTimezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["workingHoursTimezone"].(string); ok {
+        data.WorkingHoursTimezone = types.StringValue(val)
+    } else {
+        data.WorkingHoursTimezone = types.StringNull()
     }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
@@ -1183,6 +1453,20 @@ func (r *AlertEpisodeOnCallRuleResource) Update(ctx context.Context, req resourc
             requestDataMap["criteria"] = data.Criteria.ValueString()
         }
     }
+    if !data.WhenToPage.IsUnknown() && !state.WhenToPage.IsUnknown() && !data.WhenToPage.Equal(state.WhenToPage) {
+        requestDataMap["whenToPage"] = data.WhenToPage.ValueString()
+    }
+    if !data.WorkingHours.IsUnknown() && !state.WorkingHours.IsUnknown() && !data.WorkingHours.Equal(state.WorkingHours) {
+        var workinghoursData interface{}
+        if err := json.Unmarshal([]byte(data.WorkingHours.ValueString()), &workinghoursData); err == nil {
+            requestDataMap["workingHours"] = workinghoursData
+        } else {
+            requestDataMap["workingHours"] = data.WorkingHours.ValueString()
+        }
+    }
+    if !data.WorkingHoursTimezone.IsUnknown() && !state.WorkingHoursTimezone.IsUnknown() && !data.WorkingHoursTimezone.Equal(state.WorkingHoursTimezone) {
+        requestDataMap["workingHoursTimezone"] = data.WorkingHoursTimezone.ValueString()
+    }
     if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
         requestDataMap["name"] = data.Name.ValueString()
     }
@@ -1231,6 +1515,9 @@ func (r *AlertEpisodeOnCallRuleResource) Update(ctx context.Context, req resourc
     // After successful update, fetch the current state by calling Read with select parameter
     selectParam := map[string]interface{}{
         "criteria": true,
+        "whenToPage": true,
+        "workingHours": true,
+        "workingHoursTimezone": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -1306,6 +1593,117 @@ func (r *AlertEpisodeOnCallRuleResource) Update(ctx context.Context, req resourc
         data.Criteria = NewJSONSubsetValue(val)
     } else {
         data.Criteria = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["whenToPage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WhenToPage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WhenToPage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WhenToPage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WhenToPage = types.StringValue(string(jsonBytes))
+            } else {
+                data.WhenToPage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WhenToPage = types.StringValue(string(jsonBytes))
+            } else {
+                data.WhenToPage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WhenToPage = types.StringValue(string(jsonBytes))
+        } else {
+            data.WhenToPage = types.StringNull()
+        }
+    } else if val, ok := dataMap["whenToPage"].(string); ok {
+        data.WhenToPage = types.StringValue(val)
+    } else {
+        data.WhenToPage = types.StringNull()
+    }
+    if obj, ok := dataMap["workingHours"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkingHours = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WorkingHours = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WorkingHours = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WorkingHours = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.WorkingHours = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WorkingHours = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.WorkingHours = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WorkingHours = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.WorkingHours = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["workingHours"].(string); ok {
+        data.WorkingHours = NewJSONSubsetValue(val)
+    } else {
+        data.WorkingHours = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["workingHoursTimezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkingHoursTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WorkingHoursTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WorkingHoursTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WorkingHoursTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.WorkingHoursTimezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WorkingHoursTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.WorkingHoursTimezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WorkingHoursTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkingHoursTimezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["workingHoursTimezone"].(string); ok {
+        data.WorkingHoursTimezone = types.StringValue(val)
+    } else {
+        data.WorkingHoursTimezone = types.StringNull()
     }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
@@ -1683,6 +2081,15 @@ func (r *AlertEpisodeOnCallRuleResource) ImportState(ctx context.Context, req re
 func (r *AlertEpisodeOnCallRuleResource) keepPlannedValues(data *AlertEpisodeOnCallRuleResourceModel, plan *AlertEpisodeOnCallRuleResourceModel, config *AlertEpisodeOnCallRuleResourceModel) {
     if config.Criteria.IsNull() && !plan.Criteria.IsUnknown() {
         data.Criteria = plan.Criteria
+    }
+    if config.WhenToPage.IsNull() && !plan.WhenToPage.IsUnknown() {
+        data.WhenToPage = plan.WhenToPage
+    }
+    if config.WorkingHours.IsNull() && !plan.WorkingHours.IsUnknown() {
+        data.WorkingHours = plan.WorkingHours
+    }
+    if config.WorkingHoursTimezone.IsNull() && !plan.WorkingHoursTimezone.IsUnknown() {
+        data.WorkingHoursTimezone = plan.WorkingHoursTimezone
     }
     if config.Description.IsNull() && !plan.Description.IsUnknown() {
         data.Description = plan.Description

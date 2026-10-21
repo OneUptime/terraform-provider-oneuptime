@@ -36,6 +36,7 @@ data "oneuptime_on_call_duty_execution_log" "by_id" {
 - `last_executed_escalation_rule_order` (Number) Which escalation rule was executed?
 - `on_call_duty_policy_id` (String) ID of the On-Call Policy this execution log is a run of. Required when you create one. Empty for a direct page: people, a team or an on-call schedule paged without an on-call policy. The ID of a `oneuptime_on_call_policy`.
 - `on_call_policy_execution_repeat_count` (Number) How many times did we execute this on-call policy?
+- `paging_started_early_reason` (String) Why this run started paging before the working hours it waited for began: its record came to match an on-call rule that pages right away. Empty for every other run.
 - `schedule_gap_retry_count` (Number) How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.
 - `status` (String) Status of this execution.
 - `status_message` (String) Status message of this execution.
@@ -52,5 +53,6 @@ data "oneuptime_on_call_duty_execution_log" "by_id" {
 
 - `acknowledged_at` (String) When was this policy execution acknowledged?
 - `created_at` (String) Date and Time when the object was created.
+- `paging_starts_at` (String) When this run starts paging, when it waited to: an on-call rule that pages only during working hours held it until they began. Empty when it paged straight away.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

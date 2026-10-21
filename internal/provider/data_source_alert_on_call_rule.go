@@ -32,6 +32,9 @@ type AlertOnCallRuleDataSourceModel struct {
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     Criteria types.String `tfsdk:"criteria"`
+    WhenToPage types.String `tfsdk:"when_to_page"`
+    WorkingHours types.String `tfsdk:"working_hours"`
+    WorkingHoursTimezone types.String `tfsdk:"working_hours_timezone"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
@@ -72,6 +75,20 @@ func (d *AlertOnCallRuleDataSource) Schema(ctx context.Context, req datasource.S
             },
             "criteria": schema.StringAttribute{
                 MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "when_to_page": schema.StringAttribute{
+                MarkdownDescription: "When the on-call policies of this rule page: Right Away, as soon as a record matches it, or Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin.",
+                Optional: true,
+                Computed: true,
+            },
+            "working_hours": schema.StringAttribute{
+                MarkdownDescription: "When this rule may page, when When to Page is Working Hours: the same daily or weekly windows as an on-call schedule layer's restriction times, read in the time zone of this rule. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "working_hours_timezone": schema.StringAttribute{
+                MarkdownDescription: "The IANA time zone the working hours of this rule are in: Europe/London.",
+                Optional: true,
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -182,6 +199,14 @@ func (d *AlertOnCallRuleDataSource) Read(ctx context.Context, req datasource.Rea
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
+    if !data.WhenToPage.IsNull() && !data.WhenToPage.IsUnknown() {
+        filters["whenToPage"] = data.WhenToPage.ValueString()
+        filterNames = append(filterNames, "when_to_page = "+fmt.Sprintf("%q", data.WhenToPage.ValueString()))
+    }
+    if !data.WorkingHoursTimezone.IsNull() && !data.WorkingHoursTimezone.IsUnknown() {
+        filters["workingHoursTimezone"] = data.WorkingHoursTimezone.ValueString()
+        filterNames = append(filterNames, "working_hours_timezone = "+fmt.Sprintf("%q", data.WorkingHoursTimezone.ValueString()))
+    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
@@ -234,6 +259,9 @@ func (d *AlertOnCallRuleDataSource) Read(ctx context.Context, req datasource.Rea
         "createdAt": true,
         "updatedAt": true,
         "criteria": true,
+        "whenToPage": true,
+        "workingHours": true,
+        "workingHoursTimezone": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -376,6 +404,57 @@ func (d *AlertOnCallRuleDataSource) Read(ctx context.Context, req datasource.Rea
         data.Criteria = types.StringValue(val)
     } else {
         data.Criteria = types.StringNull()
+    }
+    if obj, ok := item["whenToPage"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WhenToPage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WhenToPage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WhenToPage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WhenToPage = types.StringValue(string(jsonBytes))
+        } else {
+            data.WhenToPage = types.StringNull()
+        }
+    } else if val, ok := item["whenToPage"].(string); ok {
+        data.WhenToPage = types.StringValue(val)
+    } else {
+        data.WhenToPage = types.StringNull()
+    }
+    if obj, ok := item["workingHours"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkingHours = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WorkingHours = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WorkingHours = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WorkingHours = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkingHours = types.StringNull()
+        }
+    } else if val, ok := item["workingHours"].(string); ok {
+        data.WorkingHours = types.StringValue(val)
+    } else {
+        data.WorkingHours = types.StringNull()
+    }
+    if obj, ok := item["workingHoursTimezone"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkingHoursTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WorkingHoursTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WorkingHoursTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WorkingHoursTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkingHoursTimezone = types.StringNull()
+        }
+    } else if val, ok := item["workingHoursTimezone"].(string); ok {
+        data.WorkingHoursTimezone = types.StringValue(val)
+    } else {
+        data.WorkingHoursTimezone = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

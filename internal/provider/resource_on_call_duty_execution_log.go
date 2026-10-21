@@ -57,6 +57,8 @@ type OnCallDutyExecutionLogResourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     AcknowledgedByUserId types.String `tfsdk:"acknowledged_by_user_id"`
     ScheduleGapRetryCount types.Number `tfsdk:"schedule_gap_retry_count"`
+    PagingStartsAt RFC3339Value `tfsdk:"paging_starts_at"`
+    PagingStartedEarlyReason types.String `tfsdk:"paging_started_early_reason"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
     TriggeredByWorkflowId types.String `tfsdk:"triggered_by_workflow_id"`
     TriggeredByWorkflowName types.String `tfsdk:"triggered_by_workflow_name"`
@@ -218,6 +220,15 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
             },
             "schedule_gap_retry_count": schema.NumberAttribute{
                 MarkdownDescription: "How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.",
+                Computed: true,
+            },
+            "paging_starts_at": schema.StringAttribute{
+                MarkdownDescription: "When this run starts paging, when it waited to: an on-call rule that pages only during working hours held it until they began. Empty when it paged straight away.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "paging_started_early_reason": schema.StringAttribute{
+                MarkdownDescription: "Why this run started paging before the working hours it waited for began: its record came to match an on-call rule that pages right away. Empty for every other run.",
                 Computed: true,
             },
             "triggered_by_user_id": schema.StringAttribute{
@@ -394,6 +405,8 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
         "createdByUserId": true,
         "acknowledgedByUserId": true,
         "scheduleGapRetryCount": true,
+        "pagingStartsAt": true,
+        "pagingStartedEarlyReason": true,
         "triggeredByUserId": true,
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
@@ -920,6 +933,54 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
         data.AcknowledgedByUserId = types.StringNull()
     }
     data.ScheduleGapRetryCount = numberFromAPI(data.ScheduleGapRetryCount, dataMap["scheduleGapRetryCount"])
+    if obj, ok := dataMap["pagingStartsAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PagingStartsAt = NewRFC3339Value(val)
+        } else {
+            data.PagingStartsAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["pagingStartsAt"].(string); ok && val != "" {
+        data.PagingStartsAt = NewRFC3339Value(val)
+    } else {
+        data.PagingStartsAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["pagingStartedEarlyReason"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PagingStartedEarlyReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PagingStartedEarlyReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PagingStartedEarlyReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PagingStartedEarlyReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.PagingStartedEarlyReason = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PagingStartedEarlyReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.PagingStartedEarlyReason = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PagingStartedEarlyReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.PagingStartedEarlyReason = types.StringNull()
+        }
+    } else if val, ok := dataMap["pagingStartedEarlyReason"].(string); ok {
+        data.PagingStartedEarlyReason = types.StringValue(val)
+    } else {
+        data.PagingStartedEarlyReason = types.StringNull()
+    }
     if obj, ok := dataMap["triggeredByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1080,6 +1141,8 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         "createdByUserId": true,
         "acknowledgedByUserId": true,
         "scheduleGapRetryCount": true,
+        "pagingStartsAt": true,
+        "pagingStartedEarlyReason": true,
         "triggeredByUserId": true,
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
@@ -1607,6 +1670,54 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         data.AcknowledgedByUserId = types.StringNull()
     }
     data.ScheduleGapRetryCount = numberFromAPI(data.ScheduleGapRetryCount, dataMap["scheduleGapRetryCount"])
+    if obj, ok := dataMap["pagingStartsAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PagingStartsAt = NewRFC3339Value(val)
+        } else {
+            data.PagingStartsAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["pagingStartsAt"].(string); ok && val != "" {
+        data.PagingStartsAt = NewRFC3339Value(val)
+    } else {
+        data.PagingStartsAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["pagingStartedEarlyReason"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PagingStartedEarlyReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PagingStartedEarlyReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PagingStartedEarlyReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PagingStartedEarlyReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.PagingStartedEarlyReason = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PagingStartedEarlyReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.PagingStartedEarlyReason = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PagingStartedEarlyReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.PagingStartedEarlyReason = types.StringNull()
+        }
+    } else if val, ok := dataMap["pagingStartedEarlyReason"].(string); ok {
+        data.PagingStartedEarlyReason = types.StringValue(val)
+    } else {
+        data.PagingStartedEarlyReason = types.StringNull()
+    }
     if obj, ok := dataMap["triggeredByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

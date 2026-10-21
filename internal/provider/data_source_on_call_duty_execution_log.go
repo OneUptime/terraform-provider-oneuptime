@@ -46,6 +46,8 @@ type OnCallDutyExecutionLogDataSourceModel struct {
     LastExecutedEscalationRuleId types.String `tfsdk:"last_executed_escalation_rule_id"`
     OnCallPolicyExecutionRepeatCount types.Number `tfsdk:"on_call_policy_execution_repeat_count"`
     ScheduleGapRetryCount types.Number `tfsdk:"schedule_gap_retry_count"`
+    PagingStartsAt types.String `tfsdk:"paging_starts_at"`
+    PagingStartedEarlyReason types.String `tfsdk:"paging_started_early_reason"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
     TriggeredByWorkflowId types.String `tfsdk:"triggered_by_workflow_id"`
     TriggeredByWorkflowName types.String `tfsdk:"triggered_by_workflow_name"`
@@ -153,6 +155,15 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
             },
             "schedule_gap_retry_count": schema.NumberAttribute{
                 MarkdownDescription: "How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.",
+                Optional: true,
+                Computed: true,
+            },
+            "paging_starts_at": schema.StringAttribute{
+                MarkdownDescription: "When this run starts paging, when it waited to: an on-call rule that pages only during working hours held it until they began. Empty when it paged straight away.",
+                Computed: true,
+            },
+            "paging_started_early_reason": schema.StringAttribute{
+                MarkdownDescription: "Why this run started paging before the working hours it waited for began: its record came to match an on-call rule that pages right away. Empty for every other run.",
                 Optional: true,
                 Computed: true,
             },
@@ -270,6 +281,10 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         filters["scheduleGapRetryCount"] = lookupNumber(data.ScheduleGapRetryCount)
         filterNames = append(filterNames, "schedule_gap_retry_count = "+data.ScheduleGapRetryCount.ValueBigFloat().String())
     }
+    if !data.PagingStartedEarlyReason.IsNull() && !data.PagingStartedEarlyReason.IsUnknown() {
+        filters["pagingStartedEarlyReason"] = data.PagingStartedEarlyReason.ValueString()
+        filterNames = append(filterNames, "paging_started_early_reason = "+fmt.Sprintf("%q", data.PagingStartedEarlyReason.ValueString()))
+    }
     if !data.TriggeredByUserId.IsNull() && !data.TriggeredByUserId.IsUnknown() {
         filters["triggeredByUserId"] = data.TriggeredByUserId.ValueString()
         filterNames = append(filterNames, "triggered_by_user_id = "+fmt.Sprintf("%q", data.TriggeredByUserId.ValueString()))
@@ -318,6 +333,8 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         "lastExecutedEscalationRuleId": true,
         "onCallPolicyExecutionRepeatCount": true,
         "scheduleGapRetryCount": true,
+        "pagingStartsAt": true,
+        "pagingStartedEarlyReason": true,
         "triggeredByUserId": true,
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
@@ -674,6 +691,40 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
     }
     data.OnCallPolicyExecutionRepeatCount = numberFromAPI(data.OnCallPolicyExecutionRepeatCount, item["onCallPolicyExecutionRepeatCount"])
     data.ScheduleGapRetryCount = numberFromAPI(data.ScheduleGapRetryCount, item["scheduleGapRetryCount"])
+    if obj, ok := item["pagingStartsAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PagingStartsAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PagingStartsAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PagingStartsAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PagingStartsAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.PagingStartsAt = types.StringNull()
+        }
+    } else if val, ok := item["pagingStartsAt"].(string); ok {
+        data.PagingStartsAt = types.StringValue(val)
+    } else {
+        data.PagingStartsAt = types.StringNull()
+    }
+    if obj, ok := item["pagingStartedEarlyReason"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PagingStartedEarlyReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PagingStartedEarlyReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PagingStartedEarlyReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PagingStartedEarlyReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.PagingStartedEarlyReason = types.StringNull()
+        }
+    } else if val, ok := item["pagingStartedEarlyReason"].(string); ok {
+        data.PagingStartedEarlyReason = types.StringValue(val)
+    } else {
+        data.PagingStartedEarlyReason = types.StringNull()
+    }
     if obj, ok := item["triggeredByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TriggeredByUserId = types.StringValue(val)
