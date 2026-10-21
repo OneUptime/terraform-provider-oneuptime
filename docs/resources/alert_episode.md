@@ -53,6 +53,7 @@ resource "oneuptime_alert_episode" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `episode_number_with_prefix` (String) Episode number with prefix (e.g., 'AE-42' or '#42').
+- `first_paged_at` (String) When an on-call policy or a direct page first notified someone about this episode. Empty until someone is paged. Set by OneUptime.
 - `id` (String) Unique identifier for the resource.
 - `is_on_call_policy_executed` (Boolean) Whether the on-call policy has been executed for this episode.
 - `is_owner_notified_of_episode_creation` (Boolean) Are owners notified when this episode is created?

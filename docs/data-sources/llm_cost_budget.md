@@ -38,6 +38,7 @@ data "oneuptime_llm_cost_budget" "by_id" {
 - `llm_system` (String) Optional provider filter, e.g. openai, anthropic, aws.bedrock (matches the span's gen_ai provider). Leave empty to count every provider.
 - `name` (String) Friendly name for this budget.
 - `service_id` (String) Optional telemetry service ID scoping this budget. Null means the budget is project-wide. The ID of a `oneuptime_service`.
+- `spend_source` (String) 'calls' counts the cost of your AI calls; 'providers' counts what your connected AI provider accounts report.
 
 ### Read-Only
 

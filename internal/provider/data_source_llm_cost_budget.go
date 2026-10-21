@@ -37,6 +37,7 @@ type LlmCostBudgetDataSourceModel struct {
     ServiceId types.String `tfsdk:"service_id"`
     LlmSystem types.String `tfsdk:"llm_system"`
     LlmModel types.String `tfsdk:"llm_model"`
+    SpendSource types.String `tfsdk:"spend_source"`
     CurrentDaySpendInUsd types.Number `tfsdk:"current_day_spend_in_usd"`
     SpendLastEvaluatedAt types.String `tfsdk:"spend_last_evaluated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -100,6 +101,11 @@ func (d *LlmCostBudgetDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "llm_model": schema.StringAttribute{
                 MarkdownDescription: "Optional model filter, e.g. gpt-4o (matches the span's requested model exactly). Leave empty to count every model.",
+                Optional: true,
+                Computed: true,
+            },
+            "spend_source": schema.StringAttribute{
+                MarkdownDescription: "'calls' counts the cost of your AI calls; 'providers' counts what your connected AI provider accounts report.",
                 Optional: true,
                 Computed: true,
             },
@@ -184,6 +190,10 @@ func (d *LlmCostBudgetDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["llmModel"] = data.LlmModel.ValueString()
         filterNames = append(filterNames, "llm_model = "+fmt.Sprintf("%q", data.LlmModel.ValueString()))
     }
+    if !data.SpendSource.IsNull() && !data.SpendSource.IsUnknown() {
+        filters["spendSource"] = data.SpendSource.ValueString()
+        filterNames = append(filterNames, "spend_source = "+fmt.Sprintf("%q", data.SpendSource.ValueString()))
+    }
     if !data.CurrentDaySpendInUsd.IsNull() && !data.CurrentDaySpendInUsd.IsUnknown() {
         filters["currentDaySpendInUSD"] = lookupNumber(data.CurrentDaySpendInUsd)
         filterNames = append(filterNames, "current_day_spend_in_usd = "+data.CurrentDaySpendInUsd.ValueBigFloat().String())
@@ -219,6 +229,7 @@ func (d *LlmCostBudgetDataSource) Read(ctx context.Context, req datasource.ReadR
         "serviceId": true,
         "llmSystem": true,
         "llmModel": true,
+        "spendSource": true,
         "currentDaySpendInUSD": true,
         "spendLastEvaluatedAt": true,
         "createdByUserId": true,
@@ -441,6 +452,23 @@ func (d *LlmCostBudgetDataSource) Read(ctx context.Context, req datasource.ReadR
         data.LlmModel = types.StringValue(val)
     } else {
         data.LlmModel = types.StringNull()
+    }
+    if obj, ok := item["spendSource"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SpendSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SpendSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SpendSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SpendSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.SpendSource = types.StringNull()
+        }
+    } else if val, ok := item["spendSource"].(string); ok {
+        data.SpendSource = types.StringValue(val)
+    } else {
+        data.SpendSource = types.StringNull()
     }
     data.CurrentDaySpendInUsd = numberFromAPI(data.CurrentDaySpendInUsd, item["currentDaySpendInUSD"])
     if obj, ok := item["spendLastEvaluatedAt"].(map[string]interface{}); ok {

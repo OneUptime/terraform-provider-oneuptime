@@ -46,7 +46,7 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `runbook_id` (String) ID of the proposed runbook. The ID of a `oneuptime_runbook`.
 - `runbook_name_snapshot` (String) Name of the proposed runbook when this suggestion was created — survives runbook deletion.
 - `status` (String) Lifecycle status: Planning, Suggested, Approved, AutoExecuted, Dismissed or NoneApplicable.
-- `suggestion_type` (String) Runbook suggestions propose starting a pre-authored runbook; CommandPlan suggestions carry an AI-composed command plan.
+- `suggestion_type` (String) Runbook suggestions propose starting a pre-authored runbook; CommandPlan suggestions carry an AI-composed command plan; McpToolCalls suggestions carry the tool calls OneUptime AI makes, or proposes, through the project's external MCP servers.
 - `verification_note` (String) Why verification ended the way it did.
 - `verification_status` (String) Outcome verification after execution: Pending, Verified, Failed or Skipped. Empty until a runbook is started.
 - `verification_window_minutes` (Number) Snapshot of the rule's verification window when this suggestion was created.
@@ -57,6 +57,7 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `command_plan` (String) The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run. A JSON value: write it with `jsonencode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `dismissed_at` (String) When this suggestion was dismissed.
+- `mcp_tool_call_plan` (String) For McpToolCalls suggestions: the tool calls OneUptime AI made, or proposes, through the project's external MCP servers, with what each server answered once called. A JSON value: write it with `jsonencode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
 - `verification_completed_at` (String) When verification reached a terminal outcome.

@@ -47,12 +47,12 @@ type RunnerResourceModel struct {
     AgentVersion JSONSubsetValue `tfsdk:"agent_version"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
     CanRunRunbooks types.Bool `tfsdk:"can_run_runbooks"`
-    CanRunAiCommands types.Bool `tfsdk:"can_run_ai_commands"`
     Labels types.Set `tfsdk:"labels"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
     LastAlive RFC3339Value `tfsdk:"last_alive"`
+    CanRunAiCommands types.Bool `tfsdk:"can_run_ai_commands"`
     IsGlobalRunner types.Bool `tfsdk:"is_global_runner"`
     HostInfo JSONSubsetValue `tfsdk:"host_info"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -132,15 +132,6 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
-            "can_run_ai_commands": schema.BoolAttribute{
-                MarkdownDescription: "Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, SSH, kubectl) that either match an allowlist or wait for one-click human approval. Off by default; the in-cluster Runner installed by the Kubernetes agent chart turns it on.",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
             "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
                 Optional: true,
@@ -170,6 +161,10 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
             "last_alive": schema.StringAttribute{
                 MarkdownDescription: "Most recent heartbeat from this agent.",
                 CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "can_run_ai_commands": schema.BoolAttribute{
+                MarkdownDescription: "Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, SSH, kubectl) that either match an allowlist or wait for one-click human approval. Set by OneUptime: on once an auto remediation rule picks this Runner or a Kubernetes cluster's AI settings bind it, and on for the in-cluster Runner the Kubernetes agent chart installs.",
                 Computed: true,
             },
             "is_global_runner": schema.BoolAttribute{
@@ -259,9 +254,6 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
     if !data.CanRunRunbooks.IsNull() && !data.CanRunRunbooks.IsUnknown() {
         requestDataMap["canRunRunbooks"] = data.CanRunRunbooks.ValueBool()
     }
-    if !data.CanRunAiCommands.IsNull() && !data.CanRunAiCommands.IsUnknown() {
-        requestDataMap["canRunAiCommands"] = data.CanRunAiCommands.ValueBool()
-    }
     if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -317,12 +309,12 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
         "agentVersion": true,
         "connectionStatus": true,
         "canRunRunbooks": true,
-        "canRunAiCommands": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "lastAlive": true,
+        "canRunAiCommands": true,
         "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
@@ -557,9 +549,6 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
     if val, ok := dataMap["canRunRunbooks"].(bool); ok {
         data.CanRunRunbooks = types.BoolValue(val)
     }
-    if val, ok := dataMap["canRunAiCommands"].(bool); ok {
-        data.CanRunAiCommands = types.BoolValue(val)
-    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -661,6 +650,9 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
         data.LastAlive = NewRFC3339Value(val)
     } else {
         data.LastAlive = NewRFC3339Null()
+    }
+    if val, ok := dataMap["canRunAiCommands"].(bool); ok {
+        data.CanRunAiCommands = types.BoolValue(val)
     }
     if val, ok := dataMap["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)
@@ -776,12 +768,12 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
         "agentVersion": true,
         "connectionStatus": true,
         "canRunRunbooks": true,
-        "canRunAiCommands": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "lastAlive": true,
+        "canRunAiCommands": true,
         "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
@@ -1017,9 +1009,6 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
     if val, ok := dataMap["canRunRunbooks"].(bool); ok {
         data.CanRunRunbooks = types.BoolValue(val)
     }
-    if val, ok := dataMap["canRunAiCommands"].(bool); ok {
-        data.CanRunAiCommands = types.BoolValue(val)
-    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1121,6 +1110,9 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
         data.LastAlive = NewRFC3339Value(val)
     } else {
         data.LastAlive = NewRFC3339Null()
+    }
+    if val, ok := dataMap["canRunAiCommands"].(bool); ok {
+        data.CanRunAiCommands = types.BoolValue(val)
     }
     if val, ok := dataMap["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)
@@ -1254,9 +1246,6 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
     if !data.CanRunRunbooks.IsUnknown() && !state.CanRunRunbooks.IsUnknown() && !data.CanRunRunbooks.Equal(state.CanRunRunbooks) {
         requestDataMap["canRunRunbooks"] = data.CanRunRunbooks.ValueBool()
     }
-    if !data.CanRunAiCommands.IsUnknown() && !state.CanRunAiCommands.IsUnknown() && !data.CanRunAiCommands.Equal(state.CanRunAiCommands) {
-        requestDataMap["canRunAiCommands"] = data.CanRunAiCommands.ValueBool()
-    }
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -1290,12 +1279,12 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
         "agentVersion": true,
         "connectionStatus": true,
         "canRunRunbooks": true,
-        "canRunAiCommands": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "lastAlive": true,
+        "canRunAiCommands": true,
         "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
@@ -1525,9 +1514,6 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
     if val, ok := dataMap["canRunRunbooks"].(bool); ok {
         data.CanRunRunbooks = types.BoolValue(val)
     }
-    if val, ok := dataMap["canRunAiCommands"].(bool); ok {
-        data.CanRunAiCommands = types.BoolValue(val)
-    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1629,6 +1615,9 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
         data.LastAlive = NewRFC3339Value(val)
     } else {
         data.LastAlive = NewRFC3339Null()
+    }
+    if val, ok := dataMap["canRunAiCommands"].(bool); ok {
+        data.CanRunAiCommands = types.BoolValue(val)
     }
     if val, ok := dataMap["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)
@@ -1775,9 +1764,6 @@ func (r *RunnerResource) keepPlannedValues(data *RunnerResourceModel, plan *Runn
     }
     if config.CanRunRunbooks.IsNull() && !plan.CanRunRunbooks.IsUnknown() {
         data.CanRunRunbooks = plan.CanRunRunbooks
-    }
-    if config.CanRunAiCommands.IsNull() && !plan.CanRunAiCommands.IsUnknown() {
-        data.CanRunAiCommands = plan.CanRunAiCommands
     }
     if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
         data.Labels = plan.Labels

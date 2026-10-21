@@ -69,6 +69,7 @@ resource "oneuptime_alert" "example" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_criteria_id` (String) If this alert was created by a Probe, this is the ID of the criteria that created it.
 - `created_state_log` (String) A JSON value: write it with `jsonencode()`.
+- `first_paged_at` (String) When an on-call policy or a direct page first notified someone about this alert. Empty until someone is paged. Set by OneUptime.
 - `id` (String) Unique identifier for the resource.
 - `is_created_automatically` (Boolean) Is this alert created by OneUptime Probe or Workers automatically (and not created manually by a user)?
 - `is_owner_notified_of_alert_creation` (Boolean) Are owners notified of when this alert is created?

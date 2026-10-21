@@ -114,11 +114,11 @@ func (r *AlertMeasurementResource) schemaDefinition() schema.Schema {
                 },
             },
             "start_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered.",
+                MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered, First Paged At.",
                 Required: true,
             },
             "end_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered.",
+                MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered, First Paged At.",
                 Required: true,
             },
             "start_alert_state_id": schema.StringAttribute{

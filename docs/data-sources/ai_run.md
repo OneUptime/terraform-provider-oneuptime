@@ -45,6 +45,7 @@ data "oneuptime_ai_run" "by_id" {
 - `llm_call_count` (Number) Number of LLM calls made during this run.
 - `monitor_id` (String) The monitor behind the alert that triggered this run — the dedupe key for per-monitor investigation windows.
 - `needs_user_input` (Boolean) True when the run ended by asking the person who started it a question, and waits for their answer.
+- `rule_wait_minutes` (Number) For an investigation an investigation rule made wait: the minutes the rule waited to see whether the incident or alert would still be open. Empty when it started right away.
 - `run_type` (String) Type of AI run: Chat or Investigation.
 - `status` (String) Current status of this run.
 - `task_number` (Number) Per-project sequential number for this AI task (code-fix runs only).

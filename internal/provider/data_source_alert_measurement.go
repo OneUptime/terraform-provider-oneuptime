@@ -101,12 +101,12 @@ func (d *AlertMeasurementDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "start_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered.",
+                MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered, First Paged At.",
                 Optional: true,
                 Computed: true,
             },
             "end_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered.",
+                MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered, First Paged At.",
                 Optional: true,
                 Computed: true,
             },

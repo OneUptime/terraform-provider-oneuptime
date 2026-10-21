@@ -24,9 +24,9 @@ resource "oneuptime_incident_measurement" "example" {
 
 ### Required
 
-- `end_anchor_type` (String) Where this measurement ends. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At.
+- `end_anchor_type` (String) Where this measurement ends. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At, First Paged At.
 - `name` (String) Human readable name of this measurement, such as Time to Acknowledge. This is what charts call it.
-- `start_anchor_type` (String) Where this measurement starts. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At.
+- `start_anchor_type` (String) Where this measurement starts. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At, First Paged At.
 
 ### Optional
 

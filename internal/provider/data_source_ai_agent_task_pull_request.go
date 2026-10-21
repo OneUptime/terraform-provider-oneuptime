@@ -51,6 +51,7 @@ type AiAgentTaskPullRequestDataSourceModel struct {
     DeployedVersion types.String `tfsdk:"deployed_version"`
     DeployedCommitSha types.String `tfsdk:"deployed_commit_sha"`
     ProductionSummary types.String `tfsdk:"production_summary"`
+    ProductionCheck types.String `tfsdk:"production_check"`
     HeadRefName types.String `tfsdk:"head_ref_name"`
     BaseRefName types.String `tfsdk:"base_ref_name"`
     RepoOrganizationName types.String `tfsdk:"repo_organization_name"`
@@ -158,7 +159,7 @@ func (d *AiAgentTaskPullRequestDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "production_status": schema.StringAttribute{
-                MarkdownDescription: "Whether the merged fix fixed its exception in production: AwaitingDeploy, Watching, Verified, Regressed or Unverifiable. Written by the server, which watches the exception once a recorded deploy contains the fix.",
+                MarkdownDescription: "Whether the merged fix worked in production: AwaitingDeploy, Watching, Verified, Regressed or Unverifiable. Written by the server, which watches what the fix was for (Production Check) once a recorded deploy contains the fix.",
                 Optional: true,
                 Computed: true,
             },
@@ -181,7 +182,12 @@ func (d *AiAgentTaskPullRequestDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "production_summary": schema.StringAttribute{
-                MarkdownDescription: "What the production check found, in a sentence: the deploy that shipped the fix and how often the exception happened before and since. Written by the server.",
+                MarkdownDescription: "What the production check found, in a sentence: the deploy that shipped the fix and what it measured before and since. Written by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "production_check": schema.StringAttribute{
+                MarkdownDescription: "What production is watched for once the fix merges: Exception (the exception stops), Performance (the operation it names gets faster), Recurrence (the monitor stops raising incidents or alerts) or Telemetry (the spans and log fields it adds arrive). Empty on a watched fix of an exception from before the column existed. Written by the server when the pull request merges.",
                 Optional: true,
                 Computed: true,
             },
@@ -317,6 +323,10 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         filters["productionSummary"] = data.ProductionSummary.ValueString()
         filterNames = append(filterNames, "production_summary = "+fmt.Sprintf("%q", data.ProductionSummary.ValueString()))
     }
+    if !data.ProductionCheck.IsNull() && !data.ProductionCheck.IsUnknown() {
+        filters["productionCheck"] = data.ProductionCheck.ValueString()
+        filterNames = append(filterNames, "production_check = "+fmt.Sprintf("%q", data.ProductionCheck.ValueString()))
+    }
     if !data.HeadRefName.IsNull() && !data.HeadRefName.IsUnknown() {
         filters["headRefName"] = data.HeadRefName.ValueString()
         filterNames = append(filterNames, "head_ref_name = "+fmt.Sprintf("%q", data.HeadRefName.ValueString()))
@@ -378,6 +388,7 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         "deployedVersion": true,
         "deployedCommitSha": true,
         "productionSummary": true,
+        "productionCheck": true,
         "headRefName": true,
         "baseRefName": true,
         "repoOrganizationName": true,
@@ -836,6 +847,23 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         data.ProductionSummary = types.StringValue(val)
     } else {
         data.ProductionSummary = types.StringNull()
+    }
+    if obj, ok := item["productionCheck"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionCheck = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductionCheck = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductionCheck = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductionCheck = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionCheck = types.StringNull()
+        }
+    } else if val, ok := item["productionCheck"].(string); ok {
+        data.ProductionCheck = types.StringValue(val)
+    } else {
+        data.ProductionCheck = types.StringNull()
     }
     if obj, ok := item["headRefName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

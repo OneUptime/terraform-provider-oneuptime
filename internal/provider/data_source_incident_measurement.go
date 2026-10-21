@@ -101,12 +101,12 @@ func (d *IncidentMeasurementDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "start_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At.",
+                MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At, First Paged At.",
                 Optional: true,
                 Computed: true,
             },
             "end_anchor_type": schema.StringAttribute{
-                MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At.",
+                MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At, First Paged At.",
                 Optional: true,
                 Computed: true,
             },

@@ -43,6 +43,7 @@ type AutoRemediationSuggestionDataSourceModel struct {
     ExecutionMode types.String `tfsdk:"execution_mode"`
     SuggestionType types.String `tfsdk:"suggestion_type"`
     CommandPlan types.String `tfsdk:"command_plan"`
+    McpToolCallPlan types.String `tfsdk:"mcp_tool_call_plan"`
     RationaleMarkdown types.String `tfsdk:"rationale_markdown"`
     AiRunId types.String `tfsdk:"ai_run_id"`
     RunbookExecutionId types.String `tfsdk:"runbook_execution_id"`
@@ -140,12 +141,16 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "suggestion_type": schema.StringAttribute{
-                MarkdownDescription: "Runbook suggestions propose starting a pre-authored runbook; CommandPlan suggestions carry an AI-composed command plan.",
+                MarkdownDescription: "Runbook suggestions propose starting a pre-authored runbook; CommandPlan suggestions carry an AI-composed command plan; McpToolCalls suggestions carry the tool calls OneUptime AI makes, or proposes, through the project's external MCP servers.",
                 Optional: true,
                 Computed: true,
             },
             "command_plan": schema.StringAttribute{
                 MarkdownDescription: "The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "mcp_tool_call_plan": schema.StringAttribute{
+                MarkdownDescription: "For McpToolCalls suggestions: the tool calls OneUptime AI made, or proposes, through the project's external MCP servers, with what each server answered once called. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "rationale_markdown": schema.StringAttribute{
@@ -365,6 +370,7 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         "executionMode": true,
         "suggestionType": true,
         "commandPlan": true,
+        "mcpToolCallPlan": true,
         "rationaleMarkdown": true,
         "aiRunId": true,
         "runbookExecutionId": true,
@@ -727,6 +733,23 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         data.CommandPlan = types.StringValue(val)
     } else {
         data.CommandPlan = types.StringNull()
+    }
+    if obj, ok := item["mcpToolCallPlan"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.McpToolCallPlan = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.McpToolCallPlan = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.McpToolCallPlan = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.McpToolCallPlan = types.StringValue(string(jsonBytes))
+        } else {
+            data.McpToolCallPlan = types.StringNull()
+        }
+    } else if val, ok := item["mcpToolCallPlan"].(string); ok {
+        data.McpToolCallPlan = types.StringValue(val)
+    } else {
+        data.McpToolCallPlan = types.StringNull()
     }
     if obj, ok := item["rationaleMarkdown"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

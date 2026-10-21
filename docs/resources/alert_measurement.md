@@ -24,9 +24,9 @@ resource "oneuptime_alert_measurement" "example" {
 
 ### Required
 
-- `end_anchor_type` (String) Where this measurement ends. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered.
+- `end_anchor_type` (String) Where this measurement ends. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered, First Paged At.
 - `name` (String) Human readable name of this measurement, such as Time to Acknowledge. This is what charts call it.
-- `start_anchor_type` (String) Where this measurement starts. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered.
+- `start_anchor_type` (String) Where this measurement starts. One of: Impact Started At, Created At, Timeline Start, State Entered, State Role Entered, First Paged At.
 
 ### Optional
 

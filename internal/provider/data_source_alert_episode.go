@@ -42,6 +42,7 @@ type AlertEpisodeDataSourceModel struct {
     LastAlertAddedAt types.String `tfsdk:"last_alert_added_at"`
     ResolvedAt types.String `tfsdk:"resolved_at"`
     AllAlertsResolvedAt types.String `tfsdk:"all_alerts_resolved_at"`
+    FirstPagedAt types.String `tfsdk:"first_paged_at"`
     AssignedToUserId types.String `tfsdk:"assigned_to_user_id"`
     AssignedToTeamId types.String `tfsdk:"assigned_to_team_id"`
     AlertGroupingRuleId types.String `tfsdk:"alert_grouping_rule_id"`
@@ -131,6 +132,10 @@ func (d *AlertEpisodeDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "all_alerts_resolved_at": schema.StringAttribute{
                 MarkdownDescription: "When all alerts in this episode were first detected as resolved. Used for resolve delay calculation.",
+                Computed: true,
+            },
+            "first_paged_at": schema.StringAttribute{
+                MarkdownDescription: "When an on-call policy or a direct page first notified someone about this episode. Empty until someone is paged. Set by OneUptime.",
                 Computed: true,
             },
             "assigned_to_user_id": schema.StringAttribute{
@@ -361,6 +366,7 @@ func (d *AlertEpisodeDataSource) Read(ctx context.Context, req datasource.ReadRe
         "lastAlertAddedAt": true,
         "resolvedAt": true,
         "allAlertsResolvedAt": true,
+        "firstPagedAt": true,
         "assignedToUserId": true,
         "assignedToTeamId": true,
         "alertGroupingRuleId": true,
@@ -659,6 +665,23 @@ func (d *AlertEpisodeDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.AllAlertsResolvedAt = types.StringValue(val)
     } else {
         data.AllAlertsResolvedAt = types.StringNull()
+    }
+    if obj, ok := item["firstPagedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FirstPagedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FirstPagedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FirstPagedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FirstPagedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstPagedAt = types.StringNull()
+        }
+    } else if val, ok := item["firstPagedAt"].(string); ok {
+        data.FirstPagedAt = types.StringValue(val)
+    } else {
+        data.FirstPagedAt = types.StringNull()
     }
     if obj, ok := item["assignedToUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

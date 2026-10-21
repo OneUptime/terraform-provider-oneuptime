@@ -40,8 +40,9 @@ data "oneuptime_ai_agent_task_pull_request" "by_id" {
 - `head_ref_name` (String) The branch name of the pull request (source branch).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `merge_commit_sha` (String) The commit GitHub merged the pull request as. The fix is in production once a recorded deploy contains this commit. Written by the server when the pull request merges.
-- `production_status` (String) Whether the merged fix fixed its exception in production: AwaitingDeploy, Watching, Verified, Regressed or Unverifiable. Written by the server, which watches the exception once a recorded deploy contains the fix.
-- `production_summary` (String) What the production check found, in a sentence: the deploy that shipped the fix and how often the exception happened before and since. Written by the server.
+- `production_check` (String) What production is watched for once the fix merges: Exception (the exception stops), Performance (the operation it names gets faster), Recurrence (the monitor stops raising incidents or alerts) or Telemetry (the spans and log fields it adds arrive). Empty on a watched fix of an exception from before the column existed. Written by the server when the pull request merges.
+- `production_status` (String) Whether the merged fix worked in production: AwaitingDeploy, Watching, Verified, Regressed or Unverifiable. Written by the server, which watches what the fix was for (Production Check) once a recorded deploy contains the fix.
+- `production_summary` (String) What the production check found, in a sentence: the deploy that shipped the fix and what it measured before and since. Written by the server.
 - `pull_request_id` (Number) The unique ID of the pull request from the hosting platform.
 - `pull_request_number` (Number) The pull request number (e.g., #123).
 - `pull_request_state` (String) Current state of the pull request (open, closed, merged).

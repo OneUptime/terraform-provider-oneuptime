@@ -84,6 +84,7 @@ type IncidentResourceModel struct {
     EnableReminders types.Bool `tfsdk:"enable_reminders"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    FirstPagedAt RFC3339Value `tfsdk:"first_paged_at"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     SubscriberNotificationStatusOnIncidentCreated types.String `tfsdk:"subscriber_notification_status_on_incident_created"`
@@ -510,6 +511,11 @@ func (r *IncidentResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "first_paged_at": schema.StringAttribute{
+                MarkdownDescription: "When an on-call policy or a direct page first notified someone about this incident. Empty until someone is paged. Set by OneUptime.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
@@ -880,6 +886,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
+        "firstPagedAt": true,
         "slug": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnIncidentCreated": true,
@@ -2094,6 +2101,17 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["firstPagedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstPagedAt = NewRFC3339Value(val)
+        } else {
+            data.FirstPagedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstPagedAt"].(string); ok && val != "" {
+        data.FirstPagedAt = NewRFC3339Value(val)
+    } else {
+        data.FirstPagedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2798,6 +2816,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
+        "firstPagedAt": true,
         "slug": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnIncidentCreated": true,
@@ -4013,6 +4032,17 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["firstPagedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstPagedAt = NewRFC3339Value(val)
+        } else {
+            data.FirstPagedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstPagedAt"].(string); ok && val != "" {
+        data.FirstPagedAt = NewRFC3339Value(val)
+    } else {
+        data.FirstPagedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4883,6 +4913,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
+        "firstPagedAt": true,
         "slug": true,
         "createdByUserId": true,
         "subscriberNotificationStatusOnIncidentCreated": true,
@@ -6091,6 +6122,17 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["firstPagedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstPagedAt = NewRFC3339Value(val)
+        } else {
+            data.FirstPagedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstPagedAt"].(string); ok && val != "" {
+        data.FirstPagedAt = NewRFC3339Value(val)
+    } else {
+        data.FirstPagedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

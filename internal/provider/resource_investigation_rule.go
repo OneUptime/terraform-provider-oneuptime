@@ -20,6 +20,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
@@ -53,6 +54,8 @@ type InvestigationRuleResourceModel struct {
     MonitorLabels types.Set `tfsdk:"monitor_labels"`
     TitlePattern types.String `tfsdk:"title_pattern"`
     DescriptionPattern types.String `tfsdk:"description_pattern"`
+    OnlyIfOpenAfterMinutes types.Number `tfsdk:"only_if_open_after_minutes"`
+    ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -186,6 +189,23 @@ func (r *InvestigationRuleResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "only_if_open_after_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Investigate only incidents or alerts still open this many minutes after they were created: OneUptime AI waits that long, then investigates if it is still open. Leave empty to investigate right away. When several rules match, the shortest wait decides. At most 1440 minutes (a day).",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "external_mcp_servers": schema.SetAttribute{
+                MarkdownDescription: "The external MCP servers OneUptime AI may use while it investigates what this rule matches. Leave empty to let it use all of the project's MCP servers. IDs of `oneuptime_external_mcp_server` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -295,6 +315,12 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
     if !data.DescriptionPattern.IsNull() && !data.DescriptionPattern.IsUnknown() {
         requestDataMap["descriptionPattern"] = data.DescriptionPattern.ValueString()
     }
+    if !data.OnlyIfOpenAfterMinutes.IsNull() && !data.OnlyIfOpenAfterMinutes.IsUnknown() {
+        requestDataMap["onlyIfOpenAfterMinutes"] = r.bigFloatToFloat64(data.OnlyIfOpenAfterMinutes.ValueBigFloat())
+    }
+    if !data.ExternalMcpServers.IsNull() && !data.ExternalMcpServers.IsUnknown() {
+        requestDataMap["externalMcpServers"] = r.convertTerraformSetToInterface(data.ExternalMcpServers)
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/ai-investigation-rule", investigationRuleRequest)
@@ -353,6 +379,8 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
+        "onlyIfOpenAfterMinutes": true,
+        "externalMcpServers": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -784,6 +812,39 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.DescriptionPattern = types.StringNull()
     }
+    data.OnlyIfOpenAfterMinutes = numberFromAPI(data.OnlyIfOpenAfterMinutes, dataMap["onlyIfOpenAfterMinutes"])
+    if val, ok := dataMap["externalMcpServers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -886,6 +947,8 @@ func (r *InvestigationRuleResource) Read(ctx context.Context, req resource.ReadR
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
+        "onlyIfOpenAfterMinutes": true,
+        "externalMcpServers": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -1318,6 +1381,39 @@ func (r *InvestigationRuleResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.DescriptionPattern = types.StringNull()
     }
+    data.OnlyIfOpenAfterMinutes = numberFromAPI(data.OnlyIfOpenAfterMinutes, dataMap["onlyIfOpenAfterMinutes"])
+    if val, ok := dataMap["externalMcpServers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1458,6 +1554,12 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
     if !data.DescriptionPattern.IsUnknown() && !state.DescriptionPattern.IsUnknown() && !data.DescriptionPattern.Equal(state.DescriptionPattern) {
         requestDataMap["descriptionPattern"] = data.DescriptionPattern.ValueString()
     }
+    if !data.OnlyIfOpenAfterMinutes.IsUnknown() && !state.OnlyIfOpenAfterMinutes.IsUnknown() && !data.OnlyIfOpenAfterMinutes.Equal(state.OnlyIfOpenAfterMinutes) {
+        requestDataMap["onlyIfOpenAfterMinutes"] = r.bigFloatToFloat64(data.OnlyIfOpenAfterMinutes.ValueBigFloat())
+    }
+    if !data.ExternalMcpServers.IsUnknown() && !state.ExternalMcpServers.IsUnknown() && !data.ExternalMcpServers.Equal(state.ExternalMcpServers) {
+        requestDataMap["externalMcpServers"] = r.convertTerraformSetToInterface(data.ExternalMcpServers)
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1494,6 +1596,8 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
+        "onlyIfOpenAfterMinutes": true,
+        "externalMcpServers": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -1920,6 +2024,39 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
     } else {
         data.DescriptionPattern = types.StringNull()
     }
+    data.OnlyIfOpenAfterMinutes = numberFromAPI(data.OnlyIfOpenAfterMinutes, dataMap["onlyIfOpenAfterMinutes"])
+    if val, ok := dataMap["externalMcpServers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2065,6 +2202,12 @@ func (r *InvestigationRuleResource) keepPlannedValues(data *InvestigationRuleRes
     }
     if config.DescriptionPattern.IsNull() && !plan.DescriptionPattern.IsUnknown() {
         data.DescriptionPattern = plan.DescriptionPattern
+    }
+    if config.OnlyIfOpenAfterMinutes.IsNull() && !plan.OnlyIfOpenAfterMinutes.IsUnknown() {
+        data.OnlyIfOpenAfterMinutes = plan.OnlyIfOpenAfterMinutes
+    }
+    if config.ExternalMcpServers.IsNull() && !plan.ExternalMcpServers.IsUnknown() {
+        data.ExternalMcpServers = plan.ExternalMcpServers
     }
 }
 

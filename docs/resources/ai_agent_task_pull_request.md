@@ -52,9 +52,10 @@ resource "oneuptime_ai_agent_task_pull_request" "example" {
 - `id` (String) Unique identifier for the resource.
 - `merge_commit_sha` (String) The commit GitHub merged the pull request as. The fix is in production once a recorded deploy contains this commit. Written by the server when the pull request merges.
 - `merged_at` (String) When GitHub merged the pull request. Written by the server.
-- `production_status` (String) Whether the merged fix fixed its exception in production: AwaitingDeploy, Watching, Verified, Regressed or Unverifiable. Written by the server, which watches the exception once a recorded deploy contains the fix.
+- `production_check` (String) What production is watched for once the fix merges: Exception (the exception stops), Performance (the operation it names gets faster), Recurrence (the monitor stops raising incidents or alerts) or Telemetry (the spans and log fields it adds arrive). Empty on a watched fix of an exception from before the column existed. Written by the server when the pull request merges.
+- `production_status` (String) Whether the merged fix worked in production: AwaitingDeploy, Watching, Verified, Regressed or Unverifiable. Written by the server, which watches what the fix was for (Production Check) once a recorded deploy contains the fix.
 - `production_status_at` (String) When the production status last changed. Written by the server.
-- `production_summary` (String) What the production check found, in a sentence: the deploy that shipped the fix and how often the exception happened before and since. Written by the server.
+- `production_summary` (String) What the production check found, in a sentence: the deploy that shipped the fix and what it measured before and since. Written by the server.
 - `project_id` (String) ID of the project this pull request belongs to. The ID of a `oneuptime_project`.
 - `runner_verification_status` (String) Outcome of the Runner-side build/test verification that ran against the fix BEFORE this pull request opened (Passed, Failed, Skipped when the repository has no verification commands configured). Distinct from CI Status, which mirrors the repository's own CI checks after the PR exists. Written by the Runner at record time — never by users.
 - `runner_verification_summary` (String) Human-readable summary of the Runner-side verification (which commands ran, what failed, how many repair attempts were used). Written by the Runner at record time.

@@ -15,6 +15,7 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -45,6 +46,7 @@ type LlmCostBudgetResourceModel struct {
     ServiceId types.String `tfsdk:"service_id"`
     LlmSystem types.String `tfsdk:"llm_system"`
     LlmModel types.String `tfsdk:"llm_model"`
+    SpendSource types.String `tfsdk:"spend_source"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CurrentDaySpendInUsd types.Number `tfsdk:"current_day_spend_in_usd"`
@@ -128,6 +130,15 @@ func (r *LlmCostBudgetResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Optional model filter, e.g. gpt-4o (matches the span's requested model exactly). Leave empty to count every model.",
                 Optional: true,
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "spend_source": schema.StringAttribute{
+                MarkdownDescription: "'calls' counts the cost of your AI calls; 'providers' counts what your connected AI provider accounts report.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("calls"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -235,6 +246,9 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
     if !data.LlmModel.IsNull() && !data.LlmModel.IsUnknown() {
         requestDataMap["llmModel"] = data.LlmModel.ValueString()
     }
+    if !data.SpendSource.IsNull() && !data.SpendSource.IsUnknown() {
+        requestDataMap["spendSource"] = data.SpendSource.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/llm-cost-budget", llmCostBudgetRequest)
@@ -288,6 +302,7 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
         "serviceId": true,
         "llmSystem": true,
         "llmModel": true,
+        "spendSource": true,
         "createdAt": true,
         "updatedAt": true,
         "currentDaySpendInUSD": true,
@@ -525,6 +540,43 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.LlmModel = types.StringNull()
     }
+    if obj, ok := dataMap["spendSource"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SpendSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SpendSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SpendSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SpendSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.SpendSource = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SpendSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.SpendSource = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SpendSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.SpendSource = types.StringNull()
+        }
+    } else if val, ok := dataMap["spendSource"].(string); ok {
+        data.SpendSource = types.StringValue(val)
+    } else {
+        data.SpendSource = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -634,6 +686,7 @@ func (r *LlmCostBudgetResource) Read(ctx context.Context, req resource.ReadReque
         "serviceId": true,
         "llmSystem": true,
         "llmModel": true,
+        "spendSource": true,
         "createdAt": true,
         "updatedAt": true,
         "currentDaySpendInUSD": true,
@@ -872,6 +925,43 @@ func (r *LlmCostBudgetResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.LlmModel = types.StringNull()
     }
+    if obj, ok := dataMap["spendSource"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SpendSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SpendSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SpendSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SpendSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.SpendSource = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SpendSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.SpendSource = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SpendSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.SpendSource = types.StringNull()
+        }
+    } else if val, ok := dataMap["spendSource"].(string); ok {
+        data.SpendSource = types.StringValue(val)
+    } else {
+        data.SpendSource = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1012,6 +1102,9 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
     if !data.LlmModel.IsUnknown() && !state.LlmModel.IsUnknown() && !data.LlmModel.Equal(state.LlmModel) {
         requestDataMap["llmModel"] = data.LlmModel.ValueString()
     }
+    if !data.SpendSource.IsUnknown() && !state.SpendSource.IsUnknown() && !data.SpendSource.Equal(state.SpendSource) {
+        requestDataMap["spendSource"] = data.SpendSource.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1043,6 +1136,7 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
         "serviceId": true,
         "llmSystem": true,
         "llmModel": true,
+        "spendSource": true,
         "createdAt": true,
         "updatedAt": true,
         "currentDaySpendInUSD": true,
@@ -1275,6 +1369,43 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.LlmModel = types.StringNull()
     }
+    if obj, ok := dataMap["spendSource"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SpendSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SpendSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SpendSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SpendSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.SpendSource = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SpendSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.SpendSource = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SpendSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.SpendSource = types.StringNull()
+        }
+    } else if val, ok := dataMap["spendSource"].(string); ok {
+        data.SpendSource = types.StringValue(val)
+    } else {
+        data.SpendSource = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1417,6 +1548,9 @@ func (r *LlmCostBudgetResource) keepPlannedValues(data *LlmCostBudgetResourceMod
     }
     if config.LlmModel.IsNull() && !plan.LlmModel.IsUnknown() {
         data.LlmModel = plan.LlmModel
+    }
+    if config.SpendSource.IsNull() && !plan.SpendSource.IsUnknown() {
+        data.SpendSource = plan.SpendSource
     }
 }
 

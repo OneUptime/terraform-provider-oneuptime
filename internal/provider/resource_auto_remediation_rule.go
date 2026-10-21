@@ -62,6 +62,8 @@ type AutoRemediationRuleResourceModel struct {
     TitlePattern types.String `tfsdk:"title_pattern"`
     DescriptionPattern types.String `tfsdk:"description_pattern"`
     Runbooks types.Set `tfsdk:"runbooks"`
+    ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
+    RunnerId types.String `tfsdk:"runner_id"`
     VerificationWindowMinutes types.Number `tfsdk:"verification_window_minutes"`
     AutoResolveOnVerifiedRecovery types.Bool `tfsdk:"auto_resolve_on_verified_recovery"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
@@ -79,7 +81,7 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
 
 func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Which new incidents or alerts are fixed automatically, and how: by OneUptime AI or with runbooks, asking first or not. With no rule, OneUptime AI fixes every one while automatic fixing is on.",
+        MarkdownDescription: "Which new incidents or alerts OneUptime AI fixes automatically, and whether it asks first. It may run the project's runbooks (only the rule's, when it names some), commands on a Runner the rule picks, and the tools of the project's external MCP servers (only the rule's, when it names some). With no rule, OneUptime AI fixes every one while automatic fixing is on.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -137,7 +139,7 @@ func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "execution_mode": schema.StringAttribute{
-                MarkdownDescription: "Suggest asks before fixing: every fix the rule starts waits for one-click human approval. FullAuto fixes without asking: its runbooks start immediately, and OneUptime AI fixes run on their own where the cluster's or resource's AI agent page allows.",
+                MarkdownDescription: "Suggest asks before fixing: every fix the rule starts waits for one-click human approval. FullAuto fixes without asking: OneUptime AI fixes on its own where the cluster's or resource's AI agent page allows, a runbook it picks from the ones the rule names starts right away (one it picks from all of the project's runbooks still waits for approval), a change through an MCP server the rule names is made right away (through any of the project's MCP servers, it still waits for approval), and a rule that runs its runbooks every time starts them immediately.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Suggest"),
@@ -146,7 +148,7 @@ func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "remediation_action": schema.StringAttribute{
-                MarkdownDescription: "OneUptimeAI: OneUptime AI fixes the matched incident or alert on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows. Runbooks: the rule's runbooks run. Whether a person approves first is the rule's Execution Mode.",
+                MarkdownDescription: "OneUptimeAI (the default): OneUptime AI fixes the matched incident or alert - on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, with the project's runbooks (only the rule's Runbooks when it names some) and with commands on the rule's Runner when it picks one. Runbooks: the rule starts every one of its Runbooks for every match, without OneUptime AI deciding. Whether a person approves first is the rule's Execution Mode.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("OneUptimeAI"),
@@ -155,7 +157,7 @@ func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "ai_selects_runbook": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an AI planning run reads the incident/alert context and picks the most applicable runbook (from the attached candidates, or all enabled runbooks when none are attached). AI-picked runbooks are always suggest-only — never full-auto.",
+                MarkdownDescription: "Kept for rules saved before rules were simplified: an AI planning run reads the incident/alert context and picks the most applicable runbook (from the attached candidates, or all enabled runbooks when none are attached), always proposing it for approval, and the rule does nothing else. Every OneUptime AI rule now lets AI pick a runbook on its own, so new rules leave this off.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -164,7 +166,7 @@ func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "ai_composes_commands": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the AI investigates the incident/alert and composes Bash/SSH commands for opted-in Runners instead of picking a runbook. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. Requires AI to be enabled for the project.",
+                MarkdownDescription: "Kept for rules saved before rules were simplified: the AI investigates the incident/alert and composes Bash/SSH commands for the rule's Runner and Command Runners, and the rule does nothing else. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. A OneUptime AI rule now composes commands on its Runner when it picks one, so new rules leave this off.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -185,7 +187,7 @@ func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "command_runners": schema.SetAttribute{
-                MarkdownDescription: "Runners the AI may target with composed commands. Leave empty to allow any Runner in the project that has AI commands enabled. IDs of `oneuptime_runner` resources.",
+                MarkdownDescription: "Kept for rules saved before rules were simplified: more Runners the AI may target with composed commands, besides the rule's Runner. A Runner runs a rule's commands only when the rule names it. IDs of `oneuptime_runner` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -255,12 +257,29 @@ func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "runbooks": schema.SetAttribute{
-                MarkdownDescription: "Runbook candidates for this rule. Deterministic rules propose or start every attached runbook; AI rules pick the most applicable one. IDs of `oneuptime_runbook` resources.",
+                MarkdownDescription: "The runbooks OneUptime AI may pick and run for this rule. Leave empty to let it pick any of the project's runbooks. A rule whose Fix With is Runbooks starts every one of them for every match instead. IDs of `oneuptime_runbook` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "external_mcp_servers": schema.SetAttribute{
+                MarkdownDescription: "The external MCP servers OneUptime AI may use while it fixes what this rule matches. Leave empty to let it use all of the project's MCP servers; changes through them are then always proposed for approval first. IDs of `oneuptime_external_mcp_server` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "runner_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Runner OneUptime AI runs this rule's commands on: one of the project's own Runners. Empty means none: OneUptime AI fixes through the AI agent on the affected Kubernetes cluster or host. The ID of a `oneuptime_runner`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "verification_window_minutes": schema.NumberAttribute{
@@ -410,6 +429,12 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
     if !data.Runbooks.IsNull() && !data.Runbooks.IsUnknown() {
         requestDataMap["runbooks"] = r.convertTerraformSetToInterface(data.Runbooks)
     }
+    if !data.ExternalMcpServers.IsNull() && !data.ExternalMcpServers.IsUnknown() {
+        requestDataMap["externalMcpServers"] = r.convertTerraformSetToInterface(data.ExternalMcpServers)
+    }
+    if !data.RunnerId.IsNull() && !data.RunnerId.IsUnknown() {
+        requestDataMap["runnerId"] = data.RunnerId.ValueString()
+    }
     if !data.VerificationWindowMinutes.IsNull() && !data.VerificationWindowMinutes.IsUnknown() {
         requestDataMap["verificationWindowMinutes"] = r.bigFloatToFloat64(data.VerificationWindowMinutes.ValueBigFloat())
     }
@@ -481,6 +506,8 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
         "titlePattern": true,
         "descriptionPattern": true,
         "runbooks": true,
+        "externalMcpServers": true,
+        "runnerId": true,
         "verificationWindowMinutes": true,
         "autoResolveOnVerifiedRecovery": true,
         "createdAt": true,
@@ -1095,6 +1122,75 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
         // For sets, always use empty set instead of null to match default values
         data.Runbooks = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["externalMcpServers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["runnerId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunnerId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runnerId"].(string); ok {
+        data.RunnerId = types.StringValue(val)
+    } else {
+        data.RunnerId = types.StringNull()
+    }
     data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, dataMap["verificationWindowMinutes"])
     if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
         data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
@@ -1208,6 +1304,8 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
         "titlePattern": true,
         "descriptionPattern": true,
         "runbooks": true,
+        "externalMcpServers": true,
+        "runnerId": true,
         "verificationWindowMinutes": true,
         "autoResolveOnVerifiedRecovery": true,
         "createdAt": true,
@@ -1823,6 +1921,75 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
         // For sets, always use empty set instead of null to match default values
         data.Runbooks = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["externalMcpServers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["runnerId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunnerId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runnerId"].(string); ok {
+        data.RunnerId = types.StringValue(val)
+    } else {
+        data.RunnerId = types.StringNull()
+    }
     data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, dataMap["verificationWindowMinutes"])
     if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
         data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
@@ -1993,6 +2160,12 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
     if !data.Runbooks.IsUnknown() && !state.Runbooks.IsUnknown() && !data.Runbooks.Equal(state.Runbooks) {
         requestDataMap["runbooks"] = r.convertTerraformSetToInterface(data.Runbooks)
     }
+    if !data.ExternalMcpServers.IsUnknown() && !state.ExternalMcpServers.IsUnknown() && !data.ExternalMcpServers.Equal(state.ExternalMcpServers) {
+        requestDataMap["externalMcpServers"] = r.convertTerraformSetToInterface(data.ExternalMcpServers)
+    }
+    if !data.RunnerId.IsUnknown() && !state.RunnerId.IsUnknown() && !data.RunnerId.Equal(state.RunnerId) {
+        requestDataMap["runnerId"] = data.RunnerId.ValueString()
+    }
     if !data.VerificationWindowMinutes.IsUnknown() && !state.VerificationWindowMinutes.IsUnknown() && !data.VerificationWindowMinutes.Equal(state.VerificationWindowMinutes) {
         requestDataMap["verificationWindowMinutes"] = r.bigFloatToFloat64(data.VerificationWindowMinutes.ValueBigFloat())
     }
@@ -2042,6 +2215,8 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
         "titlePattern": true,
         "descriptionPattern": true,
         "runbooks": true,
+        "externalMcpServers": true,
+        "runnerId": true,
         "verificationWindowMinutes": true,
         "autoResolveOnVerifiedRecovery": true,
         "createdAt": true,
@@ -2651,6 +2826,75 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
         // For sets, always use empty set instead of null to match default values
         data.Runbooks = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["externalMcpServers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["runnerId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunnerId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunnerId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runnerId"].(string); ok {
+        data.RunnerId = types.StringValue(val)
+    } else {
+        data.RunnerId = types.StringNull()
+    }
     data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, dataMap["verificationWindowMinutes"])
     if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
         data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
@@ -2821,6 +3065,12 @@ func (r *AutoRemediationRuleResource) keepPlannedValues(data *AutoRemediationRul
     }
     if config.Runbooks.IsNull() && !plan.Runbooks.IsUnknown() {
         data.Runbooks = plan.Runbooks
+    }
+    if config.ExternalMcpServers.IsNull() && !plan.ExternalMcpServers.IsUnknown() {
+        data.ExternalMcpServers = plan.ExternalMcpServers
+    }
+    if config.RunnerId.IsNull() && !plan.RunnerId.IsUnknown() {
+        data.RunnerId = plan.RunnerId
     }
     if config.VerificationWindowMinutes.IsNull() && !plan.VerificationWindowMinutes.IsUnknown() {
         data.VerificationWindowMinutes = plan.VerificationWindowMinutes

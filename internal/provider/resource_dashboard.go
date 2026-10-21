@@ -15,6 +15,7 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -50,6 +51,7 @@ type DashboardResourceModel struct {
     PageDescription types.String `tfsdk:"page_description"`
     LogoFileId types.String `tfsdk:"logo_file_id"`
     FaviconFileId types.String `tfsdk:"favicon_file_id"`
+    Theme types.String `tfsdk:"theme"`
     IsPublicDashboard types.Bool `tfsdk:"is_public_dashboard"`
     EnableMasterPassword types.Bool `tfsdk:"enable_master_password"`
     MasterPassword types.String `tfsdk:"master_password"`
@@ -159,6 +161,15 @@ func (r *DashboardResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Dashboard Favicon File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "theme": schema.StringAttribute{
+                MarkdownDescription: "How the public dashboard looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). Visitors can switch between light and dark from its toolbar. A dashboard created without a theme starts with System.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("Light"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -311,6 +322,9 @@ func (r *DashboardResource) Create(ctx context.Context, req resource.CreateReque
     if !data.FaviconFileId.IsNull() && !data.FaviconFileId.IsUnknown() {
         requestDataMap["faviconFileId"] = data.FaviconFileId.ValueString()
     }
+    if !data.Theme.IsNull() && !data.Theme.IsUnknown() {
+        requestDataMap["theme"] = data.Theme.ValueString()
+    }
     if !data.IsPublicDashboard.IsNull() && !data.IsPublicDashboard.IsUnknown() {
         requestDataMap["isPublicDashboard"] = data.IsPublicDashboard.ValueBool()
     }
@@ -378,6 +392,7 @@ func (r *DashboardResource) Create(ctx context.Context, req resource.CreateReque
         "pageDescription": true,
         "logoFileId": true,
         "faviconFileId": true,
+        "theme": true,
         "isPublicDashboard": true,
         "enableMasterPassword": true,
         "masterPassword": true,
@@ -725,6 +740,43 @@ func (r *DashboardResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.FaviconFileId = types.StringNull()
     }
+    if obj, ok := dataMap["theme"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Theme = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Theme = types.StringValue(string(jsonBytes))
+        } else {
+            data.Theme = types.StringNull()
+        }
+    } else if val, ok := dataMap["theme"].(string); ok {
+        data.Theme = types.StringValue(val)
+    } else {
+        data.Theme = types.StringNull()
+    }
     if val, ok := dataMap["isPublicDashboard"].(bool); ok {
         data.IsPublicDashboard = types.BoolValue(val)
     }
@@ -989,6 +1041,7 @@ func (r *DashboardResource) Read(ctx context.Context, req resource.ReadRequest, 
         "pageDescription": true,
         "logoFileId": true,
         "faviconFileId": true,
+        "theme": true,
         "isPublicDashboard": true,
         "enableMasterPassword": true,
         "masterPassword": true,
@@ -1337,6 +1390,43 @@ func (r *DashboardResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.FaviconFileId = types.StringNull()
     }
+    if obj, ok := dataMap["theme"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Theme = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Theme = types.StringValue(string(jsonBytes))
+        } else {
+            data.Theme = types.StringNull()
+        }
+    } else if val, ok := dataMap["theme"].(string); ok {
+        data.Theme = types.StringValue(val)
+    } else {
+        data.Theme = types.StringNull()
+    }
     if val, ok := dataMap["isPublicDashboard"].(bool); ok {
         data.IsPublicDashboard = types.BoolValue(val)
     }
@@ -1636,6 +1726,9 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
     if !data.FaviconFileId.IsUnknown() && !state.FaviconFileId.IsUnknown() && !data.FaviconFileId.Equal(state.FaviconFileId) {
         requestDataMap["faviconFileId"] = data.FaviconFileId.ValueString()
     }
+    if !data.Theme.IsUnknown() && !state.Theme.IsUnknown() && !data.Theme.Equal(state.Theme) {
+        requestDataMap["theme"] = data.Theme.ValueString()
+    }
     if !data.IsPublicDashboard.IsUnknown() && !state.IsPublicDashboard.IsUnknown() && !data.IsPublicDashboard.Equal(state.IsPublicDashboard) {
         requestDataMap["isPublicDashboard"] = data.IsPublicDashboard.ValueBool()
     }
@@ -1681,6 +1774,7 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
         "pageDescription": true,
         "logoFileId": true,
         "faviconFileId": true,
+        "theme": true,
         "isPublicDashboard": true,
         "enableMasterPassword": true,
         "masterPassword": true,
@@ -2023,6 +2117,43 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
     } else {
         data.FaviconFileId = types.StringNull()
     }
+    if obj, ok := dataMap["theme"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Theme = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Theme = types.StringValue(string(jsonBytes))
+            } else {
+                data.Theme = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Theme = types.StringValue(string(jsonBytes))
+        } else {
+            data.Theme = types.StringNull()
+        }
+    } else if val, ok := dataMap["theme"].(string); ok {
+        data.Theme = types.StringValue(val)
+    } else {
+        data.Theme = types.StringNull()
+    }
     if val, ok := dataMap["isPublicDashboard"].(bool); ok {
         data.IsPublicDashboard = types.BoolValue(val)
     }
@@ -2327,6 +2458,9 @@ func (r *DashboardResource) keepPlannedValues(data *DashboardResourceModel, plan
     }
     if config.FaviconFileId.IsNull() && !plan.FaviconFileId.IsUnknown() {
         data.FaviconFileId = plan.FaviconFileId
+    }
+    if config.Theme.IsNull() && !plan.Theme.IsUnknown() {
+        data.Theme = plan.Theme
     }
     if config.IsPublicDashboard.IsNull() && !plan.IsPublicDashboard.IsUnknown() {
         data.IsPublicDashboard = plan.IsPublicDashboard

@@ -40,6 +40,7 @@ type AiRunDataSourceModel struct {
     TriggeredByIncidentId types.String `tfsdk:"triggered_by_incident_id"`
     TriggeredByAlertId types.String `tfsdk:"triggered_by_alert_id"`
     FollowUpForAlertId types.String `tfsdk:"follow_up_for_alert_id"`
+    RuleWaitMinutes types.Number `tfsdk:"rule_wait_minutes"`
     TriggeredByTelemetryExceptionId types.String `tfsdk:"triggered_by_telemetry_exception_id"`
     TriggeredByAiInsightId types.String `tfsdk:"triggered_by_ai_insight_id"`
     TriggeredByAutoRemediationSuggestionId types.String `tfsdk:"triggered_by_auto_remediation_suggestion_id"`
@@ -139,6 +140,11 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             },
             "follow_up_for_alert_id": schema.StringAttribute{
                 MarkdownDescription: "For a follow-up check of an incident: the alert that opened on the incident's linked infrastructure after its first investigation and made OneUptime AI check it again.",
+                Optional: true,
+                Computed: true,
+            },
+            "rule_wait_minutes": schema.NumberAttribute{
+                MarkdownDescription: "For an investigation an investigation rule made wait: the minutes the rule waited to see whether the incident or alert would still be open. Empty when it started right away.",
                 Optional: true,
                 Computed: true,
             },
@@ -335,6 +341,10 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         filters["followUpForAlertId"] = data.FollowUpForAlertId.ValueString()
         filterNames = append(filterNames, "follow_up_for_alert_id = "+fmt.Sprintf("%q", data.FollowUpForAlertId.ValueString()))
     }
+    if !data.RuleWaitMinutes.IsNull() && !data.RuleWaitMinutes.IsUnknown() {
+        filters["ruleWaitMinutes"] = lookupNumber(data.RuleWaitMinutes)
+        filterNames = append(filterNames, "rule_wait_minutes = "+data.RuleWaitMinutes.ValueBigFloat().String())
+    }
     if !data.TriggeredByTelemetryExceptionId.IsNull() && !data.TriggeredByTelemetryExceptionId.IsUnknown() {
         filters["triggeredByTelemetryExceptionId"] = data.TriggeredByTelemetryExceptionId.ValueString()
         filterNames = append(filterNames, "triggered_by_telemetry_exception_id = "+fmt.Sprintf("%q", data.TriggeredByTelemetryExceptionId.ValueString()))
@@ -437,6 +447,7 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "triggeredByIncidentId": true,
         "triggeredByAlertId": true,
         "followUpForAlertId": true,
+        "ruleWaitMinutes": true,
         "triggeredByTelemetryExceptionId": true,
         "triggeredByAiInsightId": true,
         "triggeredByAutoRemediationSuggestionId": true,
@@ -744,6 +755,7 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     } else {
         data.FollowUpForAlertId = types.StringNull()
     }
+    data.RuleWaitMinutes = numberFromAPI(data.RuleWaitMinutes, item["ruleWaitMinutes"])
     if obj, ok := item["triggeredByTelemetryExceptionId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TriggeredByTelemetryExceptionId = types.StringValue(val)

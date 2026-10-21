@@ -66,6 +66,7 @@ type AlertEpisodeResourceModel struct {
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     EpisodeNumberWithPrefix types.String `tfsdk:"episode_number_with_prefix"`
     AllAlertsResolvedAt RFC3339Value `tfsdk:"all_alerts_resolved_at"`
+    FirstPagedAt RFC3339Value `tfsdk:"first_paged_at"`
     IsOnCallPolicyExecuted types.Bool `tfsdk:"is_on_call_policy_executed"`
     AlertCount types.Number `tfsdk:"alert_count"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -292,6 +293,11 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "first_paged_at": schema.StringAttribute{
+                MarkdownDescription: "When an on-call policy or a direct page first notified someone about this episode. Empty until someone is paged. Set by OneUptime.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
             "is_on_call_policy_executed": schema.BoolAttribute{
                 MarkdownDescription: "Whether the on-call policy has been executed for this episode.",
                 Computed: true,
@@ -494,6 +500,7 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
         "updatedAt": true,
         "episodeNumberWithPrefix": true,
         "allAlertsResolvedAt": true,
+        "firstPagedAt": true,
         "isOnCallPolicyExecuted": true,
         "alertCount": true,
         "createdByUserId": true,
@@ -1185,6 +1192,17 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.AllAlertsResolvedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["firstPagedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstPagedAt = NewRFC3339Value(val)
+        } else {
+            data.FirstPagedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstPagedAt"].(string); ok && val != "" {
+        data.FirstPagedAt = NewRFC3339Value(val)
+    } else {
+        data.FirstPagedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["isOnCallPolicyExecuted"].(bool); ok {
         data.IsOnCallPolicyExecuted = types.BoolValue(val)
     }
@@ -1284,6 +1302,7 @@ func (r *AlertEpisodeResource) Read(ctx context.Context, req resource.ReadReques
         "updatedAt": true,
         "episodeNumberWithPrefix": true,
         "allAlertsResolvedAt": true,
+        "firstPagedAt": true,
         "isOnCallPolicyExecuted": true,
         "alertCount": true,
         "createdByUserId": true,
@@ -1976,6 +1995,17 @@ func (r *AlertEpisodeResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.AllAlertsResolvedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["firstPagedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstPagedAt = NewRFC3339Value(val)
+        } else {
+            data.FirstPagedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstPagedAt"].(string); ok && val != "" {
+        data.FirstPagedAt = NewRFC3339Value(val)
+    } else {
+        data.FirstPagedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["isOnCallPolicyExecuted"].(bool); ok {
         data.IsOnCallPolicyExecuted = types.BoolValue(val)
     }
@@ -2161,6 +2191,7 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
         "updatedAt": true,
         "episodeNumberWithPrefix": true,
         "allAlertsResolvedAt": true,
+        "firstPagedAt": true,
         "isOnCallPolicyExecuted": true,
         "alertCount": true,
         "createdByUserId": true,
@@ -2846,6 +2877,17 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
         data.AllAlertsResolvedAt = NewRFC3339Value(val)
     } else {
         data.AllAlertsResolvedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["firstPagedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstPagedAt = NewRFC3339Value(val)
+        } else {
+            data.FirstPagedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstPagedAt"].(string); ok && val != "" {
+        data.FirstPagedAt = NewRFC3339Value(val)
+    } else {
+        data.FirstPagedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["isOnCallPolicyExecuted"].(bool); ok {
         data.IsOnCallPolicyExecuted = types.BoolValue(val)

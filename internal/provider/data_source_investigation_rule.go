@@ -44,6 +44,8 @@ type InvestigationRuleDataSourceModel struct {
     MonitorLabels types.Set `tfsdk:"monitor_labels"`
     TitlePattern types.String `tfsdk:"title_pattern"`
     DescriptionPattern types.String `tfsdk:"description_pattern"`
+    OnlyIfOpenAfterMinutes types.Number `tfsdk:"only_if_open_after_minutes"`
+    ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -132,6 +134,16 @@ func (d *InvestigationRuleDataSource) Schema(ctx context.Context, req datasource
                 Optional: true,
                 Computed: true,
             },
+            "only_if_open_after_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Investigate only incidents or alerts still open this many minutes after they were created: OneUptime AI waits that long, then investigates if it is still open. Leave empty to investigate right away. When several rules match, the shortest wait decides. At most 1440 minutes (a day).",
+                Optional: true,
+                Computed: true,
+            },
+            "external_mcp_servers": schema.SetAttribute{
+                MarkdownDescription: "The external MCP servers OneUptime AI may use while it investigates what this rule matches. Leave empty to let it use all of the project's MCP servers. IDs of `oneuptime_external_mcp_server` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
@@ -200,6 +212,10 @@ func (d *InvestigationRuleDataSource) Read(ctx context.Context, req datasource.R
         filters["descriptionPattern"] = data.DescriptionPattern.ValueString()
         filterNames = append(filterNames, "description_pattern = "+fmt.Sprintf("%q", data.DescriptionPattern.ValueString()))
     }
+    if !data.OnlyIfOpenAfterMinutes.IsNull() && !data.OnlyIfOpenAfterMinutes.IsUnknown() {
+        filters["onlyIfOpenAfterMinutes"] = lookupNumber(data.OnlyIfOpenAfterMinutes)
+        filterNames = append(filterNames, "only_if_open_after_minutes = "+data.OnlyIfOpenAfterMinutes.ValueBigFloat().String())
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -236,6 +252,8 @@ func (d *InvestigationRuleDataSource) Read(ctx context.Context, req datasource.R
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
+        "onlyIfOpenAfterMinutes": true,
+        "externalMcpServers": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -592,6 +610,31 @@ func (d *InvestigationRuleDataSource) Read(ctx context.Context, req datasource.R
         data.DescriptionPattern = types.StringValue(val)
     } else {
         data.DescriptionPattern = types.StringNull()
+    }
+    data.OnlyIfOpenAfterMinutes = numberFromAPI(data.OnlyIfOpenAfterMinutes, item["onlyIfOpenAfterMinutes"])
+    if val, ok := item["externalMcpServers"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.ExternalMcpServers = types.SetNull(types.StringType)
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

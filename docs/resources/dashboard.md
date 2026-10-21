@@ -38,6 +38,7 @@ resource "oneuptime_dashboard" "example" {
 - `master_password` (String, Sensitive) Password required to unlock a public dashboard. This value is stored as a secure hash.
 - `page_description` (String) Description of the public dashboard page. This will be used for SEO.
 - `page_title` (String) Title of the public dashboard page. This will be used for SEO and the browser tab.
+- `theme` (String) How the public dashboard looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). Visitors can switch between light and dark from its toolbar. A dashboard created without a theme starts with System. Defaults to `Light`.
 
 ### Read-Only
 

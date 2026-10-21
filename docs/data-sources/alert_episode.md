@@ -54,6 +54,7 @@ data "oneuptime_alert_episode" "by_id" {
 
 - `all_alerts_resolved_at` (String) When all alerts in this episode were first detected as resolved. Used for resolve delay calculation.
 - `created_at` (String) Date and Time when the object was created.
+- `first_paged_at` (String) When an on-call policy or a direct page first notified someone about this episode. Empty until someone is paged. Set by OneUptime.
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 - `last_alert_added_at` (String) When the last alert was added to this episode.
 - `on_call_duty_policies` (Set of String) List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.

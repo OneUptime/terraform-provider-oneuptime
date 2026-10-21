@@ -51,6 +51,8 @@ type AutoRemediationRuleDataSourceModel struct {
     TitlePattern types.String `tfsdk:"title_pattern"`
     DescriptionPattern types.String `tfsdk:"description_pattern"`
     Runbooks types.Set `tfsdk:"runbooks"`
+    ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
+    RunnerId types.String `tfsdk:"runner_id"`
     VerificationWindowMinutes types.Number `tfsdk:"verification_window_minutes"`
     AutoResolveOnVerifiedRecovery types.Bool `tfsdk:"auto_resolve_on_verified_recovery"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -62,7 +64,7 @@ func (d *AutoRemediationRuleDataSource) Metadata(ctx context.Context, req dataso
 
 func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Which new incidents or alerts are fixed automatically, and how: by OneUptime AI or with runbooks, asking first or not. With no rule, OneUptime AI fixes every one while automatic fixing is on. Look up an existing auto remediation rule by `id`, or by any of its other arguments (`name`, `ai_composes_commands`, `ai_selects_runbook`, ...): each one set must match, and exactly one auto remediation rule may match them all.",
+        MarkdownDescription: "Which new incidents or alerts OneUptime AI fixes automatically, and whether it asks first. It may run the project's runbooks (only the rule's, when it names some), commands on a Runner the rule picks, and the tools of the project's external MCP servers (only the rule's, when it names some). With no rule, OneUptime AI fixes every one while automatic fixing is on. Look up an existing auto remediation rule by `id`, or by any of its other arguments (`name`, `ai_composes_commands`, `ai_selects_runbook`, ...): each one set must match, and exactly one auto remediation rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -107,22 +109,22 @@ func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "execution_mode": schema.StringAttribute{
-                MarkdownDescription: "Suggest asks before fixing: every fix the rule starts waits for one-click human approval. FullAuto fixes without asking: its runbooks start immediately, and OneUptime AI fixes run on their own where the cluster's or resource's AI agent page allows.",
+                MarkdownDescription: "Suggest asks before fixing: every fix the rule starts waits for one-click human approval. FullAuto fixes without asking: OneUptime AI fixes on its own where the cluster's or resource's AI agent page allows, a runbook it picks from the ones the rule names starts right away (one it picks from all of the project's runbooks still waits for approval), a change through an MCP server the rule names is made right away (through any of the project's MCP servers, it still waits for approval), and a rule that runs its runbooks every time starts them immediately.",
                 Optional: true,
                 Computed: true,
             },
             "remediation_action": schema.StringAttribute{
-                MarkdownDescription: "OneUptimeAI: OneUptime AI fixes the matched incident or alert on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows. Runbooks: the rule's runbooks run. Whether a person approves first is the rule's Execution Mode.",
+                MarkdownDescription: "OneUptimeAI (the default): OneUptime AI fixes the matched incident or alert - on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, with the project's runbooks (only the rule's Runbooks when it names some) and with commands on the rule's Runner when it picks one. Runbooks: the rule starts every one of its Runbooks for every match, without OneUptime AI deciding. Whether a person approves first is the rule's Execution Mode.",
                 Optional: true,
                 Computed: true,
             },
             "ai_selects_runbook": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an AI planning run reads the incident/alert context and picks the most applicable runbook (from the attached candidates, or all enabled runbooks when none are attached). AI-picked runbooks are always suggest-only — never full-auto.",
+                MarkdownDescription: "Kept for rules saved before rules were simplified: an AI planning run reads the incident/alert context and picks the most applicable runbook (from the attached candidates, or all enabled runbooks when none are attached), always proposing it for approval, and the rule does nothing else. Every OneUptime AI rule now lets AI pick a runbook on its own, so new rules leave this off.",
                 Optional: true,
                 Computed: true,
             },
             "ai_composes_commands": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the AI investigates the incident/alert and composes Bash/SSH commands for opted-in Runners instead of picking a runbook. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. Requires AI to be enabled for the project.",
+                MarkdownDescription: "Kept for rules saved before rules were simplified: the AI investigates the incident/alert and composes Bash/SSH commands for the rule's Runner and Command Runners, and the rule does nothing else. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. A OneUptime AI rule now composes commands on its Runner when it picks one, so new rules leave this off.",
                 Optional: true,
                 Computed: true,
             },
@@ -131,7 +133,7 @@ func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "command_runners": schema.SetAttribute{
-                MarkdownDescription: "Runners the AI may target with composed commands. Leave empty to allow any Runner in the project that has AI commands enabled. IDs of `oneuptime_runner` resources.",
+                MarkdownDescription: "Kept for rules saved before rules were simplified: more Runners the AI may target with composed commands, besides the rule's Runner. A Runner runs a rule's commands only when the rule names it. IDs of `oneuptime_runner` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -171,9 +173,19 @@ func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "runbooks": schema.SetAttribute{
-                MarkdownDescription: "Runbook candidates for this rule. Deterministic rules propose or start every attached runbook; AI rules pick the most applicable one. IDs of `oneuptime_runbook` resources.",
+                MarkdownDescription: "The runbooks OneUptime AI may pick and run for this rule. Leave empty to let it pick any of the project's runbooks. A rule whose Fix With is Runbooks starts every one of them for every match instead. IDs of `oneuptime_runbook` resources.",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "external_mcp_servers": schema.SetAttribute{
+                MarkdownDescription: "The external MCP servers OneUptime AI may use while it fixes what this rule matches. Leave empty to let it use all of the project's MCP servers; changes through them are then always proposed for approval first. IDs of `oneuptime_external_mcp_server` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "runner_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Runner OneUptime AI runs this rule's commands on: one of the project's own Runners. Empty means none: OneUptime AI fixes through the AI agent on the affected Kubernetes cluster or host. The ID of a `oneuptime_runner`.",
+                Optional: true,
+                Computed: true,
             },
             "verification_window_minutes": schema.NumberAttribute{
                 MarkdownDescription: "How long after the runbook starts the subject's monitors get to recover before verification fails. Defaults to 15 minutes.",
@@ -269,6 +281,10 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         filters["descriptionPattern"] = data.DescriptionPattern.ValueString()
         filterNames = append(filterNames, "description_pattern = "+fmt.Sprintf("%q", data.DescriptionPattern.ValueString()))
     }
+    if !data.RunnerId.IsNull() && !data.RunnerId.IsUnknown() {
+        filters["runnerId"] = data.RunnerId.ValueString()
+        filterNames = append(filterNames, "runner_id = "+fmt.Sprintf("%q", data.RunnerId.ValueString()))
+    }
     if !data.VerificationWindowMinutes.IsNull() && !data.VerificationWindowMinutes.IsUnknown() {
         filters["verificationWindowMinutes"] = lookupNumber(data.VerificationWindowMinutes)
         filterNames = append(filterNames, "verification_window_minutes = "+data.VerificationWindowMinutes.ValueBigFloat().String())
@@ -320,6 +336,8 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         "titlePattern": true,
         "descriptionPattern": true,
         "runbooks": true,
+        "externalMcpServers": true,
+        "runnerId": true,
         "verificationWindowMinutes": true,
         "autoResolveOnVerifiedRecovery": true,
         "createdByUserId": true,
@@ -787,6 +805,47 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         data.Runbooks = types.SetValueMust(types.StringType, setItems)
     } else {
         data.Runbooks = types.SetNull(types.StringType)
+    }
+    if val, ok := item["externalMcpServers"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.ExternalMcpServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.ExternalMcpServers = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["runnerId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunnerId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
+    } else if val, ok := item["runnerId"].(string); ok {
+        data.RunnerId = types.StringValue(val)
+    } else {
+        data.RunnerId = types.StringNull()
     }
     data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, item["verificationWindowMinutes"])
     if val, ok := item["autoResolveOnVerifiedRecovery"].(bool); ok {

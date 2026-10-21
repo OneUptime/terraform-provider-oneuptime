@@ -42,6 +42,7 @@ type IncidentEpisodeDataSourceModel struct {
     LastIncidentAddedAt types.String `tfsdk:"last_incident_added_at"`
     ResolvedAt types.String `tfsdk:"resolved_at"`
     AllIncidentsResolvedAt types.String `tfsdk:"all_incidents_resolved_at"`
+    FirstPagedAt types.String `tfsdk:"first_paged_at"`
     AssignedToUserId types.String `tfsdk:"assigned_to_user_id"`
     AssignedToTeamId types.String `tfsdk:"assigned_to_team_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
@@ -137,6 +138,10 @@ func (d *IncidentEpisodeDataSource) Schema(ctx context.Context, req datasource.S
             },
             "all_incidents_resolved_at": schema.StringAttribute{
                 MarkdownDescription: "When all incidents in this episode were first detected as resolved. Used for resolve delay calculation.",
+                Computed: true,
+            },
+            "first_paged_at": schema.StringAttribute{
+                MarkdownDescription: "When an on-call policy or a direct page first notified someone about this episode. Empty until someone is paged. Set by OneUptime.",
                 Computed: true,
             },
             "assigned_to_user_id": schema.StringAttribute{
@@ -416,6 +421,7 @@ func (d *IncidentEpisodeDataSource) Read(ctx context.Context, req datasource.Rea
         "lastIncidentAddedAt": true,
         "resolvedAt": true,
         "allIncidentsResolvedAt": true,
+        "firstPagedAt": true,
         "assignedToUserId": true,
         "assignedToTeamId": true,
         "onCallDutyPolicies": true,
@@ -720,6 +726,23 @@ func (d *IncidentEpisodeDataSource) Read(ctx context.Context, req datasource.Rea
         data.AllIncidentsResolvedAt = types.StringValue(val)
     } else {
         data.AllIncidentsResolvedAt = types.StringNull()
+    }
+    if obj, ok := item["firstPagedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FirstPagedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FirstPagedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FirstPagedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FirstPagedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstPagedAt = types.StringNull()
+        }
+    } else if val, ok := item["firstPagedAt"].(string); ok {
+        data.FirstPagedAt = types.StringValue(val)
+    } else {
+        data.FirstPagedAt = types.StringNull()
     }
     if obj, ok := item["assignedToUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

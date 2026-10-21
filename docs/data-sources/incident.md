@@ -73,6 +73,7 @@ data "oneuptime_incident" "by_id" {
 - `docker_hosts` (Set of String) List of Docker hosts affected by this incident. IDs of `oneuptime_docker_host` resources.
 - `docker_resources` (Set of String) List of Docker resources (containers, images, networks, volumes) affected by this incident.
 - `docker_swarm_clusters` (Set of String) List of Docker Swarm clusters affected by this incident. IDs of `oneuptime_docker_swarm_cluster` resources.
+- `first_paged_at` (String) When an on-call policy or a direct page first notified someone about this incident. Empty until someone is paged. Set by OneUptime.
 - `hosts` (Set of String) List of hosts affected by this incident. IDs of `oneuptime_host` resources.
 - `impact_started_at` (String) When customer impact actually began. Left blank until someone records it - never inferred, because a guessed value is worse than no value.
 - `iot_fleets` (Set of String) List of IoT fleets affected by this incident. IDs of `oneuptime_iot_fleet` resources.

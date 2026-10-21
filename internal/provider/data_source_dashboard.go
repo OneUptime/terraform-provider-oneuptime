@@ -45,6 +45,7 @@ type DashboardDataSourceModel struct {
     PageDescription types.String `tfsdk:"page_description"`
     LogoFileId types.String `tfsdk:"logo_file_id"`
     FaviconFileId types.String `tfsdk:"favicon_file_id"`
+    Theme types.String `tfsdk:"theme"`
     IsPublicDashboard types.Bool `tfsdk:"is_public_dashboard"`
     EnableMasterPassword types.Bool `tfsdk:"enable_master_password"`
     MasterPassword types.String `tfsdk:"master_password"`
@@ -137,6 +138,11 @@ func (d *DashboardDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "favicon_file_id": schema.StringAttribute{
                 MarkdownDescription: "Dashboard Favicon File ID. The ID of a `oneuptime_file`.",
+                Optional: true,
+                Computed: true,
+            },
+            "theme": schema.StringAttribute{
+                MarkdownDescription: "How the public dashboard looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). Visitors can switch between light and dark from its toolbar. A dashboard created without a theme starts with System.",
                 Optional: true,
                 Computed: true,
             },
@@ -239,6 +245,10 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         filters["faviconFileId"] = data.FaviconFileId.ValueString()
         filterNames = append(filterNames, "favicon_file_id = "+fmt.Sprintf("%q", data.FaviconFileId.ValueString()))
     }
+    if !data.Theme.IsNull() && !data.Theme.IsUnknown() {
+        filters["theme"] = data.Theme.ValueString()
+        filterNames = append(filterNames, "theme = "+fmt.Sprintf("%q", data.Theme.ValueString()))
+    }
     if !data.IsPublicDashboard.IsNull() && !data.IsPublicDashboard.IsUnknown() {
         filters["isPublicDashboard"] = data.IsPublicDashboard.ValueBool()
         filterNames = append(filterNames, "is_public_dashboard = "+fmt.Sprintf("%t", data.IsPublicDashboard.ValueBool()))
@@ -284,6 +294,7 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         "pageDescription": true,
         "logoFileId": true,
         "faviconFileId": true,
+        "theme": true,
         "isPublicDashboard": true,
         "enableMasterPassword": true,
         "masterPassword": true,
@@ -632,6 +643,23 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.FaviconFileId = types.StringValue(val)
     } else {
         data.FaviconFileId = types.StringNull()
+    }
+    if obj, ok := item["theme"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Theme = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Theme = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Theme = types.StringValue(string(jsonBytes))
+        } else {
+            data.Theme = types.StringNull()
+        }
+    } else if val, ok := item["theme"].(string); ok {
+        data.Theme = types.StringValue(val)
+    } else {
+        data.Theme = types.StringNull()
     }
     if val, ok := item["isPublicDashboard"].(bool); ok {
         data.IsPublicDashboard = types.BoolValue(val)
