@@ -26,7 +26,7 @@ resource "oneuptime_dashboard" "example" {
 
 ### Optional
 
-- `dashboard_view_config` (String) Configuration of Dashboard View. A JSON value: write it with `jsonencode()`.
+- `dashboard_view_config` (String) The dashboard's widgets and variables, and the time range (timeRange, such as Past 1 Day) and auto-refresh (refreshInterval, such as 1m) it opens on. See the DashboardViewConfig data type. A JSON value: write it with `jsonencode()`.
 - `description` (String) Friendly description that will help you remember.
 - `enable_master_password` (Boolean) Require visitors to enter a master password before viewing a public dashboard. Defaults to `false`.
 - `favicon_file_id` (String) Dashboard Favicon File ID. The ID of a `oneuptime_file`.

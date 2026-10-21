@@ -265,6 +265,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewOnCallScheduleLayerUserDataSource,
         NewOnCallScheduleTeamOwnerDataSource,
         NewOnCallScheduleUserOwnerDataSource,
+        NewScheduledMaintenanceExternalCalendarDataSource,
         NewOnCallDutyPolicyFeedDataSource,
         NewOnCallDutyPolicyTeamOwnerDataSource,
         NewOnCallDutyPolicyUserOwnerDataSource,

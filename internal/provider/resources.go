@@ -241,6 +241,7 @@ func GetResources() []func() resource.Resource {
         NewOnCallScheduleLayerUserResource,
         NewOnCallScheduleTeamOwnerResource,
         NewOnCallScheduleUserOwnerResource,
+        NewScheduledMaintenanceExternalCalendarResource,
         NewOnCallDutyPolicyFeedResource,
         NewOnCallDutyPolicyTeamOwnerResource,
         NewOnCallDutyPolicyUserOwnerResource,

@@ -118,7 +118,7 @@ func (d *DashboardDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 ElementType: types.StringType,
             },
             "dashboard_view_config": schema.StringAttribute{
-                MarkdownDescription: "Configuration of Dashboard View. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The dashboard's widgets and variables, and the time range (timeRange, such as Past 1 Day) and auto-refresh (refreshInterval, such as 1m) it opens on. See the DashboardViewConfig data type. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "page_title": schema.StringAttribute{

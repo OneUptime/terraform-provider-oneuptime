@@ -48,7 +48,7 @@ data "oneuptime_dashboard" "by_id" {
 
 - `archived_at` (String) When this dashboard was archived. Empty while it is not archived.
 - `created_at` (String) Date and Time when the object was created.
-- `dashboard_view_config` (String) Configuration of Dashboard View. A JSON value: write it with `jsonencode()`.
+- `dashboard_view_config` (String) The dashboard's widgets and variables, and the time range (timeRange, such as Past 1 Day) and auto-refresh (refreshInterval, such as 1m) it opens on. See the DashboardViewConfig data type. A JSON value: write it with `jsonencode()`.
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 - `master_password` (String, Sensitive) Password required to unlock a public dashboard. This value is stored as a secure hash.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
