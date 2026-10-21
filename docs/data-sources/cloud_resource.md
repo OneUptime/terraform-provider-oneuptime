@@ -31,6 +31,7 @@ data "oneuptime_cloud_resource" "by_id" {
 - `agent_version` (String) Version of the OneUptime agent reporting this resource.
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `cloud_account_id` (String) Last-seen cloud.account.id OpenTelemetry resource attribute.
+- `cloud_connection_id` (String) For a resource: ID of the cloud connection that reads it, when one does. The ID of a `oneuptime_cloud_connection`.
 - `cloud_platform` (String) Last-seen cloud.platform OpenTelemetry resource attribute, e.g. aws_ecs, gcp_cloud_run, azure_container_apps.
 - `cloud_provider` (String) Last-seen cloud.provider OpenTelemetry resource attribute, e.g. aws, gcp, azure.
 - `cloud_region` (String) Last-seen cloud.region OpenTelemetry resource attribute, e.g. us-east-1.

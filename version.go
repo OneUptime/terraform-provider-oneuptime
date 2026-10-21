@@ -5,7 +5,7 @@ import (
 )
 
 // Version is the current version of the provider
-var Version = "14.0.82"
+var Version = "14.0.83"
 
 // PrintVersion prints the version information
 func PrintVersion() {

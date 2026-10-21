@@ -44,6 +44,7 @@ resource "oneuptime_cloud_resource" "example" {
 - `archived_at` (String) When was this cloud resource archived?
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `auto_archived_at` (String) For a resource: when it was archived automatically for sending no metrics for the auto-archive period. Cleared when it reports again.
+- `cloud_connection_id` (String) For a resource: ID of the cloud connection that reads it, when one does. The ID of a `oneuptime_cloud_connection`.
 - `cloud_resource_group` (String) For an Azure resource: the resource group it belongs to.
 - `cloud_resource_kind` (String) environment: a managed compute environment discovered from the cloud.platform, cloud.account.id and cloud.region resource attributes of a workload's own telemetry. resource: one IaaS or PaaS resource (a virtual machine, a load balancer, a bucket, a managed database, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch or Google Cloud Monitoring publish about it.
 - `cloud_resource_type` (String) For a resource: the provider's type for it - the Azure Resource Manager type (Microsoft.Compute/virtualMachines), the AWS CloudFormation type (AWS::EC2::Instance) or the Google Cloud Monitoring resource type (gce_instance).

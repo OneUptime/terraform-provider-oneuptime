@@ -45,6 +45,7 @@ type CloudResourceDataSourceModel struct {
     ProviderResourceId types.String `tfsdk:"provider_resource_id"`
     CloudResourceGroup types.String `tfsdk:"cloud_resource_group"`
     TelemetryAttributes types.String `tfsdk:"telemetry_attributes"`
+    CloudConnectionId types.String `tfsdk:"cloud_connection_id"`
     RuntimeName types.String `tfsdk:"runtime_name"`
     RuntimeVersion types.String `tfsdk:"runtime_version"`
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
@@ -148,6 +149,11 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "telemetry_attributes": schema.StringAttribute{
                 MarkdownDescription: "For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "cloud_connection_id": schema.StringAttribute{
+                MarkdownDescription: "For a resource: ID of the cloud connection that reads it, when one does. The ID of a `oneuptime_cloud_connection`.",
+                Optional: true,
                 Computed: true,
             },
             "runtime_name": schema.StringAttribute{
@@ -298,6 +304,10 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["cloudResourceGroup"] = data.CloudResourceGroup.ValueString()
         filterNames = append(filterNames, "cloud_resource_group = "+fmt.Sprintf("%q", data.CloudResourceGroup.ValueString()))
     }
+    if !data.CloudConnectionId.IsNull() && !data.CloudConnectionId.IsUnknown() {
+        filters["cloudConnectionId"] = data.CloudConnectionId.ValueString()
+        filterNames = append(filterNames, "cloud_connection_id = "+fmt.Sprintf("%q", data.CloudConnectionId.ValueString()))
+    }
     if !data.RuntimeName.IsNull() && !data.RuntimeName.IsUnknown() {
         filters["runtimeName"] = data.RuntimeName.ValueString()
         filterNames = append(filterNames, "runtime_name = "+fmt.Sprintf("%q", data.RuntimeName.ValueString()))
@@ -363,6 +373,7 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         "providerResourceId": true,
         "cloudResourceGroup": true,
         "telemetryAttributes": true,
+        "cloudConnectionId": true,
         "runtimeName": true,
         "runtimeVersion": true,
         "otelCollectorStatus": true,
@@ -725,6 +736,23 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.TelemetryAttributes = types.StringValue(val)
     } else {
         data.TelemetryAttributes = types.StringNull()
+    }
+    if obj, ok := item["cloudConnectionId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudConnectionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudConnectionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudConnectionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudConnectionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudConnectionId = types.StringNull()
+        }
+    } else if val, ok := item["cloudConnectionId"].(string); ok {
+        data.CloudConnectionId = types.StringValue(val)
+    } else {
+        data.CloudConnectionId = types.StringNull()
     }
     if obj, ok := item["runtimeName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
