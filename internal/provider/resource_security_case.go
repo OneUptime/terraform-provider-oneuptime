@@ -65,6 +65,7 @@ type SecurityCaseResourceModel struct {
     ClosedAt RFC3339Value `tfsdk:"closed_at"`
     ClosedByUserId types.String `tfsdk:"closed_by_user_id"`
     GroupingKey types.String `tfsdk:"grouping_key"`
+    NotifiedPriority types.String `tfsdk:"notified_priority"`
     IncidentId types.String `tfsdk:"incident_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -265,6 +266,10 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "What new detections are matched on to join this case while it is open: the entity they are about, or the detection's own fingerprint.",
                 Computed: true,
             },
+            "notified_priority": schema.StringAttribute{
+                MarkdownDescription: "The highest priority people have been told about this case at. They are told again only when it rises above it.",
+                Computed: true,
+            },
             "incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the OneUptime incident declared for this case. The ID of a `oneuptime_incident`.",
                 Computed: true,
@@ -436,6 +441,7 @@ func (r *SecurityCaseResource) Create(ctx context.Context, req resource.CreateRe
         "closedAt": true,
         "closedByUserId": true,
         "groupingKey": true,
+        "notifiedPriority": true,
         "incidentId": true,
         "createdByUserId": true,
         "_id": true,
@@ -1147,6 +1153,43 @@ func (r *SecurityCaseResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.GroupingKey = types.StringNull()
     }
+    if obj, ok := dataMap["notifiedPriority"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NotifiedPriority = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NotifiedPriority = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NotifiedPriority = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NotifiedPriority = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NotifiedPriority = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotifiedPriority = types.StringNull()
+        }
+    } else if val, ok := dataMap["notifiedPriority"].(string); ok {
+        data.NotifiedPriority = types.StringValue(val)
+    } else {
+        data.NotifiedPriority = types.StringNull()
+    }
     if obj, ok := dataMap["incidentId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1277,6 +1320,7 @@ func (r *SecurityCaseResource) Read(ctx context.Context, req resource.ReadReques
         "closedAt": true,
         "closedByUserId": true,
         "groupingKey": true,
+        "notifiedPriority": true,
         "incidentId": true,
         "createdByUserId": true,
         "_id": true,
@@ -1989,6 +2033,43 @@ func (r *SecurityCaseResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.GroupingKey = types.StringNull()
     }
+    if obj, ok := dataMap["notifiedPriority"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NotifiedPriority = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NotifiedPriority = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NotifiedPriority = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NotifiedPriority = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NotifiedPriority = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotifiedPriority = types.StringNull()
+        }
+    } else if val, ok := dataMap["notifiedPriority"].(string); ok {
+        data.NotifiedPriority = types.StringValue(val)
+    } else {
+        data.NotifiedPriority = types.StringNull()
+    }
     if obj, ok := dataMap["incidentId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2206,6 +2287,7 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
         "closedAt": true,
         "closedByUserId": true,
         "groupingKey": true,
+        "notifiedPriority": true,
         "incidentId": true,
         "createdByUserId": true,
         "_id": true,
@@ -2911,6 +2993,43 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
         data.GroupingKey = types.StringValue(val)
     } else {
         data.GroupingKey = types.StringNull()
+    }
+    if obj, ok := dataMap["notifiedPriority"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NotifiedPriority = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NotifiedPriority = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NotifiedPriority = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NotifiedPriority = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NotifiedPriority = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotifiedPriority = types.StringNull()
+        }
+    } else if val, ok := dataMap["notifiedPriority"].(string); ok {
+        data.NotifiedPriority = types.StringValue(val)
+    } else {
+        data.NotifiedPriority = types.StringNull()
     }
     if obj, ok := dataMap["incidentId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

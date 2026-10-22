@@ -53,6 +53,12 @@ type SecurityEventDataSourceModel struct {
     PrincipalHost types.String `tfsdk:"principal_host"`
     PrincipalIp types.String `tfsdk:"principal_ip"`
     PrincipalProcess types.String `tfsdk:"principal_process"`
+    ProcessName types.String `tfsdk:"process_name"`
+    ProcessPath types.String `tfsdk:"process_path"`
+    ProcessCommandLine types.String `tfsdk:"process_command_line"`
+    ParentProcessName types.String `tfsdk:"parent_process_name"`
+    ParentProcessPath types.String `tfsdk:"parent_process_path"`
+    ParentProcessCommandLine types.String `tfsdk:"parent_process_command_line"`
     TargetUser types.String `tfsdk:"target_user"`
     TargetHost types.String `tfsdk:"target_host"`
     TargetIp types.String `tfsdk:"target_ip"`
@@ -193,6 +199,36 @@ func (d *SecurityEventDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "principal_process": schema.StringAttribute{
                 MarkdownDescription: "Principal Process.",
+                Optional: true,
+                Computed: true,
+            },
+            "process_name": schema.StringAttribute{
+                MarkdownDescription: "Process.",
+                Optional: true,
+                Computed: true,
+            },
+            "process_path": schema.StringAttribute{
+                MarkdownDescription: "Process Path.",
+                Optional: true,
+                Computed: true,
+            },
+            "process_command_line": schema.StringAttribute{
+                MarkdownDescription: "Command Line.",
+                Optional: true,
+                Computed: true,
+            },
+            "parent_process_name": schema.StringAttribute{
+                MarkdownDescription: "Parent Process.",
+                Optional: true,
+                Computed: true,
+            },
+            "parent_process_path": schema.StringAttribute{
+                MarkdownDescription: "Parent Process Path.",
+                Optional: true,
+                Computed: true,
+            },
+            "parent_process_command_line": schema.StringAttribute{
+                MarkdownDescription: "Parent Command Line.",
                 Optional: true,
                 Computed: true,
             },
@@ -359,6 +395,30 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["principalProcess"] = data.PrincipalProcess.ValueString()
         filterNames = append(filterNames, "principal_process = "+fmt.Sprintf("%q", data.PrincipalProcess.ValueString()))
     }
+    if !data.ProcessName.IsNull() && !data.ProcessName.IsUnknown() {
+        filters["processName"] = data.ProcessName.ValueString()
+        filterNames = append(filterNames, "process_name = "+fmt.Sprintf("%q", data.ProcessName.ValueString()))
+    }
+    if !data.ProcessPath.IsNull() && !data.ProcessPath.IsUnknown() {
+        filters["processPath"] = data.ProcessPath.ValueString()
+        filterNames = append(filterNames, "process_path = "+fmt.Sprintf("%q", data.ProcessPath.ValueString()))
+    }
+    if !data.ProcessCommandLine.IsNull() && !data.ProcessCommandLine.IsUnknown() {
+        filters["processCommandLine"] = data.ProcessCommandLine.ValueString()
+        filterNames = append(filterNames, "process_command_line = "+fmt.Sprintf("%q", data.ProcessCommandLine.ValueString()))
+    }
+    if !data.ParentProcessName.IsNull() && !data.ParentProcessName.IsUnknown() {
+        filters["parentProcessName"] = data.ParentProcessName.ValueString()
+        filterNames = append(filterNames, "parent_process_name = "+fmt.Sprintf("%q", data.ParentProcessName.ValueString()))
+    }
+    if !data.ParentProcessPath.IsNull() && !data.ParentProcessPath.IsUnknown() {
+        filters["parentProcessPath"] = data.ParentProcessPath.ValueString()
+        filterNames = append(filterNames, "parent_process_path = "+fmt.Sprintf("%q", data.ParentProcessPath.ValueString()))
+    }
+    if !data.ParentProcessCommandLine.IsNull() && !data.ParentProcessCommandLine.IsUnknown() {
+        filters["parentProcessCommandLine"] = data.ParentProcessCommandLine.ValueString()
+        filterNames = append(filterNames, "parent_process_command_line = "+fmt.Sprintf("%q", data.ParentProcessCommandLine.ValueString()))
+    }
     if !data.TargetUser.IsNull() && !data.TargetUser.IsUnknown() {
         filters["targetUser"] = data.TargetUser.ValueString()
         filterNames = append(filterNames, "target_user = "+fmt.Sprintf("%q", data.TargetUser.ValueString()))
@@ -424,6 +484,12 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
         "principalHost": true,
         "principalIp": true,
         "principalProcess": true,
+        "processName": true,
+        "processPath": true,
+        "processCommandLine": true,
+        "parentProcessName": true,
+        "parentProcessPath": true,
+        "parentProcessCommandLine": true,
         "targetUser": true,
         "targetHost": true,
         "targetIp": true,
@@ -883,6 +949,108 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
         data.PrincipalProcess = types.StringValue(val)
     } else {
         data.PrincipalProcess = types.StringNull()
+    }
+    if obj, ok := item["processName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProcessName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProcessName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProcessName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProcessName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessName = types.StringNull()
+        }
+    } else if val, ok := item["processName"].(string); ok {
+        data.ProcessName = types.StringValue(val)
+    } else {
+        data.ProcessName = types.StringNull()
+    }
+    if obj, ok := item["processPath"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProcessPath = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProcessPath = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProcessPath = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProcessPath = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessPath = types.StringNull()
+        }
+    } else if val, ok := item["processPath"].(string); ok {
+        data.ProcessPath = types.StringValue(val)
+    } else {
+        data.ProcessPath = types.StringNull()
+    }
+    if obj, ok := item["processCommandLine"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProcessCommandLine = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProcessCommandLine = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProcessCommandLine = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProcessCommandLine = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessCommandLine = types.StringNull()
+        }
+    } else if val, ok := item["processCommandLine"].(string); ok {
+        data.ProcessCommandLine = types.StringValue(val)
+    } else {
+        data.ProcessCommandLine = types.StringNull()
+    }
+    if obj, ok := item["parentProcessName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentProcessName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ParentProcessName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ParentProcessName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ParentProcessName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentProcessName = types.StringNull()
+        }
+    } else if val, ok := item["parentProcessName"].(string); ok {
+        data.ParentProcessName = types.StringValue(val)
+    } else {
+        data.ParentProcessName = types.StringNull()
+    }
+    if obj, ok := item["parentProcessPath"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentProcessPath = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ParentProcessPath = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ParentProcessPath = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ParentProcessPath = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentProcessPath = types.StringNull()
+        }
+    } else if val, ok := item["parentProcessPath"].(string); ok {
+        data.ParentProcessPath = types.StringValue(val)
+    } else {
+        data.ParentProcessPath = types.StringNull()
+    }
+    if obj, ok := item["parentProcessCommandLine"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentProcessCommandLine = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ParentProcessCommandLine = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ParentProcessCommandLine = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ParentProcessCommandLine = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentProcessCommandLine = types.StringNull()
+        }
+    } else if val, ok := item["parentProcessCommandLine"].(string); ok {
+        data.ParentProcessCommandLine = types.StringValue(val)
+    } else {
+        data.ParentProcessCommandLine = types.StringNull()
     }
     if obj, ok := item["targetUser"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

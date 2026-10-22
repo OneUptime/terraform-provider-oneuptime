@@ -42,6 +42,7 @@ type RunnerDataSourceModel struct {
     CanRunRunbooks types.Bool `tfsdk:"can_run_runbooks"`
     CanRunAiCommands types.Bool `tfsdk:"can_run_ai_commands"`
     IsGlobalRunner types.Bool `tfsdk:"is_global_runner"`
+    IsProjectDefault types.Bool `tfsdk:"is_project_default"`
     HostInfo types.String `tfsdk:"host_info"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
@@ -118,6 +119,11 @@ func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
             },
             "is_global_runner": schema.BoolAttribute{
                 MarkdownDescription: "Whether OneUptime runs this Runner for every project. Global Runners run JavaScript steps in a sandbox that can reach the internet but not your network. Only a master admin creates them.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_project_default": schema.BoolAttribute{
+                MarkdownDescription: "Whether this is the project's default Runner: runbook steps that pick no Runner run on it instead of the Global Runner.",
                 Optional: true,
                 Computed: true,
             },
@@ -206,6 +212,10 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         filters["isGlobalRunner"] = data.IsGlobalRunner.ValueBool()
         filterNames = append(filterNames, "is_global_runner = "+fmt.Sprintf("%t", data.IsGlobalRunner.ValueBool()))
     }
+    if !data.IsProjectDefault.IsNull() && !data.IsProjectDefault.IsUnknown() {
+        filters["isProjectDefault"] = data.IsProjectDefault.ValueBool()
+        filterNames = append(filterNames, "is_project_default = "+fmt.Sprintf("%t", data.IsProjectDefault.ValueBool()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -240,6 +250,7 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         "canRunRunbooks": true,
         "canRunAiCommands": true,
         "isGlobalRunner": true,
+        "isProjectDefault": true,
         "hostInfo": true,
         "createdByUserId": true,
         "labels": true,
@@ -505,6 +516,11 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         data.IsGlobalRunner = types.BoolValue(val)
     } else {
         data.IsGlobalRunner = types.BoolNull()
+    }
+    if val, ok := item["isProjectDefault"].(bool); ok {
+        data.IsProjectDefault = types.BoolValue(val)
+    } else {
+        data.IsProjectDefault = types.BoolNull()
     }
     if obj, ok := item["hostInfo"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

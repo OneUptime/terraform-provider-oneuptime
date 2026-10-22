@@ -37,12 +37,18 @@ data "oneuptime_security_event" "by_id" {
 - `event_uid` (String) Event UID.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `message` (String) Message.
+- `parent_process_command_line` (String) Parent Command Line.
+- `parent_process_name` (String) Parent Process.
+- `parent_process_path` (String) Parent Process Path.
 - `primary_entity_id` (String) Source ID.
 - `primary_entity_type` (String) Source Type.
 - `principal_host` (String) Principal Host.
 - `principal_ip` (String) Principal IP.
 - `principal_process` (String) Principal Process.
 - `principal_user` (String) Principal User.
+- `process_command_line` (String) Command Line.
+- `process_name` (String) Process.
+- `process_path` (String) Process Path.
 - `product_name` (String) Product.
 - `rule_id` (String) Rule ID.
 - `rule_name` (String) Rule Name.

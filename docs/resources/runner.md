@@ -32,6 +32,7 @@ resource "oneuptime_runner" "example" {
 - `can_run_runbooks` (Boolean) Whether this Runner executes runbook steps. On by default — this is why most Runners are installed. It cannot be turned on for an in-cluster Runner the Kubernetes agent chart registered, which runs kubectl only. Defaults to `true`.
 - `connection_status` (String) Connected if the agent has heartbeated recently.
 - `description` (String) Optional description for this agent.
+- `is_project_default` (Boolean) Whether this is the project's default Runner: runbook steps that pick no Runner run on it instead of the Global Runner. Defaults to `false`.
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 
 ### Read-Only

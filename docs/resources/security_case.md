@@ -54,6 +54,7 @@ resource "oneuptime_security_case" "example" {
 - `id` (String) Unique identifier for the resource.
 - `incident_id` (String) ID of the OneUptime incident declared for this case. The ID of a `oneuptime_incident`.
 - `last_detected_at` (String) When a detection of the case last fired.
+- `notified_priority` (String) The highest priority people have been told about this case at. They are told again only when it rises above it.
 - `project_id` (String) ID of the project this case belongs to. The ID of a `oneuptime_project`.
 - `source` (String) What opened the case: a Detection Rule, Threat Intel, a Connected Product, or a person (Manual).
 - `updated_at` (String) Date and Time when the object was updated.

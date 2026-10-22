@@ -47,6 +47,7 @@ type AiRunDataSourceModel struct {
     MonitorId types.String `tfsdk:"monitor_id"`
     AiAgentId types.String `tfsdk:"ai_agent_id"`
     AttemptCount types.Number `tfsdk:"attempt_count"`
+    HandedBackCount types.Number `tfsdk:"handed_back_count"`
     StartedAt types.String `tfsdk:"started_at"`
     CompletedAt types.String `tfsdk:"completed_at"`
     LastHeartbeatAt types.String `tfsdk:"last_heartbeat_at"`
@@ -174,7 +175,12 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "attempt_count": schema.NumberAttribute{
-                MarkdownDescription: "How many times a worker has claimed this run for execution. Incremented on each claim; the queue stops retrying after the maximum.",
+                MarkdownDescription: "How many times a worker has claimed this run for execution. Incremented on each claim; the queue stops retrying after the maximum, not counting the claims a server shutting down handed back (Handed Back Count).",
+                Optional: true,
+                Computed: true,
+            },
+            "handed_back_count": schema.NumberAttribute{
+                MarkdownDescription: "How many times a server shutting down handed this run back to the queue for another server to run. Those claims are not counted as failed attempts.",
                 Optional: true,
                 Computed: true,
             },
@@ -369,6 +375,10 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         filters["attemptCount"] = lookupNumber(data.AttemptCount)
         filterNames = append(filterNames, "attempt_count = "+data.AttemptCount.ValueBigFloat().String())
     }
+    if !data.HandedBackCount.IsNull() && !data.HandedBackCount.IsUnknown() {
+        filters["handedBackCount"] = lookupNumber(data.HandedBackCount)
+        filterNames = append(filterNames, "handed_back_count = "+data.HandedBackCount.ValueBigFloat().String())
+    }
     if !data.LlmCallCount.IsNull() && !data.LlmCallCount.IsUnknown() {
         filters["llmCallCount"] = lookupNumber(data.LlmCallCount)
         filterNames = append(filterNames, "llm_call_count = "+data.LlmCallCount.ValueBigFloat().String())
@@ -454,6 +464,7 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "monitorId": true,
         "aiAgentId": true,
         "attemptCount": true,
+        "handedBackCount": true,
         "startedAt": true,
         "completedAt": true,
         "lastHeartbeatAt": true,
@@ -842,6 +853,7 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.AiAgentId = types.StringNull()
     }
     data.AttemptCount = numberFromAPI(data.AttemptCount, item["attemptCount"])
+    data.HandedBackCount = numberFromAPI(data.HandedBackCount, item["handedBackCount"])
     if obj, ok := item["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.StartedAt = types.StringValue(val)

@@ -47,6 +47,7 @@ type RunnerResourceModel struct {
     AgentVersion JSONSubsetValue `tfsdk:"agent_version"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
     CanRunRunbooks types.Bool `tfsdk:"can_run_runbooks"`
+    IsProjectDefault types.Bool `tfsdk:"is_project_default"`
     Labels types.Set `tfsdk:"labels"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -128,6 +129,15 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_project_default": schema.BoolAttribute{
+                MarkdownDescription: "Whether this is the project's default Runner: runbook steps that pick no Runner run on it instead of the Global Runner.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },
@@ -254,6 +264,9 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
     if !data.CanRunRunbooks.IsNull() && !data.CanRunRunbooks.IsUnknown() {
         requestDataMap["canRunRunbooks"] = data.CanRunRunbooks.ValueBool()
     }
+    if !data.IsProjectDefault.IsNull() && !data.IsProjectDefault.IsUnknown() {
+        requestDataMap["isProjectDefault"] = data.IsProjectDefault.ValueBool()
+    }
     if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -309,6 +322,7 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
         "agentVersion": true,
         "connectionStatus": true,
         "canRunRunbooks": true,
+        "isProjectDefault": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
@@ -549,6 +563,9 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
     if val, ok := dataMap["canRunRunbooks"].(bool); ok {
         data.CanRunRunbooks = types.BoolValue(val)
     }
+    if val, ok := dataMap["isProjectDefault"].(bool); ok {
+        data.IsProjectDefault = types.BoolValue(val)
+    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -768,6 +785,7 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
         "agentVersion": true,
         "connectionStatus": true,
         "canRunRunbooks": true,
+        "isProjectDefault": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1009,6 +1027,9 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
     if val, ok := dataMap["canRunRunbooks"].(bool); ok {
         data.CanRunRunbooks = types.BoolValue(val)
     }
+    if val, ok := dataMap["isProjectDefault"].(bool); ok {
+        data.IsProjectDefault = types.BoolValue(val)
+    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1246,6 +1267,9 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
     if !data.CanRunRunbooks.IsUnknown() && !state.CanRunRunbooks.IsUnknown() && !data.CanRunRunbooks.Equal(state.CanRunRunbooks) {
         requestDataMap["canRunRunbooks"] = data.CanRunRunbooks.ValueBool()
     }
+    if !data.IsProjectDefault.IsUnknown() && !state.IsProjectDefault.IsUnknown() && !data.IsProjectDefault.Equal(state.IsProjectDefault) {
+        requestDataMap["isProjectDefault"] = data.IsProjectDefault.ValueBool()
+    }
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -1279,6 +1303,7 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
         "agentVersion": true,
         "connectionStatus": true,
         "canRunRunbooks": true,
+        "isProjectDefault": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1513,6 +1538,9 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
     }
     if val, ok := dataMap["canRunRunbooks"].(bool); ok {
         data.CanRunRunbooks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isProjectDefault"].(bool); ok {
+        data.IsProjectDefault = types.BoolValue(val)
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1764,6 +1792,9 @@ func (r *RunnerResource) keepPlannedValues(data *RunnerResourceModel, plan *Runn
     }
     if config.CanRunRunbooks.IsNull() && !plan.CanRunRunbooks.IsUnknown() {
         data.CanRunRunbooks = plan.CanRunRunbooks
+    }
+    if config.IsProjectDefault.IsNull() && !plan.IsProjectDefault.IsUnknown() {
+        data.IsProjectDefault = plan.IsProjectDefault
     }
     if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
         data.Labels = plan.Labels

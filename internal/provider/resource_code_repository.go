@@ -14,6 +14,7 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -133,7 +134,7 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 },
             },
             "setup_command": schema.StringAttribute{
-                MarkdownDescription: "Command the AI fix Runner executes at the repository root to install dependencies before verifying an AI-authored fix (e.g. 'npm ci'). Runs on your Runner, in the cloned workspace, before the build and test commands. Leave empty to skip.",
+                MarkdownDescription: "Optional. Leave it empty: the code agent learns how to set up, build and test the repository from the repository itself (its AGENTS.md first) and checks its change that way. When set, a Runner of the project's own also runs it at the repository root, in the cloned workspace, to install dependencies before the build and test commands check an AI-authored fix (e.g. 'npm ci').",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -141,7 +142,7 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 },
             },
             "build_command": schema.StringAttribute{
-                MarkdownDescription: "Command the AI fix Runner executes at the repository root to verify an AI-authored fix compiles/builds (e.g. 'npm run build'). A failure is fed back to the code agent for bounded repair attempts before the pull request opens. Leave empty to skip the build check.",
+                MarkdownDescription: "Optional. Leave it empty: the code agent learns how to build the repository from the repository itself (its AGENTS.md first) and checks its change that way. When set, a Runner of the project's own also runs it at the repository root to check that an AI-authored fix builds (e.g. 'npm run build'); a failure is fed back to the code agent for bounded repair attempts before the pull request opens.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -149,7 +150,7 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 },
             },
             "test_command": schema.StringAttribute{
-                MarkdownDescription: "Command the AI fix Runner executes at the repository root to run the test suite against an AI-authored fix (e.g. 'npm test'). A failure is fed back to the code agent for bounded repair attempts before the pull request opens. Leave empty to skip the test check.",
+                MarkdownDescription: "Optional. Leave it empty: the code agent learns how to test the repository from the repository itself (its AGENTS.md first) and checks its change that way. When set, a Runner of the project's own also runs it at the repository root to run the test suite against an AI-authored fix (e.g. 'npm test'); a failure is fed back to the code agent for bounded repair attempts before the pull request opens.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -173,9 +174,10 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 },
             },
             "is_git_hub_commands_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether the OneUptime GitHub App acts on mentions, assignments and trigger labels in this repository. Only people with write access to the repository can command it, and it never merges anything. Unset means enabled.",
+                MarkdownDescription: "Whether the OneUptime GitHub App acts on mentions, assignments and trigger labels in this repository. Only people with write access to the repository can command it, and it never merges anything. On by default.",
                 Optional: true,
                 Computed: true,
+                Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },
@@ -834,8 +836,6 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
-    } else {
-        data.IsGitHubCommandsEnabled = types.BoolNull()
     }
     if obj, ok := dataMap["gitHubTriggerLabel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1582,8 +1582,6 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
-    } else {
-        data.IsGitHubCommandsEnabled = types.BoolNull()
     }
     if obj, ok := dataMap["gitHubTriggerLabel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2396,8 +2394,6 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
-    } else {
-        data.IsGitHubCommandsEnabled = types.BoolNull()
     }
     if obj, ok := dataMap["gitHubTriggerLabel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

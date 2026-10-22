@@ -40,6 +40,7 @@ data "oneuptime_security_case" "by_id" {
 - `grouping_key` (String) What new detections are matched on to join this case while it is open: the entity they are about, or the detection's own fingerprint.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_id` (String) ID of the OneUptime incident declared for this case. The ID of a `oneuptime_incident`.
+- `notified_priority` (String) The highest priority people have been told about this case at. They are told again only when it rises above it.
 - `priority` (String) Critical, High, Medium, Low or Informational. A case opened by a detection starts at the detection's severity and rises when a more severe one joins it.
 - `source` (String) What opened the case: a Detection Rule, Threat Intel, a Connected Product, or a person (Manual).
 - `status` (String) New, Investigating, Contained or Closed. Every case starts New; closing it records a verdict.

@@ -36,6 +36,15 @@ data "oneuptime_host" "by_id" {
 - `cloud_platform` (String) Last-seen value of the cloud.platform OpenTelemetry resource attribute, e.g. aws_ec2, gcp_compute_engine.
 - `cloud_provider` (String) Last-seen value of the cloud.provider OpenTelemetry resource attribute, e.g. aws, gcp, azure.
 - `cloud_region` (String) Last-seen value of the cloud.region OpenTelemetry resource attribute, e.g. us-east-1.
+- `collector_config_error` (String) Why the last config OneUptime sent this host did not start there, as the host reported it. Set by the server.
+- `collector_config_hash` (String) The SHA-256 of the config this host reports it runs. Set by the server.
+- `collector_config_id` (String) ID of the Collector Config OneUptime sends to this host. Empty when the host runs OneUptime's default for its system. The ID of a `oneuptime_collector_config`.
+- `collector_config_status` (String) Where this host stands with the config OneUptime sends it: waiting, applying, applied or failed. Set by the server.
+- `collector_config_version_id` (String) ID of the Collector Config version this host reports it runs. Set by the server. The ID of a `oneuptime_collector_config_version` (see the data source).
+- `collector_failed_config_hash` (String) The SHA-256 of a config that did not start on this host, which OneUptime does not send it again until the config changes. Clear it to try that config again.
+- `collector_health_error` (String) The error the collector OneUptime manages on this host last reported, while it is not healthy. Set by the server.
+- `collector_host_features` (String) What the OneUptime installer found on this host for its default config to read: journald, systemd. Set by the server.
+- `collector_instance_uid` (String) The OpAMP instance ID of the collector OneUptime manages on this host. Empty when the host's collector was installed by hand. Set by the server.
 - `container_runtime` (String) Container runtime detected on this host, if any (e.g. docker, containerd).
 - `cpu_cores` (Number) Logical CPU core count, sourced from system.cpu.logical.count metric.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
@@ -50,6 +59,8 @@ data "oneuptime_host" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_ai_investigation_enabled` (Boolean) When on, OneUptime AI runs read-only commands (systemctl status, journalctl, df, free, uptime, ps, ss) on this host, through its Host AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the host can turn it on or off.
 - `is_archived` (Boolean) Is this host archived? Archived hosts are hidden from lists but keep collecting telemetry.
+- `is_collector_config_pinned` (Boolean) Whether the Collector Config was picked for this host on its page. When it is not, the host runs the first config in the list that applies to it.
+- `is_collector_healthy` (Boolean) Whether the collector OneUptime manages on this host last reported itself healthy. Set by the server.
 - `kubernetes_cluster_id` (String) Optional FK to the KubernetesCluster this host belongs to when k8s.cluster.name is reported. The ID of a `oneuptime_kubernetes_cluster`.
 - `name` (String) Friendly name for this host.
 - `os_type` (String) Operating system type of the host.
@@ -69,6 +80,8 @@ data "oneuptime_host" "by_id" {
 - `ai_access_last_verified_at` (String) When a command from OneUptime AI last succeeded on this host through its Host AI agent. Set by the server.
 - `ai_command_allowlist` (String) Optional JSON array of command patterns that Automatic mode may run on this host without approval even though they are riskier changes. Each pattern is one command line for this host's agent (systemctl, journalctl and the other host programs it may run) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this host is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the host can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.
 - `archived_at` (String) When was this host archived?
+- `collector_last_contact_at` (String) When the collector OneUptime manages on this host last reported to OneUptime. Set by the server.
+- `collector_registered_at` (String) When the collector OneUptime manages on this host was installed, or installed again: when it first reported to OneUptime. Set by the server.
 - `created_at` (String) Date and Time when the object was created.
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When telemetry was last received from this host.

@@ -72,6 +72,19 @@ type HostDataSourceModel struct {
     AiAccessLastVerifiedAt types.String `tfsdk:"ai_access_last_verified_at"`
     AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
     AiAccessConfiguredAt types.String `tfsdk:"ai_access_configured_at"`
+    CollectorInstanceUid types.String `tfsdk:"collector_instance_uid"`
+    CollectorLastContactAt types.String `tfsdk:"collector_last_contact_at"`
+    CollectorRegisteredAt types.String `tfsdk:"collector_registered_at"`
+    CollectorConfigId types.String `tfsdk:"collector_config_id"`
+    IsCollectorConfigPinned types.Bool `tfsdk:"is_collector_config_pinned"`
+    CollectorConfigVersionId types.String `tfsdk:"collector_config_version_id"`
+    CollectorConfigHash types.String `tfsdk:"collector_config_hash"`
+    CollectorConfigStatus types.String `tfsdk:"collector_config_status"`
+    CollectorConfigError types.String `tfsdk:"collector_config_error"`
+    CollectorFailedConfigHash types.String `tfsdk:"collector_failed_config_hash"`
+    IsCollectorHealthy types.Bool `tfsdk:"is_collector_healthy"`
+    CollectorHealthError types.String `tfsdk:"collector_health_error"`
+    CollectorHostFeatures types.String `tfsdk:"collector_host_features"`
 }
 
 func (d *HostDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -294,6 +307,69 @@ func (d *HostDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "When OneUptime AI access to this host was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Host AI agent that registers later never overwrites a setting an operator chose.",
                 Computed: true,
             },
+            "collector_instance_uid": schema.StringAttribute{
+                MarkdownDescription: "The OpAMP instance ID of the collector OneUptime manages on this host. Empty when the host's collector was installed by hand. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "collector_last_contact_at": schema.StringAttribute{
+                MarkdownDescription: "When the collector OneUptime manages on this host last reported to OneUptime. Set by the server.",
+                Computed: true,
+            },
+            "collector_registered_at": schema.StringAttribute{
+                MarkdownDescription: "When the collector OneUptime manages on this host was installed, or installed again: when it first reported to OneUptime. Set by the server.",
+                Computed: true,
+            },
+            "collector_config_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Collector Config OneUptime sends to this host. Empty when the host runs OneUptime's default for its system. The ID of a `oneuptime_collector_config`.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_collector_config_pinned": schema.BoolAttribute{
+                MarkdownDescription: "Whether the Collector Config was picked for this host on its page. When it is not, the host runs the first config in the list that applies to it.",
+                Optional: true,
+                Computed: true,
+            },
+            "collector_config_version_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Collector Config version this host reports it runs. Set by the server. The ID of a `oneuptime_collector_config_version` (see the data source).",
+                Optional: true,
+                Computed: true,
+            },
+            "collector_config_hash": schema.StringAttribute{
+                MarkdownDescription: "The SHA-256 of the config this host reports it runs. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "collector_config_status": schema.StringAttribute{
+                MarkdownDescription: "Where this host stands with the config OneUptime sends it: waiting, applying, applied or failed. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "collector_config_error": schema.StringAttribute{
+                MarkdownDescription: "Why the last config OneUptime sent this host did not start there, as the host reported it. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "collector_failed_config_hash": schema.StringAttribute{
+                MarkdownDescription: "The SHA-256 of a config that did not start on this host, which OneUptime does not send it again until the config changes. Clear it to try that config again.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_collector_healthy": schema.BoolAttribute{
+                MarkdownDescription: "Whether the collector OneUptime manages on this host last reported itself healthy. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "collector_health_error": schema.StringAttribute{
+                MarkdownDescription: "The error the collector OneUptime manages on this host last reported, while it is not healthy. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "collector_host_features": schema.StringAttribute{
+                MarkdownDescription: "What the OneUptime installer found on this host for its default config to read: journald, systemd. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -465,6 +541,50 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         filters["aiAccessLastError"] = data.AiAccessLastError.ValueString()
         filterNames = append(filterNames, "ai_access_last_error = "+fmt.Sprintf("%q", data.AiAccessLastError.ValueString()))
     }
+    if !data.CollectorInstanceUid.IsNull() && !data.CollectorInstanceUid.IsUnknown() {
+        filters["collectorInstanceUid"] = data.CollectorInstanceUid.ValueString()
+        filterNames = append(filterNames, "collector_instance_uid = "+fmt.Sprintf("%q", data.CollectorInstanceUid.ValueString()))
+    }
+    if !data.CollectorConfigId.IsNull() && !data.CollectorConfigId.IsUnknown() {
+        filters["collectorConfigId"] = data.CollectorConfigId.ValueString()
+        filterNames = append(filterNames, "collector_config_id = "+fmt.Sprintf("%q", data.CollectorConfigId.ValueString()))
+    }
+    if !data.IsCollectorConfigPinned.IsNull() && !data.IsCollectorConfigPinned.IsUnknown() {
+        filters["isCollectorConfigPinned"] = data.IsCollectorConfigPinned.ValueBool()
+        filterNames = append(filterNames, "is_collector_config_pinned = "+fmt.Sprintf("%t", data.IsCollectorConfigPinned.ValueBool()))
+    }
+    if !data.CollectorConfigVersionId.IsNull() && !data.CollectorConfigVersionId.IsUnknown() {
+        filters["collectorConfigVersionId"] = data.CollectorConfigVersionId.ValueString()
+        filterNames = append(filterNames, "collector_config_version_id = "+fmt.Sprintf("%q", data.CollectorConfigVersionId.ValueString()))
+    }
+    if !data.CollectorConfigHash.IsNull() && !data.CollectorConfigHash.IsUnknown() {
+        filters["collectorConfigHash"] = data.CollectorConfigHash.ValueString()
+        filterNames = append(filterNames, "collector_config_hash = "+fmt.Sprintf("%q", data.CollectorConfigHash.ValueString()))
+    }
+    if !data.CollectorConfigStatus.IsNull() && !data.CollectorConfigStatus.IsUnknown() {
+        filters["collectorConfigStatus"] = data.CollectorConfigStatus.ValueString()
+        filterNames = append(filterNames, "collector_config_status = "+fmt.Sprintf("%q", data.CollectorConfigStatus.ValueString()))
+    }
+    if !data.CollectorConfigError.IsNull() && !data.CollectorConfigError.IsUnknown() {
+        filters["collectorConfigError"] = data.CollectorConfigError.ValueString()
+        filterNames = append(filterNames, "collector_config_error = "+fmt.Sprintf("%q", data.CollectorConfigError.ValueString()))
+    }
+    if !data.CollectorFailedConfigHash.IsNull() && !data.CollectorFailedConfigHash.IsUnknown() {
+        filters["collectorFailedConfigHash"] = data.CollectorFailedConfigHash.ValueString()
+        filterNames = append(filterNames, "collector_failed_config_hash = "+fmt.Sprintf("%q", data.CollectorFailedConfigHash.ValueString()))
+    }
+    if !data.IsCollectorHealthy.IsNull() && !data.IsCollectorHealthy.IsUnknown() {
+        filters["isCollectorHealthy"] = data.IsCollectorHealthy.ValueBool()
+        filterNames = append(filterNames, "is_collector_healthy = "+fmt.Sprintf("%t", data.IsCollectorHealthy.ValueBool()))
+    }
+    if !data.CollectorHealthError.IsNull() && !data.CollectorHealthError.IsUnknown() {
+        filters["collectorHealthError"] = data.CollectorHealthError.ValueString()
+        filterNames = append(filterNames, "collector_health_error = "+fmt.Sprintf("%q", data.CollectorHealthError.ValueString()))
+    }
+    if !data.CollectorHostFeatures.IsNull() && !data.CollectorHostFeatures.IsUnknown() {
+        filters["collectorHostFeatures"] = data.CollectorHostFeatures.ValueString()
+        filterNames = append(filterNames, "collector_host_features = "+fmt.Sprintf("%q", data.CollectorHostFeatures.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -525,6 +645,19 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "collectorInstanceUid": true,
+        "collectorLastContactAt": true,
+        "collectorRegisteredAt": true,
+        "collectorConfigId": true,
+        "isCollectorConfigPinned": true,
+        "collectorConfigVersionId": true,
+        "collectorConfigHash": true,
+        "collectorConfigStatus": true,
+        "collectorConfigError": true,
+        "collectorFailedConfigHash": true,
+        "isCollectorHealthy": true,
+        "collectorHealthError": true,
+        "collectorHostFeatures": true,
         "_id": true,
     }
 
@@ -1252,6 +1385,203 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.AiAccessConfiguredAt = types.StringValue(val)
     } else {
         data.AiAccessConfiguredAt = types.StringNull()
+    }
+    if obj, ok := item["collectorInstanceUid"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorInstanceUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorInstanceUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorInstanceUid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorInstanceUid = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorInstanceUid = types.StringNull()
+        }
+    } else if val, ok := item["collectorInstanceUid"].(string); ok {
+        data.CollectorInstanceUid = types.StringValue(val)
+    } else {
+        data.CollectorInstanceUid = types.StringNull()
+    }
+    if obj, ok := item["collectorLastContactAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorLastContactAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorLastContactAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorLastContactAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorLastContactAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorLastContactAt = types.StringNull()
+        }
+    } else if val, ok := item["collectorLastContactAt"].(string); ok {
+        data.CollectorLastContactAt = types.StringValue(val)
+    } else {
+        data.CollectorLastContactAt = types.StringNull()
+    }
+    if obj, ok := item["collectorRegisteredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorRegisteredAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorRegisteredAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorRegisteredAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorRegisteredAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorRegisteredAt = types.StringNull()
+        }
+    } else if val, ok := item["collectorRegisteredAt"].(string); ok {
+        data.CollectorRegisteredAt = types.StringValue(val)
+    } else {
+        data.CollectorRegisteredAt = types.StringNull()
+    }
+    if obj, ok := item["collectorConfigId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorConfigId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorConfigId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorConfigId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorConfigId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorConfigId = types.StringNull()
+        }
+    } else if val, ok := item["collectorConfigId"].(string); ok {
+        data.CollectorConfigId = types.StringValue(val)
+    } else {
+        data.CollectorConfigId = types.StringNull()
+    }
+    if val, ok := item["isCollectorConfigPinned"].(bool); ok {
+        data.IsCollectorConfigPinned = types.BoolValue(val)
+    } else {
+        data.IsCollectorConfigPinned = types.BoolNull()
+    }
+    if obj, ok := item["collectorConfigVersionId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorConfigVersionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorConfigVersionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorConfigVersionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorConfigVersionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorConfigVersionId = types.StringNull()
+        }
+    } else if val, ok := item["collectorConfigVersionId"].(string); ok {
+        data.CollectorConfigVersionId = types.StringValue(val)
+    } else {
+        data.CollectorConfigVersionId = types.StringNull()
+    }
+    if obj, ok := item["collectorConfigHash"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorConfigHash = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorConfigHash = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorConfigHash = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorConfigHash = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorConfigHash = types.StringNull()
+        }
+    } else if val, ok := item["collectorConfigHash"].(string); ok {
+        data.CollectorConfigHash = types.StringValue(val)
+    } else {
+        data.CollectorConfigHash = types.StringNull()
+    }
+    if obj, ok := item["collectorConfigStatus"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorConfigStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorConfigStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorConfigStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorConfigStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorConfigStatus = types.StringNull()
+        }
+    } else if val, ok := item["collectorConfigStatus"].(string); ok {
+        data.CollectorConfigStatus = types.StringValue(val)
+    } else {
+        data.CollectorConfigStatus = types.StringNull()
+    }
+    if obj, ok := item["collectorConfigError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorConfigError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorConfigError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorConfigError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorConfigError = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorConfigError = types.StringNull()
+        }
+    } else if val, ok := item["collectorConfigError"].(string); ok {
+        data.CollectorConfigError = types.StringValue(val)
+    } else {
+        data.CollectorConfigError = types.StringNull()
+    }
+    if obj, ok := item["collectorFailedConfigHash"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorFailedConfigHash = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorFailedConfigHash = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorFailedConfigHash = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorFailedConfigHash = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorFailedConfigHash = types.StringNull()
+        }
+    } else if val, ok := item["collectorFailedConfigHash"].(string); ok {
+        data.CollectorFailedConfigHash = types.StringValue(val)
+    } else {
+        data.CollectorFailedConfigHash = types.StringNull()
+    }
+    if val, ok := item["isCollectorHealthy"].(bool); ok {
+        data.IsCollectorHealthy = types.BoolValue(val)
+    } else {
+        data.IsCollectorHealthy = types.BoolNull()
+    }
+    if obj, ok := item["collectorHealthError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorHealthError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorHealthError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorHealthError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorHealthError = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorHealthError = types.StringNull()
+        }
+    } else if val, ok := item["collectorHealthError"].(string); ok {
+        data.CollectorHealthError = types.StringValue(val)
+    } else {
+        data.CollectorHealthError = types.StringNull()
+    }
+    if obj, ok := item["collectorHostFeatures"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CollectorHostFeatures = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CollectorHostFeatures = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CollectorHostFeatures = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectorHostFeatures = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectorHostFeatures = types.StringNull()
+        }
+    } else if val, ok := item["collectorHostFeatures"].(string); ok {
+        data.CollectorHostFeatures = types.StringValue(val)
+    } else {
+        data.CollectorHostFeatures = types.StringNull()
     }
 
     // Write logs using the tflog package

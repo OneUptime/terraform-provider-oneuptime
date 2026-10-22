@@ -54,6 +54,7 @@ type SecurityCaseDataSourceModel struct {
     ClosedAt types.String `tfsdk:"closed_at"`
     ClosedByUserId types.String `tfsdk:"closed_by_user_id"`
     GroupingKey types.String `tfsdk:"grouping_key"`
+    NotifiedPriority types.String `tfsdk:"notified_priority"`
     IncidentId types.String `tfsdk:"incident_id"`
     Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -187,6 +188,11 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 Optional: true,
                 Computed: true,
             },
+            "notified_priority": schema.StringAttribute{
+                MarkdownDescription: "The highest priority people have been told about this case at. They are told again only when it rises above it.",
+                Optional: true,
+                Computed: true,
+            },
             "incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the OneUptime incident declared for this case. The ID of a `oneuptime_incident`.",
                 Optional: true,
@@ -297,6 +303,10 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["groupingKey"] = data.GroupingKey.ValueString()
         filterNames = append(filterNames, "grouping_key = "+fmt.Sprintf("%q", data.GroupingKey.ValueString()))
     }
+    if !data.NotifiedPriority.IsNull() && !data.NotifiedPriority.IsUnknown() {
+        filters["notifiedPriority"] = data.NotifiedPriority.ValueString()
+        filterNames = append(filterNames, "notified_priority = "+fmt.Sprintf("%q", data.NotifiedPriority.ValueString()))
+    }
     if !data.IncidentId.IsNull() && !data.IncidentId.IsUnknown() {
         filters["incidentId"] = data.IncidentId.ValueString()
         filterNames = append(filterNames, "incident_id = "+fmt.Sprintf("%q", data.IncidentId.ValueString()))
@@ -347,6 +357,7 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         "closedAt": true,
         "closedByUserId": true,
         "groupingKey": true,
+        "notifiedPriority": true,
         "incidentId": true,
         "labels": true,
         "createdByUserId": true,
@@ -820,6 +831,23 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.GroupingKey = types.StringValue(val)
     } else {
         data.GroupingKey = types.StringNull()
+    }
+    if obj, ok := item["notifiedPriority"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NotifiedPriority = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NotifiedPriority = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NotifiedPriority = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotifiedPriority = types.StringNull()
+        }
+    } else if val, ok := item["notifiedPriority"].(string); ok {
+        data.NotifiedPriority = types.StringValue(val)
+    } else {
+        data.NotifiedPriority = types.StringNull()
     }
     if obj, ok := item["incidentId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
