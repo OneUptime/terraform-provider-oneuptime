@@ -28,7 +28,7 @@ data "oneuptime_runner" "by_id" {
 
 ### Optional
 
-- `can_run_ai_commands` (Boolean) Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, SSH, kubectl) that either match an allowlist or wait for one-click human approval. Set by OneUptime: on once an auto remediation rule picks this Runner or a Kubernetes cluster's AI settings bind it, and on for the in-cluster Runner the Kubernetes agent chart installs.
+- `can_run_ai_commands` (Boolean) Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, kubectl) that either match an allowlist or wait for one-click human approval. Set by OneUptime: on once an auto remediation rule picks this Runner, and on for the in-cluster Runner the Kubernetes agent chart installs.
 - `can_run_runbooks` (Boolean) Whether this Runner executes runbook steps. On by default — this is why most Runners are installed. It cannot be turned on for an in-cluster Runner the Kubernetes agent chart registered, which runs kubectl only.
 - `connection_status` (String) Connected if the agent has heartbeated recently.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).

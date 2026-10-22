@@ -28,9 +28,11 @@ data "oneuptime_scheduled_maintenance_state" "by_id" {
 
 ### Optional
 
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_archived` (Boolean) Archived states stay on the maintenance events that are in them, but can't be picked again. The scheduled, ongoing, ended and completed states can't be archived.
 - `is_ended_state` (Boolean) Is this state a ended state?
 - `is_ongoing_state` (Boolean) Is this state a ongoing state?
 - `is_resolved_state` (Boolean) Is this state a resolved state?
@@ -41,6 +43,7 @@ data "oneuptime_scheduled_maintenance_state" "by_id" {
 
 ### Read-Only
 
+- `archived_at` (String) When this scheduled maintenance state was archived. Empty while it is not archived.
 - `color` (String) Color of this resource in Hex (#32a852 for example).
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

@@ -37,7 +37,7 @@ resource "oneuptime_runner" "example" {
 
 ### Read-Only
 
-- `can_run_ai_commands` (Boolean) Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, SSH, kubectl) that either match an allowlist or wait for one-click human approval. Set by OneUptime: on once an auto remediation rule picks this Runner or a Kubernetes cluster's AI settings bind it, and on for the in-cluster Runner the Kubernetes agent chart installs.
+- `can_run_ai_commands` (Boolean) Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, kubectl) that either match an allowlist or wait for one-click human approval. Set by OneUptime: on once an auto remediation rule picks this Runner, and on for the in-cluster Runner the Kubernetes agent chart installs.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `host_info` (String) Self-reported host info (hostname, OS, arch). Updated on each heartbeat. A JSON value: write it with `jsonencode()`.

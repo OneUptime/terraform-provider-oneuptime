@@ -14,6 +14,7 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -45,10 +46,13 @@ type IncidentStateResourceModel struct {
     IsAcknowledgedState types.Bool `tfsdk:"is_acknowledged_state"`
     IsResolvedState types.Bool `tfsdk:"is_resolved_state"`
     Order types.Number `tfsdk:"order"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    ArchivedAt RFC3339Value `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
 }
 
 func (r *IncidentStateResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -130,6 +134,15 @@ func (r *IncidentStateResource) schemaDefinition() schema.Schema {
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Archived states stay on the incidents and episodes that are in them, but can't be picked again. The created, acknowledged and resolved states can't be archived.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -153,6 +166,15 @@ func (r *IncidentStateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "When this incident state was archived. Empty while it is not archived.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Computed: true,
             },
         },
     }
@@ -228,6 +250,9 @@ func (r *IncidentStateResource) Create(ctx context.Context, req resource.CreateR
     if !data.Order.IsNull() && !data.Order.IsUnknown() {
         requestDataMap["order"] = r.bigFloatToFloat64(data.Order.ValueBigFloat())
     }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/incident-state", incidentStateRequest)
@@ -281,10 +306,13 @@ func (r *IncidentStateResource) Create(ctx context.Context, req resource.CreateR
         "isAcknowledgedState": true,
         "isResolvedState": true,
         "order": true,
+        "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "createdByUserId": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
@@ -455,6 +483,9 @@ func (r *IncidentStateResource) Create(ctx context.Context, req resource.CreateR
         data.IsResolvedState = types.BoolNull()
     }
     data.Order = numberFromAPI(data.Order, dataMap["order"])
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -551,6 +582,54 @@ func (r *IncidentStateResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -589,10 +668,13 @@ func (r *IncidentStateResource) Read(ctx context.Context, req resource.ReadReque
         "isAcknowledgedState": true,
         "isResolvedState": true,
         "order": true,
+        "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "createdByUserId": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
@@ -764,6 +846,9 @@ func (r *IncidentStateResource) Read(ctx context.Context, req resource.ReadReque
         data.IsResolvedState = types.BoolNull()
     }
     data.Order = numberFromAPI(data.Order, dataMap["order"])
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -860,6 +945,54 @@ func (r *IncidentStateResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -929,6 +1062,9 @@ func (r *IncidentStateResource) Update(ctx context.Context, req resource.UpdateR
     if !data.Order.IsUnknown() && !state.Order.IsUnknown() && !data.Order.Equal(state.Order) {
         requestDataMap["order"] = r.bigFloatToFloat64(data.Order.ValueBigFloat())
     }
+    if !data.IsArchived.IsUnknown() && !state.IsArchived.IsUnknown() && !data.IsArchived.Equal(state.IsArchived) {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -960,10 +1096,13 @@ func (r *IncidentStateResource) Update(ctx context.Context, req resource.UpdateR
         "isAcknowledgedState": true,
         "isResolvedState": true,
         "order": true,
+        "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "createdByUserId": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
@@ -1129,6 +1268,9 @@ func (r *IncidentStateResource) Update(ctx context.Context, req resource.UpdateR
         data.IsResolvedState = types.BoolNull()
     }
     data.Order = numberFromAPI(data.Order, dataMap["order"])
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1225,6 +1367,54 @@ func (r *IncidentStateResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1296,6 +1486,9 @@ func (r *IncidentStateResource) keepPlannedValues(data *IncidentStateResourceMod
     }
     if config.Order.IsNull() && !plan.Order.IsUnknown() {
         data.Order = plan.Order
+    }
+    if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
+        data.IsArchived = plan.IsArchived
     }
 }
 

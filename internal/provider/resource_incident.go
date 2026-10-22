@@ -76,6 +76,7 @@ type IncidentResourceModel struct {
     NotifySubscribersOnPostmortemPublished types.Bool `tfsdk:"notify_subscribers_on_postmortem_published"`
     PostmortemPostedAt RFC3339Value `tfsdk:"postmortem_posted_at"`
     PostmortemAttachments types.Set `tfsdk:"postmortem_attachments"`
+    PostmortemStatusId types.String `tfsdk:"postmortem_status_id"`
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     TelemetryQuery JSONSubsetValue `tfsdk:"telemetry_query"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
@@ -442,6 +443,14 @@ func (r *IncidentResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
+            "postmortem_status_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the incident's postmortem status. Left out on create, the postmortem starts in the project's not started status - or its draft status when the incident is created with a postmortem note, its completed status when that note is published on a status page. The ID of a `oneuptime_postmortem_status`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "remediation_notes": schema.StringAttribute{
                 MarkdownDescription: "Notes on how to remediate this incident. This is in markdown.",
                 Optional: true,
@@ -779,6 +788,9 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if !data.PostmortemAttachments.IsNull() && !data.PostmortemAttachments.IsUnknown() {
         requestDataMap["postmortemAttachments"] = r.convertTerraformSetToInterface(data.PostmortemAttachments)
     }
+    if !data.PostmortemStatusId.IsNull() && !data.PostmortemStatusId.IsUnknown() {
+        requestDataMap["postmortemStatusId"] = data.PostmortemStatusId.ValueString()
+    }
     if !data.RemediationNotes.IsNull() && !data.RemediationNotes.IsUnknown() {
         requestDataMap["remediationNotes"] = data.RemediationNotes.ValueString()
     }
@@ -878,6 +890,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "notifySubscribersOnPostmortemPublished": true,
         "postmortemPostedAt": true,
         "postmortemAttachments": true,
+        "postmortemStatusId": true,
         "remediationNotes": true,
         "telemetryQuery": true,
         "isVisibleOnStatusPage": true,
@@ -1964,6 +1977,43 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         // For sets, always use empty set instead of null to match default values
         data.PostmortemAttachments = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["postmortemStatusId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PostmortemStatusId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PostmortemStatusId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PostmortemStatusId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PostmortemStatusId = types.StringValue(string(jsonBytes))
+            } else {
+                data.PostmortemStatusId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PostmortemStatusId = types.StringValue(string(jsonBytes))
+            } else {
+                data.PostmortemStatusId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PostmortemStatusId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostmortemStatusId = types.StringNull()
+        }
+    } else if val, ok := dataMap["postmortemStatusId"].(string); ok {
+        data.PostmortemStatusId = types.StringValue(val)
+    } else {
+        data.PostmortemStatusId = types.StringNull()
+    }
     if obj, ok := dataMap["remediationNotes"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2808,6 +2858,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "notifySubscribersOnPostmortemPublished": true,
         "postmortemPostedAt": true,
         "postmortemAttachments": true,
+        "postmortemStatusId": true,
         "remediationNotes": true,
         "telemetryQuery": true,
         "isVisibleOnStatusPage": true,
@@ -3895,6 +3946,43 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         // For sets, always use empty set instead of null to match default values
         data.PostmortemAttachments = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["postmortemStatusId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PostmortemStatusId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PostmortemStatusId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PostmortemStatusId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PostmortemStatusId = types.StringValue(string(jsonBytes))
+            } else {
+                data.PostmortemStatusId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PostmortemStatusId = types.StringValue(string(jsonBytes))
+            } else {
+                data.PostmortemStatusId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PostmortemStatusId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostmortemStatusId = types.StringNull()
+        }
+    } else if val, ok := dataMap["postmortemStatusId"].(string); ok {
+        data.PostmortemStatusId = types.StringValue(val)
+    } else {
+        data.PostmortemStatusId = types.StringNull()
+    }
     if obj, ok := dataMap["remediationNotes"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4823,6 +4911,9 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.PostmortemAttachments.IsUnknown() && !state.PostmortemAttachments.IsUnknown() && !data.PostmortemAttachments.Equal(state.PostmortemAttachments) {
         requestDataMap["postmortemAttachments"] = r.convertTerraformSetToInterface(data.PostmortemAttachments)
     }
+    if !data.PostmortemStatusId.IsUnknown() && !state.PostmortemStatusId.IsUnknown() && !data.PostmortemStatusId.Equal(state.PostmortemStatusId) {
+        requestDataMap["postmortemStatusId"] = data.PostmortemStatusId.ValueString()
+    }
     if !data.RemediationNotes.IsUnknown() && !state.RemediationNotes.IsUnknown() && !data.RemediationNotes.Equal(state.RemediationNotes) {
         requestDataMap["remediationNotes"] = data.RemediationNotes.ValueString()
     }
@@ -4905,6 +4996,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "notifySubscribersOnPostmortemPublished": true,
         "postmortemPostedAt": true,
         "postmortemAttachments": true,
+        "postmortemStatusId": true,
         "remediationNotes": true,
         "telemetryQuery": true,
         "isVisibleOnStatusPage": true,
@@ -5986,6 +6078,43 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         // For sets, always use empty set instead of null to match default values
         data.PostmortemAttachments = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["postmortemStatusId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PostmortemStatusId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PostmortemStatusId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PostmortemStatusId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PostmortemStatusId = types.StringValue(string(jsonBytes))
+            } else {
+                data.PostmortemStatusId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PostmortemStatusId = types.StringValue(string(jsonBytes))
+            } else {
+                data.PostmortemStatusId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PostmortemStatusId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostmortemStatusId = types.StringNull()
+        }
+    } else if val, ok := dataMap["postmortemStatusId"].(string); ok {
+        data.PostmortemStatusId = types.StringValue(val)
+    } else {
+        data.PostmortemStatusId = types.StringNull()
+    }
     if obj, ok := dataMap["remediationNotes"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6919,6 +7048,9 @@ func (r *IncidentResource) keepPlannedValues(data *IncidentResourceModel, plan *
     }
     if config.PostmortemAttachments.IsNull() && !plan.PostmortemAttachments.IsUnknown() {
         data.PostmortemAttachments = plan.PostmortemAttachments
+    }
+    if config.PostmortemStatusId.IsNull() && !plan.PostmortemStatusId.IsUnknown() {
+        data.PostmortemStatusId = plan.PostmortemStatusId
     }
     if config.RemediationNotes.IsNull() && !plan.RemediationNotes.IsUnknown() {
         data.RemediationNotes = plan.RemediationNotes

@@ -82,10 +82,6 @@ type ProjectDataSourceModel struct {
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     LimitIncidentsToOneEpisode types.Bool `tfsdk:"limit_incidents_to_one_episode"`
     LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
-    EnableIncidentInstrumentationFixTasks types.Bool `tfsdk:"enable_incident_instrumentation_fix_tasks"`
-    EnableAlertInstrumentationFixTasks types.Bool `tfsdk:"enable_alert_instrumentation_fix_tasks"`
-    EnableAutomaticIncidentCodeFixes types.Bool `tfsdk:"enable_automatic_incident_code_fixes"`
-    EnableAutomaticAlertCodeFixes types.Bool `tfsdk:"enable_automatic_alert_code_fixes"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
     AutoArchiveNonActionableExceptions types.Bool `tfsdk:"auto_archive_non_actionable_exceptions"`
@@ -378,12 +374,12 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "enable_automatic_incident_remediation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime fixes new incidents automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which incidents are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the incident settles first. Requires AI to be enabled. It also holds the incident pull-request switches, enableAutomaticIncidentCodeFixes and enableIncidentInstrumentationFixTasks: they open pull requests only while this is on. The dashboard turns them on and off with it; through the API, set them in the same request.",
+                MarkdownDescription: "When enabled, OneUptime fixes new incidents automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which incidents are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the incident settles first. Requires AI to be enabled. Fix and telemetry pull requests open only while this is on, as each Auto Remediation Rule says (openCodeFixPullRequests, openTelemetryPullRequests - on by default, and on with no rule).",
                 Optional: true,
                 Computed: true,
             },
             "enable_automatic_alert_remediation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime fixes new alerts automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which alerts are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the alert settles first. Requires AI to be enabled. It also holds the alert pull-request switches, enableAutomaticAlertCodeFixes and enableAlertInstrumentationFixTasks: they open pull requests only while this is on. The dashboard turns them on and off with it; through the API, set them in the same request.",
+                MarkdownDescription: "When enabled, OneUptime fixes new alerts automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which alerts are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the alert settles first. Requires AI to be enabled. Fix and telemetry pull requests open only while this is on, as each Auto Remediation Rule says (openCodeFixPullRequests, openTelemetryPullRequests - on by default, and on with no rule).",
                 Optional: true,
                 Computed: true,
             },
@@ -409,26 +405,6 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "limit_alerts_to_one_episode": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, an alert can be in only one alert episode: adding an alert that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Alerts that are already in several episodes stay in them. Off by default.",
-                Optional: true,
-                Computed: true,
-            },
-            "enable_incident_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an incident AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticIncidentRemediation (Fix new incidents automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
-                Optional: true,
-                Computed: true,
-            },
-            "enable_alert_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticAlertRemediation (Fix new alerts automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
-                Optional: true,
-                Computed: true,
-            },
-            "enable_automatic_incident_code_fixes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an incident AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticIncidentRemediation (Fix new incidents automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
-                Optional: true,
-                Computed: true,
-            },
-            "enable_automatic_alert_code_fixes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticAlertRemediation (Fix new alerts automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
                 Optional: true,
                 Computed: true,
             },
@@ -867,22 +843,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["limitAlertsToOneEpisode"] = data.LimitAlertsToOneEpisode.ValueBool()
         filterNames = append(filterNames, "limit_alerts_to_one_episode = "+fmt.Sprintf("%t", data.LimitAlertsToOneEpisode.ValueBool()))
     }
-    if !data.EnableIncidentInstrumentationFixTasks.IsNull() && !data.EnableIncidentInstrumentationFixTasks.IsUnknown() {
-        filters["enableIncidentInstrumentationFixTasks"] = data.EnableIncidentInstrumentationFixTasks.ValueBool()
-        filterNames = append(filterNames, "enable_incident_instrumentation_fix_tasks = "+fmt.Sprintf("%t", data.EnableIncidentInstrumentationFixTasks.ValueBool()))
-    }
-    if !data.EnableAlertInstrumentationFixTasks.IsNull() && !data.EnableAlertInstrumentationFixTasks.IsUnknown() {
-        filters["enableAlertInstrumentationFixTasks"] = data.EnableAlertInstrumentationFixTasks.ValueBool()
-        filterNames = append(filterNames, "enable_alert_instrumentation_fix_tasks = "+fmt.Sprintf("%t", data.EnableAlertInstrumentationFixTasks.ValueBool()))
-    }
-    if !data.EnableAutomaticIncidentCodeFixes.IsNull() && !data.EnableAutomaticIncidentCodeFixes.IsUnknown() {
-        filters["enableAutomaticIncidentCodeFixes"] = data.EnableAutomaticIncidentCodeFixes.ValueBool()
-        filterNames = append(filterNames, "enable_automatic_incident_code_fixes = "+fmt.Sprintf("%t", data.EnableAutomaticIncidentCodeFixes.ValueBool()))
-    }
-    if !data.EnableAutomaticAlertCodeFixes.IsNull() && !data.EnableAutomaticAlertCodeFixes.IsUnknown() {
-        filters["enableAutomaticAlertCodeFixes"] = data.EnableAutomaticAlertCodeFixes.ValueBool()
-        filterNames = append(filterNames, "enable_automatic_alert_code_fixes = "+fmt.Sprintf("%t", data.EnableAutomaticAlertCodeFixes.ValueBool()))
-    }
     if !data.EnableAiInsights.IsNull() && !data.EnableAiInsights.IsUnknown() {
         filters["enableAiInsights"] = data.EnableAiInsights.ValueBool()
         filterNames = append(filterNames, "enable_ai_insights = "+fmt.Sprintf("%t", data.EnableAiInsights.ValueBool()))
@@ -1099,10 +1059,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
-        "enableIncidentInstrumentationFixTasks": true,
-        "enableAlertInstrumentationFixTasks": true,
-        "enableAutomaticIncidentCodeFixes": true,
-        "enableAutomaticAlertCodeFixes": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
         "autoArchiveNonActionableExceptions": true,
@@ -1697,26 +1653,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.LimitAlertsToOneEpisode = types.BoolValue(val)
     } else {
         data.LimitAlertsToOneEpisode = types.BoolNull()
-    }
-    if val, ok := item["enableIncidentInstrumentationFixTasks"].(bool); ok {
-        data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
-    } else {
-        data.EnableIncidentInstrumentationFixTasks = types.BoolNull()
-    }
-    if val, ok := item["enableAlertInstrumentationFixTasks"].(bool); ok {
-        data.EnableAlertInstrumentationFixTasks = types.BoolValue(val)
-    } else {
-        data.EnableAlertInstrumentationFixTasks = types.BoolNull()
-    }
-    if val, ok := item["enableAutomaticIncidentCodeFixes"].(bool); ok {
-        data.EnableAutomaticIncidentCodeFixes = types.BoolValue(val)
-    } else {
-        data.EnableAutomaticIncidentCodeFixes = types.BoolNull()
-    }
-    if val, ok := item["enableAutomaticAlertCodeFixes"].(bool); ok {
-        data.EnableAutomaticAlertCodeFixes = types.BoolValue(val)
-    } else {
-        data.EnableAutomaticAlertCodeFixes = types.BoolNull()
     }
     if val, ok := item["enableAiInsights"].(bool); ok {
         data.EnableAiInsights = types.BoolValue(val)

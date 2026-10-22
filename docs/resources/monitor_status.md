@@ -29,12 +29,15 @@ resource "oneuptime_monitor_status" "example" {
 ### Optional
 
 - `description` (String) Friendly description that will help you remember.
+- `is_archived` (Boolean) Archived statuses stay on the monitors that are in them, but can't be picked again. The operational and offline statuses can't be archived. Defaults to `false`.
 - `is_offline_state` (Boolean) Is this monitor in offline state? Defaults to `false`.
 - `is_operational_state` (Boolean) Is this monitor in operational state? Defaults to `false`.
 - `priority` (Number) Where this status sits in the project's list of monitor statuses, from the healthiest (the lowest number) down to the worst: where monitors are shown together, as on a status page or in a monitor group, the status furthest down the list wins. A new status without a number goes just above the offline status. Setting a number moves the status to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
 
 ### Read-Only
 
+- `archived_at` (String) When this monitor status was archived. Empty while it is not archived.
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.

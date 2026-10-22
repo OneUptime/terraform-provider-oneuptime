@@ -49,6 +49,7 @@ data "oneuptime_incident" "by_id" {
 - `is_visible_on_status_page` (Boolean) Should this incident be visible on the status page?
 - `notify_subscribers_on_postmortem_published` (Boolean) Should subscribers be notified when the postmortem is published?
 - `postmortem_note` (String) Document the postmortem summary for this incident.
+- `postmortem_status_id` (String) ID of the incident's postmortem status. Left out on create, the postmortem starts in the project's not started status - or its draft status when the incident is created with a postmortem note, its completed status when that note is published on a status page. The ID of a `oneuptime_postmortem_status`.
 - `remediation_notes` (String) Notes on how to remediate this incident. This is in markdown.
 - `reminder_notification_sent_count` (Number) How many reminder notifications have been sent to owners of this incident so far.
 - `root_cause` (String) What is the root cause of this incident?

@@ -41,6 +41,7 @@ data "oneuptime_investigation_rule" "by_id" {
 ### Read-Only
 
 - `alert_severities` (Set of String) Match only alerts with these severities (alert rules only). Leave empty to match any severity. IDs of `oneuptime_alert_severity` resources.
+- `code_repositories` (Set of String) The code repositories OneUptime AI may read while it investigates what this rule matches. Leave empty to let it read every repository the project has connected. IDs of `oneuptime_code_repository` resources.
 - `created_at` (String) Date and Time when the object was created.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `external_mcp_servers` (Set of String) The external MCP servers OneUptime AI may use while it investigates what this rule matches. Leave empty to let it use all of the project's MCP servers. IDs of `oneuptime_external_mcp_server` resources.

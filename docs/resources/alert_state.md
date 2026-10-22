@@ -30,12 +30,15 @@ resource "oneuptime_alert_state" "example" {
 
 - `description` (String) Friendly description that will help you remember.
 - `is_acknowledged_state` (Boolean) Is it the acknowledged state of the alert?
+- `is_archived` (Boolean) Archived states stay on the alerts and episodes that are in them, but can't be picked again. The created, acknowledged and resolved states can't be archived. Defaults to `false`.
 - `is_created_state` (Boolean) Is it the created state of the alert?
 - `is_resolved_state` (Boolean) Is it the resolved state of the alert?
 - `order` (Number) Where this state sits in the project's list of alert states: 1 is the top. Alerts only ever move down the list, and an alert in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
 
 ### Read-Only
 
+- `archived_at` (String) When this alert state was archived. Empty while it is not archived.
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.

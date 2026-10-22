@@ -38,6 +38,9 @@ type AlertStateDataSourceModel struct {
     IsAcknowledgedState types.Bool `tfsdk:"is_acknowledged_state"`
     IsResolvedState types.Bool `tfsdk:"is_resolved_state"`
     Order types.Number `tfsdk:"order"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
 }
 
 func (d *AlertStateDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -46,7 +49,7 @@ func (d *AlertStateDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *AlertStateDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage alert states for your project (Created, Acknowledged for example). Add / edit or remove states. Look up an existing alert state by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one alert state may match them all.",
+        MarkdownDescription: "Manage alert states for your project (Created, Acknowledged for example). Add / edit or remove states. Look up an existing alert state by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one alert state may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -102,6 +105,20 @@ func (d *AlertStateDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Where this state sits in the project's list of alert states: 1 is the top. Alerts only ever move down the list, and an alert in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Archived states stay on the alerts and episodes that are in them, but can't be picked again. The created, acknowledged and resolved states can't be archived.",
+                Optional: true,
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "When this alert state was archived. Empty while it is not archived.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
             },
@@ -172,6 +189,14 @@ func (d *AlertStateDataSource) Read(ctx context.Context, req datasource.ReadRequ
         filters["order"] = lookupNumber(data.Order)
         filterNames = append(filterNames, "order = "+data.Order.ValueBigFloat().String())
     }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -200,6 +225,9 @@ func (d *AlertStateDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "isAcknowledgedState": true,
         "isResolvedState": true,
         "order": true,
+        "isArchived": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
@@ -413,6 +441,45 @@ func (d *AlertStateDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.IsResolvedState = types.BoolNull()
     }
     data.Order = numberFromAPI(data.Order, item["order"])
+    if val, ok := item["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    } else {
+        data.IsArchived = types.BoolNull()
+    }
+    if obj, ok := item["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
+    } else if val, ok := item["archivedAt"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    } else {
+        data.ArchivedAt = types.StringNull()
+    }
+    if obj, ok := item["archivedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

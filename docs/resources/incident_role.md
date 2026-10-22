@@ -30,10 +30,13 @@ resource "oneuptime_incident_role" "example" {
 
 - `can_assign_multiple_users` (Boolean) Can multiple users be assigned to this role? If false, only one user can be assigned.
 - `description` (String) Friendly description that will help you remember.
+- `is_archived` (Boolean) Archived roles stay on the incidents people hold them on, but nobody can be given them again. The primary role can't be archived. Defaults to `false`.
 - `role_icon` (String) Icon for this incident role (e.g., User, Shield, etc.).
 
 ### Read-Only
 
+- `archived_at` (String) When this incident role was archived. Empty while it is not archived.
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.

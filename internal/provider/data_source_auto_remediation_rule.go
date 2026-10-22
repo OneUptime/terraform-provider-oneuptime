@@ -53,6 +53,9 @@ type AutoRemediationRuleDataSourceModel struct {
     Runbooks types.Set `tfsdk:"runbooks"`
     ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
     RunnerId types.String `tfsdk:"runner_id"`
+    CodeRepositories types.Set `tfsdk:"code_repositories"`
+    OpenCodeFixPullRequests types.Bool `tfsdk:"open_code_fix_pull_requests"`
+    OpenTelemetryPullRequests types.Bool `tfsdk:"open_telemetry_pull_requests"`
     VerificationWindowMinutes types.Number `tfsdk:"verification_window_minutes"`
     AutoResolveOnVerifiedRecovery types.Bool `tfsdk:"auto_resolve_on_verified_recovery"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -64,7 +67,7 @@ func (d *AutoRemediationRuleDataSource) Metadata(ctx context.Context, req dataso
 
 func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Which new incidents or alerts OneUptime AI fixes automatically, and whether it asks first. It may run the project's runbooks (only the rule's, when it names some), commands on a Runner the rule picks, and the tools of the project's external MCP servers (only the rule's, when it names some). With no rule, OneUptime AI fixes every one while automatic fixing is on. Look up an existing auto remediation rule by `id`, or by any of its other arguments (`name`, `ai_composes_commands`, `ai_selects_runbook`, ...): each one set must match, and exactly one auto remediation rule may match them all.",
+        MarkdownDescription: "Which new incidents or alerts OneUptime AI fixes automatically, and whether it asks first. It may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI fixes every one while automatic fixing is on, pull requests included. Look up an existing auto remediation rule by `id`, or by any of its other arguments (`name`, `ai_composes_commands`, `ai_selects_runbook`, ...): each one set must match, and exactly one auto remediation rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -124,7 +127,7 @@ func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "ai_composes_commands": schema.BoolAttribute{
-                MarkdownDescription: "Kept for rules saved before rules were simplified: the AI investigates the incident/alert and composes Bash/SSH commands for the rule's Runner and Command Runners, and the rule does nothing else. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. A OneUptime AI rule now composes commands on its Runner when it picks one, so new rules leave this off.",
+                MarkdownDescription: "Kept for rules saved before rules were simplified: the AI investigates the incident/alert and composes Bash commands for the rule's Runner and Command Runners, and the rule does nothing else. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. A OneUptime AI rule now composes commands on its Runner when it picks one, so new rules leave this off.",
                 Optional: true,
                 Computed: true,
             },
@@ -183,7 +186,22 @@ func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasour
                 ElementType: types.StringType,
             },
             "runner_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the Runner OneUptime AI runs this rule's commands on: one of the project's own Runners. Empty means none: OneUptime AI fixes through the AI agent on the affected Kubernetes cluster or host. The ID of a `oneuptime_runner`.",
+                MarkdownDescription: "ID of the Runner OneUptime AI runs this rule's Bash commands on: one of the project's own Runners. Empty means none: OneUptime AI runs no commands of its own for the rule. Commands on the affected Kubernetes cluster or host always go through its AI agent. The ID of a `oneuptime_runner`.",
+                Optional: true,
+                Computed: true,
+            },
+            "code_repositories": schema.SetAttribute{
+                MarkdownDescription: "The code repositories OneUptime AI may read while it fixes what this rule matches, and open the rule's pull requests in. Leave empty to let it use every repository the project has connected. IDs of `oneuptime_code_repository` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "open_code_fix_pull_requests": schema.BoolAttribute{
+                MarkdownDescription: "When an investigation of an incident or alert this rule matches finds the cause in your code, OneUptime AI opens a pull request with the fix, for review. Nothing is merged. Acts only while fixing new incidents (or alerts) automatically is on. On by default.",
+                Optional: true,
+                Computed: true,
+            },
+            "open_telemetry_pull_requests": schema.BoolAttribute{
+                MarkdownDescription: "When missing logs, traces or metrics stop an investigation of an incident or alert this rule matches, OneUptime AI opens a pull request that adds them, for review. Nothing is merged. Acts only while fixing new incidents (or alerts) automatically is on. On by default.",
                 Optional: true,
                 Computed: true,
             },
@@ -285,6 +303,14 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         filters["runnerId"] = data.RunnerId.ValueString()
         filterNames = append(filterNames, "runner_id = "+fmt.Sprintf("%q", data.RunnerId.ValueString()))
     }
+    if !data.OpenCodeFixPullRequests.IsNull() && !data.OpenCodeFixPullRequests.IsUnknown() {
+        filters["openCodeFixPullRequests"] = data.OpenCodeFixPullRequests.ValueBool()
+        filterNames = append(filterNames, "open_code_fix_pull_requests = "+fmt.Sprintf("%t", data.OpenCodeFixPullRequests.ValueBool()))
+    }
+    if !data.OpenTelemetryPullRequests.IsNull() && !data.OpenTelemetryPullRequests.IsUnknown() {
+        filters["openTelemetryPullRequests"] = data.OpenTelemetryPullRequests.ValueBool()
+        filterNames = append(filterNames, "open_telemetry_pull_requests = "+fmt.Sprintf("%t", data.OpenTelemetryPullRequests.ValueBool()))
+    }
     if !data.VerificationWindowMinutes.IsNull() && !data.VerificationWindowMinutes.IsUnknown() {
         filters["verificationWindowMinutes"] = lookupNumber(data.VerificationWindowMinutes)
         filterNames = append(filterNames, "verification_window_minutes = "+data.VerificationWindowMinutes.ValueBigFloat().String())
@@ -338,6 +364,9 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         "runbooks": true,
         "externalMcpServers": true,
         "runnerId": true,
+        "codeRepositories": true,
+        "openCodeFixPullRequests": true,
+        "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
         "autoResolveOnVerifiedRecovery": true,
         "createdByUserId": true,
@@ -846,6 +875,40 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         data.RunnerId = types.StringValue(val)
     } else {
         data.RunnerId = types.StringNull()
+    }
+    if val, ok := item["codeRepositories"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.CodeRepositories = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.CodeRepositories = types.SetNull(types.StringType)
+    }
+    if val, ok := item["openCodeFixPullRequests"].(bool); ok {
+        data.OpenCodeFixPullRequests = types.BoolValue(val)
+    } else {
+        data.OpenCodeFixPullRequests = types.BoolNull()
+    }
+    if val, ok := item["openTelemetryPullRequests"].(bool); ok {
+        data.OpenTelemetryPullRequests = types.BoolValue(val)
+    } else {
+        data.OpenTelemetryPullRequests = types.BoolNull()
     }
     data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, item["verificationWindowMinutes"])
     if val, ok := item["autoResolveOnVerifiedRecovery"].(bool); ok {

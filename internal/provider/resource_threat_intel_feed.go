@@ -16,6 +16,7 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberdefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -42,7 +43,11 @@ type ThreatIntelFeedResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Name JSONSubsetValue `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
+    FeedType types.String `tfsdk:"feed_type"`
     ApiRootUrl types.String `tfsdk:"api_root_url"`
+    ListUrl types.String `tfsdk:"list_url"`
+    IndicatorConfidence types.Number `tfsdk:"indicator_confidence"`
+    SecurityEventConnectionId types.String `tfsdk:"security_event_connection_id"`
     CollectionId types.String `tfsdk:"collection_id"`
     ApiToken types.String `tfsdk:"api_token"`
     BasicAuthUsername types.String `tfsdk:"basic_auth_username"`
@@ -79,7 +84,7 @@ func (r *ThreatIntelFeedResource) Schema(ctx context.Context, req resource.Schem
 
 func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "STIX/TAXII 2.1 threat-intelligence feeds. Indicators are polled on an interval and matched against incoming security events.",
+        MarkdownDescription: "Threat-intelligence feeds: TAXII 2.1 collections, lists of indicators and Google SecOps. Indicators are polled and matched against security events.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -112,13 +117,54 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "feed_type": schema.StringAttribute{
+                MarkdownDescription: "Where the indicators come from: a TAXII 2.1 collection (taxii), a list at an https address (list) or Google SecOps (google-secops).",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("taxii"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "api_root_url": schema.StringAttribute{
                 MarkdownDescription: "The TAXII 2.1 API root, e.g. https://taxii.example.com/api1/. Collections are addressed beneath it.",
-                Required: true,
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "list_url": schema.StringAttribute{
+                MarkdownDescription: "For a list feed: the https address of the list, one IP address, domain, URL or file hash a line.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "indicator_confidence": schema.NumberAttribute{
+                MarkdownDescription: "For a list feed: how sure the list is, 1 to 100, given to each of its indicators. It sets the severity of a match.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "security_event_connection_id": schema.StringAttribute{
+                MarkdownDescription: "For a Google SecOps feed: the ID of the connection whose key reads Google SecOps's indicator matches. The ID of a `oneuptime_security_event_connection`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "collection_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the TAXII collection to poll for indicator objects.",
-                Required: true,
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "api_token": schema.StringAttribute{
                 MarkdownDescription: "Bearer token for token-authenticated collections. Encrypted at rest and never returned by the API. Leave empty for anonymous or basic-auth collections.",
@@ -236,7 +282,7 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "cursor": schema.StringAttribute{
-                MarkdownDescription: "Poll cursor: the TAXII added_after timestamp already ingested, as an ISO string.",
+                MarkdownDescription: "Poll cursor: for a TAXII feed the added_after timestamp already ingested, for a list feed the hash of the list last written and when, for a Google SecOps feed the end of the window last read.",
                 Computed: true,
             },
             "next_page_token": schema.StringAttribute{
@@ -331,8 +377,20 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
     }
+    if !data.FeedType.IsNull() && !data.FeedType.IsUnknown() {
+        requestDataMap["feedType"] = data.FeedType.ValueString()
+    }
     if !data.ApiRootUrl.IsNull() && !data.ApiRootUrl.IsUnknown() {
         requestDataMap["apiRootUrl"] = data.ApiRootUrl.ValueString()
+    }
+    if !data.ListUrl.IsNull() && !data.ListUrl.IsUnknown() {
+        requestDataMap["listUrl"] = data.ListUrl.ValueString()
+    }
+    if !data.IndicatorConfidence.IsNull() && !data.IndicatorConfidence.IsUnknown() {
+        requestDataMap["indicatorConfidence"] = r.bigFloatToFloat64(data.IndicatorConfidence.ValueBigFloat())
+    }
+    if !data.SecurityEventConnectionId.IsNull() && !data.SecurityEventConnectionId.IsUnknown() {
+        requestDataMap["securityEventConnectionId"] = data.SecurityEventConnectionId.ValueString()
     }
     if !data.CollectionId.IsNull() && !data.CollectionId.IsUnknown() {
         requestDataMap["collectionId"] = data.CollectionId.ValueString()
@@ -421,7 +479,11 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
         "projectId": true,
         "name": true,
         "description": true,
+        "feedType": true,
         "apiRootUrl": true,
+        "listUrl": true,
+        "indicatorConfidence": true,
+        "securityEventConnectionId": true,
         "collectionId": true,
         "basicAuthUsername": true,
         "isEnabled": true,
@@ -561,6 +623,43 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.Description = types.StringNull()
     }
+    if obj, ok := dataMap["feedType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FeedType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FeedType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FeedType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FeedType = types.StringValue(string(jsonBytes))
+            } else {
+                data.FeedType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FeedType = types.StringValue(string(jsonBytes))
+            } else {
+                data.FeedType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FeedType = types.StringValue(string(jsonBytes))
+        } else {
+            data.FeedType = types.StringNull()
+        }
+    } else if val, ok := dataMap["feedType"].(string); ok {
+        data.FeedType = types.StringValue(val)
+    } else {
+        data.FeedType = types.StringNull()
+    }
     if obj, ok := dataMap["apiRootUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -597,6 +696,81 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
         data.ApiRootUrl = types.StringValue(val)
     } else {
         data.ApiRootUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["listUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ListUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ListUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ListUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ListUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ListUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ListUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ListUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ListUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.ListUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["listUrl"].(string); ok {
+        data.ListUrl = types.StringValue(val)
+    } else {
+        data.ListUrl = types.StringNull()
+    }
+    data.IndicatorConfidence = numberFromAPI(data.IndicatorConfidence, dataMap["indicatorConfidence"])
+    if obj, ok := dataMap["securityEventConnectionId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityEventConnectionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SecurityEventConnectionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityEventConnectionId = types.StringNull()
+        }
+    } else if val, ok := dataMap["securityEventConnectionId"].(string); ok {
+        data.SecurityEventConnectionId = types.StringValue(val)
+    } else {
+        data.SecurityEventConnectionId = types.StringNull()
     }
     if obj, ok := dataMap["collectionId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1073,7 +1247,11 @@ func (r *ThreatIntelFeedResource) Read(ctx context.Context, req resource.ReadReq
         "projectId": true,
         "name": true,
         "description": true,
+        "feedType": true,
         "apiRootUrl": true,
+        "listUrl": true,
+        "indicatorConfidence": true,
+        "securityEventConnectionId": true,
         "collectionId": true,
         "basicAuthUsername": true,
         "isEnabled": true,
@@ -1214,6 +1392,43 @@ func (r *ThreatIntelFeedResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.Description = types.StringNull()
     }
+    if obj, ok := dataMap["feedType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FeedType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FeedType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FeedType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FeedType = types.StringValue(string(jsonBytes))
+            } else {
+                data.FeedType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FeedType = types.StringValue(string(jsonBytes))
+            } else {
+                data.FeedType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FeedType = types.StringValue(string(jsonBytes))
+        } else {
+            data.FeedType = types.StringNull()
+        }
+    } else if val, ok := dataMap["feedType"].(string); ok {
+        data.FeedType = types.StringValue(val)
+    } else {
+        data.FeedType = types.StringNull()
+    }
     if obj, ok := dataMap["apiRootUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1250,6 +1465,81 @@ func (r *ThreatIntelFeedResource) Read(ctx context.Context, req resource.ReadReq
         data.ApiRootUrl = types.StringValue(val)
     } else {
         data.ApiRootUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["listUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ListUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ListUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ListUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ListUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ListUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ListUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ListUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ListUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.ListUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["listUrl"].(string); ok {
+        data.ListUrl = types.StringValue(val)
+    } else {
+        data.ListUrl = types.StringNull()
+    }
+    data.IndicatorConfidence = numberFromAPI(data.IndicatorConfidence, dataMap["indicatorConfidence"])
+    if obj, ok := dataMap["securityEventConnectionId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityEventConnectionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SecurityEventConnectionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityEventConnectionId = types.StringNull()
+        }
+    } else if val, ok := dataMap["securityEventConnectionId"].(string); ok {
+        data.SecurityEventConnectionId = types.StringValue(val)
+    } else {
+        data.SecurityEventConnectionId = types.StringNull()
     }
     if obj, ok := dataMap["collectionId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1747,8 +2037,20 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
     }
+    if !data.FeedType.IsUnknown() && !state.FeedType.IsUnknown() && !data.FeedType.Equal(state.FeedType) {
+        requestDataMap["feedType"] = data.FeedType.ValueString()
+    }
     if !data.ApiRootUrl.IsUnknown() && !state.ApiRootUrl.IsUnknown() && !data.ApiRootUrl.Equal(state.ApiRootUrl) {
         requestDataMap["apiRootUrl"] = data.ApiRootUrl.ValueString()
+    }
+    if !data.ListUrl.IsUnknown() && !state.ListUrl.IsUnknown() && !data.ListUrl.Equal(state.ListUrl) {
+        requestDataMap["listUrl"] = data.ListUrl.ValueString()
+    }
+    if !data.IndicatorConfidence.IsUnknown() && !state.IndicatorConfidence.IsUnknown() && !data.IndicatorConfidence.Equal(state.IndicatorConfidence) {
+        requestDataMap["indicatorConfidence"] = r.bigFloatToFloat64(data.IndicatorConfidence.ValueBigFloat())
+    }
+    if !data.SecurityEventConnectionId.IsUnknown() && !state.SecurityEventConnectionId.IsUnknown() && !data.SecurityEventConnectionId.Equal(state.SecurityEventConnectionId) {
+        requestDataMap["securityEventConnectionId"] = data.SecurityEventConnectionId.ValueString()
     }
     if !data.CollectionId.IsUnknown() && !state.CollectionId.IsUnknown() && !data.CollectionId.Equal(state.CollectionId) {
         requestDataMap["collectionId"] = data.CollectionId.ValueString()
@@ -1815,7 +2117,11 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
         "projectId": true,
         "name": true,
         "description": true,
+        "feedType": true,
         "apiRootUrl": true,
+        "listUrl": true,
+        "indicatorConfidence": true,
+        "securityEventConnectionId": true,
         "collectionId": true,
         "basicAuthUsername": true,
         "isEnabled": true,
@@ -1950,6 +2256,43 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.Description = types.StringNull()
     }
+    if obj, ok := dataMap["feedType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FeedType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FeedType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FeedType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FeedType = types.StringValue(string(jsonBytes))
+            } else {
+                data.FeedType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FeedType = types.StringValue(string(jsonBytes))
+            } else {
+                data.FeedType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FeedType = types.StringValue(string(jsonBytes))
+        } else {
+            data.FeedType = types.StringNull()
+        }
+    } else if val, ok := dataMap["feedType"].(string); ok {
+        data.FeedType = types.StringValue(val)
+    } else {
+        data.FeedType = types.StringNull()
+    }
     if obj, ok := dataMap["apiRootUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1986,6 +2329,81 @@ func (r *ThreatIntelFeedResource) Update(ctx context.Context, req resource.Updat
         data.ApiRootUrl = types.StringValue(val)
     } else {
         data.ApiRootUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["listUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ListUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ListUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ListUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ListUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ListUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ListUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ListUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ListUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.ListUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["listUrl"].(string); ok {
+        data.ListUrl = types.StringValue(val)
+    } else {
+        data.ListUrl = types.StringNull()
+    }
+    data.IndicatorConfidence = numberFromAPI(data.IndicatorConfidence, dataMap["indicatorConfidence"])
+    if obj, ok := dataMap["securityEventConnectionId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityEventConnectionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SecurityEventConnectionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityEventConnectionId = types.StringNull()
+        }
+    } else if val, ok := dataMap["securityEventConnectionId"].(string); ok {
+        data.SecurityEventConnectionId = types.StringValue(val)
+    } else {
+        data.SecurityEventConnectionId = types.StringNull()
     }
     if obj, ok := dataMap["collectionId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2488,6 +2906,24 @@ func (r *ThreatIntelFeedResource) ImportState(ctx context.Context, req resource.
 func (r *ThreatIntelFeedResource) keepPlannedValues(data *ThreatIntelFeedResourceModel, plan *ThreatIntelFeedResourceModel, config *ThreatIntelFeedResourceModel) {
     if config.Description.IsNull() && !plan.Description.IsUnknown() {
         data.Description = plan.Description
+    }
+    if config.FeedType.IsNull() && !plan.FeedType.IsUnknown() {
+        data.FeedType = plan.FeedType
+    }
+    if config.ApiRootUrl.IsNull() && !plan.ApiRootUrl.IsUnknown() {
+        data.ApiRootUrl = plan.ApiRootUrl
+    }
+    if config.ListUrl.IsNull() && !plan.ListUrl.IsUnknown() {
+        data.ListUrl = plan.ListUrl
+    }
+    if config.IndicatorConfidence.IsNull() && !plan.IndicatorConfidence.IsUnknown() {
+        data.IndicatorConfidence = plan.IndicatorConfidence
+    }
+    if config.SecurityEventConnectionId.IsNull() && !plan.SecurityEventConnectionId.IsUnknown() {
+        data.SecurityEventConnectionId = plan.SecurityEventConnectionId
+    }
+    if config.CollectionId.IsNull() && !plan.CollectionId.IsUnknown() {
+        data.CollectionId = plan.CollectionId
     }
     if config.BasicAuthUsername.IsNull() && !plan.BasicAuthUsername.IsUnknown() {
         data.BasicAuthUsername = plan.BasicAuthUsername

@@ -39,6 +39,9 @@ type IncidentRoleDataSourceModel struct {
     IsPrimaryRole types.Bool `tfsdk:"is_primary_role"`
     IsDeleteable types.Bool `tfsdk:"is_deleteable"`
     CanAssignMultipleUsers types.Bool `tfsdk:"can_assign_multiple_users"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
 }
 
 func (d *IncidentRoleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -47,7 +50,7 @@ func (d *IncidentRoleDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *IncidentRoleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage incident roles for your project (Incident Commander, Responder, etc.). Add, edit, or remove roles. Look up an existing incident role by `id`, or by any of its other arguments (`name`, `can_assign_multiple_users`, `created_by_user_id`, ...): each one set must match, and exactly one incident role may match them all.",
+        MarkdownDescription: "Manage incident roles for your project (Incident Commander, Responder, etc.). Add, edit, or remove roles. Look up an existing incident role by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `can_assign_multiple_users`, ...): each one set must match, and exactly one incident role may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -108,6 +111,20 @@ func (d *IncidentRoleDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "can_assign_multiple_users": schema.BoolAttribute{
                 MarkdownDescription: "Can multiple users be assigned to this role? If false, only one user can be assigned.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Archived roles stay on the incidents people hold them on, but nobody can be given them again. The primary role can't be archived.",
+                Optional: true,
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "When this incident role was archived. Empty while it is not archived.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
             },
@@ -182,6 +199,14 @@ func (d *IncidentRoleDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["canAssignMultipleUsers"] = data.CanAssignMultipleUsers.ValueBool()
         filterNames = append(filterNames, "can_assign_multiple_users = "+fmt.Sprintf("%t", data.CanAssignMultipleUsers.ValueBool()))
     }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -211,6 +236,9 @@ func (d *IncidentRoleDataSource) Read(ctx context.Context, req datasource.ReadRe
         "isPrimaryRole": true,
         "isDeleteable": true,
         "canAssignMultipleUsers": true,
+        "isArchived": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
@@ -456,6 +484,45 @@ func (d *IncidentRoleDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.CanAssignMultipleUsers = types.BoolValue(val)
     } else {
         data.CanAssignMultipleUsers = types.BoolNull()
+    }
+    if val, ok := item["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    } else {
+        data.IsArchived = types.BoolNull()
+    }
+    if obj, ok := item["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
+    } else if val, ok := item["archivedAt"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    } else {
+        data.ArchivedAt = types.StringNull()
+    }
+    if obj, ok := item["archivedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

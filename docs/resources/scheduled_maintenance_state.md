@@ -29,6 +29,7 @@ resource "oneuptime_scheduled_maintenance_state" "example" {
 ### Optional
 
 - `description` (String) Friendly description that will help you remember.
+- `is_archived` (Boolean) Archived states stay on the maintenance events that are in them, but can't be picked again. The scheduled, ongoing, ended and completed states can't be archived. Defaults to `false`.
 - `is_ended_state` (Boolean) Is this state a ended state? Defaults to `false`.
 - `is_ongoing_state` (Boolean) Is this state a ongoing state? Defaults to `false`.
 - `is_resolved_state` (Boolean) Is this state a resolved state? Defaults to `false`.
@@ -37,6 +38,8 @@ resource "oneuptime_scheduled_maintenance_state" "example" {
 
 ### Read-Only
 
+- `archived_at` (String) When this scheduled maintenance state was archived. Empty while it is not archived.
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.

@@ -46,6 +46,7 @@ type InvestigationRuleDataSourceModel struct {
     DescriptionPattern types.String `tfsdk:"description_pattern"`
     OnlyIfOpenAfterMinutes types.Number `tfsdk:"only_if_open_after_minutes"`
     ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
+    CodeRepositories types.Set `tfsdk:"code_repositories"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -141,6 +142,11 @@ func (d *InvestigationRuleDataSource) Schema(ctx context.Context, req datasource
             },
             "external_mcp_servers": schema.SetAttribute{
                 MarkdownDescription: "The external MCP servers OneUptime AI may use while it investigates what this rule matches. Leave empty to let it use all of the project's MCP servers. IDs of `oneuptime_external_mcp_server` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "code_repositories": schema.SetAttribute{
+                MarkdownDescription: "The code repositories OneUptime AI may read while it investigates what this rule matches. Leave empty to let it read every repository the project has connected. IDs of `oneuptime_code_repository` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -254,6 +260,7 @@ func (d *InvestigationRuleDataSource) Read(ctx context.Context, req datasource.R
         "descriptionPattern": true,
         "onlyIfOpenAfterMinutes": true,
         "externalMcpServers": true,
+        "codeRepositories": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -635,6 +642,30 @@ func (d *InvestigationRuleDataSource) Read(ctx context.Context, req datasource.R
         data.ExternalMcpServers = types.SetValueMust(types.StringType, setItems)
     } else {
         data.ExternalMcpServers = types.SetNull(types.StringType)
+    }
+    if val, ok := item["codeRepositories"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.CodeRepositories = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.CodeRepositories = types.SetNull(types.StringType)
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

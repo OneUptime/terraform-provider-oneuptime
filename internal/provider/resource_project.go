@@ -63,10 +63,6 @@ type ProjectResourceModel struct {
     EnableAutomaticIncidentRemediation types.Bool `tfsdk:"enable_automatic_incident_remediation"`
     EnableAutomaticAlertRemediation types.Bool `tfsdk:"enable_automatic_alert_remediation"`
     EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
-    EnableIncidentInstrumentationFixTasks types.Bool `tfsdk:"enable_incident_instrumentation_fix_tasks"`
-    EnableAlertInstrumentationFixTasks types.Bool `tfsdk:"enable_alert_instrumentation_fix_tasks"`
-    EnableAutomaticIncidentCodeFixes types.Bool `tfsdk:"enable_automatic_incident_code_fixes"`
-    EnableAutomaticAlertCodeFixes types.Bool `tfsdk:"enable_automatic_alert_code_fixes"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
     AutoArchiveNonActionableExceptions types.Bool `tfsdk:"auto_archive_non_actionable_exceptions"`
@@ -324,7 +320,7 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 },
             },
             "enable_automatic_incident_remediation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime fixes new incidents automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which incidents are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the incident settles first. Requires AI to be enabled. It also holds the incident pull-request switches, enableAutomaticIncidentCodeFixes and enableIncidentInstrumentationFixTasks: they open pull requests only while this is on. The dashboard turns them on and off with it; through the API, set them in the same request.",
+                MarkdownDescription: "When enabled, OneUptime fixes new incidents automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which incidents are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the incident settles first. Requires AI to be enabled. Fix and telemetry pull requests open only while this is on, as each Auto Remediation Rule says (openCodeFixPullRequests, openTelemetryPullRequests - on by default, and on with no rule).",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -333,7 +329,7 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 },
             },
             "enable_automatic_alert_remediation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime fixes new alerts automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which alerts are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the alert settles first. Requires AI to be enabled. It also holds the alert pull-request switches, enableAutomaticAlertCodeFixes and enableAlertInstrumentationFixTasks: they open pull requests only while this is on. The dashboard turns them on and off with it; through the API, set them in the same request.",
+                MarkdownDescription: "When enabled, OneUptime fixes new alerts automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which alerts are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the alert settles first. Requires AI to be enabled. Fix and telemetry pull requests open only while this is on, as each Auto Remediation Rule says (openCodeFixPullRequests, openTelemetryPullRequests - on by default, and on with no rule).",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -343,42 +339,6 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
             },
             "enable_automatic_postmortem_draft": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime's AI SRE drafts a postmortem from the incident's timeline and telemetry when an incident is resolved, for a human to review and edit. It never overwrites a postmortem that already exists. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "enable_incident_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an incident AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticIncidentRemediation (Fix new incidents automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "enable_alert_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticAlertRemediation (Fix new alerts automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "enable_automatic_incident_code_fixes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an incident AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticIncidentRemediation (Fix new incidents automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "enable_automatic_alert_code_fixes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. Part of fixing: it acts only while enableAutomaticAlertRemediation (Fix new alerts automatically) is on, and the dashboard turns it on and off with that switch. Off for new projects.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -1045,18 +1005,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.EnableAutomaticPostmortemDraft.IsNull() && !data.EnableAutomaticPostmortemDraft.IsUnknown() {
         requestDataMap["enableAutomaticPostmortemDraft"] = data.EnableAutomaticPostmortemDraft.ValueBool()
     }
-    if !data.EnableIncidentInstrumentationFixTasks.IsNull() && !data.EnableIncidentInstrumentationFixTasks.IsUnknown() {
-        requestDataMap["enableIncidentInstrumentationFixTasks"] = data.EnableIncidentInstrumentationFixTasks.ValueBool()
-    }
-    if !data.EnableAlertInstrumentationFixTasks.IsNull() && !data.EnableAlertInstrumentationFixTasks.IsUnknown() {
-        requestDataMap["enableAlertInstrumentationFixTasks"] = data.EnableAlertInstrumentationFixTasks.ValueBool()
-    }
-    if !data.EnableAutomaticIncidentCodeFixes.IsNull() && !data.EnableAutomaticIncidentCodeFixes.IsUnknown() {
-        requestDataMap["enableAutomaticIncidentCodeFixes"] = data.EnableAutomaticIncidentCodeFixes.ValueBool()
-    }
-    if !data.EnableAutomaticAlertCodeFixes.IsNull() && !data.EnableAutomaticAlertCodeFixes.IsUnknown() {
-        requestDataMap["enableAutomaticAlertCodeFixes"] = data.EnableAutomaticAlertCodeFixes.ValueBool()
-    }
     if !data.EnableAiInsights.IsNull() && !data.EnableAiInsights.IsUnknown() {
         requestDataMap["enableAiInsights"] = data.EnableAiInsights.ValueBool()
     }
@@ -1157,10 +1105,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableAutomaticIncidentRemediation": true,
         "enableAutomaticAlertRemediation": true,
         "enableAutomaticPostmortemDraft": true,
-        "enableIncidentInstrumentationFixTasks": true,
-        "enableAlertInstrumentationFixTasks": true,
-        "enableAutomaticIncidentCodeFixes": true,
-        "enableAutomaticAlertCodeFixes": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
         "autoArchiveNonActionableExceptions": true,
@@ -1693,18 +1637,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["enableAutomaticPostmortemDraft"].(bool); ok {
         data.EnableAutomaticPostmortemDraft = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableIncidentInstrumentationFixTasks"].(bool); ok {
-        data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAlertInstrumentationFixTasks"].(bool); ok {
-        data.EnableAlertInstrumentationFixTasks = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticIncidentCodeFixes"].(bool); ok {
-        data.EnableAutomaticIncidentCodeFixes = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticAlertCodeFixes"].(bool); ok {
-        data.EnableAutomaticAlertCodeFixes = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAiInsights"].(bool); ok {
         data.EnableAiInsights = types.BoolValue(val)
@@ -2555,10 +2487,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableAutomaticIncidentRemediation": true,
         "enableAutomaticAlertRemediation": true,
         "enableAutomaticPostmortemDraft": true,
-        "enableIncidentInstrumentationFixTasks": true,
-        "enableAlertInstrumentationFixTasks": true,
-        "enableAutomaticIncidentCodeFixes": true,
-        "enableAutomaticAlertCodeFixes": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
         "autoArchiveNonActionableExceptions": true,
@@ -3092,18 +3020,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["enableAutomaticPostmortemDraft"].(bool); ok {
         data.EnableAutomaticPostmortemDraft = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableIncidentInstrumentationFixTasks"].(bool); ok {
-        data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAlertInstrumentationFixTasks"].(bool); ok {
-        data.EnableAlertInstrumentationFixTasks = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticIncidentCodeFixes"].(bool); ok {
-        data.EnableAutomaticIncidentCodeFixes = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticAlertCodeFixes"].(bool); ok {
-        data.EnableAutomaticAlertCodeFixes = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAiInsights"].(bool); ok {
         data.EnableAiInsights = types.BoolValue(val)
@@ -4065,18 +3981,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.LimitAlertsToOneEpisode.IsUnknown() && !state.LimitAlertsToOneEpisode.IsUnknown() && !data.LimitAlertsToOneEpisode.Equal(state.LimitAlertsToOneEpisode) {
         requestDataMap["limitAlertsToOneEpisode"] = data.LimitAlertsToOneEpisode.ValueBool()
     }
-    if !data.EnableIncidentInstrumentationFixTasks.IsUnknown() && !state.EnableIncidentInstrumentationFixTasks.IsUnknown() && !data.EnableIncidentInstrumentationFixTasks.Equal(state.EnableIncidentInstrumentationFixTasks) {
-        requestDataMap["enableIncidentInstrumentationFixTasks"] = data.EnableIncidentInstrumentationFixTasks.ValueBool()
-    }
-    if !data.EnableAlertInstrumentationFixTasks.IsUnknown() && !state.EnableAlertInstrumentationFixTasks.IsUnknown() && !data.EnableAlertInstrumentationFixTasks.Equal(state.EnableAlertInstrumentationFixTasks) {
-        requestDataMap["enableAlertInstrumentationFixTasks"] = data.EnableAlertInstrumentationFixTasks.ValueBool()
-    }
-    if !data.EnableAutomaticIncidentCodeFixes.IsUnknown() && !state.EnableAutomaticIncidentCodeFixes.IsUnknown() && !data.EnableAutomaticIncidentCodeFixes.Equal(state.EnableAutomaticIncidentCodeFixes) {
-        requestDataMap["enableAutomaticIncidentCodeFixes"] = data.EnableAutomaticIncidentCodeFixes.ValueBool()
-    }
-    if !data.EnableAutomaticAlertCodeFixes.IsUnknown() && !state.EnableAutomaticAlertCodeFixes.IsUnknown() && !data.EnableAutomaticAlertCodeFixes.Equal(state.EnableAutomaticAlertCodeFixes) {
-        requestDataMap["enableAutomaticAlertCodeFixes"] = data.EnableAutomaticAlertCodeFixes.ValueBool()
-    }
     if !data.EnableAiInsights.IsUnknown() && !state.EnableAiInsights.IsUnknown() && !data.EnableAiInsights.Equal(state.EnableAiInsights) {
         requestDataMap["enableAiInsights"] = data.EnableAiInsights.ValueBool()
     }
@@ -4225,10 +4129,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableAutomaticIncidentRemediation": true,
         "enableAutomaticAlertRemediation": true,
         "enableAutomaticPostmortemDraft": true,
-        "enableIncidentInstrumentationFixTasks": true,
-        "enableAlertInstrumentationFixTasks": true,
-        "enableAutomaticIncidentCodeFixes": true,
-        "enableAutomaticAlertCodeFixes": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
         "autoArchiveNonActionableExceptions": true,
@@ -4756,18 +4656,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["enableAutomaticPostmortemDraft"].(bool); ok {
         data.EnableAutomaticPostmortemDraft = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableIncidentInstrumentationFixTasks"].(bool); ok {
-        data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAlertInstrumentationFixTasks"].(bool); ok {
-        data.EnableAlertInstrumentationFixTasks = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticIncidentCodeFixes"].(bool); ok {
-        data.EnableAutomaticIncidentCodeFixes = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticAlertCodeFixes"].(bool); ok {
-        data.EnableAutomaticAlertCodeFixes = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAiInsights"].(bool); ok {
         data.EnableAiInsights = types.BoolValue(val)
@@ -5685,18 +5573,6 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.EnableAutomaticPostmortemDraft.IsNull() && !plan.EnableAutomaticPostmortemDraft.IsUnknown() {
         data.EnableAutomaticPostmortemDraft = plan.EnableAutomaticPostmortemDraft
-    }
-    if config.EnableIncidentInstrumentationFixTasks.IsNull() && !plan.EnableIncidentInstrumentationFixTasks.IsUnknown() {
-        data.EnableIncidentInstrumentationFixTasks = plan.EnableIncidentInstrumentationFixTasks
-    }
-    if config.EnableAlertInstrumentationFixTasks.IsNull() && !plan.EnableAlertInstrumentationFixTasks.IsUnknown() {
-        data.EnableAlertInstrumentationFixTasks = plan.EnableAlertInstrumentationFixTasks
-    }
-    if config.EnableAutomaticIncidentCodeFixes.IsNull() && !plan.EnableAutomaticIncidentCodeFixes.IsUnknown() {
-        data.EnableAutomaticIncidentCodeFixes = plan.EnableAutomaticIncidentCodeFixes
-    }
-    if config.EnableAutomaticAlertCodeFixes.IsNull() && !plan.EnableAutomaticAlertCodeFixes.IsUnknown() {
-        data.EnableAutomaticAlertCodeFixes = plan.EnableAutomaticAlertCodeFixes
     }
     if config.EnableAiInsights.IsNull() && !plan.EnableAiInsights.IsUnknown() {
         data.EnableAiInsights = plan.EnableAiInsights

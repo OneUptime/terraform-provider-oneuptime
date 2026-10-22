@@ -75,6 +75,7 @@ type IncidentDataSourceModel struct {
     NotifySubscribersOnPostmortemPublished types.Bool `tfsdk:"notify_subscribers_on_postmortem_published"`
     PostmortemPostedAt types.String `tfsdk:"postmortem_posted_at"`
     PostmortemAttachments types.Set `tfsdk:"postmortem_attachments"`
+    PostmortemStatusId types.String `tfsdk:"postmortem_status_id"`
     CreatedStateLog types.String `tfsdk:"created_state_log"`
     CreatedCriteriaId types.String `tfsdk:"created_criteria_id"`
     CreatedIncidentTemplateId types.String `tfsdk:"created_incident_template_id"`
@@ -336,6 +337,11 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "postmortem_status_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the incident's postmortem status. Left out on create, the postmortem starts in the project's not started status - or its draft status when the incident is created with a postmortem note, its completed status when that note is published on a status page. The ID of a `oneuptime_postmortem_status`.",
+                Optional: true,
+                Computed: true,
+            },
             "created_state_log": schema.StringAttribute{
                 MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
                 Computed: true,
@@ -551,6 +557,10 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         filters["notifySubscribersOnPostmortemPublished"] = data.NotifySubscribersOnPostmortemPublished.ValueBool()
         filterNames = append(filterNames, "notify_subscribers_on_postmortem_published = "+fmt.Sprintf("%t", data.NotifySubscribersOnPostmortemPublished.ValueBool()))
     }
+    if !data.PostmortemStatusId.IsNull() && !data.PostmortemStatusId.IsUnknown() {
+        filters["postmortemStatusId"] = data.PostmortemStatusId.ValueString()
+        filterNames = append(filterNames, "postmortem_status_id = "+fmt.Sprintf("%q", data.PostmortemStatusId.ValueString()))
+    }
     if !data.CreatedCriteriaId.IsNull() && !data.CreatedCriteriaId.IsUnknown() {
         filters["createdCriteriaId"] = data.CreatedCriteriaId.ValueString()
         filterNames = append(filterNames, "created_criteria_id = "+fmt.Sprintf("%q", data.CreatedCriteriaId.ValueString()))
@@ -674,6 +684,7 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         "notifySubscribersOnPostmortemPublished": true,
         "postmortemPostedAt": true,
         "postmortemAttachments": true,
+        "postmortemStatusId": true,
         "createdStateLog": true,
         "createdCriteriaId": true,
         "createdIncidentTemplateId": true,
@@ -1655,6 +1666,23 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.PostmortemAttachments = types.SetValueMust(types.StringType, setItems)
     } else {
         data.PostmortemAttachments = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["postmortemStatusId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PostmortemStatusId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PostmortemStatusId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PostmortemStatusId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PostmortemStatusId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostmortemStatusId = types.StringNull()
+        }
+    } else if val, ok := item["postmortemStatusId"].(string); ok {
+        data.PostmortemStatusId = types.StringValue(val)
+    } else {
+        data.PostmortemStatusId = types.StringNull()
     }
     if obj, ok := item["createdStateLog"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -64,6 +64,9 @@ type AutoRemediationRuleResourceModel struct {
     Runbooks types.Set `tfsdk:"runbooks"`
     ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
     RunnerId types.String `tfsdk:"runner_id"`
+    CodeRepositories types.Set `tfsdk:"code_repositories"`
+    OpenCodeFixPullRequests types.Bool `tfsdk:"open_code_fix_pull_requests"`
+    OpenTelemetryPullRequests types.Bool `tfsdk:"open_telemetry_pull_requests"`
     VerificationWindowMinutes types.Number `tfsdk:"verification_window_minutes"`
     AutoResolveOnVerifiedRecovery types.Bool `tfsdk:"auto_resolve_on_verified_recovery"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
@@ -81,7 +84,7 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
 
 func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Which new incidents or alerts OneUptime AI fixes automatically, and whether it asks first. It may run the project's runbooks (only the rule's, when it names some), commands on a Runner the rule picks, and the tools of the project's external MCP servers (only the rule's, when it names some). With no rule, OneUptime AI fixes every one while automatic fixing is on.",
+        MarkdownDescription: "Which new incidents or alerts OneUptime AI fixes automatically, and whether it asks first. It may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI fixes every one while automatic fixing is on, pull requests included.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -166,7 +169,7 @@ func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "ai_composes_commands": schema.BoolAttribute{
-                MarkdownDescription: "Kept for rules saved before rules were simplified: the AI investigates the incident/alert and composes Bash/SSH commands for the rule's Runner and Command Runners, and the rule does nothing else. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. A OneUptime AI rule now composes commands on its Runner when it picks one, so new rules leave this off.",
+                MarkdownDescription: "Kept for rules saved before rules were simplified: the AI investigates the incident/alert and composes Bash commands for the rule's Runner and Command Runners, and the rule does nothing else. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. A OneUptime AI rule now composes commands on its Runner when it picks one, so new rules leave this off.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -275,11 +278,38 @@ func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "runner_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the Runner OneUptime AI runs this rule's commands on: one of the project's own Runners. Empty means none: OneUptime AI fixes through the AI agent on the affected Kubernetes cluster or host. The ID of a `oneuptime_runner`.",
+                MarkdownDescription: "ID of the Runner OneUptime AI runs this rule's Bash commands on: one of the project's own Runners. Empty means none: OneUptime AI runs no commands of its own for the rule. Commands on the affected Kubernetes cluster or host always go through its AI agent. The ID of a `oneuptime_runner`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "code_repositories": schema.SetAttribute{
+                MarkdownDescription: "The code repositories OneUptime AI may read while it fixes what this rule matches, and open the rule's pull requests in. Leave empty to let it use every repository the project has connected. IDs of `oneuptime_code_repository` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "open_code_fix_pull_requests": schema.BoolAttribute{
+                MarkdownDescription: "When an investigation of an incident or alert this rule matches finds the cause in your code, OneUptime AI opens a pull request with the fix, for review. Nothing is merged. Acts only while fixing new incidents (or alerts) automatically is on. On by default.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "open_telemetry_pull_requests": schema.BoolAttribute{
+                MarkdownDescription: "When missing logs, traces or metrics stop an investigation of an incident or alert this rule matches, OneUptime AI opens a pull request that adds them, for review. Nothing is merged. Acts only while fixing new incidents (or alerts) automatically is on. On by default.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "verification_window_minutes": schema.NumberAttribute{
@@ -435,6 +465,15 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
     if !data.RunnerId.IsNull() && !data.RunnerId.IsUnknown() {
         requestDataMap["runnerId"] = data.RunnerId.ValueString()
     }
+    if !data.CodeRepositories.IsNull() && !data.CodeRepositories.IsUnknown() {
+        requestDataMap["codeRepositories"] = r.convertTerraformSetToInterface(data.CodeRepositories)
+    }
+    if !data.OpenCodeFixPullRequests.IsNull() && !data.OpenCodeFixPullRequests.IsUnknown() {
+        requestDataMap["openCodeFixPullRequests"] = data.OpenCodeFixPullRequests.ValueBool()
+    }
+    if !data.OpenTelemetryPullRequests.IsNull() && !data.OpenTelemetryPullRequests.IsUnknown() {
+        requestDataMap["openTelemetryPullRequests"] = data.OpenTelemetryPullRequests.ValueBool()
+    }
     if !data.VerificationWindowMinutes.IsNull() && !data.VerificationWindowMinutes.IsUnknown() {
         requestDataMap["verificationWindowMinutes"] = r.bigFloatToFloat64(data.VerificationWindowMinutes.ValueBigFloat())
     }
@@ -508,6 +547,9 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
         "runbooks": true,
         "externalMcpServers": true,
         "runnerId": true,
+        "codeRepositories": true,
+        "openCodeFixPullRequests": true,
+        "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
         "autoResolveOnVerifiedRecovery": true,
         "createdAt": true,
@@ -1191,6 +1233,44 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
     } else {
         data.RunnerId = types.StringNull()
     }
+    if val, ok := dataMap["codeRepositories"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CodeRepositories = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["openCodeFixPullRequests"].(bool); ok {
+        data.OpenCodeFixPullRequests = types.BoolValue(val)
+    }
+    if val, ok := dataMap["openTelemetryPullRequests"].(bool); ok {
+        data.OpenTelemetryPullRequests = types.BoolValue(val)
+    }
     data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, dataMap["verificationWindowMinutes"])
     if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
         data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
@@ -1306,6 +1386,9 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
         "runbooks": true,
         "externalMcpServers": true,
         "runnerId": true,
+        "codeRepositories": true,
+        "openCodeFixPullRequests": true,
+        "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
         "autoResolveOnVerifiedRecovery": true,
         "createdAt": true,
@@ -1990,6 +2073,44 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
     } else {
         data.RunnerId = types.StringNull()
     }
+    if val, ok := dataMap["codeRepositories"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CodeRepositories = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["openCodeFixPullRequests"].(bool); ok {
+        data.OpenCodeFixPullRequests = types.BoolValue(val)
+    }
+    if val, ok := dataMap["openTelemetryPullRequests"].(bool); ok {
+        data.OpenTelemetryPullRequests = types.BoolValue(val)
+    }
     data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, dataMap["verificationWindowMinutes"])
     if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
         data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
@@ -2166,6 +2287,15 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
     if !data.RunnerId.IsUnknown() && !state.RunnerId.IsUnknown() && !data.RunnerId.Equal(state.RunnerId) {
         requestDataMap["runnerId"] = data.RunnerId.ValueString()
     }
+    if !data.CodeRepositories.IsUnknown() && !state.CodeRepositories.IsUnknown() && !data.CodeRepositories.Equal(state.CodeRepositories) {
+        requestDataMap["codeRepositories"] = r.convertTerraformSetToInterface(data.CodeRepositories)
+    }
+    if !data.OpenCodeFixPullRequests.IsUnknown() && !state.OpenCodeFixPullRequests.IsUnknown() && !data.OpenCodeFixPullRequests.Equal(state.OpenCodeFixPullRequests) {
+        requestDataMap["openCodeFixPullRequests"] = data.OpenCodeFixPullRequests.ValueBool()
+    }
+    if !data.OpenTelemetryPullRequests.IsUnknown() && !state.OpenTelemetryPullRequests.IsUnknown() && !data.OpenTelemetryPullRequests.Equal(state.OpenTelemetryPullRequests) {
+        requestDataMap["openTelemetryPullRequests"] = data.OpenTelemetryPullRequests.ValueBool()
+    }
     if !data.VerificationWindowMinutes.IsUnknown() && !state.VerificationWindowMinutes.IsUnknown() && !data.VerificationWindowMinutes.Equal(state.VerificationWindowMinutes) {
         requestDataMap["verificationWindowMinutes"] = r.bigFloatToFloat64(data.VerificationWindowMinutes.ValueBigFloat())
     }
@@ -2217,6 +2347,9 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
         "runbooks": true,
         "externalMcpServers": true,
         "runnerId": true,
+        "codeRepositories": true,
+        "openCodeFixPullRequests": true,
+        "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
         "autoResolveOnVerifiedRecovery": true,
         "createdAt": true,
@@ -2895,6 +3028,44 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
     } else {
         data.RunnerId = types.StringNull()
     }
+    if val, ok := dataMap["codeRepositories"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CodeRepositories = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["openCodeFixPullRequests"].(bool); ok {
+        data.OpenCodeFixPullRequests = types.BoolValue(val)
+    }
+    if val, ok := dataMap["openTelemetryPullRequests"].(bool); ok {
+        data.OpenTelemetryPullRequests = types.BoolValue(val)
+    }
     data.VerificationWindowMinutes = numberFromAPI(data.VerificationWindowMinutes, dataMap["verificationWindowMinutes"])
     if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
         data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
@@ -3071,6 +3242,15 @@ func (r *AutoRemediationRuleResource) keepPlannedValues(data *AutoRemediationRul
     }
     if config.RunnerId.IsNull() && !plan.RunnerId.IsUnknown() {
         data.RunnerId = plan.RunnerId
+    }
+    if config.CodeRepositories.IsNull() && !plan.CodeRepositories.IsUnknown() {
+        data.CodeRepositories = plan.CodeRepositories
+    }
+    if config.OpenCodeFixPullRequests.IsNull() && !plan.OpenCodeFixPullRequests.IsUnknown() {
+        data.OpenCodeFixPullRequests = plan.OpenCodeFixPullRequests
+    }
+    if config.OpenTelemetryPullRequests.IsNull() && !plan.OpenTelemetryPullRequests.IsUnknown() {
+        data.OpenTelemetryPullRequests = plan.OpenTelemetryPullRequests
     }
     if config.VerificationWindowMinutes.IsNull() && !plan.VerificationWindowMinutes.IsUnknown() {
         data.VerificationWindowMinutes = plan.VerificationWindowMinutes

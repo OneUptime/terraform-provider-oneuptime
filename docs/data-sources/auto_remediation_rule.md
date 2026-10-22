@@ -2,12 +2,12 @@
 page_title: "oneuptime_auto_remediation_rule Data Source - oneuptime"
 subcategory: "Other"
 description: |-
-  Which new incidents or alerts OneUptime AI fixes automatically, and whether it asks first. It may run the project's runbooks (only the rule's, when it names some), commands on a Runner the rule picks, and the tools of the project's external MCP servers (only the rule's, when it names some). With no rule, OneUptime AI fixes every one while automatic fixing is on.
+  Which new incidents or alerts OneUptime AI fixes automatically, and whether it asks first. It may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI fixes every one while automatic fixing is on, pull requests included.
 ---
 
 # oneuptime_auto_remediation_rule (Data Source)
 
-Which new incidents or alerts OneUptime AI fixes automatically, and whether it asks first. It may run the project's runbooks (only the rule's, when it names some), commands on a Runner the rule picks, and the tools of the project's external MCP servers (only the rule's, when it names some). With no rule, OneUptime AI fixes every one while automatic fixing is on.
+Which new incidents or alerts OneUptime AI fixes automatically, and whether it asks first. It may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI fixes every one while automatic fixing is on, pull requests included.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one auto remediation rule may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -28,7 +28,7 @@ data "oneuptime_auto_remediation_rule" "by_id" {
 
 ### Optional
 
-- `ai_composes_commands` (Boolean) Kept for rules saved before rules were simplified: the AI investigates the incident/alert and composes Bash/SSH commands for the rule's Runner and Command Runners, and the rule does nothing else. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. A OneUptime AI rule now composes commands on its Runner when it picks one, so new rules leave this off.
+- `ai_composes_commands` (Boolean) Kept for rules saved before rules were simplified: the AI investigates the incident/alert and composes Bash commands for the rule's Runner and Command Runners, and the rule does nothing else. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. A OneUptime AI rule now composes commands on its Runner when it picks one, so new rules leave this off.
 - `ai_selects_runbook` (Boolean) Kept for rules saved before rules were simplified: an AI planning run reads the incident/alert context and picks the most applicable runbook (from the attached candidates, or all enabled runbooks when none are attached), always proposing it for approval, and the rule does nothing else. Every OneUptime AI rule now lets AI pick a runbook on its own, so new rules leave this off.
 - `auto_resolve_on_verified_recovery` (Boolean) When verification confirms the monitors recovered inside the window, automatically resolve the incident/alert. Off by default — the timeline note is posted either way.
 - `created_by_user_id` (String) User ID who created this object. The ID of a `oneuptime_user` (see the data source).
@@ -38,8 +38,10 @@ data "oneuptime_auto_remediation_rule" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Whether this rule is enabled.
 - `name` (String) Name of this auto-remediation rule.
+- `open_code_fix_pull_requests` (Boolean) When an investigation of an incident or alert this rule matches finds the cause in your code, OneUptime AI opens a pull request with the fix, for review. Nothing is merged. Acts only while fixing new incidents (or alerts) automatically is on. On by default.
+- `open_telemetry_pull_requests` (Boolean) When missing logs, traces or metrics stop an investigation of an incident or alert this rule matches, OneUptime AI opens a pull request that adds them, for review. Nothing is merged. Acts only while fixing new incidents (or alerts) automatically is on. On by default.
 - `remediation_action` (String) OneUptimeAI (the default): OneUptime AI fixes the matched incident or alert - on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, with the project's runbooks (only the rule's Runbooks when it names some) and with commands on the rule's Runner when it picks one. Runbooks: the rule starts every one of its Runbooks for every match, without OneUptime AI deciding. Whether a person approves first is the rule's Execution Mode.
-- `runner_id` (String) ID of the Runner OneUptime AI runs this rule's commands on: one of the project's own Runners. Empty means none: OneUptime AI fixes through the AI agent on the affected Kubernetes cluster or host. The ID of a `oneuptime_runner`.
+- `runner_id` (String) ID of the Runner OneUptime AI runs this rule's Bash commands on: one of the project's own Runners. Empty means none: OneUptime AI runs no commands of its own for the rule. Commands on the affected Kubernetes cluster or host always go through its AI agent. The ID of a `oneuptime_runner`.
 - `title_pattern` (String) Case-insensitive regex matched against the entity's title. Leave empty to match any title.
 - `trigger_entity_type` (String) Entity type that triggers this rule on creation: Incident or Alert.
 - `verification_window_minutes` (Number) How long after the runbook starts the subject's monitors get to recover before verification fails. Defaults to 15 minutes.
@@ -47,6 +49,7 @@ data "oneuptime_auto_remediation_rule" "by_id" {
 ### Read-Only
 
 - `alert_severities` (Set of String) Only trigger for alerts with these severities (alert rules only). Leave empty to match any severity. IDs of `oneuptime_alert_severity` resources.
+- `code_repositories` (Set of String) The code repositories OneUptime AI may read while it fixes what this rule matches, and open the rule's pull requests in. Leave empty to let it use every repository the project has connected. IDs of `oneuptime_code_repository` resources.
 - `command_allowlist` (String) Glob patterns for commands the AI may execute WITHOUT human approval under FullAuto (for example: systemctl restart *). Commands that do not match are proposed for one-click approval instead. Destructive commands are always refused by the built-in policy. A JSON value: write it with `jsonencode()`.
 - `command_runners` (Set of String) Kept for rules saved before rules were simplified: more Runners the AI may target with composed commands, besides the rule's Runner. A Runner runs a rule's commands only when the rule names it. IDs of `oneuptime_runner` resources.
 - `created_at` (String) Date and Time when the object was created.

@@ -51,7 +51,6 @@ type KubernetesClusterDataSourceModel struct {
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
     AiAccessRunnerId types.String `tfsdk:"ai_access_runner_id"`
-    AiAccessCredentialId types.String `tfsdk:"ai_access_credential_id"`
     IsAiInvestigationEnabled types.Bool `tfsdk:"is_ai_investigation_enabled"`
     AiRemediationMode types.String `tfsdk:"ai_remediation_mode"`
     AiKubectlCommandAllowlist types.String `tfsdk:"ai_kubectl_command_allowlist"`
@@ -67,7 +66,7 @@ func (d *KubernetesClusterDataSource) Metadata(ctx context.Context, req datasour
 
 func (d *KubernetesClusterDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Kubernetes Clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime kubernetes-agent sends metrics, or can be manually registered. Look up an existing kubernetes cluster by `id`, or by any of its other arguments (`name`, `agent_version`, `ai_access_credential_id`, ...): each one set must match, and exactly one kubernetes cluster may match them all.",
+        MarkdownDescription: "Kubernetes Clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime kubernetes-agent sends metrics, or can be manually registered. Look up an existing kubernetes cluster by `id`, or by any of its other arguments (`name`, `agent_version`, `ai_access_last_error`, ...): each one set must match, and exactly one kubernetes cluster may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -175,12 +174,7 @@ func (d *KubernetesClusterDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "ai_access_runner_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the Runner OneUptime AI uses to run kubectl against this cluster. Another cluster's in-cluster Runner cannot be bound. Binding a Runner, or switching to a different one, needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can clear it. The ID of a `oneuptime_runner`.",
-                Optional: true,
-                Computed: true,
-            },
-            "ai_access_credential_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the Kubernetes credential the AI access Runner uses for this cluster; the credential must be assigned to that Runner. Empty for the in-cluster Runner, which is never given a credential. Binding a credential needs Project Owner, Project Admin or Edit Auto Remediation Rule, and also permission to read credentials (Project Owner, Project Admin or Read Runbook Credential); anyone who may edit the cluster can clear it. The ID of a `oneuptime_runbook_credential`.",
+                MarkdownDescription: "ID of the in-cluster Runner an older Kubernetes agent chart installed on this cluster. Only this cluster's own in-cluster Runner can be bound. Binding it again needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can clear it. The ID of a `oneuptime_runner`.",
                 Optional: true,
                 Computed: true,
             },
@@ -314,10 +308,6 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         filters["aiAccessRunnerId"] = data.AiAccessRunnerId.ValueString()
         filterNames = append(filterNames, "ai_access_runner_id = "+fmt.Sprintf("%q", data.AiAccessRunnerId.ValueString()))
     }
-    if !data.AiAccessCredentialId.IsNull() && !data.AiAccessCredentialId.IsUnknown() {
-        filters["aiAccessCredentialId"] = data.AiAccessCredentialId.ValueString()
-        filterNames = append(filterNames, "ai_access_credential_id = "+fmt.Sprintf("%q", data.AiAccessCredentialId.ValueString()))
-    }
     if !data.IsAiInvestigationEnabled.IsNull() && !data.IsAiInvestigationEnabled.IsUnknown() {
         filters["isAiInvestigationEnabled"] = data.IsAiInvestigationEnabled.ValueBool()
         filterNames = append(filterNames, "is_ai_investigation_enabled = "+fmt.Sprintf("%t", data.IsAiInvestigationEnabled.ValueBool()))
@@ -369,7 +359,6 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
         "aiAccessRunnerId": true,
-        "aiAccessCredentialId": true,
         "isAiInvestigationEnabled": true,
         "aiRemediationMode": true,
         "aiKubectlCommandAllowlist": true,
@@ -759,23 +748,6 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         data.AiAccessRunnerId = types.StringValue(val)
     } else {
         data.AiAccessRunnerId = types.StringNull()
-    }
-    if obj, ok := item["aiAccessCredentialId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiAccessCredentialId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.AiAccessCredentialId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AiAccessCredentialId = types.StringNull()
-        }
-    } else if val, ok := item["aiAccessCredentialId"].(string); ok {
-        data.AiAccessCredentialId = types.StringValue(val)
-    } else {
-        data.AiAccessCredentialId = types.StringNull()
     }
     if val, ok := item["isAiInvestigationEnabled"].(bool); ok {
         data.IsAiInvestigationEnabled = types.BoolValue(val)

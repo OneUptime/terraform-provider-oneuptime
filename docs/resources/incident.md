@@ -56,6 +56,7 @@ resource "oneuptime_incident" "example" {
 - `postmortem_attachments` (Set of String) Files that accompany the postmortem note and can be shared publicly when enabled. IDs of `oneuptime_file` resources.
 - `postmortem_note` (String) Document the postmortem summary for this incident.
 - `postmortem_posted_at` (String) Timestamp that will be shown alongside the published postmortem on the status page.
+- `postmortem_status_id` (String) ID of the incident's postmortem status. Left out on create, the postmortem starts in the project's not started status - or its draft status when the incident is created with a postmortem note, its completed status when that note is published on a status page. The ID of a `oneuptime_postmortem_status`.
 - `proxmox_clusters` (Set of String) List of Proxmox clusters affected by this incident. IDs of `oneuptime_proxmox_cluster` resources.
 - `remediation_notes` (String) Notes on how to remediate this incident. This is in markdown.
 - `root_cause` (String) What is the root cause of this incident?

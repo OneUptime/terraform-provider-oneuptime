@@ -56,6 +56,7 @@ type InvestigationRuleResourceModel struct {
     DescriptionPattern types.String `tfsdk:"description_pattern"`
     OnlyIfOpenAfterMinutes types.Number `tfsdk:"only_if_open_after_minutes"`
     ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
+    CodeRepositories types.Set `tfsdk:"code_repositories"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -206,6 +207,15 @@ func (r *InvestigationRuleResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
+            "code_repositories": schema.SetAttribute{
+                MarkdownDescription: "The code repositories OneUptime AI may read while it investigates what this rule matches. Leave empty to let it read every repository the project has connected. IDs of `oneuptime_code_repository` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -321,6 +331,9 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
     if !data.ExternalMcpServers.IsNull() && !data.ExternalMcpServers.IsUnknown() {
         requestDataMap["externalMcpServers"] = r.convertTerraformSetToInterface(data.ExternalMcpServers)
     }
+    if !data.CodeRepositories.IsNull() && !data.CodeRepositories.IsUnknown() {
+        requestDataMap["codeRepositories"] = r.convertTerraformSetToInterface(data.CodeRepositories)
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/ai-investigation-rule", investigationRuleRequest)
@@ -381,6 +394,7 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
         "descriptionPattern": true,
         "onlyIfOpenAfterMinutes": true,
         "externalMcpServers": true,
+        "codeRepositories": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -845,6 +859,38 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
         // For sets, always use empty set instead of null to match default values
         data.ExternalMcpServers = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["codeRepositories"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CodeRepositories = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -949,6 +995,7 @@ func (r *InvestigationRuleResource) Read(ctx context.Context, req resource.ReadR
         "descriptionPattern": true,
         "onlyIfOpenAfterMinutes": true,
         "externalMcpServers": true,
+        "codeRepositories": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -1414,6 +1461,38 @@ func (r *InvestigationRuleResource) Read(ctx context.Context, req resource.ReadR
         // For sets, always use empty set instead of null to match default values
         data.ExternalMcpServers = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["codeRepositories"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CodeRepositories = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1560,6 +1639,9 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
     if !data.ExternalMcpServers.IsUnknown() && !state.ExternalMcpServers.IsUnknown() && !data.ExternalMcpServers.Equal(state.ExternalMcpServers) {
         requestDataMap["externalMcpServers"] = r.convertTerraformSetToInterface(data.ExternalMcpServers)
     }
+    if !data.CodeRepositories.IsUnknown() && !state.CodeRepositories.IsUnknown() && !data.CodeRepositories.Equal(state.CodeRepositories) {
+        requestDataMap["codeRepositories"] = r.convertTerraformSetToInterface(data.CodeRepositories)
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1598,6 +1680,7 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
         "descriptionPattern": true,
         "onlyIfOpenAfterMinutes": true,
         "externalMcpServers": true,
+        "codeRepositories": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -2057,6 +2140,38 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
         // For sets, always use empty set instead of null to match default values
         data.ExternalMcpServers = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["codeRepositories"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CodeRepositories = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2208,6 +2323,9 @@ func (r *InvestigationRuleResource) keepPlannedValues(data *InvestigationRuleRes
     }
     if config.ExternalMcpServers.IsNull() && !plan.ExternalMcpServers.IsUnknown() {
         data.ExternalMcpServers = plan.ExternalMcpServers
+    }
+    if config.CodeRepositories.IsNull() && !plan.CodeRepositories.IsUnknown() {
+        data.CodeRepositories = plan.CodeRepositories
     }
 }
 

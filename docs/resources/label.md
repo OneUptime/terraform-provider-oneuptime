@@ -29,9 +29,12 @@ resource "oneuptime_label" "example" {
 ### Optional
 
 - `description` (String) Friendly description that will help you remember.
+- `is_archived` (Boolean) Archived labels stay on everything that has them, but can't be added to anything again. Defaults to `false`.
 
 ### Read-Only
 
+- `archived_at` (String) When this label was archived. Empty while it is not archived.
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.

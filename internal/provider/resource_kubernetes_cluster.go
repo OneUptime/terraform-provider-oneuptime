@@ -58,7 +58,6 @@ type KubernetesClusterResourceModel struct {
     PodCount types.Number `tfsdk:"pod_count"`
     NamespaceCount types.Number `tfsdk:"namespace_count"`
     AiAccessRunnerId types.String `tfsdk:"ai_access_runner_id"`
-    AiAccessCredentialId types.String `tfsdk:"ai_access_credential_id"`
     IsAiInvestigationEnabled types.Bool `tfsdk:"is_ai_investigation_enabled"`
     AiRemediationMode types.String `tfsdk:"ai_remediation_mode"`
     AiKubectlCommandAllowlist JSONSubsetValue `tfsdk:"ai_kubectl_command_allowlist"`
@@ -213,15 +212,7 @@ func (r *KubernetesClusterResource) schemaDefinition() schema.Schema {
                 },
             },
             "ai_access_runner_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the Runner OneUptime AI uses to run kubectl against this cluster. Another cluster's in-cluster Runner cannot be bound. Binding a Runner, or switching to a different one, needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can clear it. The ID of a `oneuptime_runner`.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "ai_access_credential_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the Kubernetes credential the AI access Runner uses for this cluster; the credential must be assigned to that Runner. Empty for the in-cluster Runner, which is never given a credential. Binding a credential needs Project Owner, Project Admin or Edit Auto Remediation Rule, and also permission to read credentials (Project Owner, Project Admin or Read Runbook Credential); anyone who may edit the cluster can clear it. The ID of a `oneuptime_runbook_credential`.",
+                MarkdownDescription: "ID of the in-cluster Runner an older Kubernetes agent chart installed on this cluster. Only this cluster's own in-cluster Runner can be bound. Binding it again needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can clear it. The ID of a `oneuptime_runner`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -448,7 +439,6 @@ func (r *KubernetesClusterResource) Create(ctx context.Context, req resource.Cre
         "podCount": true,
         "namespaceCount": true,
         "aiAccessRunnerId": true,
-        "aiAccessCredentialId": true,
         "isAiInvestigationEnabled": true,
         "aiRemediationMode": true,
         "aiKubectlCommandAllowlist": true,
@@ -851,43 +841,6 @@ func (r *KubernetesClusterResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.AiAccessRunnerId = types.StringNull()
     }
-    if obj, ok := dataMap["aiAccessCredentialId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiAccessCredentialId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AiAccessCredentialId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AiAccessCredentialId = types.StringNull()
-        }
-    } else if val, ok := dataMap["aiAccessCredentialId"].(string); ok {
-        data.AiAccessCredentialId = types.StringValue(val)
-    } else {
-        data.AiAccessCredentialId = types.StringNull()
-    }
     if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
         data.IsAiInvestigationEnabled = types.BoolValue(val)
     }
@@ -1225,7 +1178,6 @@ func (r *KubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
         "podCount": true,
         "namespaceCount": true,
         "aiAccessRunnerId": true,
-        "aiAccessCredentialId": true,
         "isAiInvestigationEnabled": true,
         "aiRemediationMode": true,
         "aiKubectlCommandAllowlist": true,
@@ -1629,43 +1581,6 @@ func (r *KubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.AiAccessRunnerId = types.StringNull()
     }
-    if obj, ok := dataMap["aiAccessCredentialId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiAccessCredentialId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AiAccessCredentialId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AiAccessCredentialId = types.StringNull()
-        }
-    } else if val, ok := dataMap["aiAccessCredentialId"].(string); ok {
-        data.AiAccessCredentialId = types.StringValue(val)
-    } else {
-        data.AiAccessCredentialId = types.StringNull()
-    }
     if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
         data.IsAiInvestigationEnabled = types.BoolValue(val)
     }
@@ -2050,9 +1965,6 @@ func (r *KubernetesClusterResource) Update(ctx context.Context, req resource.Upd
     if !data.AiAccessRunnerId.IsUnknown() && !state.AiAccessRunnerId.IsUnknown() && !data.AiAccessRunnerId.Equal(state.AiAccessRunnerId) {
         requestDataMap["aiAccessRunnerId"] = data.AiAccessRunnerId.ValueString()
     }
-    if !data.AiAccessCredentialId.IsUnknown() && !state.AiAccessCredentialId.IsUnknown() && !data.AiAccessCredentialId.Equal(state.AiAccessCredentialId) {
-        requestDataMap["aiAccessCredentialId"] = data.AiAccessCredentialId.ValueString()
-    }
     if !data.IsAiInvestigationEnabled.IsUnknown() && !state.IsAiInvestigationEnabled.IsUnknown() && !data.IsAiInvestigationEnabled.Equal(state.IsAiInvestigationEnabled) {
         requestDataMap["isAiInvestigationEnabled"] = data.IsAiInvestigationEnabled.ValueBool()
     }
@@ -2106,7 +2018,6 @@ func (r *KubernetesClusterResource) Update(ctx context.Context, req resource.Upd
         "podCount": true,
         "namespaceCount": true,
         "aiAccessRunnerId": true,
-        "aiAccessCredentialId": true,
         "isAiInvestigationEnabled": true,
         "aiRemediationMode": true,
         "aiKubectlCommandAllowlist": true,
@@ -2504,43 +2415,6 @@ func (r *KubernetesClusterResource) Update(ctx context.Context, req resource.Upd
     } else {
         data.AiAccessRunnerId = types.StringNull()
     }
-    if obj, ok := dataMap["aiAccessCredentialId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiAccessCredentialId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AiAccessCredentialId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AiAccessCredentialId = types.StringNull()
-        }
-    } else if val, ok := dataMap["aiAccessCredentialId"].(string); ok {
-        data.AiAccessCredentialId = types.StringValue(val)
-    } else {
-        data.AiAccessCredentialId = types.StringNull()
-    }
     if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
         data.IsAiInvestigationEnabled = types.BoolValue(val)
     }
@@ -2927,9 +2801,6 @@ func (r *KubernetesClusterResource) keepPlannedValues(data *KubernetesClusterRes
     }
     if config.AiAccessRunnerId.IsNull() && !plan.AiAccessRunnerId.IsUnknown() {
         data.AiAccessRunnerId = plan.AiAccessRunnerId
-    }
-    if config.AiAccessCredentialId.IsNull() && !plan.AiAccessCredentialId.IsUnknown() {
-        data.AiAccessCredentialId = plan.AiAccessCredentialId
     }
     if config.IsAiInvestigationEnabled.IsNull() && !plan.IsAiInvestigationEnabled.IsUnknown() {
         data.IsAiInvestigationEnabled = plan.IsAiInvestigationEnabled

@@ -28,9 +28,11 @@ data "oneuptime_monitor_status" "by_id" {
 
 ### Optional
 
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_archived` (Boolean) Archived statuses stay on the monitors that are in them, but can't be picked again. The operational and offline statuses can't be archived.
 - `is_offline_state` (Boolean) Is this monitor in offline state?
 - `is_operational_state` (Boolean) Is this monitor in operational state?
 - `name` (String) Any friendly name of this object.
@@ -39,6 +41,7 @@ data "oneuptime_monitor_status" "by_id" {
 
 ### Read-Only
 
+- `archived_at` (String) When this monitor status was archived. Empty while it is not archived.
 - `color` (String) Color of this resource in Hex (#32a852 for example).
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

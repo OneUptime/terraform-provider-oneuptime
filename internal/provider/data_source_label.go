@@ -35,6 +35,9 @@ type LabelDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Color types.String `tfsdk:"color"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
 }
 
 func (d *LabelDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -43,7 +46,7 @@ func (d *LabelDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 
 func (d *LabelDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Organize resources for your project by using labels / tags. Look up an existing label by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one label may match them all.",
+        MarkdownDescription: "Organize resources for your project by using labels / tags. Look up an existing label by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one label may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -85,6 +88,20 @@ func (d *LabelDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             },
             "color": schema.StringAttribute{
                 MarkdownDescription: "Color of this resource in Hex (#32a852 for example).",
+                Computed: true,
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Archived labels stay on everything that has them, but can't be added to anything again.",
+                Optional: true,
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "When this label was archived. Empty while it is not archived.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -142,6 +159,14 @@ func (d *LabelDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
     }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -167,6 +192,9 @@ func (d *LabelDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "description": true,
         "createdByUserId": true,
         "color": true,
+        "isArchived": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
@@ -380,6 +408,45 @@ func (d *LabelDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.Color = types.StringValue(val)
     } else {
         data.Color = types.StringNull()
+    }
+    if val, ok := item["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    } else {
+        data.IsArchived = types.BoolNull()
+    }
+    if obj, ok := item["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
+    } else if val, ok := item["archivedAt"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    } else {
+        data.ArchivedAt = types.StringNull()
+    }
+    if obj, ok := item["archivedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

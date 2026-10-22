@@ -38,6 +38,9 @@ type MonitorStatusDataSourceModel struct {
     IsOperationalState types.Bool `tfsdk:"is_operational_state"`
     IsOfflineState types.Bool `tfsdk:"is_offline_state"`
     Priority types.Number `tfsdk:"priority"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
 }
 
 func (d *MonitorStatusDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -46,7 +49,7 @@ func (d *MonitorStatusDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *MonitorStatusDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage monitor status in your project. Monitor Status are Operational, Degraded and Offline for example. Add custom status like Monitoring or more. Look up an existing monitor status by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one monitor status may match them all.",
+        MarkdownDescription: "Manage monitor status in your project. Monitor Status are Operational, Degraded and Offline for example. Add custom status like Monitoring or more. Look up an existing monitor status by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one monitor status may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -102,6 +105,20 @@ func (d *MonitorStatusDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "priority": schema.NumberAttribute{
                 MarkdownDescription: "Where this status sits in the project's list of monitor statuses, from the healthiest (the lowest number) down to the worst: where monitors are shown together, as on a status page or in a monitor group, the status furthest down the list wins. A new status without a number goes just above the offline status. Setting a number moves the status to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Archived statuses stay on the monitors that are in them, but can't be picked again. The operational and offline statuses can't be archived.",
+                Optional: true,
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "When this monitor status was archived. Empty while it is not archived.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
             },
@@ -172,6 +189,14 @@ func (d *MonitorStatusDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["priority"] = lookupNumber(data.Priority)
         filterNames = append(filterNames, "priority = "+data.Priority.ValueBigFloat().String())
     }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -200,6 +225,9 @@ func (d *MonitorStatusDataSource) Read(ctx context.Context, req datasource.ReadR
         "isOperationalState": true,
         "isOfflineState": true,
         "priority": true,
+        "isArchived": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
@@ -425,6 +453,45 @@ func (d *MonitorStatusDataSource) Read(ctx context.Context, req datasource.ReadR
         data.IsOfflineState = types.BoolNull()
     }
     data.Priority = numberFromAPI(data.Priority, item["priority"])
+    if val, ok := item["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    } else {
+        data.IsArchived = types.BoolNull()
+    }
+    if obj, ok := item["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
+    } else if val, ok := item["archivedAt"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    } else {
+        data.ArchivedAt = types.StringNull()
+    }
+    if obj, ok := item["archivedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

@@ -32,7 +32,11 @@ type ThreatIntelFeedDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
+    FeedType types.String `tfsdk:"feed_type"`
     ApiRootUrl types.String `tfsdk:"api_root_url"`
+    ListUrl types.String `tfsdk:"list_url"`
+    IndicatorConfidence types.Number `tfsdk:"indicator_confidence"`
+    SecurityEventConnectionId types.String `tfsdk:"security_event_connection_id"`
     CollectionId types.String `tfsdk:"collection_id"`
     BasicAuthUsername types.String `tfsdk:"basic_auth_username"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
@@ -61,7 +65,7 @@ func (d *ThreatIntelFeedDataSource) Metadata(ctx context.Context, req datasource
 
 func (d *ThreatIntelFeedDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "STIX/TAXII 2.1 threat-intelligence feeds. Indicators are polled on an interval and matched against incoming security events. Look up an existing threat intel feed by `id`, or by any of its other arguments (`name`, `alert_severity_id`, `api_root_url`, ...): each one set must match, and exactly one threat intel feed may match them all.",
+        MarkdownDescription: "Threat-intelligence feeds: TAXII 2.1 collections, lists of indicators and Google SecOps. Indicators are polled and matched against security events. Look up an existing threat intel feed by `id`, or by any of its other arguments (`name`, `alert_severity_id`, `api_root_url`, ...): each one set must match, and exactly one threat intel feed may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -91,8 +95,28 @@ func (d *ThreatIntelFeedDataSource) Schema(ctx context.Context, req datasource.S
                 Optional: true,
                 Computed: true,
             },
+            "feed_type": schema.StringAttribute{
+                MarkdownDescription: "Where the indicators come from: a TAXII 2.1 collection (taxii), a list at an https address (list) or Google SecOps (google-secops).",
+                Optional: true,
+                Computed: true,
+            },
             "api_root_url": schema.StringAttribute{
                 MarkdownDescription: "The TAXII 2.1 API root, e.g. https://taxii.example.com/api1/. Collections are addressed beneath it.",
+                Optional: true,
+                Computed: true,
+            },
+            "list_url": schema.StringAttribute{
+                MarkdownDescription: "For a list feed: the https address of the list, one IP address, domain, URL or file hash a line.",
+                Optional: true,
+                Computed: true,
+            },
+            "indicator_confidence": schema.NumberAttribute{
+                MarkdownDescription: "For a list feed: how sure the list is, 1 to 100, given to each of its indicators. It sets the severity of a match.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_event_connection_id": schema.StringAttribute{
+                MarkdownDescription: "For a Google SecOps feed: the ID of the connection whose key reads Google SecOps's indicator matches. The ID of a `oneuptime_security_event_connection`.",
                 Optional: true,
                 Computed: true,
             },
@@ -156,7 +180,7 @@ func (d *ThreatIntelFeedDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "cursor": schema.StringAttribute{
-                MarkdownDescription: "Poll cursor: the TAXII added_after timestamp already ingested, as an ISO string.",
+                MarkdownDescription: "Poll cursor: for a TAXII feed the added_after timestamp already ingested, for a list feed the hash of the list last written and when, for a Google SecOps feed the end of the window last read.",
                 Optional: true,
                 Computed: true,
             },
@@ -240,9 +264,25 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
         filters["description"] = data.Description.ValueString()
         filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
     }
+    if !data.FeedType.IsNull() && !data.FeedType.IsUnknown() {
+        filters["feedType"] = data.FeedType.ValueString()
+        filterNames = append(filterNames, "feed_type = "+fmt.Sprintf("%q", data.FeedType.ValueString()))
+    }
     if !data.ApiRootUrl.IsNull() && !data.ApiRootUrl.IsUnknown() {
         filters["apiRootUrl"] = data.ApiRootUrl.ValueString()
         filterNames = append(filterNames, "api_root_url = "+fmt.Sprintf("%q", data.ApiRootUrl.ValueString()))
+    }
+    if !data.ListUrl.IsNull() && !data.ListUrl.IsUnknown() {
+        filters["listUrl"] = data.ListUrl.ValueString()
+        filterNames = append(filterNames, "list_url = "+fmt.Sprintf("%q", data.ListUrl.ValueString()))
+    }
+    if !data.IndicatorConfidence.IsNull() && !data.IndicatorConfidence.IsUnknown() {
+        filters["indicatorConfidence"] = lookupNumber(data.IndicatorConfidence)
+        filterNames = append(filterNames, "indicator_confidence = "+data.IndicatorConfidence.ValueBigFloat().String())
+    }
+    if !data.SecurityEventConnectionId.IsNull() && !data.SecurityEventConnectionId.IsUnknown() {
+        filters["securityEventConnectionId"] = data.SecurityEventConnectionId.ValueString()
+        filterNames = append(filterNames, "security_event_connection_id = "+fmt.Sprintf("%q", data.SecurityEventConnectionId.ValueString()))
     }
     if !data.CollectionId.IsNull() && !data.CollectionId.IsUnknown() {
         filters["collectionId"] = data.CollectionId.ValueString()
@@ -334,7 +374,11 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
         "projectId": true,
         "name": true,
         "description": true,
+        "feedType": true,
         "apiRootUrl": true,
+        "listUrl": true,
+        "indicatorConfidence": true,
+        "securityEventConnectionId": true,
         "collectionId": true,
         "basicAuthUsername": true,
         "isEnabled": true,
@@ -518,6 +562,23 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.Description = types.StringNull()
     }
+    if obj, ok := item["feedType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FeedType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FeedType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FeedType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FeedType = types.StringValue(string(jsonBytes))
+        } else {
+            data.FeedType = types.StringNull()
+        }
+    } else if val, ok := item["feedType"].(string); ok {
+        data.FeedType = types.StringValue(val)
+    } else {
+        data.FeedType = types.StringNull()
+    }
     if obj, ok := item["apiRootUrl"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ApiRootUrl = types.StringValue(val)
@@ -534,6 +595,41 @@ func (d *ThreatIntelFeedDataSource) Read(ctx context.Context, req datasource.Rea
         data.ApiRootUrl = types.StringValue(val)
     } else {
         data.ApiRootUrl = types.StringNull()
+    }
+    if obj, ok := item["listUrl"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ListUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ListUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ListUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ListUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.ListUrl = types.StringNull()
+        }
+    } else if val, ok := item["listUrl"].(string); ok {
+        data.ListUrl = types.StringValue(val)
+    } else {
+        data.ListUrl = types.StringNull()
+    }
+    data.IndicatorConfidence = numberFromAPI(data.IndicatorConfidence, item["indicatorConfidence"])
+    if obj, ok := item["securityEventConnectionId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityEventConnectionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityEventConnectionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityEventConnectionId = types.StringNull()
+        }
+    } else if val, ok := item["securityEventConnectionId"].(string); ok {
+        data.SecurityEventConnectionId = types.StringValue(val)
+    } else {
+        data.SecurityEventConnectionId = types.StringNull()
     }
     if obj, ok := item["collectionId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

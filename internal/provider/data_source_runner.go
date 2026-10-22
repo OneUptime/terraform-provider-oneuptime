@@ -113,7 +113,7 @@ func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 Computed: true,
             },
             "can_run_ai_commands": schema.BoolAttribute{
-                MarkdownDescription: "Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, SSH, kubectl) that either match an allowlist or wait for one-click human approval. Set by OneUptime: on once an auto remediation rule picks this Runner or a Kubernetes cluster's AI settings bind it, and on for the in-cluster Runner the Kubernetes agent chart installs.",
+                MarkdownDescription: "Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, kubectl) that either match an allowlist or wait for one-click human approval. Set by OneUptime: on once an auto remediation rule picks this Runner, and on for the in-cluster Runner the Kubernetes agent chart installs.",
                 Optional: true,
                 Computed: true,
             },

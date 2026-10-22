@@ -40,6 +40,9 @@ type ScheduledMaintenanceStateDataSourceModel struct {
     IsEndedState types.Bool `tfsdk:"is_ended_state"`
     IsResolvedState types.Bool `tfsdk:"is_resolved_state"`
     Order types.Number `tfsdk:"order"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
 }
 
 func (d *ScheduledMaintenanceStateDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -48,7 +51,7 @@ func (d *ScheduledMaintenanceStateDataSource) Metadata(ctx context.Context, req 
 
 func (d *ScheduledMaintenanceStateDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage different scheduled maintenance state to your project (Scheduled, Ongoing, Completed for example) Look up an existing scheduled maintenance state by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one scheduled maintenance state may match them all.",
+        MarkdownDescription: "Manage different scheduled maintenance state to your project (Scheduled, Ongoing, Completed for example) Look up an existing scheduled maintenance state by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one scheduled maintenance state may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -114,6 +117,20 @@ func (d *ScheduledMaintenanceStateDataSource) Schema(ctx context.Context, req da
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Where this state sits in the project's list of scheduled maintenance states: 1 is the top. Events only ever move down the list, so the scheduled, ongoing, ended and completed states have to stay in that order. A new state without a number goes just above the completed state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Archived states stay on the maintenance events that are in them, but can't be picked again. The scheduled, ongoing, ended and completed states can't be archived.",
+                Optional: true,
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "When this scheduled maintenance state was archived. Empty while it is not archived.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
             },
@@ -192,6 +209,14 @@ func (d *ScheduledMaintenanceStateDataSource) Read(ctx context.Context, req data
         filters["order"] = lookupNumber(data.Order)
         filterNames = append(filterNames, "order = "+data.Order.ValueBigFloat().String())
     }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        filters["isArchived"] = data.IsArchived.ValueBool()
+        filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
+    }
+    if !data.ArchivedByUserId.IsNull() && !data.ArchivedByUserId.IsUnknown() {
+        filters["archivedByUserId"] = data.ArchivedByUserId.ValueString()
+        filterNames = append(filterNames, "archived_by_user_id = "+fmt.Sprintf("%q", data.ArchivedByUserId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -222,6 +247,9 @@ func (d *ScheduledMaintenanceStateDataSource) Read(ctx context.Context, req data
         "isEndedState": true,
         "isResolvedState": true,
         "order": true,
+        "isArchived": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
@@ -457,6 +485,45 @@ func (d *ScheduledMaintenanceStateDataSource) Read(ctx context.Context, req data
         data.IsResolvedState = types.BoolNull()
     }
     data.Order = numberFromAPI(data.Order, item["order"])
+    if val, ok := item["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    } else {
+        data.IsArchived = types.BoolNull()
+    }
+    if obj, ok := item["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
+    } else if val, ok := item["archivedAt"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    } else {
+        data.ArchivedAt = types.StringNull()
+    }
+    if obj, ok := item["archivedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

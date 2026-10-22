@@ -29,6 +29,7 @@ resource "oneuptime_investigation_rule" "example" {
 ### Optional
 
 - `alert_severities` (Set of String) Match only alerts with these severities (alert rules only). Leave empty to match any severity. IDs of `oneuptime_alert_severity` resources.
+- `code_repositories` (Set of String) The code repositories OneUptime AI may read while it investigates what this rule matches. Leave empty to let it read every repository the project has connected. IDs of `oneuptime_code_repository` resources.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of this investigation rule.
 - `description_pattern` (String) Case-insensitive regex matched against the entity's description. Leave empty to match any description.

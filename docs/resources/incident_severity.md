@@ -29,10 +29,13 @@ resource "oneuptime_incident_severity" "example" {
 ### Optional
 
 - `description` (String) Friendly description that will help you remember.
+- `is_archived` (Boolean) Archived severities stay on the incidents and episodes that have them, but can't be picked again. A project keeps at least one severity that is not archived. Defaults to `false`.
 - `order` (Number) Where this severity ranks among the project's incident severities: 1 is the most severe. A new severity without a number goes to the end of the list. Setting a number moves the severity to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
 
 ### Read-Only
 
+- `archived_at` (String) When this incident severity was archived. Empty while it is not archived.
+- `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
