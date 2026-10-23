@@ -26,6 +26,7 @@ resource "oneuptime_incident_owner_rule" "example" {
 
 ### Optional
 
+- `creator_teams` (Set of String) Teams added as owners when the person who declares a matching incident is a member of them. Incidents with no creator get none. IDs of `oneuptime_team` resources.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of this incident owner rule.
 - `incident_description_pattern` (String) Regex (case-insensitive) matched against the incident description. Leave empty to match any description.

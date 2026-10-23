@@ -56,6 +56,7 @@ type IncidentOwnerRuleResourceModel struct {
     MonitorDescriptionPattern types.String `tfsdk:"monitor_description_pattern"`
     OwnerUsers types.Set `tfsdk:"owner_users"`
     OwnerTeams types.Set `tfsdk:"owner_teams"`
+    CreatorTeams types.Set `tfsdk:"creator_teams"`
     InheritOwnersFromMonitors types.Bool `tfsdk:"inherit_owners_from_monitors"`
     InheritOwnersFromHosts types.Bool `tfsdk:"inherit_owners_from_hosts"`
     InheritOwnersFromKubernetesClusters types.Bool `tfsdk:"inherit_owners_from_kubernetes_clusters"`
@@ -215,6 +216,15 @@ func (r *IncidentOwnerRuleResource) schemaDefinition() schema.Schema {
             },
             "owner_teams": schema.SetAttribute{
                 MarkdownDescription: "Teams to add as owners on the incident when this rule matches. IDs of `oneuptime_team` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "creator_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams added as owners when the person who declares a matching incident is a member of them. Incidents with no creator get none. IDs of `oneuptime_team` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -394,6 +404,9 @@ func (r *IncidentOwnerRuleResource) Create(ctx context.Context, req resource.Cre
     if !data.OwnerTeams.IsNull() && !data.OwnerTeams.IsUnknown() {
         requestDataMap["ownerTeams"] = r.convertTerraformSetToInterface(data.OwnerTeams)
     }
+    if !data.CreatorTeams.IsNull() && !data.CreatorTeams.IsUnknown() {
+        requestDataMap["creatorTeams"] = r.convertTerraformSetToInterface(data.CreatorTeams)
+    }
     if !data.InheritOwnersFromMonitors.IsNull() && !data.InheritOwnersFromMonitors.IsUnknown() {
         requestDataMap["inheritOwnersFromMonitors"] = data.InheritOwnersFromMonitors.ValueBool()
     }
@@ -473,6 +486,7 @@ func (r *IncidentOwnerRuleResource) Create(ctx context.Context, req resource.Cre
         "monitorDescriptionPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
+        "creatorTeams": true,
         "inheritOwnersFromMonitors": true,
         "inheritOwnersFromHosts": true,
         "inheritOwnersFromKubernetesClusters": true,
@@ -982,6 +996,38 @@ func (r *IncidentOwnerRuleResource) Create(ctx context.Context, req resource.Cre
         // For sets, always use empty set instead of null to match default values
         data.OwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["creatorTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CreatorTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CreatorTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["inheritOwnersFromMonitors"].(bool); ok {
         data.InheritOwnersFromMonitors = types.BoolValue(val)
     }
@@ -1105,6 +1151,7 @@ func (r *IncidentOwnerRuleResource) Read(ctx context.Context, req resource.ReadR
         "monitorDescriptionPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
+        "creatorTeams": true,
         "inheritOwnersFromMonitors": true,
         "inheritOwnersFromHosts": true,
         "inheritOwnersFromKubernetesClusters": true,
@@ -1615,6 +1662,38 @@ func (r *IncidentOwnerRuleResource) Read(ctx context.Context, req resource.ReadR
         // For sets, always use empty set instead of null to match default values
         data.OwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["creatorTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CreatorTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CreatorTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["inheritOwnersFromMonitors"].(bool); ok {
         data.InheritOwnersFromMonitors = types.BoolValue(val)
     }
@@ -1785,6 +1864,9 @@ func (r *IncidentOwnerRuleResource) Update(ctx context.Context, req resource.Upd
     if !data.OwnerTeams.IsUnknown() && !state.OwnerTeams.IsUnknown() && !data.OwnerTeams.Equal(state.OwnerTeams) {
         requestDataMap["ownerTeams"] = r.convertTerraformSetToInterface(data.OwnerTeams)
     }
+    if !data.CreatorTeams.IsUnknown() && !state.CreatorTeams.IsUnknown() && !data.CreatorTeams.Equal(state.CreatorTeams) {
+        requestDataMap["creatorTeams"] = r.convertTerraformSetToInterface(data.CreatorTeams)
+    }
     if !data.InheritOwnersFromMonitors.IsUnknown() && !state.InheritOwnersFromMonitors.IsUnknown() && !data.InheritOwnersFromMonitors.Equal(state.InheritOwnersFromMonitors) {
         requestDataMap["inheritOwnersFromMonitors"] = data.InheritOwnersFromMonitors.ValueBool()
     }
@@ -1842,6 +1924,7 @@ func (r *IncidentOwnerRuleResource) Update(ctx context.Context, req resource.Upd
         "monitorDescriptionPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
+        "creatorTeams": true,
         "inheritOwnersFromMonitors": true,
         "inheritOwnersFromHosts": true,
         "inheritOwnersFromKubernetesClusters": true,
@@ -2346,6 +2429,38 @@ func (r *IncidentOwnerRuleResource) Update(ctx context.Context, req resource.Upd
         // For sets, always use empty set instead of null to match default values
         data.OwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["creatorTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CreatorTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CreatorTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["inheritOwnersFromMonitors"].(bool); ok {
         data.InheritOwnersFromMonitors = types.BoolValue(val)
     }
@@ -2521,6 +2636,9 @@ func (r *IncidentOwnerRuleResource) keepPlannedValues(data *IncidentOwnerRuleRes
     }
     if config.OwnerTeams.IsNull() && !plan.OwnerTeams.IsUnknown() {
         data.OwnerTeams = plan.OwnerTeams
+    }
+    if config.CreatorTeams.IsNull() && !plan.CreatorTeams.IsUnknown() {
+        data.CreatorTeams = plan.CreatorTeams
     }
     if config.InheritOwnersFromMonitors.IsNull() && !plan.InheritOwnersFromMonitors.IsUnknown() {
         data.InheritOwnersFromMonitors = plan.InheritOwnersFromMonitors

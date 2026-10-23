@@ -47,6 +47,7 @@ type AlertOwnerRuleDataSourceModel struct {
     MonitorDescriptionPattern types.String `tfsdk:"monitor_description_pattern"`
     OwnerUsers types.Set `tfsdk:"owner_users"`
     OwnerTeams types.Set `tfsdk:"owner_teams"`
+    CreatorTeams types.Set `tfsdk:"creator_teams"`
     InheritOwnersFromMonitors types.Bool `tfsdk:"inherit_owners_from_monitors"`
     InheritOwnersFromHosts types.Bool `tfsdk:"inherit_owners_from_hosts"`
     InheritOwnersFromKubernetesClusters types.Bool `tfsdk:"inherit_owners_from_kubernetes_clusters"`
@@ -153,6 +154,11 @@ func (d *AlertOwnerRuleDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "owner_teams": schema.SetAttribute{
                 MarkdownDescription: "Teams to add as owners on the alert when this rule matches. IDs of `oneuptime_team` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "creator_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams added as owners when the person who creates a matching alert is a member of them. Alerts with no creator get none. IDs of `oneuptime_team` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -325,6 +331,7 @@ func (d *AlertOwnerRuleDataSource) Read(ctx context.Context, req datasource.Read
         "monitorDescriptionPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
+        "creatorTeams": true,
         "inheritOwnersFromMonitors": true,
         "inheritOwnersFromHosts": true,
         "inheritOwnersFromKubernetesClusters": true,
@@ -733,6 +740,30 @@ func (d *AlertOwnerRuleDataSource) Read(ctx context.Context, req datasource.Read
         data.OwnerTeams = types.SetValueMust(types.StringType, setItems)
     } else {
         data.OwnerTeams = types.SetNull(types.StringType)
+    }
+    if val, ok := item["creatorTeams"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.CreatorTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.CreatorTeams = types.SetNull(types.StringType)
     }
     if val, ok := item["inheritOwnersFromMonitors"].(bool); ok {
         data.InheritOwnersFromMonitors = types.BoolValue(val)

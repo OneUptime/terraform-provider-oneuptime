@@ -30,6 +30,7 @@ resource "oneuptime_alert_owner_rule" "example" {
 - `alert_labels` (Set of String) Only trigger for alerts that have at least one of these labels. Leave empty to match regardless of alert labels. IDs of `oneuptime_label` resources.
 - `alert_severities` (Set of String) Only trigger for alerts with these severities. Leave empty to match alerts of any severity. IDs of `oneuptime_alert_severity` resources.
 - `alert_title_pattern` (String) Regex (case-insensitive) matched against the alert title.
+- `creator_teams` (Set of String) Teams added as owners when the person who creates a matching alert is a member of them. Alerts with no creator get none. IDs of `oneuptime_team` resources.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of this alert owner rule.
 - `inherit_owners_from_docker_hosts` (Boolean) When this rule matches, also assign every owner of the alert's affected Docker hosts to the alert. Defaults to `false`.
