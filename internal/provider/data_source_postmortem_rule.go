@@ -44,6 +44,7 @@ type PostmortemRuleDataSourceModel struct {
     TitlePattern types.String `tfsdk:"title_pattern"`
     DescriptionPattern types.String `tfsdk:"description_pattern"`
     PostmortemTemplates types.Set `tfsdk:"postmortem_templates"`
+    LlmProviderId types.String `tfsdk:"llm_provider_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -132,6 +133,11 @@ func (d *PostmortemRuleDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "llm_provider_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the LLM provider OneUptime AI uses for everything this rule drafts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
+                Optional: true,
+                Computed: true,
+            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
@@ -200,6 +206,10 @@ func (d *PostmortemRuleDataSource) Read(ctx context.Context, req datasource.Read
         filters["descriptionPattern"] = data.DescriptionPattern.ValueString()
         filterNames = append(filterNames, "description_pattern = "+fmt.Sprintf("%q", data.DescriptionPattern.ValueString()))
     }
+    if !data.LlmProviderId.IsNull() && !data.LlmProviderId.IsUnknown() {
+        filters["llmProviderId"] = data.LlmProviderId.ValueString()
+        filterNames = append(filterNames, "llm_provider_id = "+fmt.Sprintf("%q", data.LlmProviderId.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -236,6 +246,7 @@ func (d *PostmortemRuleDataSource) Read(ctx context.Context, req datasource.Read
         "titlePattern": true,
         "descriptionPattern": true,
         "postmortemTemplates": true,
+        "llmProviderId": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -576,6 +587,23 @@ func (d *PostmortemRuleDataSource) Read(ctx context.Context, req datasource.Read
         data.PostmortemTemplates = types.SetValueMust(types.StringType, setItems)
     } else {
         data.PostmortemTemplates = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["llmProviderId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
+    } else if val, ok := item["llmProviderId"].(string); ok {
+        data.LlmProviderId = types.StringValue(val)
+    } else {
+        data.LlmProviderId = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

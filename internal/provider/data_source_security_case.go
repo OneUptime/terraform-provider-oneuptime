@@ -56,6 +56,12 @@ type SecurityCaseDataSourceModel struct {
     GroupingKey types.String `tfsdk:"grouping_key"`
     NotifiedPriority types.String `tfsdk:"notified_priority"`
     IncidentId types.String `tfsdk:"incident_id"`
+    AiVerdict types.String `tfsdk:"ai_verdict"`
+    AiSuggestedPriority types.String `tfsdk:"ai_suggested_priority"`
+    AiSuggestedPlaybookId types.String `tfsdk:"ai_suggested_playbook_id"`
+    AiTriageReport types.String `tfsdk:"ai_triage_report"`
+    AiTriagedAt types.String `tfsdk:"ai_triaged_at"`
+    AiTriagePromptInjectionSuspected types.Bool `tfsdk:"ai_triage_prompt_injection_suspected"`
     Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -66,7 +72,7 @@ func (d *SecurityCaseDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A possible threat to investigate: the detections that point at it, who is on it, its priority and status, and the verdict it closed with. Look up an existing security case by `id`, or by any of its other arguments (`assigned_to_team_id`, `assigned_to_user_id`, `case_number`, ...): each one set must match, and exactly one security case may match them all.",
+        MarkdownDescription: "A possible threat to investigate: the detections that point at it, who is on it, its priority and status, and the verdict it closed with. Look up an existing security case by `id`, or by any of its other arguments (`ai_suggested_playbook_id`, `ai_suggested_priority`, `ai_triage_prompt_injection_suspected`, ...): each one set must match, and exactly one security case may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -198,6 +204,35 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 Optional: true,
                 Computed: true,
             },
+            "ai_verdict": schema.StringAttribute{
+                MarkdownDescription: "What OneUptime AI made of the case when it triaged it: Likely Malicious, Likely Benign, Likely False Positive or Inconclusive. A suggestion; a person sets the case's verdict.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_suggested_priority": schema.StringAttribute{
+                MarkdownDescription: "The priority OneUptime AI suggested when it triaged the case. The case's own priority changes only when a person sets it.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_suggested_playbook_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the project's playbook OneUptime AI suggested running when it triaged the case. It runs only when a person runs it.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_triage_report": schema.StringAttribute{
+                MarkdownDescription: "The report OneUptime AI wrote when it last triaged the case: what happened, its read and the evidence for it, and the next steps.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_triaged_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime AI last finished triaging the case.",
+                Computed: true,
+            },
+            "ai_triage_prompt_injection_suspected": schema.BoolAttribute{
+                MarkdownDescription: "Whether OneUptime AI found text in the case's data written to steer an AI when it triaged the case. It then leaves the call to a person.",
+                Optional: true,
+                Computed: true,
+            },
             "labels": schema.SetAttribute{
                 MarkdownDescription: "Labels to filter and report on cases by. IDs of `oneuptime_label` resources.",
                 Computed: true,
@@ -311,6 +346,26 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["incidentId"] = data.IncidentId.ValueString()
         filterNames = append(filterNames, "incident_id = "+fmt.Sprintf("%q", data.IncidentId.ValueString()))
     }
+    if !data.AiVerdict.IsNull() && !data.AiVerdict.IsUnknown() {
+        filters["aiVerdict"] = data.AiVerdict.ValueString()
+        filterNames = append(filterNames, "ai_verdict = "+fmt.Sprintf("%q", data.AiVerdict.ValueString()))
+    }
+    if !data.AiSuggestedPriority.IsNull() && !data.AiSuggestedPriority.IsUnknown() {
+        filters["aiSuggestedPriority"] = data.AiSuggestedPriority.ValueString()
+        filterNames = append(filterNames, "ai_suggested_priority = "+fmt.Sprintf("%q", data.AiSuggestedPriority.ValueString()))
+    }
+    if !data.AiSuggestedPlaybookId.IsNull() && !data.AiSuggestedPlaybookId.IsUnknown() {
+        filters["aiSuggestedPlaybookId"] = data.AiSuggestedPlaybookId.ValueString()
+        filterNames = append(filterNames, "ai_suggested_playbook_id = "+fmt.Sprintf("%q", data.AiSuggestedPlaybookId.ValueString()))
+    }
+    if !data.AiTriageReport.IsNull() && !data.AiTriageReport.IsUnknown() {
+        filters["aiTriageReport"] = data.AiTriageReport.ValueString()
+        filterNames = append(filterNames, "ai_triage_report = "+fmt.Sprintf("%q", data.AiTriageReport.ValueString()))
+    }
+    if !data.AiTriagePromptInjectionSuspected.IsNull() && !data.AiTriagePromptInjectionSuspected.IsUnknown() {
+        filters["aiTriagePromptInjectionSuspected"] = data.AiTriagePromptInjectionSuspected.ValueBool()
+        filterNames = append(filterNames, "ai_triage_prompt_injection_suspected = "+fmt.Sprintf("%t", data.AiTriagePromptInjectionSuspected.ValueBool()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -359,6 +414,12 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         "groupingKey": true,
         "notifiedPriority": true,
         "incidentId": true,
+        "aiVerdict": true,
+        "aiSuggestedPriority": true,
+        "aiSuggestedPlaybookId": true,
+        "aiTriageReport": true,
+        "aiTriagedAt": true,
+        "aiTriagePromptInjectionSuspected": true,
         "labels": true,
         "createdByUserId": true,
         "_id": true,
@@ -865,6 +926,96 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.IncidentId = types.StringValue(val)
     } else {
         data.IncidentId = types.StringNull()
+    }
+    if obj, ok := item["aiVerdict"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiVerdict = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiVerdict = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiVerdict = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiVerdict = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiVerdict = types.StringNull()
+        }
+    } else if val, ok := item["aiVerdict"].(string); ok {
+        data.AiVerdict = types.StringValue(val)
+    } else {
+        data.AiVerdict = types.StringNull()
+    }
+    if obj, ok := item["aiSuggestedPriority"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiSuggestedPriority = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiSuggestedPriority = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiSuggestedPriority = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiSuggestedPriority = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiSuggestedPriority = types.StringNull()
+        }
+    } else if val, ok := item["aiSuggestedPriority"].(string); ok {
+        data.AiSuggestedPriority = types.StringValue(val)
+    } else {
+        data.AiSuggestedPriority = types.StringNull()
+    }
+    if obj, ok := item["aiSuggestedPlaybookId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiSuggestedPlaybookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiSuggestedPlaybookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiSuggestedPlaybookId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiSuggestedPlaybookId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiSuggestedPlaybookId = types.StringNull()
+        }
+    } else if val, ok := item["aiSuggestedPlaybookId"].(string); ok {
+        data.AiSuggestedPlaybookId = types.StringValue(val)
+    } else {
+        data.AiSuggestedPlaybookId = types.StringNull()
+    }
+    if obj, ok := item["aiTriageReport"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiTriageReport = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiTriageReport = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiTriageReport = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiTriageReport = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiTriageReport = types.StringNull()
+        }
+    } else if val, ok := item["aiTriageReport"].(string); ok {
+        data.AiTriageReport = types.StringValue(val)
+    } else {
+        data.AiTriageReport = types.StringNull()
+    }
+    if obj, ok := item["aiTriagedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiTriagedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiTriagedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiTriagedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiTriagedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiTriagedAt = types.StringNull()
+        }
+    } else if val, ok := item["aiTriagedAt"].(string); ok {
+        data.AiTriagedAt = types.StringValue(val)
+    } else {
+        data.AiTriagedAt = types.StringNull()
+    }
+    if val, ok := item["aiTriagePromptInjectionSuspected"].(bool); ok {
+        data.AiTriagePromptInjectionSuspected = types.BoolValue(val)
+    } else {
+        data.AiTriagePromptInjectionSuspected = types.BoolNull()
     }
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value

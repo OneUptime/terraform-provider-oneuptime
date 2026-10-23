@@ -41,6 +41,12 @@ resource "oneuptime_security_case" "example" {
 ### Read-Only
 
 - `acknowledged_at` (String) When somebody first took the case on: assigned it to a person, or moved it out of New. The time to acknowledge is measured to here.
+- `ai_suggested_playbook_id` (String) ID of the project's playbook OneUptime AI suggested running when it triaged the case. It runs only when a person runs it.
+- `ai_suggested_priority` (String) The priority OneUptime AI suggested when it triaged the case. The case's own priority changes only when a person sets it.
+- `ai_triage_prompt_injection_suspected` (Boolean) Whether OneUptime AI found text in the case's data written to steer an AI when it triaged the case. It then leaves the call to a person.
+- `ai_triage_report` (String) The report OneUptime AI wrote when it last triaged the case: what happened, its read and the evidence for it, and the next steps.
+- `ai_triaged_at` (String) When OneUptime AI last finished triaging the case.
+- `ai_verdict` (String) What OneUptime AI made of the case when it triaged it: Likely Malicious, Likely Benign, Likely False Positive or Inconclusive. A suggestion; a person sets the case's verdict.
 - `case_number` (Number) The case's number in this project, counting up from 1 as cases are opened.
 - `case_number_with_prefix` (String) The case number with the project's case number prefix in front of it, like CASE-42.
 - `closed_at` (String) When the case was closed. Cleared if it is reopened. The time to close is measured to here.

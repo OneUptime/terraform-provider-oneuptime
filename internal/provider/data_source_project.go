@@ -75,6 +75,7 @@ type ProjectDataSourceModel struct {
     AiDailySpendLimitInUsd types.Number `tfsdk:"ai_daily_spend_limit_in_usd"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    EnableAutomaticSecurityCaseTriage types.Bool `tfsdk:"enable_automatic_security_case_triage"`
     EnableAutomaticIncidentRemediation types.Bool `tfsdk:"enable_automatic_incident_remediation"`
     EnableAutomaticAlertRemediation types.Bool `tfsdk:"enable_automatic_alert_remediation"`
     EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
@@ -370,6 +371,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
+                Optional: true,
+                Computed: true,
+            },
+            "enable_automatic_security_case_triage": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime AI triages every new security case a detection opens: it posts what happened, how likely it is to be real, the priority it deserves and the playbook that fits to the case's timeline. It changes nothing: a person decides the verdict and priority and runs the playbook. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
                 Optional: true,
                 Computed: true,
             },
@@ -815,6 +821,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
         filterNames = append(filterNames, "enable_automatic_alert_investigation = "+fmt.Sprintf("%t", data.EnableAutomaticAlertInvestigation.ValueBool()))
     }
+    if !data.EnableAutomaticSecurityCaseTriage.IsNull() && !data.EnableAutomaticSecurityCaseTriage.IsUnknown() {
+        filters["enableAutomaticSecurityCaseTriage"] = data.EnableAutomaticSecurityCaseTriage.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_security_case_triage = "+fmt.Sprintf("%t", data.EnableAutomaticSecurityCaseTriage.ValueBool()))
+    }
     if !data.EnableAutomaticIncidentRemediation.IsNull() && !data.EnableAutomaticIncidentRemediation.IsUnknown() {
         filters["enableAutomaticIncidentRemediation"] = data.EnableAutomaticIncidentRemediation.ValueBool()
         filterNames = append(filterNames, "enable_automatic_incident_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticIncidentRemediation.ValueBool()))
@@ -1052,6 +1062,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "aiDailySpendLimitInUSD": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "enableAutomaticSecurityCaseTriage": true,
         "enableAutomaticIncidentRemediation": true,
         "enableAutomaticAlertRemediation": true,
         "enableAutomaticPostmortemDraft": true,
@@ -1618,6 +1629,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     } else {
         data.EnableAutomaticAlertInvestigation = types.BoolNull()
+    }
+    if val, ok := item["enableAutomaticSecurityCaseTriage"].(bool); ok {
+        data.EnableAutomaticSecurityCaseTriage = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticSecurityCaseTriage = types.BoolNull()
     }
     if val, ok := item["enableAutomaticIncidentRemediation"].(bool); ok {
         data.EnableAutomaticIncidentRemediation = types.BoolValue(val)

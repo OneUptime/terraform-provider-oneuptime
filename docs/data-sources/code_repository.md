@@ -36,10 +36,12 @@ data "oneuptime_code_repository" "by_id" {
 - `git_lab_project_id` (String) The GitLab project ID for this repository.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_git_hub_commands_enabled` (Boolean) Whether the OneUptime GitHub App acts on mentions, assignments and trigger labels in this repository. Only people with write access to the repository can command it, and it never merges anything. On by default.
+- `is_production_review_enabled` (Boolean) Whether OneUptime comments on this repository's pull requests with what production says about the code they change: the exceptions thrown in it, how busy and slow the operations it runs are, and the incidents and deploys around it. Only pull requests from people who can write to the repository are reviewed on their own.
 - `main_branch_name` (String) The name of the main/default branch.
 - `max_open_fix_pull_requests` (Number) Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means no cap; 0 blocks AI fix pull requests for this repository entirely.
 - `name` (String) A friendly name for this code repository.
 - `organization_name` (String) GitHub organization or username that owns this repository.
+- `production_review_pull_request_content` (String) What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository.
 - `repository_hosted_at` (String) Where is this repository hosted (GitHub, GitLab, etc.).
 - `repository_name` (String) The name of the repository.
 - `repository_url` (String) The HTTPS URL to the repository.

@@ -60,6 +60,7 @@ type ProjectResourceModel struct {
     ScheduledMaintenanceNumbersStartAt types.Number `tfsdk:"scheduled_maintenance_numbers_start_at"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    EnableAutomaticSecurityCaseTriage types.Bool `tfsdk:"enable_automatic_security_case_triage"`
     EnableAutomaticIncidentRemediation types.Bool `tfsdk:"enable_automatic_incident_remediation"`
     EnableAutomaticAlertRemediation types.Bool `tfsdk:"enable_automatic_alert_remediation"`
     EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
@@ -312,6 +313,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_automatic_security_case_triage": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime AI triages every new security case a detection opens: it posts what happened, how likely it is to be real, the priority it deserves and the playbook that fits to the case's timeline. It changes nothing: a person decides the verdict and priority and runs the playbook. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -996,6 +1006,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.EnableAutomaticAlertInvestigation.IsNull() && !data.EnableAutomaticAlertInvestigation.IsUnknown() {
         requestDataMap["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
     }
+    if !data.EnableAutomaticSecurityCaseTriage.IsNull() && !data.EnableAutomaticSecurityCaseTriage.IsUnknown() {
+        requestDataMap["enableAutomaticSecurityCaseTriage"] = data.EnableAutomaticSecurityCaseTriage.ValueBool()
+    }
     if !data.EnableAutomaticIncidentRemediation.IsNull() && !data.EnableAutomaticIncidentRemediation.IsUnknown() {
         requestDataMap["enableAutomaticIncidentRemediation"] = data.EnableAutomaticIncidentRemediation.ValueBool()
     }
@@ -1102,6 +1115,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "scheduledMaintenanceNumbersStartAt": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "enableAutomaticSecurityCaseTriage": true,
         "enableAutomaticIncidentRemediation": true,
         "enableAutomaticAlertRemediation": true,
         "enableAutomaticPostmortemDraft": true,
@@ -1628,6 +1642,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticSecurityCaseTriage"].(bool); ok {
+        data.EnableAutomaticSecurityCaseTriage = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutomaticIncidentRemediation"].(bool); ok {
         data.EnableAutomaticIncidentRemediation = types.BoolValue(val)
@@ -2484,6 +2501,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "scheduledMaintenanceNumbersStartAt": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "enableAutomaticSecurityCaseTriage": true,
         "enableAutomaticIncidentRemediation": true,
         "enableAutomaticAlertRemediation": true,
         "enableAutomaticPostmortemDraft": true,
@@ -3011,6 +3029,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticSecurityCaseTriage"].(bool); ok {
+        data.EnableAutomaticSecurityCaseTriage = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutomaticIncidentRemediation"].(bool); ok {
         data.EnableAutomaticIncidentRemediation = types.BoolValue(val)
@@ -3960,6 +3981,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAutomaticAlertInvestigation.IsUnknown() && !state.EnableAutomaticAlertInvestigation.IsUnknown() && !data.EnableAutomaticAlertInvestigation.Equal(state.EnableAutomaticAlertInvestigation) {
         requestDataMap["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
     }
+    if !data.EnableAutomaticSecurityCaseTriage.IsUnknown() && !state.EnableAutomaticSecurityCaseTriage.IsUnknown() && !data.EnableAutomaticSecurityCaseTriage.Equal(state.EnableAutomaticSecurityCaseTriage) {
+        requestDataMap["enableAutomaticSecurityCaseTriage"] = data.EnableAutomaticSecurityCaseTriage.ValueBool()
+    }
     if !data.EnableAutomaticIncidentRemediation.IsUnknown() && !state.EnableAutomaticIncidentRemediation.IsUnknown() && !data.EnableAutomaticIncidentRemediation.Equal(state.EnableAutomaticIncidentRemediation) {
         requestDataMap["enableAutomaticIncidentRemediation"] = data.EnableAutomaticIncidentRemediation.ValueBool()
     }
@@ -4126,6 +4150,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "scheduledMaintenanceNumbersStartAt": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "enableAutomaticSecurityCaseTriage": true,
         "enableAutomaticIncidentRemediation": true,
         "enableAutomaticAlertRemediation": true,
         "enableAutomaticPostmortemDraft": true,
@@ -4647,6 +4672,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticSecurityCaseTriage"].(bool); ok {
+        data.EnableAutomaticSecurityCaseTriage = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutomaticIncidentRemediation"].(bool); ok {
         data.EnableAutomaticIncidentRemediation = types.BoolValue(val)
@@ -5564,6 +5592,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.EnableAutomaticAlertInvestigation.IsNull() && !plan.EnableAutomaticAlertInvestigation.IsUnknown() {
         data.EnableAutomaticAlertInvestigation = plan.EnableAutomaticAlertInvestigation
+    }
+    if config.EnableAutomaticSecurityCaseTriage.IsNull() && !plan.EnableAutomaticSecurityCaseTriage.IsUnknown() {
+        data.EnableAutomaticSecurityCaseTriage = plan.EnableAutomaticSecurityCaseTriage
     }
     if config.EnableAutomaticIncidentRemediation.IsNull() && !plan.EnableAutomaticIncidentRemediation.IsUnknown() {
         data.EnableAutomaticIncidentRemediation = plan.EnableAutomaticIncidentRemediation

@@ -65,6 +65,7 @@ type AutoRemediationRuleResourceModel struct {
     ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
     RunnerId types.String `tfsdk:"runner_id"`
     CodeRepositories types.Set `tfsdk:"code_repositories"`
+    LlmProviderId types.String `tfsdk:"llm_provider_id"`
     OpenCodeFixPullRequests types.Bool `tfsdk:"open_code_fix_pull_requests"`
     OpenTelemetryPullRequests types.Bool `tfsdk:"open_telemetry_pull_requests"`
     VerificationWindowMinutes types.Number `tfsdk:"verification_window_minutes"`
@@ -294,6 +295,14 @@ func (r *AutoRemediationRuleResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
+            "llm_provider_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the LLM provider OneUptime AI uses for everything this rule starts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "open_code_fix_pull_requests": schema.BoolAttribute{
                 MarkdownDescription: "When an investigation of an incident or alert this rule matches finds the cause in your code, OneUptime AI opens a pull request with the fix, for review. Nothing is merged. Acts only while fixing new incidents (or alerts) automatically is on. On by default.",
                 Optional: true,
@@ -468,6 +477,9 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
     if !data.CodeRepositories.IsNull() && !data.CodeRepositories.IsUnknown() {
         requestDataMap["codeRepositories"] = r.convertTerraformSetToInterface(data.CodeRepositories)
     }
+    if !data.LlmProviderId.IsNull() && !data.LlmProviderId.IsUnknown() {
+        requestDataMap["llmProviderId"] = data.LlmProviderId.ValueString()
+    }
     if !data.OpenCodeFixPullRequests.IsNull() && !data.OpenCodeFixPullRequests.IsUnknown() {
         requestDataMap["openCodeFixPullRequests"] = data.OpenCodeFixPullRequests.ValueBool()
     }
@@ -548,6 +560,7 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
         "externalMcpServers": true,
         "runnerId": true,
         "codeRepositories": true,
+        "llmProviderId": true,
         "openCodeFixPullRequests": true,
         "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
@@ -1265,6 +1278,43 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
         // For sets, always use empty set instead of null to match default values
         data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["llmProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmProviderId"].(string); ok {
+        data.LlmProviderId = types.StringValue(val)
+    } else {
+        data.LlmProviderId = types.StringNull()
+    }
     if val, ok := dataMap["openCodeFixPullRequests"].(bool); ok {
         data.OpenCodeFixPullRequests = types.BoolValue(val)
     }
@@ -1387,6 +1437,7 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
         "externalMcpServers": true,
         "runnerId": true,
         "codeRepositories": true,
+        "llmProviderId": true,
         "openCodeFixPullRequests": true,
         "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
@@ -2105,6 +2156,43 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
         // For sets, always use empty set instead of null to match default values
         data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["llmProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmProviderId"].(string); ok {
+        data.LlmProviderId = types.StringValue(val)
+    } else {
+        data.LlmProviderId = types.StringNull()
+    }
     if val, ok := dataMap["openCodeFixPullRequests"].(bool); ok {
         data.OpenCodeFixPullRequests = types.BoolValue(val)
     }
@@ -2290,6 +2378,9 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
     if !data.CodeRepositories.IsUnknown() && !state.CodeRepositories.IsUnknown() && !data.CodeRepositories.Equal(state.CodeRepositories) {
         requestDataMap["codeRepositories"] = r.convertTerraformSetToInterface(data.CodeRepositories)
     }
+    if !data.LlmProviderId.IsUnknown() && !state.LlmProviderId.IsUnknown() && !data.LlmProviderId.Equal(state.LlmProviderId) {
+        requestDataMap["llmProviderId"] = data.LlmProviderId.ValueString()
+    }
     if !data.OpenCodeFixPullRequests.IsUnknown() && !state.OpenCodeFixPullRequests.IsUnknown() && !data.OpenCodeFixPullRequests.Equal(state.OpenCodeFixPullRequests) {
         requestDataMap["openCodeFixPullRequests"] = data.OpenCodeFixPullRequests.ValueBool()
     }
@@ -2348,6 +2439,7 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
         "externalMcpServers": true,
         "runnerId": true,
         "codeRepositories": true,
+        "llmProviderId": true,
         "openCodeFixPullRequests": true,
         "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
@@ -3060,6 +3152,43 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
         // For sets, always use empty set instead of null to match default values
         data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["llmProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmProviderId"].(string); ok {
+        data.LlmProviderId = types.StringValue(val)
+    } else {
+        data.LlmProviderId = types.StringNull()
+    }
     if val, ok := dataMap["openCodeFixPullRequests"].(bool); ok {
         data.OpenCodeFixPullRequests = types.BoolValue(val)
     }
@@ -3245,6 +3374,9 @@ func (r *AutoRemediationRuleResource) keepPlannedValues(data *AutoRemediationRul
     }
     if config.CodeRepositories.IsNull() && !plan.CodeRepositories.IsUnknown() {
         data.CodeRepositories = plan.CodeRepositories
+    }
+    if config.LlmProviderId.IsNull() && !plan.LlmProviderId.IsUnknown() {
+        data.LlmProviderId = plan.LlmProviderId
     }
     if config.OpenCodeFixPullRequests.IsNull() && !plan.OpenCodeFixPullRequests.IsUnknown() {
         data.OpenCodeFixPullRequests = plan.OpenCodeFixPullRequests

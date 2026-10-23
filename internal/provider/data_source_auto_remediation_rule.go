@@ -54,6 +54,7 @@ type AutoRemediationRuleDataSourceModel struct {
     ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
     RunnerId types.String `tfsdk:"runner_id"`
     CodeRepositories types.Set `tfsdk:"code_repositories"`
+    LlmProviderId types.String `tfsdk:"llm_provider_id"`
     OpenCodeFixPullRequests types.Bool `tfsdk:"open_code_fix_pull_requests"`
     OpenTelemetryPullRequests types.Bool `tfsdk:"open_telemetry_pull_requests"`
     VerificationWindowMinutes types.Number `tfsdk:"verification_window_minutes"`
@@ -195,6 +196,11 @@ func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "llm_provider_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the LLM provider OneUptime AI uses for everything this rule starts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
+                Optional: true,
+                Computed: true,
+            },
             "open_code_fix_pull_requests": schema.BoolAttribute{
                 MarkdownDescription: "When an investigation of an incident or alert this rule matches finds the cause in your code, OneUptime AI opens a pull request with the fix, for review. Nothing is merged. Acts only while fixing new incidents (or alerts) automatically is on. On by default.",
                 Optional: true,
@@ -303,6 +309,10 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         filters["runnerId"] = data.RunnerId.ValueString()
         filterNames = append(filterNames, "runner_id = "+fmt.Sprintf("%q", data.RunnerId.ValueString()))
     }
+    if !data.LlmProviderId.IsNull() && !data.LlmProviderId.IsUnknown() {
+        filters["llmProviderId"] = data.LlmProviderId.ValueString()
+        filterNames = append(filterNames, "llm_provider_id = "+fmt.Sprintf("%q", data.LlmProviderId.ValueString()))
+    }
     if !data.OpenCodeFixPullRequests.IsNull() && !data.OpenCodeFixPullRequests.IsUnknown() {
         filters["openCodeFixPullRequests"] = data.OpenCodeFixPullRequests.ValueBool()
         filterNames = append(filterNames, "open_code_fix_pull_requests = "+fmt.Sprintf("%t", data.OpenCodeFixPullRequests.ValueBool()))
@@ -365,6 +375,7 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         "externalMcpServers": true,
         "runnerId": true,
         "codeRepositories": true,
+        "llmProviderId": true,
         "openCodeFixPullRequests": true,
         "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
@@ -899,6 +910,23 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         data.CodeRepositories = types.SetValueMust(types.StringType, setItems)
     } else {
         data.CodeRepositories = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["llmProviderId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
+    } else if val, ok := item["llmProviderId"].(string); ok {
+        data.LlmProviderId = types.StringValue(val)
+    } else {
+        data.LlmProviderId = types.StringNull()
     }
     if val, ok := item["openCodeFixPullRequests"].(bool); ok {
         data.OpenCodeFixPullRequests = types.BoolValue(val)

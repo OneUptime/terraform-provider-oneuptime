@@ -42,6 +42,7 @@ type OnCallPolicyDataSourceModel struct {
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     RepeatPolicyIfNoOneAcknowledges types.Bool `tfsdk:"repeat_policy_if_no_one_acknowledges"`
     RepeatPolicyIfNoOneAcknowledgesNoOfTimes types.Number `tfsdk:"repeat_policy_if_no_one_acknowledges_no_of_times"`
+    AcknowledgementTimeoutInMinutes types.Number `tfsdk:"acknowledgement_timeout_in_minutes"`
     CustomFields types.String `tfsdk:"custom_fields"`
 }
 
@@ -51,7 +52,7 @@ func (d *OnCallPolicyDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *OnCallPolicyDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage on-call duty, schedules and roster for your project Look up an existing on call policy by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one on call policy may match them all.",
+        MarkdownDescription: "Manage on-call duty, schedules and roster for your project Look up an existing on call policy by `id`, or by any of its other arguments (`name`, `acknowledgement_timeout_in_minutes`, `archived_by_user_id`, ...): each one set must match, and exactly one on call policy may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -117,6 +118,11 @@ func (d *OnCallPolicyDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "repeat_policy_if_no_one_acknowledges_no_of_times": schema.NumberAttribute{
                 MarkdownDescription: "Repeat the policy X number of times if no one acknowledges the alert.",
+                Optional: true,
+                Computed: true,
+            },
+            "acknowledgement_timeout_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Page again when something this policy paged about is acknowledged but not resolved within this many minutes (5 to 1440). Empty: never.",
                 Optional: true,
                 Computed: true,
             },
@@ -195,6 +201,10 @@ func (d *OnCallPolicyDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["repeatPolicyIfNoOneAcknowledgesNoOfTimes"] = lookupNumber(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes)
         filterNames = append(filterNames, "repeat_policy_if_no_one_acknowledges_no_of_times = "+data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes.ValueBigFloat().String())
     }
+    if !data.AcknowledgementTimeoutInMinutes.IsNull() && !data.AcknowledgementTimeoutInMinutes.IsUnknown() {
+        filters["acknowledgementTimeoutInMinutes"] = lookupNumber(data.AcknowledgementTimeoutInMinutes)
+        filterNames = append(filterNames, "acknowledgement_timeout_in_minutes = "+data.AcknowledgementTimeoutInMinutes.ValueBigFloat().String())
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -225,6 +235,7 @@ func (d *OnCallPolicyDataSource) Read(ctx context.Context, req datasource.ReadRe
         "archivedByUserId": true,
         "repeatPolicyIfNoOneAcknowledges": true,
         "repeatPolicyIfNoOneAcknowledgesNoOfTimes": true,
+        "acknowledgementTimeoutInMinutes": true,
         "customFields": true,
         "_id": true,
     }
@@ -492,6 +503,7 @@ func (d *OnCallPolicyDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.RepeatPolicyIfNoOneAcknowledges = types.BoolNull()
     }
     data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = numberFromAPI(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes, item["repeatPolicyIfNoOneAcknowledgesNoOfTimes"])
+    data.AcknowledgementTimeoutInMinutes = numberFromAPI(data.AcknowledgementTimeoutInMinutes, item["acknowledgementTimeoutInMinutes"])
     if obj, ok := item["customFields"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CustomFields = types.StringValue(val)

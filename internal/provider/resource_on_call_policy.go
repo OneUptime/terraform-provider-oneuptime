@@ -49,6 +49,7 @@ type OnCallPolicyResourceModel struct {
     IsArchived types.Bool `tfsdk:"is_archived"`
     RepeatPolicyIfNoOneAcknowledges types.Bool `tfsdk:"repeat_policy_if_no_one_acknowledges"`
     RepeatPolicyIfNoOneAcknowledgesNoOfTimes types.Number `tfsdk:"repeat_policy_if_no_one_acknowledges_no_of_times"`
+    AcknowledgementTimeoutInMinutes types.Number `tfsdk:"acknowledgement_timeout_in_minutes"`
     CustomFields JSONSubsetValue `tfsdk:"custom_fields"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -129,6 +130,14 @@ func (r *OnCallPolicyResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "acknowledgement_timeout_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Page again when something this policy paged about is acknowledged but not resolved within this many minutes (5 to 1440). Empty: never.",
+                Optional: true,
+                Computed: true,
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
                 },
@@ -249,6 +258,9 @@ func (r *OnCallPolicyResource) Create(ctx context.Context, req resource.CreateRe
     if !data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes.IsNull() && !data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes.IsUnknown() {
         requestDataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"] = r.bigFloatToFloat64(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes.ValueBigFloat())
     }
+    if !data.AcknowledgementTimeoutInMinutes.IsNull() && !data.AcknowledgementTimeoutInMinutes.IsUnknown() {
+        requestDataMap["acknowledgementTimeoutInMinutes"] = r.bigFloatToFloat64(data.AcknowledgementTimeoutInMinutes.ValueBigFloat())
+    }
     if parsedCustomFields := r.parseJSONField(data.CustomFields); parsedCustomFields != nil {
         requestDataMap["customFields"] = parsedCustomFields
     }
@@ -304,6 +316,7 @@ func (r *OnCallPolicyResource) Create(ctx context.Context, req resource.CreateRe
         "isArchived": true,
         "repeatPolicyIfNoOneAcknowledges": true,
         "repeatPolicyIfNoOneAcknowledgesNoOfTimes": true,
+        "acknowledgementTimeoutInMinutes": true,
         "customFields": true,
         "createdAt": true,
         "updatedAt": true,
@@ -467,6 +480,7 @@ func (r *OnCallPolicyResource) Create(ctx context.Context, req resource.CreateRe
         data.RepeatPolicyIfNoOneAcknowledges = types.BoolValue(val)
     }
     data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = numberFromAPI(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes, dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"])
+    data.AcknowledgementTimeoutInMinutes = numberFromAPI(data.AcknowledgementTimeoutInMinutes, dataMap["acknowledgementTimeoutInMinutes"])
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -685,6 +699,7 @@ func (r *OnCallPolicyResource) Read(ctx context.Context, req resource.ReadReques
         "isArchived": true,
         "repeatPolicyIfNoOneAcknowledges": true,
         "repeatPolicyIfNoOneAcknowledgesNoOfTimes": true,
+        "acknowledgementTimeoutInMinutes": true,
         "customFields": true,
         "createdAt": true,
         "updatedAt": true,
@@ -849,6 +864,7 @@ func (r *OnCallPolicyResource) Read(ctx context.Context, req resource.ReadReques
         data.RepeatPolicyIfNoOneAcknowledges = types.BoolValue(val)
     }
     data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = numberFromAPI(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes, dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"])
+    data.AcknowledgementTimeoutInMinutes = numberFromAPI(data.AcknowledgementTimeoutInMinutes, dataMap["acknowledgementTimeoutInMinutes"])
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1091,6 +1107,9 @@ func (r *OnCallPolicyResource) Update(ctx context.Context, req resource.UpdateRe
     if !data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes.IsUnknown() && !state.RepeatPolicyIfNoOneAcknowledgesNoOfTimes.IsUnknown() && !data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes.Equal(state.RepeatPolicyIfNoOneAcknowledgesNoOfTimes) {
         requestDataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"] = r.bigFloatToFloat64(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes.ValueBigFloat())
     }
+    if !data.AcknowledgementTimeoutInMinutes.IsUnknown() && !state.AcknowledgementTimeoutInMinutes.IsUnknown() && !data.AcknowledgementTimeoutInMinutes.Equal(state.AcknowledgementTimeoutInMinutes) {
+        requestDataMap["acknowledgementTimeoutInMinutes"] = r.bigFloatToFloat64(data.AcknowledgementTimeoutInMinutes.ValueBigFloat())
+    }
     if !data.CustomFields.IsUnknown() && !state.CustomFields.IsUnknown() && !data.CustomFields.Equal(state.CustomFields) {
         var customfieldsData interface{}
         if err := json.Unmarshal([]byte(data.CustomFields.ValueString()), &customfieldsData); err == nil {
@@ -1129,6 +1148,7 @@ func (r *OnCallPolicyResource) Update(ctx context.Context, req resource.UpdateRe
         "isArchived": true,
         "repeatPolicyIfNoOneAcknowledges": true,
         "repeatPolicyIfNoOneAcknowledgesNoOfTimes": true,
+        "acknowledgementTimeoutInMinutes": true,
         "customFields": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1287,6 +1307,7 @@ func (r *OnCallPolicyResource) Update(ctx context.Context, req resource.UpdateRe
         data.RepeatPolicyIfNoOneAcknowledges = types.BoolValue(val)
     }
     data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = numberFromAPI(data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes, dataMap["repeatPolicyIfNoOneAcknowledgesNoOfTimes"])
+    data.AcknowledgementTimeoutInMinutes = numberFromAPI(data.AcknowledgementTimeoutInMinutes, dataMap["acknowledgementTimeoutInMinutes"])
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1539,6 +1560,9 @@ func (r *OnCallPolicyResource) keepPlannedValues(data *OnCallPolicyResourceModel
     }
     if config.RepeatPolicyIfNoOneAcknowledgesNoOfTimes.IsNull() && !plan.RepeatPolicyIfNoOneAcknowledgesNoOfTimes.IsUnknown() {
         data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = plan.RepeatPolicyIfNoOneAcknowledgesNoOfTimes
+    }
+    if config.AcknowledgementTimeoutInMinutes.IsNull() && !plan.AcknowledgementTimeoutInMinutes.IsUnknown() {
+        data.AcknowledgementTimeoutInMinutes = plan.AcknowledgementTimeoutInMinutes
     }
     if config.CustomFields.IsNull() && !plan.CustomFields.IsUnknown() {
         data.CustomFields = plan.CustomFields

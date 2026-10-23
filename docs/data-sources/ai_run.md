@@ -44,6 +44,7 @@ data "oneuptime_ai_run" "by_id" {
 - `human_verdict_by_user_id` (String) The user who recorded (or last changed) the human verdict.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `llm_call_count` (Number) Number of LLM calls made during this run.
+- `llm_provider_id` (String) The LLM provider the rule that started this run picked for it. Empty when no rule picked one: the project's default provider, else the global one.
 - `monitor_id` (String) The monitor behind the alert that triggered this run — the dedupe key for per-monitor investigation windows.
 - `needs_user_input` (Boolean) True when the run ended by asking the person who started it a question, and waits for their answer.
 - `rule_wait_minutes` (Number) For an investigation an investigation rule made wait: the minutes the rule waited to see whether the incident or alert would still be open. Empty when it started right away.
@@ -57,6 +58,7 @@ data "oneuptime_ai_run" "by_id" {
 - `triggered_by_alert_id` (String) The alert that triggered this run (for autonomous investigations).
 - `triggered_by_auto_remediation_suggestion_id` (String) The auto-remediation suggestion this planning run picks a runbook for.
 - `triggered_by_incident_id` (String) The incident that triggered this run (for autonomous investigations).
+- `triggered_by_security_case_id` (String) The security case this run triaged (for security case triage runs).
 - `triggered_by_telemetry_exception_id` (String) The telemetry exception that triggered this run (for code-fix runs).
 - `user_id` (String) ID of the user who triggered this run. The ID of a `oneuptime_user` (see the data source).
 

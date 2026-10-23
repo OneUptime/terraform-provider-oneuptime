@@ -33,6 +33,7 @@ data "oneuptime_investigation_rule" "by_id" {
 - `description_pattern` (String) Case-insensitive regex matched against the entity's description. Leave empty to match any description.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Whether this rule is enabled.
+- `llm_provider_id` (String) ID of the LLM provider OneUptime AI uses for everything this rule starts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.
 - `name` (String) Name of this investigation rule.
 - `only_if_open_after_minutes` (Number) Investigate only incidents or alerts still open this many minutes after they were created: OneUptime AI waits that long, then investigates if it is still open. Leave empty to investigate right away. When several rules match, the shortest wait decides. At most 1440 minutes (a day).
 - `title_pattern` (String) Case-insensitive regex matched against the entity's title. Leave empty to match any title.

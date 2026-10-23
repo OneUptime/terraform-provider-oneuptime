@@ -32,6 +32,7 @@ resource "oneuptime_postmortem_rule" "example" {
 - `incident_severities` (Set of String) Match only incidents with these severities. Leave empty to match any severity. IDs of `oneuptime_incident_severity` resources.
 - `is_enabled` (Boolean) Whether this rule is enabled. A disabled rule is skipped, as if it were not there. Defaults to `true`.
 - `labels` (Set of String) Match only incidents that carry at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.
+- `llm_provider_id` (String) ID of the LLM provider OneUptime AI uses for everything this rule drafts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.
 - `monitor_labels` (Set of String) Match only when one of the incident's monitors carries at least one of these labels - the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) Match only incidents from these monitors. Leave empty to match any monitor. IDs of `oneuptime_monitor` resources.
 - `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.

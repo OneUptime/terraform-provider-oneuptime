@@ -46,6 +46,8 @@ type CodeRepositoryDataSourceModel struct {
     MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
     IsGitHubCommandsEnabled types.Bool `tfsdk:"is_git_hub_commands_enabled"`
     GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
+    IsProductionReviewEnabled types.Bool `tfsdk:"is_production_review_enabled"`
+    ProductionReviewPullRequestContent types.String `tfsdk:"production_review_pull_request_content"`
     RepositoryUrl types.String `tfsdk:"repository_url"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
@@ -146,6 +148,16 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "git_hub_trigger_label": schema.StringAttribute{
                 MarkdownDescription: "The issue label that hands an issue to the OneUptime GitHub App. Adding this label to an issue starts the same work an '@mention implement this' would, which is how you assign work to the app from the GitHub UI. Unset means 'oneuptime'.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_production_review_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether OneUptime comments on this repository's pull requests with what production says about the code they change: the exceptions thrown in it, how busy and slow the operations it runs are, and the incidents and deploys around it. Only pull requests from people who can write to the repository are reviewed on their own.",
+                Optional: true,
+                Computed: true,
+            },
+            "production_review_pull_request_content": schema.StringAttribute{
+                MarkdownDescription: "What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository.",
                 Optional: true,
                 Computed: true,
             },
@@ -269,6 +281,14 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         filters["gitHubTriggerLabel"] = data.GitHubTriggerLabel.ValueString()
         filterNames = append(filterNames, "git_hub_trigger_label = "+fmt.Sprintf("%q", data.GitHubTriggerLabel.ValueString()))
     }
+    if !data.IsProductionReviewEnabled.IsNull() && !data.IsProductionReviewEnabled.IsUnknown() {
+        filters["isProductionReviewEnabled"] = data.IsProductionReviewEnabled.ValueBool()
+        filterNames = append(filterNames, "is_production_review_enabled = "+fmt.Sprintf("%t", data.IsProductionReviewEnabled.ValueBool()))
+    }
+    if !data.ProductionReviewPullRequestContent.IsNull() && !data.ProductionReviewPullRequestContent.IsUnknown() {
+        filters["productionReviewPullRequestContent"] = data.ProductionReviewPullRequestContent.ValueString()
+        filterNames = append(filterNames, "production_review_pull_request_content = "+fmt.Sprintf("%q", data.ProductionReviewPullRequestContent.ValueString()))
+    }
     if !data.RepositoryUrl.IsNull() && !data.RepositoryUrl.IsUnknown() {
         filters["repositoryUrl"] = data.RepositoryUrl.ValueString()
         filterNames = append(filterNames, "repository_url = "+fmt.Sprintf("%q", data.RepositoryUrl.ValueString()))
@@ -319,6 +339,8 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
+        "isProductionReviewEnabled": true,
+        "productionReviewPullRequestContent": true,
         "repositoryUrl": true,
         "gitHubAppInstallationId": true,
         "gitLabProjectId": true,
@@ -662,6 +684,28 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         data.GitHubTriggerLabel = types.StringValue(val)
     } else {
         data.GitHubTriggerLabel = types.StringNull()
+    }
+    if val, ok := item["isProductionReviewEnabled"].(bool); ok {
+        data.IsProductionReviewEnabled = types.BoolValue(val)
+    } else {
+        data.IsProductionReviewEnabled = types.BoolNull()
+    }
+    if obj, ok := item["productionReviewPullRequestContent"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionReviewPullRequestContent = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductionReviewPullRequestContent = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewPullRequestContent = types.StringNull()
+        }
+    } else if val, ok := item["productionReviewPullRequestContent"].(string); ok {
+        data.ProductionReviewPullRequestContent = types.StringValue(val)
+    } else {
+        data.ProductionReviewPullRequestContent = types.StringNull()
     }
     if obj, ok := item["repositoryUrl"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

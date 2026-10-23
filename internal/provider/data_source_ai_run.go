@@ -41,8 +41,10 @@ type AiRunDataSourceModel struct {
     TriggeredByAlertId types.String `tfsdk:"triggered_by_alert_id"`
     FollowUpForAlertId types.String `tfsdk:"follow_up_for_alert_id"`
     RuleWaitMinutes types.Number `tfsdk:"rule_wait_minutes"`
+    LlmProviderId types.String `tfsdk:"llm_provider_id"`
     TriggeredByTelemetryExceptionId types.String `tfsdk:"triggered_by_telemetry_exception_id"`
     TriggeredByAiInsightId types.String `tfsdk:"triggered_by_ai_insight_id"`
+    TriggeredBySecurityCaseId types.String `tfsdk:"triggered_by_security_case_id"`
     TriggeredByAutoRemediationSuggestionId types.String `tfsdk:"triggered_by_auto_remediation_suggestion_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
     AiAgentId types.String `tfsdk:"ai_agent_id"`
@@ -149,6 +151,11 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Optional: true,
                 Computed: true,
             },
+            "llm_provider_id": schema.StringAttribute{
+                MarkdownDescription: "The LLM provider the rule that started this run picked for it. Empty when no rule picked one: the project's default provider, else the global one.",
+                Optional: true,
+                Computed: true,
+            },
             "triggered_by_telemetry_exception_id": schema.StringAttribute{
                 MarkdownDescription: "The telemetry exception that triggered this run (for code-fix runs).",
                 Optional: true,
@@ -156,6 +163,11 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             },
             "triggered_by_ai_insight_id": schema.StringAttribute{
                 MarkdownDescription: "The preventive AI insight that triggered this run (for insight triage and insight-created fix runs).",
+                Optional: true,
+                Computed: true,
+            },
+            "triggered_by_security_case_id": schema.StringAttribute{
+                MarkdownDescription: "The security case this run triaged (for security case triage runs).",
                 Optional: true,
                 Computed: true,
             },
@@ -351,6 +363,10 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         filters["ruleWaitMinutes"] = lookupNumber(data.RuleWaitMinutes)
         filterNames = append(filterNames, "rule_wait_minutes = "+data.RuleWaitMinutes.ValueBigFloat().String())
     }
+    if !data.LlmProviderId.IsNull() && !data.LlmProviderId.IsUnknown() {
+        filters["llmProviderId"] = data.LlmProviderId.ValueString()
+        filterNames = append(filterNames, "llm_provider_id = "+fmt.Sprintf("%q", data.LlmProviderId.ValueString()))
+    }
     if !data.TriggeredByTelemetryExceptionId.IsNull() && !data.TriggeredByTelemetryExceptionId.IsUnknown() {
         filters["triggeredByTelemetryExceptionId"] = data.TriggeredByTelemetryExceptionId.ValueString()
         filterNames = append(filterNames, "triggered_by_telemetry_exception_id = "+fmt.Sprintf("%q", data.TriggeredByTelemetryExceptionId.ValueString()))
@@ -358,6 +374,10 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     if !data.TriggeredByAiInsightId.IsNull() && !data.TriggeredByAiInsightId.IsUnknown() {
         filters["triggeredByAiInsightId"] = data.TriggeredByAiInsightId.ValueString()
         filterNames = append(filterNames, "triggered_by_ai_insight_id = "+fmt.Sprintf("%q", data.TriggeredByAiInsightId.ValueString()))
+    }
+    if !data.TriggeredBySecurityCaseId.IsNull() && !data.TriggeredBySecurityCaseId.IsUnknown() {
+        filters["triggeredBySecurityCaseId"] = data.TriggeredBySecurityCaseId.ValueString()
+        filterNames = append(filterNames, "triggered_by_security_case_id = "+fmt.Sprintf("%q", data.TriggeredBySecurityCaseId.ValueString()))
     }
     if !data.TriggeredByAutoRemediationSuggestionId.IsNull() && !data.TriggeredByAutoRemediationSuggestionId.IsUnknown() {
         filters["triggeredByAutoRemediationSuggestionId"] = data.TriggeredByAutoRemediationSuggestionId.ValueString()
@@ -458,8 +478,10 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "triggeredByAlertId": true,
         "followUpForAlertId": true,
         "ruleWaitMinutes": true,
+        "llmProviderId": true,
         "triggeredByTelemetryExceptionId": true,
         "triggeredByAiInsightId": true,
+        "triggeredBySecurityCaseId": true,
         "triggeredByAutoRemediationSuggestionId": true,
         "monitorId": true,
         "aiAgentId": true,
@@ -767,6 +789,23 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.FollowUpForAlertId = types.StringNull()
     }
     data.RuleWaitMinutes = numberFromAPI(data.RuleWaitMinutes, item["ruleWaitMinutes"])
+    if obj, ok := item["llmProviderId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
+    } else if val, ok := item["llmProviderId"].(string); ok {
+        data.LlmProviderId = types.StringValue(val)
+    } else {
+        data.LlmProviderId = types.StringNull()
+    }
     if obj, ok := item["triggeredByTelemetryExceptionId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TriggeredByTelemetryExceptionId = types.StringValue(val)
@@ -800,6 +839,23 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.TriggeredByAiInsightId = types.StringValue(val)
     } else {
         data.TriggeredByAiInsightId = types.StringNull()
+    }
+    if obj, ok := item["triggeredBySecurityCaseId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TriggeredBySecurityCaseId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TriggeredBySecurityCaseId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TriggeredBySecurityCaseId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TriggeredBySecurityCaseId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggeredBySecurityCaseId = types.StringNull()
+        }
+    } else if val, ok := item["triggeredBySecurityCaseId"].(string); ok {
+        data.TriggeredBySecurityCaseId = types.StringValue(val)
+    } else {
+        data.TriggeredBySecurityCaseId = types.StringNull()
     }
     if obj, ok := item["triggeredByAutoRemediationSuggestionId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

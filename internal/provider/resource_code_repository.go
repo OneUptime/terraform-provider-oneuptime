@@ -54,6 +54,8 @@ type CodeRepositoryResourceModel struct {
     MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
     IsGitHubCommandsEnabled types.Bool `tfsdk:"is_git_hub_commands_enabled"`
     GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
+    IsProductionReviewEnabled types.Bool `tfsdk:"is_production_review_enabled"`
+    ProductionReviewPullRequestContent types.String `tfsdk:"production_review_pull_request_content"`
     RepositoryUrl types.String `tfsdk:"repository_url"`
     GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
     SecretToken types.String `tfsdk:"secret_token"`
@@ -184,6 +186,22 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
             },
             "git_hub_trigger_label": schema.StringAttribute{
                 MarkdownDescription: "The issue label that hands an issue to the OneUptime GitHub App. Adding this label to an issue starts the same work an '@mention implement this' would, which is how you assign work to the app from the GitHub UI. Unset means 'oneuptime'.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_production_review_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether OneUptime comments on this repository's pull requests with what production says about the code they change: the exceptions thrown in it, how busy and slow the operations it runs are, and the incidents and deploys around it. Only pull requests from people who can write to the repository are reviewed on their own.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "production_review_pull_request_content": schema.StringAttribute{
+                MarkdownDescription: "What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -341,6 +359,12 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     if !data.GitHubTriggerLabel.IsNull() && !data.GitHubTriggerLabel.IsUnknown() {
         requestDataMap["gitHubTriggerLabel"] = data.GitHubTriggerLabel.ValueString()
     }
+    if !data.IsProductionReviewEnabled.IsNull() && !data.IsProductionReviewEnabled.IsUnknown() {
+        requestDataMap["isProductionReviewEnabled"] = data.IsProductionReviewEnabled.ValueBool()
+    }
+    if !data.ProductionReviewPullRequestContent.IsNull() && !data.ProductionReviewPullRequestContent.IsUnknown() {
+        requestDataMap["productionReviewPullRequestContent"] = data.ProductionReviewPullRequestContent.ValueString()
+    }
     if !data.RepositoryUrl.IsNull() && !data.RepositoryUrl.IsUnknown() {
         requestDataMap["repositoryUrl"] = data.RepositoryUrl.ValueString()
     }
@@ -412,6 +436,8 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
+        "isProductionReviewEnabled": true,
+        "productionReviewPullRequestContent": true,
         "repositoryUrl": true,
         "gitLabProjectId": true,
         "labels": true,
@@ -874,6 +900,48 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     } else {
         data.GitHubTriggerLabel = types.StringNull()
     }
+    if val, ok := dataMap["isProductionReviewEnabled"].(bool); ok {
+        data.IsProductionReviewEnabled = types.BoolValue(val)
+    } else {
+        data.IsProductionReviewEnabled = types.BoolNull()
+    }
+    if obj, ok := dataMap["productionReviewPullRequestContent"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionReviewPullRequestContent = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionReviewPullRequestContent = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewPullRequestContent = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionReviewPullRequestContent"].(string); ok {
+        data.ProductionReviewPullRequestContent = types.StringValue(val)
+    } else {
+        data.ProductionReviewPullRequestContent = types.StringNull()
+    }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1157,6 +1225,8 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
+        "isProductionReviewEnabled": true,
+        "productionReviewPullRequestContent": true,
         "repositoryUrl": true,
         "gitLabProjectId": true,
         "labels": true,
@@ -1620,6 +1690,48 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.GitHubTriggerLabel = types.StringNull()
     }
+    if val, ok := dataMap["isProductionReviewEnabled"].(bool); ok {
+        data.IsProductionReviewEnabled = types.BoolValue(val)
+    } else {
+        data.IsProductionReviewEnabled = types.BoolNull()
+    }
+    if obj, ok := dataMap["productionReviewPullRequestContent"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionReviewPullRequestContent = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionReviewPullRequestContent = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewPullRequestContent = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionReviewPullRequestContent"].(string); ok {
+        data.ProductionReviewPullRequestContent = types.StringValue(val)
+    } else {
+        data.ProductionReviewPullRequestContent = types.StringNull()
+    }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1932,6 +2044,12 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     if !data.GitHubTriggerLabel.IsUnknown() && !state.GitHubTriggerLabel.IsUnknown() && !data.GitHubTriggerLabel.Equal(state.GitHubTriggerLabel) {
         requestDataMap["gitHubTriggerLabel"] = data.GitHubTriggerLabel.ValueString()
     }
+    if !data.IsProductionReviewEnabled.IsUnknown() && !state.IsProductionReviewEnabled.IsUnknown() && !data.IsProductionReviewEnabled.Equal(state.IsProductionReviewEnabled) {
+        requestDataMap["isProductionReviewEnabled"] = data.IsProductionReviewEnabled.ValueBool()
+    }
+    if !data.ProductionReviewPullRequestContent.IsUnknown() && !state.ProductionReviewPullRequestContent.IsUnknown() && !data.ProductionReviewPullRequestContent.Equal(state.ProductionReviewPullRequestContent) {
+        requestDataMap["productionReviewPullRequestContent"] = data.ProductionReviewPullRequestContent.ValueString()
+    }
     if !data.SecretToken.IsUnknown() && !state.SecretToken.IsUnknown() && !data.SecretToken.Equal(state.SecretToken) {
         requestDataMap["secretToken"] = data.SecretToken.ValueString()
     }
@@ -1975,6 +2093,8 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
+        "isProductionReviewEnabled": true,
+        "productionReviewPullRequestContent": true,
         "repositoryUrl": true,
         "gitLabProjectId": true,
         "labels": true,
@@ -2432,6 +2552,48 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     } else {
         data.GitHubTriggerLabel = types.StringNull()
     }
+    if val, ok := dataMap["isProductionReviewEnabled"].(bool); ok {
+        data.IsProductionReviewEnabled = types.BoolValue(val)
+    } else {
+        data.IsProductionReviewEnabled = types.BoolNull()
+    }
+    if obj, ok := dataMap["productionReviewPullRequestContent"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionReviewPullRequestContent = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionReviewPullRequestContent = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewPullRequestContent = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionReviewPullRequestContent"].(string); ok {
+        data.ProductionReviewPullRequestContent = types.StringValue(val)
+    } else {
+        data.ProductionReviewPullRequestContent = types.StringNull()
+    }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2754,6 +2916,12 @@ func (r *CodeRepositoryResource) keepPlannedValues(data *CodeRepositoryResourceM
     }
     if config.GitHubTriggerLabel.IsNull() && !plan.GitHubTriggerLabel.IsUnknown() {
         data.GitHubTriggerLabel = plan.GitHubTriggerLabel
+    }
+    if config.IsProductionReviewEnabled.IsNull() && !plan.IsProductionReviewEnabled.IsUnknown() {
+        data.IsProductionReviewEnabled = plan.IsProductionReviewEnabled
+    }
+    if config.ProductionReviewPullRequestContent.IsNull() && !plan.ProductionReviewPullRequestContent.IsUnknown() {
+        data.ProductionReviewPullRequestContent = plan.ProductionReviewPullRequestContent
     }
     if config.RepositoryUrl.IsNull() && !plan.RepositoryUrl.IsUnknown() {
         data.RepositoryUrl = plan.RepositoryUrl

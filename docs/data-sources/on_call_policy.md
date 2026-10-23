@@ -28,6 +28,7 @@ data "oneuptime_on_call_policy" "by_id" {
 
 ### Optional
 
+- `acknowledgement_timeout_in_minutes` (Number) Page again when something this policy paged about is acknowledged but not resolved within this many minutes (5 to 1440). Empty: never.
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.

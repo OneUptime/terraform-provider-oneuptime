@@ -48,6 +48,8 @@ type OnCallDutyExecutionLogDataSourceModel struct {
     ScheduleGapRetryCount types.Number `tfsdk:"schedule_gap_retry_count"`
     PagingStartsAt types.String `tfsdk:"paging_starts_at"`
     PagingStartedEarlyReason types.String `tfsdk:"paging_started_early_reason"`
+    AcknowledgementTimeoutStartedAt types.String `tfsdk:"acknowledgement_timeout_started_at"`
+    PageAgainNumber types.Number `tfsdk:"page_again_number"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
     TriggeredByWorkflowId types.String `tfsdk:"triggered_by_workflow_id"`
     TriggeredByWorkflowName types.String `tfsdk:"triggered_by_workflow_name"`
@@ -164,6 +166,15 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
             },
             "paging_started_early_reason": schema.StringAttribute{
                 MarkdownDescription: "Why this run started paging before the working hours it waited for began: its record came to match an on-call rule that pages right away. Empty for every other run.",
+                Optional: true,
+                Computed: true,
+            },
+            "acknowledgement_timeout_started_at": schema.StringAttribute{
+                MarkdownDescription: "When the acknowledgement timeout started counting for this run's record: its last acknowledgement. Empty when it is not counting.",
+                Computed: true,
+            },
+            "page_again_number": schema.NumberAttribute{
+                MarkdownDescription: "For a run that pages again because its record stayed acknowledged without being resolved: which time, from 1. Empty for every other run.",
                 Optional: true,
                 Computed: true,
             },
@@ -285,6 +296,10 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         filters["pagingStartedEarlyReason"] = data.PagingStartedEarlyReason.ValueString()
         filterNames = append(filterNames, "paging_started_early_reason = "+fmt.Sprintf("%q", data.PagingStartedEarlyReason.ValueString()))
     }
+    if !data.PageAgainNumber.IsNull() && !data.PageAgainNumber.IsUnknown() {
+        filters["pageAgainNumber"] = lookupNumber(data.PageAgainNumber)
+        filterNames = append(filterNames, "page_again_number = "+data.PageAgainNumber.ValueBigFloat().String())
+    }
     if !data.TriggeredByUserId.IsNull() && !data.TriggeredByUserId.IsUnknown() {
         filters["triggeredByUserId"] = data.TriggeredByUserId.ValueString()
         filterNames = append(filterNames, "triggered_by_user_id = "+fmt.Sprintf("%q", data.TriggeredByUserId.ValueString()))
@@ -335,6 +350,8 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         "scheduleGapRetryCount": true,
         "pagingStartsAt": true,
         "pagingStartedEarlyReason": true,
+        "acknowledgementTimeoutStartedAt": true,
+        "pageAgainNumber": true,
         "triggeredByUserId": true,
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
@@ -725,6 +742,24 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
     } else {
         data.PagingStartedEarlyReason = types.StringNull()
     }
+    if obj, ok := item["acknowledgementTimeoutStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AcknowledgementTimeoutStartedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AcknowledgementTimeoutStartedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AcknowledgementTimeoutStartedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AcknowledgementTimeoutStartedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AcknowledgementTimeoutStartedAt = types.StringNull()
+        }
+    } else if val, ok := item["acknowledgementTimeoutStartedAt"].(string); ok {
+        data.AcknowledgementTimeoutStartedAt = types.StringValue(val)
+    } else {
+        data.AcknowledgementTimeoutStartedAt = types.StringNull()
+    }
+    data.PageAgainNumber = numberFromAPI(data.PageAgainNumber, item["pageAgainNumber"])
     if obj, ok := item["triggeredByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TriggeredByUserId = types.StringValue(val)

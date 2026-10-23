@@ -59,6 +59,8 @@ type OnCallDutyExecutionLogResourceModel struct {
     ScheduleGapRetryCount types.Number `tfsdk:"schedule_gap_retry_count"`
     PagingStartsAt RFC3339Value `tfsdk:"paging_starts_at"`
     PagingStartedEarlyReason types.String `tfsdk:"paging_started_early_reason"`
+    AcknowledgementTimeoutStartedAt RFC3339Value `tfsdk:"acknowledgement_timeout_started_at"`
+    PageAgainNumber types.Number `tfsdk:"page_again_number"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
     TriggeredByWorkflowId types.String `tfsdk:"triggered_by_workflow_id"`
     TriggeredByWorkflowName types.String `tfsdk:"triggered_by_workflow_name"`
@@ -229,6 +231,15 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
             },
             "paging_started_early_reason": schema.StringAttribute{
                 MarkdownDescription: "Why this run started paging before the working hours it waited for began: its record came to match an on-call rule that pages right away. Empty for every other run.",
+                Computed: true,
+            },
+            "acknowledgement_timeout_started_at": schema.StringAttribute{
+                MarkdownDescription: "When the acknowledgement timeout started counting for this run's record: its last acknowledgement. Empty when it is not counting.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "page_again_number": schema.NumberAttribute{
+                MarkdownDescription: "For a run that pages again because its record stayed acknowledged without being resolved: which time, from 1. Empty for every other run.",
                 Computed: true,
             },
             "triggered_by_user_id": schema.StringAttribute{
@@ -407,6 +418,8 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
         "scheduleGapRetryCount": true,
         "pagingStartsAt": true,
         "pagingStartedEarlyReason": true,
+        "acknowledgementTimeoutStartedAt": true,
+        "pageAgainNumber": true,
         "triggeredByUserId": true,
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
@@ -981,6 +994,18 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     } else {
         data.PagingStartedEarlyReason = types.StringNull()
     }
+    if obj, ok := dataMap["acknowledgementTimeoutStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgementTimeoutStartedAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgementTimeoutStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgementTimeoutStartedAt"].(string); ok && val != "" {
+        data.AcknowledgementTimeoutStartedAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgementTimeoutStartedAt = NewRFC3339Null()
+    }
+    data.PageAgainNumber = numberFromAPI(data.PageAgainNumber, dataMap["pageAgainNumber"])
     if obj, ok := dataMap["triggeredByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1143,6 +1168,8 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         "scheduleGapRetryCount": true,
         "pagingStartsAt": true,
         "pagingStartedEarlyReason": true,
+        "acknowledgementTimeoutStartedAt": true,
+        "pageAgainNumber": true,
         "triggeredByUserId": true,
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
@@ -1718,6 +1745,18 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
     } else {
         data.PagingStartedEarlyReason = types.StringNull()
     }
+    if obj, ok := dataMap["acknowledgementTimeoutStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgementTimeoutStartedAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgementTimeoutStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgementTimeoutStartedAt"].(string); ok && val != "" {
+        data.AcknowledgementTimeoutStartedAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgementTimeoutStartedAt = NewRFC3339Null()
+    }
+    data.PageAgainNumber = numberFromAPI(data.PageAgainNumber, dataMap["pageAgainNumber"])
     if obj, ok := dataMap["triggeredByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

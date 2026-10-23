@@ -10,7 +10,7 @@ go build -o terraform-provider-oneuptime
 
 # Create plugin directory
 OS_ARCH="$(go env GOOS)_$(go env GOARCH)"
-PLUGIN_DIR="$HOME/.terraform.d/plugins/registry.terraform.io/oneuptime/oneuptime/14.0.85/$OS_ARCH"
+PLUGIN_DIR="$HOME/.terraform.d/plugins/registry.terraform.io/oneuptime/oneuptime/14.0.86/$OS_ARCH"
 mkdir -p "$PLUGIN_DIR"
 
 # Copy binary
@@ -24,7 +24,7 @@ echo "terraform {"
 echo "  required_providers {"
 echo "    oneuptime = {"
 echo "      source = \"oneuptime/oneuptime\""
-echo "      version = \"14.0.85\""
+echo "      version = \"14.0.86\""
 echo "    }"
 echo "  }"
 echo "}"

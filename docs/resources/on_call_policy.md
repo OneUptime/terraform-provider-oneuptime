@@ -26,6 +26,7 @@ resource "oneuptime_on_call_policy" "example" {
 
 ### Optional
 
+- `acknowledgement_timeout_in_minutes` (Number) Page again when something this policy paged about is acknowledged but not resolved within this many minutes (5 to 1440). Empty: never.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Friendly description that will help you remember.
 - `is_archived` (Boolean) Archived on-call policies are hidden from the On-Call Policies list and page no one: incidents and alerts that use them skip them. Unarchiving puts them back in service. Defaults to `false`.

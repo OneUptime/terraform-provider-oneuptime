@@ -57,6 +57,7 @@ type InvestigationRuleResourceModel struct {
     OnlyIfOpenAfterMinutes types.Number `tfsdk:"only_if_open_after_minutes"`
     ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
     CodeRepositories types.Set `tfsdk:"code_repositories"`
+    LlmProviderId types.String `tfsdk:"llm_provider_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -216,6 +217,14 @@ func (r *InvestigationRuleResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
+            "llm_provider_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the LLM provider OneUptime AI uses for everything this rule starts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -334,6 +343,9 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
     if !data.CodeRepositories.IsNull() && !data.CodeRepositories.IsUnknown() {
         requestDataMap["codeRepositories"] = r.convertTerraformSetToInterface(data.CodeRepositories)
     }
+    if !data.LlmProviderId.IsNull() && !data.LlmProviderId.IsUnknown() {
+        requestDataMap["llmProviderId"] = data.LlmProviderId.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/ai-investigation-rule", investigationRuleRequest)
@@ -395,6 +407,7 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
         "onlyIfOpenAfterMinutes": true,
         "externalMcpServers": true,
         "codeRepositories": true,
+        "llmProviderId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -891,6 +904,43 @@ func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.Cre
         // For sets, always use empty set instead of null to match default values
         data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["llmProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmProviderId"].(string); ok {
+        data.LlmProviderId = types.StringValue(val)
+    } else {
+        data.LlmProviderId = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -996,6 +1046,7 @@ func (r *InvestigationRuleResource) Read(ctx context.Context, req resource.ReadR
         "onlyIfOpenAfterMinutes": true,
         "externalMcpServers": true,
         "codeRepositories": true,
+        "llmProviderId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -1493,6 +1544,43 @@ func (r *InvestigationRuleResource) Read(ctx context.Context, req resource.ReadR
         // For sets, always use empty set instead of null to match default values
         data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["llmProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmProviderId"].(string); ok {
+        data.LlmProviderId = types.StringValue(val)
+    } else {
+        data.LlmProviderId = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1642,6 +1730,9 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
     if !data.CodeRepositories.IsUnknown() && !state.CodeRepositories.IsUnknown() && !data.CodeRepositories.Equal(state.CodeRepositories) {
         requestDataMap["codeRepositories"] = r.convertTerraformSetToInterface(data.CodeRepositories)
     }
+    if !data.LlmProviderId.IsUnknown() && !state.LlmProviderId.IsUnknown() && !data.LlmProviderId.Equal(state.LlmProviderId) {
+        requestDataMap["llmProviderId"] = data.LlmProviderId.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1681,6 +1772,7 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
         "onlyIfOpenAfterMinutes": true,
         "externalMcpServers": true,
         "codeRepositories": true,
+        "llmProviderId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -2172,6 +2264,43 @@ func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.Upd
         // For sets, always use empty set instead of null to match default values
         data.CodeRepositories = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["llmProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmProviderId"].(string); ok {
+        data.LlmProviderId = types.StringValue(val)
+    } else {
+        data.LlmProviderId = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2326,6 +2455,9 @@ func (r *InvestigationRuleResource) keepPlannedValues(data *InvestigationRuleRes
     }
     if config.CodeRepositories.IsNull() && !plan.CodeRepositories.IsUnknown() {
         data.CodeRepositories = plan.CodeRepositories
+    }
+    if config.LlmProviderId.IsNull() && !plan.LlmProviderId.IsUnknown() {
+        data.LlmProviderId = plan.LlmProviderId
     }
 }
 
