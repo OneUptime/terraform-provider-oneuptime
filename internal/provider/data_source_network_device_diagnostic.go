@@ -38,6 +38,9 @@ type NetworkDeviceDiagnosticDataSourceModel struct {
     StatusMessage types.String `tfsdk:"status_message"`
     PingResult types.String `tfsdk:"ping_result"`
     TraceRouteResult types.String `tfsdk:"trace_route_result"`
+    SnmpWalkRootOid types.String `tfsdk:"snmp_walk_root_oid"`
+    SnmpWalkAfterOid types.String `tfsdk:"snmp_walk_after_oid"`
+    SnmpWalkResult types.String `tfsdk:"snmp_walk_result"`
     StartedAt types.String `tfsdk:"started_at"`
     CompletedAt types.String `tfsdk:"completed_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -49,7 +52,7 @@ func (d *NetworkDeviceDiagnosticDataSource) Metadata(ctx context.Context, req da
 
 func (d *NetworkDeviceDiagnosticDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "An on-demand ping or traceroute run against a Network Device from its probe. Transient: rows are deleted after two days. Look up an existing network device diagnostic by `id`, or by any of its other arguments (`created_by_user_id`, `diagnostic_type`, `hostname`, ...): each one set must match, and exactly one network device diagnostic may match them all.",
+        MarkdownDescription: "An on-demand ping, traceroute or SNMP walk run against a Network Device from its probe. Transient: rows are deleted after two days. Look up an existing network device diagnostic by `id`, or by any of its other arguments (`created_by_user_id`, `diagnostic_type`, `hostname`, ...): each one set must match, and exactly one network device diagnostic may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -80,7 +83,7 @@ func (d *NetworkDeviceDiagnosticDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "diagnostic_type": schema.StringAttribute{
-                MarkdownDescription: "What to run against the device: \"Ping\" (ICMP echo: reachability, round-trip time, jitter, packet loss) or \"Traceroute\" (the hop-by-hop path from the probe to the device).",
+                MarkdownDescription: "What to run against the device: \"Ping\" (ICMP echo: reachability, round-trip time, jitter, packet loss), \"Traceroute\" (the hop-by-hop path from the probe to the device) or \"SNMP Walk\" (every OID the device answers under a starting OID, read with its SNMP credentials).",
                 Optional: true,
                 Computed: true,
             },
@@ -105,6 +108,20 @@ func (d *NetworkDeviceDiagnosticDataSource) Schema(ctx context.Context, req data
             },
             "trace_route_result": schema.StringAttribute{
                 MarkdownDescription: "For a Traceroute diagnostic: the DNS lookup and the hop-by-hop path from the probe to the device, in the same shape the Network monitor records. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "snmp_walk_root_oid": schema.StringAttribute{
+                MarkdownDescription: "For an SNMP Walk: the OID whose subtree is walked, such as 1.3.6.1.2.1.2 for the interfaces. Defaults to 1.3.6.1, everything the device exposes.",
+                Optional: true,
+                Computed: true,
+            },
+            "snmp_walk_after_oid": schema.StringAttribute{
+                MarkdownDescription: "For an SNMP Walk that continues an earlier one: the last OID the earlier walk read. The walk reads what follows it under the start OID.",
+                Optional: true,
+                Computed: true,
+            },
+            "snmp_walk_result": schema.StringAttribute{
+                MarkdownDescription: "For an SNMP Walk: each OID the device answered with its type and value, why the walk stopped, where to continue from, and, when the device refused or did not answer, why. Managed by the probe. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
@@ -183,6 +200,14 @@ func (d *NetworkDeviceDiagnosticDataSource) Read(ctx context.Context, req dataso
         filters["statusMessage"] = data.StatusMessage.ValueString()
         filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
     }
+    if !data.SnmpWalkRootOid.IsNull() && !data.SnmpWalkRootOid.IsUnknown() {
+        filters["snmpWalkRootOid"] = data.SnmpWalkRootOid.ValueString()
+        filterNames = append(filterNames, "snmp_walk_root_oid = "+fmt.Sprintf("%q", data.SnmpWalkRootOid.ValueString()))
+    }
+    if !data.SnmpWalkAfterOid.IsNull() && !data.SnmpWalkAfterOid.IsUnknown() {
+        filters["snmpWalkAfterOid"] = data.SnmpWalkAfterOid.ValueString()
+        filterNames = append(filterNames, "snmp_walk_after_oid = "+fmt.Sprintf("%q", data.SnmpWalkAfterOid.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -215,6 +240,9 @@ func (d *NetworkDeviceDiagnosticDataSource) Read(ctx context.Context, req dataso
         "statusMessage": true,
         "pingResult": true,
         "traceRouteResult": true,
+        "snmpWalkRootOid": true,
+        "snmpWalkAfterOid": true,
+        "snmpWalkResult": true,
         "startedAt": true,
         "completedAt": true,
         "createdByUserId": true,
@@ -482,6 +510,57 @@ func (d *NetworkDeviceDiagnosticDataSource) Read(ctx context.Context, req dataso
         data.TraceRouteResult = types.StringValue(val)
     } else {
         data.TraceRouteResult = types.StringNull()
+    }
+    if obj, ok := item["snmpWalkRootOid"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkRootOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpWalkRootOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpWalkRootOid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpWalkRootOid = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkRootOid = types.StringNull()
+        }
+    } else if val, ok := item["snmpWalkRootOid"].(string); ok {
+        data.SnmpWalkRootOid = types.StringValue(val)
+    } else {
+        data.SnmpWalkRootOid = types.StringNull()
+    }
+    if obj, ok := item["snmpWalkAfterOid"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkAfterOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpWalkAfterOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpWalkAfterOid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpWalkAfterOid = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkAfterOid = types.StringNull()
+        }
+    } else if val, ok := item["snmpWalkAfterOid"].(string); ok {
+        data.SnmpWalkAfterOid = types.StringValue(val)
+    } else {
+        data.SnmpWalkAfterOid = types.StringNull()
+    }
+    if obj, ok := item["snmpWalkResult"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkResult = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpWalkResult = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpWalkResult = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpWalkResult = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkResult = types.StringNull()
+        }
+    } else if val, ok := item["snmpWalkResult"].(string); ok {
+        data.SnmpWalkResult = types.StringValue(val)
+    } else {
+        data.SnmpWalkResult = types.StringNull()
     }
     if obj, ok := item["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

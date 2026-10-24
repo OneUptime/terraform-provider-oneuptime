@@ -40,6 +40,7 @@ type NetworkDeviceDataSourceModel struct {
     OtherAddresses types.String `tfsdk:"other_addresses"`
     DiscoveredName types.String `tfsdk:"discovered_name"`
     DiscoveredNameSource types.String `tfsdk:"discovered_name_source"`
+    DiscoveredDetails types.String `tfsdk:"discovered_details"`
     MacAddress types.String `tfsdk:"mac_address"`
     IsMacAddressLearned types.Bool `tfsdk:"is_mac_address_learned"`
     ProbeId types.String `tfsdk:"probe_id"`
@@ -164,6 +165,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             "discovered_name_source": schema.StringAttribute{
                 MarkdownDescription: "Where the discovered name came from: system-name (the name the device reports over SNMP), netbios-name (the computer name a Windows or Samba host reports over NetBIOS), dns-name (its reverse-DNS record) or address (its IP address). Empty for devices discovery did not name.",
                 Optional: true,
+                Computed: true,
+            },
+            "discovered_details": schema.StringAttribute{
+                MarkdownDescription: "What discovery found out about this device and has not been saved on it: the SNMP system information and the reverse-DNS and NetBIOS names a discovery scan read at its address, the MAC address a walked router's ARP table gave it, and the IP address its probe resolved its DNS name to - each with how it was read, by which scan, device or probe, and when. Managed by the server; it never changes the device's own details. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "mac_address": schema.StringAttribute{
@@ -713,6 +718,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "otherAddresses": true,
         "discoveredName": true,
         "discoveredNameSource": true,
+        "discoveredDetails": true,
         "macAddress": true,
         "isMacAddressLearned": true,
         "probeId": true,
@@ -1035,6 +1041,23 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.DiscoveredNameSource = types.StringValue(val)
     } else {
         data.DiscoveredNameSource = types.StringNull()
+    }
+    if obj, ok := item["discoveredDetails"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredDetails = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DiscoveredDetails = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DiscoveredDetails = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DiscoveredDetails = types.StringValue(string(jsonBytes))
+        } else {
+            data.DiscoveredDetails = types.StringNull()
+        }
+    } else if val, ok := item["discoveredDetails"].(string); ok {
+        data.DiscoveredDetails = types.StringValue(val)
+    } else {
+        data.DiscoveredDetails = types.StringNull()
     }
     if obj, ok := item["macAddress"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -86,7 +86,7 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "auto_remediation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the rule that produced this suggestion. The ID of a `oneuptime_auto_remediation_rule`.",
+                MarkdownDescription: "ID of the AI rule that produced this suggestion. The ID of a `oneuptime_ai_rule`.",
                 Optional: true,
                 Computed: true,
             },

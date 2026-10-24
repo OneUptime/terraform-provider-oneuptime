@@ -37,6 +37,9 @@ type ApiKeyPermissionDataSourceModel struct {
     Permission types.String `tfsdk:"permission"`
     Labels types.Set `tfsdk:"labels"`
     IsBlockPermission types.Bool `tfsdk:"is_block_permission"`
+    CustomRoleId types.String `tfsdk:"custom_role_id"`
+    ApiKeyCustomRoleId types.String `tfsdk:"api_key_custom_role_id"`
+    CustomRolePermissionId types.String `tfsdk:"custom_role_permission_id"`
 }
 
 func (d *ApiKeyPermissionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -45,7 +48,7 @@ func (d *ApiKeyPermissionDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *ApiKeyPermissionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Permissions for your API Keys Look up an existing api key permission by `id`, or by any of its other arguments (`api_key_id`, `created_by_user_id`, `is_block_permission`): each one set must match, and exactly one api key permission may match them all.",
+        MarkdownDescription: "Permissions for your API Keys Look up an existing api key permission by `id`, or by any of its other arguments (`api_key_custom_role_id`, `api_key_id`, `created_by_user_id`, ...): each one set must match, and exactly one api key permission may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -86,6 +89,21 @@ func (d *ApiKeyPermissionDataSource) Schema(ctx context.Context, req datasource.
             },
             "is_block_permission": schema.BoolAttribute{
                 MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key], Update: [Project Owner, Project Admin, Edit API Key Permissions]",
+                Optional: true,
+                Computed: true,
+            },
+            "custom_role_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role this permission comes from. Empty when the permission was given to the API key directly. The ID of a `oneuptime_custom_role`.",
+                Optional: true,
+                Computed: true,
+            },
+            "api_key_custom_role_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role given to the API key that brought this permission. Empty when the permission was given to the API key directly. The ID of a `oneuptime_api_key_custom_role`.",
+                Optional: true,
+                Computed: true,
+            },
+            "custom_role_permission_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role's own permission this one copies. Empty when the permission was given to the API key directly. The ID of a `oneuptime_custom_role_permission`.",
                 Optional: true,
                 Computed: true,
             },
@@ -140,6 +158,18 @@ func (d *ApiKeyPermissionDataSource) Read(ctx context.Context, req datasource.Re
         filters["isBlockPermission"] = data.IsBlockPermission.ValueBool()
         filterNames = append(filterNames, "is_block_permission = "+fmt.Sprintf("%t", data.IsBlockPermission.ValueBool()))
     }
+    if !data.CustomRoleId.IsNull() && !data.CustomRoleId.IsUnknown() {
+        filters["customRoleId"] = data.CustomRoleId.ValueString()
+        filterNames = append(filterNames, "custom_role_id = "+fmt.Sprintf("%q", data.CustomRoleId.ValueString()))
+    }
+    if !data.ApiKeyCustomRoleId.IsNull() && !data.ApiKeyCustomRoleId.IsUnknown() {
+        filters["apiKeyCustomRoleId"] = data.ApiKeyCustomRoleId.ValueString()
+        filterNames = append(filterNames, "api_key_custom_role_id = "+fmt.Sprintf("%q", data.ApiKeyCustomRoleId.ValueString()))
+    }
+    if !data.CustomRolePermissionId.IsNull() && !data.CustomRolePermissionId.IsUnknown() {
+        filters["customRolePermissionId"] = data.CustomRolePermissionId.ValueString()
+        filterNames = append(filterNames, "custom_role_permission_id = "+fmt.Sprintf("%q", data.CustomRolePermissionId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -165,6 +195,9 @@ func (d *ApiKeyPermissionDataSource) Read(ctx context.Context, req datasource.Re
         "permission": true,
         "labels": true,
         "isBlockPermission": true,
+        "customRoleId": true,
+        "apiKeyCustomRoleId": true,
+        "customRolePermissionId": true,
         "_id": true,
     }
 
@@ -373,6 +406,57 @@ func (d *ApiKeyPermissionDataSource) Read(ctx context.Context, req datasource.Re
         data.IsBlockPermission = types.BoolValue(val)
     } else {
         data.IsBlockPermission = types.BoolNull()
+    }
+    if obj, ok := item["customRoleId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if val, ok := item["customRoleId"].(string); ok {
+        data.CustomRoleId = types.StringValue(val)
+    } else {
+        data.CustomRoleId = types.StringNull()
+    }
+    if obj, ok := item["apiKeyCustomRoleId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApiKeyCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ApiKeyCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ApiKeyCustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ApiKeyCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyCustomRoleId = types.StringNull()
+        }
+    } else if val, ok := item["apiKeyCustomRoleId"].(string); ok {
+        data.ApiKeyCustomRoleId = types.StringValue(val)
+    } else {
+        data.ApiKeyCustomRoleId = types.StringNull()
+    }
+    if obj, ok := item["customRolePermissionId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomRolePermissionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CustomRolePermissionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CustomRolePermissionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if val, ok := item["customRolePermissionId"].(string); ok {
+        data.CustomRolePermissionId = types.StringValue(val)
+    } else {
+        data.CustomRolePermissionId = types.StringNull()
     }
 
     // Write logs using the tflog package

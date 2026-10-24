@@ -43,7 +43,7 @@ func (d *CustomRoleDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *CustomRoleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A set of permissions you name once, such as Incident Responder, and give to teams. Changing a role changes every team that has it. Look up an existing custom role by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one custom role may match them all.",
+        MarkdownDescription: "A set of permissions you name once, such as Incident Responder, and give to teams and API keys. Changing a role changes every team and key that has it. Look up an existing custom role by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one custom role may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

@@ -78,7 +78,7 @@ func (d *AutoRemediationDecisionDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "entries": schema.StringAttribute{
-                MarkdownDescription: "One entry per fix path - a Kubernetes cluster, an infrastructure resource, an Auto Remediation Rule, or the project - with a reason code saying what it did or why it did nothing. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "One entry per fix path - a Kubernetes cluster, an infrastructure resource, an AI rule, or the project - with a reason code saying what it did or why it did nothing. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
         },

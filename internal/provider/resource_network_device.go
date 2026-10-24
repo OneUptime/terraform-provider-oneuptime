@@ -49,6 +49,7 @@ type NetworkDeviceResourceModel struct {
     OtherAddresses types.String `tfsdk:"other_addresses"`
     DiscoveredName types.String `tfsdk:"discovered_name"`
     DiscoveredNameSource types.String `tfsdk:"discovered_name_source"`
+    DiscoveredDetails JSONSubsetValue `tfsdk:"discovered_details"`
     MacAddress types.String `tfsdk:"mac_address"`
     IsMacAddressLearned types.Bool `tfsdk:"is_mac_address_learned"`
     ProbeId types.String `tfsdk:"probe_id"`
@@ -187,6 +188,19 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "discovered_details": schema.StringAttribute{
+                MarkdownDescription: "What discovery found out about this device and has not been saved on it: the SNMP system information and the reverse-DNS and NetBIOS names a discovery scan read at its address, the MAC address a walked router's ARP table gave it, and the IP address its probe resolved its DNS name to - each with how it was read, by which scan, device or probe, and when. Managed by the server; it never changes the device's own details. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
                 },
             },
             "mac_address": schema.StringAttribute{
@@ -773,6 +787,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     if !data.DiscoveredNameSource.IsNull() && !data.DiscoveredNameSource.IsUnknown() {
         requestDataMap["discoveredNameSource"] = data.DiscoveredNameSource.ValueString()
     }
+    if parsedDiscoveredDetails := r.parseJSONField(data.DiscoveredDetails); parsedDiscoveredDetails != nil {
+        requestDataMap["discoveredDetails"] = parsedDiscoveredDetails
+    }
     if !data.MacAddress.IsNull() && !data.MacAddress.IsUnknown() {
         requestDataMap["macAddress"] = data.MacAddress.ValueString()
     }
@@ -913,6 +930,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "otherAddresses": true,
         "discoveredName": true,
         "discoveredNameSource": true,
+        "discoveredDetails": true,
         "macAddress": true,
         "isMacAddressLearned": true,
         "probeId": true,
@@ -1275,6 +1293,43 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         data.DiscoveredNameSource = types.StringValue(val)
     } else {
         data.DiscoveredNameSource = types.StringNull()
+    }
+    if obj, ok := dataMap["discoveredDetails"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredDetails = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DiscoveredDetails = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DiscoveredDetails = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DiscoveredDetails = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DiscoveredDetails = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DiscoveredDetails = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DiscoveredDetails = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredDetails = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DiscoveredDetails = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["discoveredDetails"].(string); ok {
+        data.DiscoveredDetails = NewJSONSubsetValue(val)
+    } else {
+        data.DiscoveredDetails = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["macAddress"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2910,6 +2965,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "otherAddresses": true,
         "discoveredName": true,
         "discoveredNameSource": true,
+        "discoveredDetails": true,
         "macAddress": true,
         "isMacAddressLearned": true,
         "probeId": true,
@@ -3273,6 +3329,43 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         data.DiscoveredNameSource = types.StringValue(val)
     } else {
         data.DiscoveredNameSource = types.StringNull()
+    }
+    if obj, ok := dataMap["discoveredDetails"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredDetails = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DiscoveredDetails = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DiscoveredDetails = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DiscoveredDetails = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DiscoveredDetails = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DiscoveredDetails = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DiscoveredDetails = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredDetails = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DiscoveredDetails = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["discoveredDetails"].(string); ok {
+        data.DiscoveredDetails = NewJSONSubsetValue(val)
+    } else {
+        data.DiscoveredDetails = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["macAddress"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -5156,6 +5249,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "otherAddresses": true,
         "discoveredName": true,
         "discoveredNameSource": true,
+        "discoveredDetails": true,
         "macAddress": true,
         "isMacAddressLearned": true,
         "probeId": true,
@@ -5513,6 +5607,43 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.DiscoveredNameSource = types.StringValue(val)
     } else {
         data.DiscoveredNameSource = types.StringNull()
+    }
+    if obj, ok := dataMap["discoveredDetails"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DiscoveredDetails = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DiscoveredDetails = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DiscoveredDetails = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DiscoveredDetails = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DiscoveredDetails = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DiscoveredDetails = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DiscoveredDetails = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredDetails = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DiscoveredDetails = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["discoveredDetails"].(string); ok {
+        data.DiscoveredDetails = NewJSONSubsetValue(val)
+    } else {
+        data.DiscoveredDetails = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["macAddress"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -7181,6 +7312,9 @@ func (r *NetworkDeviceResource) keepPlannedValues(data *NetworkDeviceResourceMod
     }
     if config.DiscoveredNameSource.IsNull() && !plan.DiscoveredNameSource.IsUnknown() {
         data.DiscoveredNameSource = plan.DiscoveredNameSource
+    }
+    if config.DiscoveredDetails.IsNull() && !plan.DiscoveredDetails.IsUnknown() {
+        data.DiscoveredDetails = plan.DiscoveredDetails
     }
     if config.MacAddress.IsNull() && !plan.MacAddress.IsUnknown() {
         data.MacAddress = plan.MacAddress

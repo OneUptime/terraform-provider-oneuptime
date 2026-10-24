@@ -28,8 +28,11 @@ data "oneuptime_api_key_permission" "by_id" {
 
 ### Optional
 
+- `api_key_custom_role_id` (String) ID of the custom role given to the API key that brought this permission. Empty when the permission was given to the API key directly. The ID of a `oneuptime_api_key_custom_role`.
 - `api_key_id` (String) ID of API Key resource in which this object belongs. The ID of a `oneuptime_api_key`.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `custom_role_id` (String) ID of the custom role this permission comes from. Empty when the permission was given to the API key directly. The ID of a `oneuptime_custom_role`.
+- `custom_role_permission_id` (String) ID of the custom role's own permission this one copies. Empty when the permission was given to the API key directly. The ID of a `oneuptime_custom_role_permission`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_block_permission` (Boolean) Permissions - Create: [Project Owner, Project Admin, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key], Update: [Project Owner, Project Admin, Edit API Key Permissions]
 

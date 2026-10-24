@@ -86,6 +86,7 @@ data "oneuptime_network_device" "by_id" {
 - `archived_at` (String) When was this network device archived?
 - `cdp_neighbors` (String) CDP neighbors discovered on the last SNMP walk, complementing LLDP for the topology graph. Managed by the probe. A JSON value: write it with `jsonencode()`.
 - `created_at` (String) Date and Time when the object was created.
+- `discovered_details` (String) What discovery found out about this device and has not been saved on it: the SNMP system information and the reverse-DNS and NetBIOS names a discovery scan read at its address, the MAC address a walked router's ARP table gave it, and the IP address its probe resolved its DNS name to - each with how it was read, by which scan, device or probe, and when. Managed by the server; it never changes the device's own details. A JSON value: write it with `jsonencode()`.
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 - `last_polled_at` (String) When the assigned probe last ATTEMPTED an SNMP walk of this device, whether or not the device answered. Paired with lastSeenAt (which only moves on a successful walk) this is what separates "the device did not answer" from "we have not asked recently". Managed by the probe.
 - `last_rebooted_at` (String) Device boot time computed from sysUpTime on each walk. Managed by the probe.

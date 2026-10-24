@@ -68,10 +68,11 @@ Server-side ids that a resource carries inside it - the ids of a monitor's steps
 
 ## Renamed resources
 
-These resources were renamed so that names like IoT and vCenter read as one word. Each old name still works, as a deprecated alias, so no configuration breaks; plans that use one say so.
+These resources were renamed: names like IoT and vCenter now read as one word, and auto remediation rules became AI rules. Each old name still works, as a deprecated alias, so no configuration breaks; plans that use one say so.
 
 | Old name | New name |
 |----------|----------|
+| `oneuptime_auto_remediation_rule` | [`oneuptime_ai_rule`](./resources/ai_rule) |
 | `oneuptime_io_t_device_credential` | [`oneuptime_iot_device_credential`](./resources/iot_device_credential) |
 | `oneuptime_io_t_fleet` | [`oneuptime_iot_fleet`](./resources/iot_fleet) |
 | `oneuptime_io_t_fleet_label_rule` | [`oneuptime_iot_fleet_label_rule`](./resources/iot_fleet_label_rule) |
@@ -89,8 +90,8 @@ To switch, rename the resource in your configuration and add a `moved` block, an
 
 ```terraform
 moved {
-  from = oneuptime_v_center.example
-  to   = oneuptime_vcenter.example
+  from = oneuptime_auto_remediation_rule.example
+  to   = oneuptime_ai_rule.example
 }
 ```
 

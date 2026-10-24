@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_auto_remediation_suggestion" "example" {
-  auto_remediation_rule_id = oneuptime_auto_remediation_rule.example.id
+  auto_remediation_rule_id = oneuptime_ai_rule.example.id
 }
 
 # Or by id:
@@ -31,7 +31,7 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `ai_run_id` (String) The AI planning run that picked the runbook (AI rules only).
 - `alert_id` (String) ID of the alert this suggestion remediates. The ID of a `oneuptime_alert`.
 - `approved_by_user_id` (String) ID of the user who approved this suggestion. The ID of a `oneuptime_user` (see the data source).
-- `auto_remediation_rule_id` (String) ID of the rule that produced this suggestion. The ID of a `oneuptime_auto_remediation_rule`.
+- `auto_remediation_rule_id` (String) ID of the AI rule that produced this suggestion. The ID of a `oneuptime_ai_rule`.
 - `auto_resolve_on_recovery` (Boolean) Snapshot of the rule's auto-resolve-on-verified-recovery setting when this suggestion was created.
 - `dismissed_by_user_id` (String) ID of the user who dismissed this suggestion. The ID of a `oneuptime_user` (see the data source).
 - `execution_mode` (String) The rule's execution mode when this suggestion was created (Suggest or FullAuto).

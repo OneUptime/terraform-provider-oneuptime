@@ -2,12 +2,12 @@
 page_title: "oneuptime_custom_role Data Source - oneuptime"
 subcategory: "Other"
 description: |-
-  A set of permissions you name once, such as Incident Responder, and give to teams. Changing a role changes every team that has it.
+  A set of permissions you name once, such as Incident Responder, and give to teams and API keys. Changing a role changes every team and key that has it.
 ---
 
 # oneuptime_custom_role (Data Source)
 
-A set of permissions you name once, such as Incident Responder, and give to teams. Changing a role changes every team that has it.
+A set of permissions you name once, such as Incident Responder, and give to teams and API keys. Changing a role changes every team and key that has it.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one custom role may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

@@ -38,6 +38,8 @@ type NetworkDeviceDiagnosticResourceModel struct {
     NetworkDeviceId types.String `tfsdk:"network_device_id"`
     ProbeId types.String `tfsdk:"probe_id"`
     DiagnosticType types.String `tfsdk:"diagnostic_type"`
+    SnmpWalkRootOid types.String `tfsdk:"snmp_walk_root_oid"`
+    SnmpWalkAfterOid types.String `tfsdk:"snmp_walk_after_oid"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Hostname types.String `tfsdk:"hostname"`
@@ -45,6 +47,7 @@ type NetworkDeviceDiagnosticResourceModel struct {
     StatusMessage types.String `tfsdk:"status_message"`
     PingResult JSONSubsetValue `tfsdk:"ping_result"`
     TraceRouteResult JSONSubsetValue `tfsdk:"trace_route_result"`
+    SnmpWalkResult JSONSubsetValue `tfsdk:"snmp_walk_result"`
     StartedAt RFC3339Value `tfsdk:"started_at"`
     CompletedAt RFC3339Value `tfsdk:"completed_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -60,7 +63,7 @@ func (r *NetworkDeviceDiagnosticResource) Schema(ctx context.Context, req resour
 
 func (r *NetworkDeviceDiagnosticResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "An on-demand ping or traceroute run against a Network Device from its probe. Transient: rows are deleted after two days.",
+        MarkdownDescription: "An on-demand ping, traceroute or SNMP walk run against a Network Device from its probe. Transient: rows are deleted after two days.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -94,9 +97,27 @@ func (r *NetworkDeviceDiagnosticResource) schemaDefinition() schema.Schema {
                 },
             },
             "diagnostic_type": schema.StringAttribute{
-                MarkdownDescription: "What to run against the device: \"Ping\" (ICMP echo: reachability, round-trip time, jitter, packet loss) or \"Traceroute\" (the hop-by-hop path from the probe to the device).",
+                MarkdownDescription: "What to run against the device: \"Ping\" (ICMP echo: reachability, round-trip time, jitter, packet loss), \"Traceroute\" (the hop-by-hop path from the probe to the device) or \"SNMP Walk\" (every OID the device answers under a starting OID, read with its SNMP credentials).",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "snmp_walk_root_oid": schema.StringAttribute{
+                MarkdownDescription: "For an SNMP Walk: the OID whose subtree is walked, such as 1.3.6.1.2.1.2 for the interfaces. Defaults to 1.3.6.1, everything the device exposes.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "snmp_walk_after_oid": schema.StringAttribute{
+                MarkdownDescription: "For an SNMP Walk that continues an earlier one: the last OID the earlier walk read. The walk reads what follows it under the start OID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
             },
@@ -132,6 +153,11 @@ func (r *NetworkDeviceDiagnosticResource) schemaDefinition() schema.Schema {
             },
             "trace_route_result": schema.StringAttribute{
                 MarkdownDescription: "For a Traceroute diagnostic: the DNS lookup and the hop-by-hop path from the probe to the device, in the same shape the Network monitor records. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "snmp_walk_result": schema.StringAttribute{
+                MarkdownDescription: "For an SNMP Walk: each OID the device answered with its type and value, why the walk stopped, where to continue from, and, when the device refused or did not answer, why. Managed by the probe. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -214,6 +240,12 @@ func (r *NetworkDeviceDiagnosticResource) Create(ctx context.Context, req resour
     if !data.DiagnosticType.IsNull() && !data.DiagnosticType.IsUnknown() {
         requestDataMap["diagnosticType"] = data.DiagnosticType.ValueString()
     }
+    if !data.SnmpWalkRootOid.IsNull() && !data.SnmpWalkRootOid.IsUnknown() {
+        requestDataMap["snmpWalkRootOid"] = data.SnmpWalkRootOid.ValueString()
+    }
+    if !data.SnmpWalkAfterOid.IsNull() && !data.SnmpWalkAfterOid.IsUnknown() {
+        requestDataMap["snmpWalkAfterOid"] = data.SnmpWalkAfterOid.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/network-device-diagnostic", networkDeviceDiagnosticRequest)
@@ -263,6 +295,8 @@ func (r *NetworkDeviceDiagnosticResource) Create(ctx context.Context, req resour
         "networkDeviceId": true,
         "probeId": true,
         "diagnosticType": true,
+        "snmpWalkRootOid": true,
+        "snmpWalkAfterOid": true,
         "createdAt": true,
         "updatedAt": true,
         "hostname": true,
@@ -270,6 +304,7 @@ func (r *NetworkDeviceDiagnosticResource) Create(ctx context.Context, req resour
         "statusMessage": true,
         "pingResult": true,
         "traceRouteResult": true,
+        "snmpWalkResult": true,
         "startedAt": true,
         "completedAt": true,
         "createdByUserId": true,
@@ -426,6 +461,80 @@ func (r *NetworkDeviceDiagnosticResource) Create(ctx context.Context, req resour
         data.DiagnosticType = types.StringValue(val)
     } else {
         data.DiagnosticType = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpWalkRootOid"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkRootOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpWalkRootOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpWalkRootOid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpWalkRootOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkRootOid = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpWalkRootOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkRootOid = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpWalkRootOid = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkRootOid = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpWalkRootOid"].(string); ok {
+        data.SnmpWalkRootOid = types.StringValue(val)
+    } else {
+        data.SnmpWalkRootOid = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpWalkAfterOid"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkAfterOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpWalkAfterOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpWalkAfterOid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpWalkAfterOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkAfterOid = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpWalkAfterOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkAfterOid = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpWalkAfterOid = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkAfterOid = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpWalkAfterOid"].(string); ok {
+        data.SnmpWalkAfterOid = types.StringValue(val)
+    } else {
+        data.SnmpWalkAfterOid = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -634,6 +743,43 @@ func (r *NetworkDeviceDiagnosticResource) Create(ctx context.Context, req resour
     } else {
         data.TraceRouteResult = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["snmpWalkResult"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpWalkResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpWalkResult = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpWalkResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpWalkResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpWalkResult = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkResult = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpWalkResult"].(string); ok {
+        data.SnmpWalkResult = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpWalkResult = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.StartedAt = NewRFC3339Value(val)
@@ -727,6 +873,8 @@ func (r *NetworkDeviceDiagnosticResource) Read(ctx context.Context, req resource
         "networkDeviceId": true,
         "probeId": true,
         "diagnosticType": true,
+        "snmpWalkRootOid": true,
+        "snmpWalkAfterOid": true,
         "createdAt": true,
         "updatedAt": true,
         "hostname": true,
@@ -734,6 +882,7 @@ func (r *NetworkDeviceDiagnosticResource) Read(ctx context.Context, req resource
         "statusMessage": true,
         "pingResult": true,
         "traceRouteResult": true,
+        "snmpWalkResult": true,
         "startedAt": true,
         "completedAt": true,
         "createdByUserId": true,
@@ -892,6 +1041,80 @@ func (r *NetworkDeviceDiagnosticResource) Read(ctx context.Context, req resource
     } else {
         data.DiagnosticType = types.StringNull()
     }
+    if obj, ok := dataMap["snmpWalkRootOid"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkRootOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpWalkRootOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpWalkRootOid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpWalkRootOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkRootOid = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpWalkRootOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkRootOid = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpWalkRootOid = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkRootOid = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpWalkRootOid"].(string); ok {
+        data.SnmpWalkRootOid = types.StringValue(val)
+    } else {
+        data.SnmpWalkRootOid = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpWalkAfterOid"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkAfterOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpWalkAfterOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpWalkAfterOid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpWalkAfterOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkAfterOid = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpWalkAfterOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkAfterOid = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpWalkAfterOid = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkAfterOid = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpWalkAfterOid"].(string); ok {
+        data.SnmpWalkAfterOid = types.StringValue(val)
+    } else {
+        data.SnmpWalkAfterOid = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1099,6 +1322,43 @@ func (r *NetworkDeviceDiagnosticResource) Read(ctx context.Context, req resource
     } else {
         data.TraceRouteResult = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["snmpWalkResult"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpWalkResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpWalkResult = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpWalkResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpWalkResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpWalkResult = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkResult = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpWalkResult"].(string); ok {
+        data.SnmpWalkResult = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpWalkResult = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.StartedAt = NewRFC3339Value(val)
@@ -1227,6 +1487,8 @@ func (r *NetworkDeviceDiagnosticResource) Update(ctx context.Context, req resour
         "networkDeviceId": true,
         "probeId": true,
         "diagnosticType": true,
+        "snmpWalkRootOid": true,
+        "snmpWalkAfterOid": true,
         "createdAt": true,
         "updatedAt": true,
         "hostname": true,
@@ -1234,6 +1496,7 @@ func (r *NetworkDeviceDiagnosticResource) Update(ctx context.Context, req resour
         "statusMessage": true,
         "pingResult": true,
         "traceRouteResult": true,
+        "snmpWalkResult": true,
         "startedAt": true,
         "completedAt": true,
         "createdByUserId": true,
@@ -1386,6 +1649,80 @@ func (r *NetworkDeviceDiagnosticResource) Update(ctx context.Context, req resour
     } else {
         data.DiagnosticType = types.StringNull()
     }
+    if obj, ok := dataMap["snmpWalkRootOid"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkRootOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpWalkRootOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpWalkRootOid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpWalkRootOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkRootOid = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpWalkRootOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkRootOid = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpWalkRootOid = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkRootOid = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpWalkRootOid"].(string); ok {
+        data.SnmpWalkRootOid = types.StringValue(val)
+    } else {
+        data.SnmpWalkRootOid = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpWalkAfterOid"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkAfterOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpWalkAfterOid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpWalkAfterOid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpWalkAfterOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkAfterOid = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpWalkAfterOid = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkAfterOid = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpWalkAfterOid = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkAfterOid = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpWalkAfterOid"].(string); ok {
+        data.SnmpWalkAfterOid = types.StringValue(val)
+    } else {
+        data.SnmpWalkAfterOid = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1593,6 +1930,43 @@ func (r *NetworkDeviceDiagnosticResource) Update(ctx context.Context, req resour
     } else {
         data.TraceRouteResult = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["snmpWalkResult"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpWalkResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpWalkResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpWalkResult = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpWalkResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpWalkResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpWalkResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpWalkResult = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpWalkResult = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpWalkResult"].(string); ok {
+        data.SnmpWalkResult = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpWalkResult = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.StartedAt = NewRFC3339Value(val)
@@ -1711,6 +2085,12 @@ func (r *NetworkDeviceDiagnosticResource) ImportState(ctx context.Context, req r
 func (r *NetworkDeviceDiagnosticResource) keepPlannedValues(data *NetworkDeviceDiagnosticResourceModel, plan *NetworkDeviceDiagnosticResourceModel, config *NetworkDeviceDiagnosticResourceModel) {
     if config.ProbeId.IsNull() && !plan.ProbeId.IsUnknown() {
         data.ProbeId = plan.ProbeId
+    }
+    if config.SnmpWalkRootOid.IsNull() && !plan.SnmpWalkRootOid.IsUnknown() {
+        data.SnmpWalkRootOid = plan.SnmpWalkRootOid
+    }
+    if config.SnmpWalkAfterOid.IsNull() && !plan.SnmpWalkAfterOid.IsUnknown() {
+        data.SnmpWalkAfterOid = plan.SnmpWalkAfterOid
     }
 }
 
