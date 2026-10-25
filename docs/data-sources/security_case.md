@@ -29,7 +29,7 @@ data "oneuptime_security_case" "by_id" {
 ### Optional
 
 - `ai_suggested_playbook_id` (String) ID of the project's playbook OneUptime AI suggested running when it triaged the case. It runs only when a person runs it.
-- `ai_suggested_priority` (String) The priority OneUptime AI suggested when it triaged the case. The case's own priority changes only when a person sets it.
+- `ai_suggested_security_case_priority_id` (String) ID of the priority OneUptime AI suggested when it triaged the case. The case's own priority changes only when a person sets it.
 - `ai_triage_prompt_injection_suspected` (Boolean) Whether OneUptime AI found text in the case's data written to steer an AI when it triaged the case. It then leaves the call to a person.
 - `ai_triage_report` (String) The report OneUptime AI wrote when it last triaged the case: what happened, its read and the evidence for it, and the next steps.
 - `ai_verdict` (String) What OneUptime AI made of the case when it triaged it: Likely Malicious, Likely Benign, Likely False Positive or Inconclusive. A suggestion; a person sets the case's verdict.
@@ -45,10 +45,10 @@ data "oneuptime_security_case" "by_id" {
 - `grouping_key` (String) What new detections are matched on to join this case while it is open: the entity they are about, or the detection's own fingerprint.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_id` (String) ID of the OneUptime incident declared for this case. The ID of a `oneuptime_incident`.
-- `notified_priority` (String) The highest priority people have been told about this case at. They are told again only when it rises above it.
-- `priority` (String) Critical, High, Medium, Low or Informational. A case opened by a detection starts at the detection's severity and rises when a more severe one joins it.
-- `source` (String) What opened the case: a Detection Rule, Threat Intel, a Connected Product, or a person (Manual).
-- `status` (String) New, Investigating, Contained or Closed. Every case starts New; closing it records a verdict.
+- `notified_security_case_priority_id` (String) ID of the highest priority people have been told about this case at. They are told again only when it rises above it.
+- `security_case_priority_id` (String) ID of the case's priority. Optional on create: a case opened by hand starts at the project's medium priority. The ID of a `oneuptime_security_case_priority`.
+- `security_case_status_id` (String) ID of the case's status. Optional on create: a new case starts in the project's new status. The ID of a `oneuptime_security_case_status`.
+- `source` (String) What opened the case: a Detection Rule, Threat Intel, a Connected Product, Entity Risk, or a person (Manual).
 - `title` (String) What the case is about, in a line.
 - `verdict` (String) What the case turned out to be, set when it is closed: True Positive, Benign Positive, False Positive or Undetermined.
 

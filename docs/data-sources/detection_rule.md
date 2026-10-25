@@ -40,6 +40,7 @@ data "oneuptime_detection_rule" "by_id" {
 - `last_error` (String) The most recent evaluation error, if any. Cleared on the next successful evaluation.
 - `match_count_threshold` (Number) Fire only when a group's count — distinct values when a distinct count field is set, matching events otherwise — reaches this number within one evaluation window. 1 fires on any match.
 - `name` (String) Friendly name for this detection rule.
+- `risk_score` (Number) What a match adds to the risk of the user, host or address it is about, from 0 to 100. Empty: by the rule's level.
 - `should_create_alert` (Boolean) Whether matches open OneUptime alerts.
 - `should_create_case` (Boolean) Whether matches open security cases (or join the open case about the same entity), where the security team works them and playbooks respond.
 - `should_create_incident` (Boolean) Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per rule.

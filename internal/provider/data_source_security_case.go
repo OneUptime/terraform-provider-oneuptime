@@ -36,8 +36,8 @@ type SecurityCaseDataSourceModel struct {
     CaseNumberWithPrefix types.String `tfsdk:"case_number_with_prefix"`
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
-    Status types.String `tfsdk:"status"`
-    Priority types.String `tfsdk:"priority"`
+    SecurityCaseStatusId types.String `tfsdk:"security_case_status_id"`
+    SecurityCasePriorityId types.String `tfsdk:"security_case_priority_id"`
     Verdict types.String `tfsdk:"verdict"`
     ClosingNote types.String `tfsdk:"closing_note"`
     AssignedToUserId types.String `tfsdk:"assigned_to_user_id"`
@@ -54,10 +54,10 @@ type SecurityCaseDataSourceModel struct {
     ClosedAt types.String `tfsdk:"closed_at"`
     ClosedByUserId types.String `tfsdk:"closed_by_user_id"`
     GroupingKey types.String `tfsdk:"grouping_key"`
-    NotifiedPriority types.String `tfsdk:"notified_priority"`
+    NotifiedSecurityCasePriorityId types.String `tfsdk:"notified_security_case_priority_id"`
     IncidentId types.String `tfsdk:"incident_id"`
     AiVerdict types.String `tfsdk:"ai_verdict"`
-    AiSuggestedPriority types.String `tfsdk:"ai_suggested_priority"`
+    AiSuggestedSecurityCasePriorityId types.String `tfsdk:"ai_suggested_security_case_priority_id"`
     AiSuggestedPlaybookId types.String `tfsdk:"ai_suggested_playbook_id"`
     AiTriageReport types.String `tfsdk:"ai_triage_report"`
     AiTriagedAt types.String `tfsdk:"ai_triaged_at"`
@@ -72,7 +72,7 @@ func (d *SecurityCaseDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A possible threat to investigate: the detections that point at it, who is on it, its priority and status, and the verdict it closed with. Look up an existing security case by `id`, or by any of its other arguments (`ai_suggested_playbook_id`, `ai_suggested_priority`, `ai_triage_prompt_injection_suspected`, ...): each one set must match, and exactly one security case may match them all.",
+        MarkdownDescription: "A possible threat to investigate: the detections that point at it, who is on it, its priority and status, and the verdict it closed with. Look up an existing security case by `id`, or by any of its other arguments (`ai_suggested_playbook_id`, `ai_suggested_security_case_priority_id`, `ai_triage_prompt_injection_suspected`, ...): each one set must match, and exactly one security case may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -112,13 +112,13 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 Optional: true,
                 Computed: true,
             },
-            "status": schema.StringAttribute{
-                MarkdownDescription: "New, Investigating, Contained or Closed. Every case starts New; closing it records a verdict.",
+            "security_case_status_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the case's status. Optional on create: a new case starts in the project's new status. The ID of a `oneuptime_security_case_status`.",
                 Optional: true,
                 Computed: true,
             },
-            "priority": schema.StringAttribute{
-                MarkdownDescription: "Critical, High, Medium, Low or Informational. A case opened by a detection starts at the detection's severity and rises when a more severe one joins it.",
+            "security_case_priority_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the case's priority. Optional on create: a case opened by hand starts at the project's medium priority. The ID of a `oneuptime_security_case_priority`.",
                 Optional: true,
                 Computed: true,
             },
@@ -143,7 +143,7 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "source": schema.StringAttribute{
-                MarkdownDescription: "What opened the case: a Detection Rule, Threat Intel, a Connected Product, or a person (Manual).",
+                MarkdownDescription: "What opened the case: a Detection Rule, Threat Intel, a Connected Product, Entity Risk, or a person (Manual).",
                 Optional: true,
                 Computed: true,
             },
@@ -194,8 +194,8 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 Optional: true,
                 Computed: true,
             },
-            "notified_priority": schema.StringAttribute{
-                MarkdownDescription: "The highest priority people have been told about this case at. They are told again only when it rises above it.",
+            "notified_security_case_priority_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the highest priority people have been told about this case at. They are told again only when it rises above it.",
                 Optional: true,
                 Computed: true,
             },
@@ -209,8 +209,8 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 Optional: true,
                 Computed: true,
             },
-            "ai_suggested_priority": schema.StringAttribute{
-                MarkdownDescription: "The priority OneUptime AI suggested when it triaged the case. The case's own priority changes only when a person sets it.",
+            "ai_suggested_security_case_priority_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the priority OneUptime AI suggested when it triaged the case. The case's own priority changes only when a person sets it.",
                 Optional: true,
                 Computed: true,
             },
@@ -298,13 +298,13 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["description"] = data.Description.ValueString()
         filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
     }
-    if !data.Status.IsNull() && !data.Status.IsUnknown() {
-        filters["status"] = data.Status.ValueString()
-        filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
+    if !data.SecurityCaseStatusId.IsNull() && !data.SecurityCaseStatusId.IsUnknown() {
+        filters["securityCaseStatusId"] = data.SecurityCaseStatusId.ValueString()
+        filterNames = append(filterNames, "security_case_status_id = "+fmt.Sprintf("%q", data.SecurityCaseStatusId.ValueString()))
     }
-    if !data.Priority.IsNull() && !data.Priority.IsUnknown() {
-        filters["priority"] = data.Priority.ValueString()
-        filterNames = append(filterNames, "priority = "+fmt.Sprintf("%q", data.Priority.ValueString()))
+    if !data.SecurityCasePriorityId.IsNull() && !data.SecurityCasePriorityId.IsUnknown() {
+        filters["securityCasePriorityId"] = data.SecurityCasePriorityId.ValueString()
+        filterNames = append(filterNames, "security_case_priority_id = "+fmt.Sprintf("%q", data.SecurityCasePriorityId.ValueString()))
     }
     if !data.Verdict.IsNull() && !data.Verdict.IsUnknown() {
         filters["verdict"] = data.Verdict.ValueString()
@@ -338,9 +338,9 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["groupingKey"] = data.GroupingKey.ValueString()
         filterNames = append(filterNames, "grouping_key = "+fmt.Sprintf("%q", data.GroupingKey.ValueString()))
     }
-    if !data.NotifiedPriority.IsNull() && !data.NotifiedPriority.IsUnknown() {
-        filters["notifiedPriority"] = data.NotifiedPriority.ValueString()
-        filterNames = append(filterNames, "notified_priority = "+fmt.Sprintf("%q", data.NotifiedPriority.ValueString()))
+    if !data.NotifiedSecurityCasePriorityId.IsNull() && !data.NotifiedSecurityCasePriorityId.IsUnknown() {
+        filters["notifiedSecurityCasePriorityId"] = data.NotifiedSecurityCasePriorityId.ValueString()
+        filterNames = append(filterNames, "notified_security_case_priority_id = "+fmt.Sprintf("%q", data.NotifiedSecurityCasePriorityId.ValueString()))
     }
     if !data.IncidentId.IsNull() && !data.IncidentId.IsUnknown() {
         filters["incidentId"] = data.IncidentId.ValueString()
@@ -350,9 +350,9 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["aiVerdict"] = data.AiVerdict.ValueString()
         filterNames = append(filterNames, "ai_verdict = "+fmt.Sprintf("%q", data.AiVerdict.ValueString()))
     }
-    if !data.AiSuggestedPriority.IsNull() && !data.AiSuggestedPriority.IsUnknown() {
-        filters["aiSuggestedPriority"] = data.AiSuggestedPriority.ValueString()
-        filterNames = append(filterNames, "ai_suggested_priority = "+fmt.Sprintf("%q", data.AiSuggestedPriority.ValueString()))
+    if !data.AiSuggestedSecurityCasePriorityId.IsNull() && !data.AiSuggestedSecurityCasePriorityId.IsUnknown() {
+        filters["aiSuggestedSecurityCasePriorityId"] = data.AiSuggestedSecurityCasePriorityId.ValueString()
+        filterNames = append(filterNames, "ai_suggested_security_case_priority_id = "+fmt.Sprintf("%q", data.AiSuggestedSecurityCasePriorityId.ValueString()))
     }
     if !data.AiSuggestedPlaybookId.IsNull() && !data.AiSuggestedPlaybookId.IsUnknown() {
         filters["aiSuggestedPlaybookId"] = data.AiSuggestedPlaybookId.ValueString()
@@ -394,8 +394,8 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         "caseNumberWithPrefix": true,
         "title": true,
         "description": true,
-        "status": true,
-        "priority": true,
+        "securityCaseStatusId": true,
+        "securityCasePriorityId": true,
         "verdict": true,
         "closingNote": true,
         "assignedToUserId": true,
@@ -412,10 +412,10 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         "closedAt": true,
         "closedByUserId": true,
         "groupingKey": true,
-        "notifiedPriority": true,
+        "notifiedSecurityCasePriorityId": true,
         "incidentId": true,
         "aiVerdict": true,
-        "aiSuggestedPriority": true,
+        "aiSuggestedSecurityCasePriorityId": true,
         "aiSuggestedPlaybookId": true,
         "aiTriageReport": true,
         "aiTriagedAt": true,
@@ -603,39 +603,39 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := item["status"].(map[string]interface{}); ok {
+    if obj, ok := item["securityCaseStatusId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Status = types.StringValue(val)
+            data.SecurityCaseStatusId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Status = types.StringValue(val)
+            data.SecurityCaseStatusId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Status = types.StringValue(fmt.Sprintf("%v", val))
+            data.SecurityCaseStatusId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Status = types.StringValue(string(jsonBytes))
+            data.SecurityCaseStatusId = types.StringValue(string(jsonBytes))
         } else {
-            data.Status = types.StringNull()
+            data.SecurityCaseStatusId = types.StringNull()
         }
-    } else if val, ok := item["status"].(string); ok {
-        data.Status = types.StringValue(val)
+    } else if val, ok := item["securityCaseStatusId"].(string); ok {
+        data.SecurityCaseStatusId = types.StringValue(val)
     } else {
-        data.Status = types.StringNull()
+        data.SecurityCaseStatusId = types.StringNull()
     }
-    if obj, ok := item["priority"].(map[string]interface{}); ok {
+    if obj, ok := item["securityCasePriorityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Priority = types.StringValue(val)
+            data.SecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Priority = types.StringValue(val)
+            data.SecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Priority = types.StringValue(fmt.Sprintf("%v", val))
+            data.SecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Priority = types.StringValue(string(jsonBytes))
+            data.SecurityCasePriorityId = types.StringValue(string(jsonBytes))
         } else {
-            data.Priority = types.StringNull()
+            data.SecurityCasePriorityId = types.StringNull()
         }
-    } else if val, ok := item["priority"].(string); ok {
-        data.Priority = types.StringValue(val)
+    } else if val, ok := item["securityCasePriorityId"].(string); ok {
+        data.SecurityCasePriorityId = types.StringValue(val)
     } else {
-        data.Priority = types.StringNull()
+        data.SecurityCasePriorityId = types.StringNull()
     }
     if obj, ok := item["verdict"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -893,22 +893,22 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.GroupingKey = types.StringNull()
     }
-    if obj, ok := item["notifiedPriority"].(map[string]interface{}); ok {
+    if obj, ok := item["notifiedSecurityCasePriorityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NotifiedPriority = types.StringValue(val)
+            data.NotifiedSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.NotifiedPriority = types.StringValue(val)
+            data.NotifiedSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.NotifiedPriority = types.StringValue(fmt.Sprintf("%v", val))
+            data.NotifiedSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.NotifiedPriority = types.StringValue(string(jsonBytes))
+            data.NotifiedSecurityCasePriorityId = types.StringValue(string(jsonBytes))
         } else {
-            data.NotifiedPriority = types.StringNull()
+            data.NotifiedSecurityCasePriorityId = types.StringNull()
         }
-    } else if val, ok := item["notifiedPriority"].(string); ok {
-        data.NotifiedPriority = types.StringValue(val)
+    } else if val, ok := item["notifiedSecurityCasePriorityId"].(string); ok {
+        data.NotifiedSecurityCasePriorityId = types.StringValue(val)
     } else {
-        data.NotifiedPriority = types.StringNull()
+        data.NotifiedSecurityCasePriorityId = types.StringNull()
     }
     if obj, ok := item["incidentId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -944,22 +944,22 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.AiVerdict = types.StringNull()
     }
-    if obj, ok := item["aiSuggestedPriority"].(map[string]interface{}); ok {
+    if obj, ok := item["aiSuggestedSecurityCasePriorityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiSuggestedPriority = types.StringValue(val)
+            data.AiSuggestedSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.AiSuggestedPriority = types.StringValue(val)
+            data.AiSuggestedSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.AiSuggestedPriority = types.StringValue(fmt.Sprintf("%v", val))
+            data.AiSuggestedSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.AiSuggestedPriority = types.StringValue(string(jsonBytes))
+            data.AiSuggestedSecurityCasePriorityId = types.StringValue(string(jsonBytes))
         } else {
-            data.AiSuggestedPriority = types.StringNull()
+            data.AiSuggestedSecurityCasePriorityId = types.StringNull()
         }
-    } else if val, ok := item["aiSuggestedPriority"].(string); ok {
-        data.AiSuggestedPriority = types.StringValue(val)
+    } else if val, ok := item["aiSuggestedSecurityCasePriorityId"].(string); ok {
+        data.AiSuggestedSecurityCasePriorityId = types.StringValue(val)
     } else {
-        data.AiSuggestedPriority = types.StringNull()
+        data.AiSuggestedSecurityCasePriorityId = types.StringNull()
     }
     if obj, ok := item["aiSuggestedPlaybookId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

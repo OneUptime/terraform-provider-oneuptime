@@ -43,7 +43,7 @@ type SecurityPlaybookResourceModel struct {
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Trigger types.String `tfsdk:"trigger"`
-    MinimumPriority types.String `tfsdk:"minimum_priority"`
+    MinimumSecurityCasePriorityId types.String `tfsdk:"minimum_security_case_priority_id"`
     DetectionSource types.String `tfsdk:"detection_source"`
     DetectionRuleIds JSONSubsetValue `tfsdk:"detection_rule_ids"`
     Steps JSONSubsetValue `tfsdk:"steps"`
@@ -115,8 +115,8 @@ func (r *SecurityPlaybookResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "minimum_priority": schema.StringAttribute{
-                MarkdownDescription: "Run only on cases at this priority or above. Empty runs on every priority.",
+            "minimum_security_case_priority_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the lowest case priority the playbook runs on by itself. Empty runs on every priority. The ID of a `oneuptime_security_case_priority`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -124,7 +124,7 @@ func (r *SecurityPlaybookResource) schemaDefinition() schema.Schema {
                 },
             },
             "detection_source": schema.StringAttribute{
-                MarkdownDescription: "Run only on cases raised by this source: a Detection Rule, Threat Intel or a Connected Product. Empty runs on every source.",
+                MarkdownDescription: "Run only on cases raised by this source: a Detection Rule, Threat Intel, a Connected Product or Entity Risk. Empty runs on every source.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -249,8 +249,8 @@ func (r *SecurityPlaybookResource) Create(ctx context.Context, req resource.Crea
     if !data.Trigger.IsNull() && !data.Trigger.IsUnknown() {
         requestDataMap["trigger"] = data.Trigger.ValueString()
     }
-    if !data.MinimumPriority.IsNull() && !data.MinimumPriority.IsUnknown() {
-        requestDataMap["minimumPriority"] = data.MinimumPriority.ValueString()
+    if !data.MinimumSecurityCasePriorityId.IsNull() && !data.MinimumSecurityCasePriorityId.IsUnknown() {
+        requestDataMap["minimumSecurityCasePriorityId"] = data.MinimumSecurityCasePriorityId.ValueString()
     }
     if !data.DetectionSource.IsNull() && !data.DetectionSource.IsUnknown() {
         requestDataMap["detectionSource"] = data.DetectionSource.ValueString()
@@ -311,7 +311,7 @@ func (r *SecurityPlaybookResource) Create(ctx context.Context, req resource.Crea
         "description": true,
         "isEnabled": true,
         "trigger": true,
-        "minimumPriority": true,
+        "minimumSecurityCasePriorityId": true,
         "detectionSource": true,
         "detectionRuleIds": true,
         "steps": true,
@@ -477,42 +477,42 @@ func (r *SecurityPlaybookResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.Trigger = types.StringNull()
     }
-    if obj, ok := dataMap["minimumPriority"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["minimumSecurityCasePriorityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MinimumPriority = types.StringValue(val)
+            data.MinimumSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MinimumPriority = types.StringValue(val)
+            data.MinimumSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.MinimumPriority = types.StringValue(fmt.Sprintf("%v", val))
+            data.MinimumSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MinimumPriority = types.StringValue(string(jsonBytes))
+                data.MinimumSecurityCasePriorityId = types.StringValue(string(jsonBytes))
             } else {
-                data.MinimumPriority = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.MinimumSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MinimumPriority = types.StringValue(string(jsonBytes))
+                data.MinimumSecurityCasePriorityId = types.StringValue(string(jsonBytes))
             } else {
-                data.MinimumPriority = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.MinimumSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.MinimumPriority = types.StringValue(string(jsonBytes))
+            data.MinimumSecurityCasePriorityId = types.StringValue(string(jsonBytes))
         } else {
-            data.MinimumPriority = types.StringNull()
+            data.MinimumSecurityCasePriorityId = types.StringNull()
         }
-    } else if val, ok := dataMap["minimumPriority"].(string); ok {
-        data.MinimumPriority = types.StringValue(val)
+    } else if val, ok := dataMap["minimumSecurityCasePriorityId"].(string); ok {
+        data.MinimumSecurityCasePriorityId = types.StringValue(val)
     } else {
-        data.MinimumPriority = types.StringNull()
+        data.MinimumSecurityCasePriorityId = types.StringNull()
     }
     if obj, ok := dataMap["detectionSource"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -731,7 +731,7 @@ func (r *SecurityPlaybookResource) Read(ctx context.Context, req resource.ReadRe
         "description": true,
         "isEnabled": true,
         "trigger": true,
-        "minimumPriority": true,
+        "minimumSecurityCasePriorityId": true,
         "detectionSource": true,
         "detectionRuleIds": true,
         "steps": true,
@@ -898,42 +898,42 @@ func (r *SecurityPlaybookResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.Trigger = types.StringNull()
     }
-    if obj, ok := dataMap["minimumPriority"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["minimumSecurityCasePriorityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MinimumPriority = types.StringValue(val)
+            data.MinimumSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MinimumPriority = types.StringValue(val)
+            data.MinimumSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.MinimumPriority = types.StringValue(fmt.Sprintf("%v", val))
+            data.MinimumSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MinimumPriority = types.StringValue(string(jsonBytes))
+                data.MinimumSecurityCasePriorityId = types.StringValue(string(jsonBytes))
             } else {
-                data.MinimumPriority = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.MinimumSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MinimumPriority = types.StringValue(string(jsonBytes))
+                data.MinimumSecurityCasePriorityId = types.StringValue(string(jsonBytes))
             } else {
-                data.MinimumPriority = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.MinimumSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.MinimumPriority = types.StringValue(string(jsonBytes))
+            data.MinimumSecurityCasePriorityId = types.StringValue(string(jsonBytes))
         } else {
-            data.MinimumPriority = types.StringNull()
+            data.MinimumSecurityCasePriorityId = types.StringNull()
         }
-    } else if val, ok := dataMap["minimumPriority"].(string); ok {
-        data.MinimumPriority = types.StringValue(val)
+    } else if val, ok := dataMap["minimumSecurityCasePriorityId"].(string); ok {
+        data.MinimumSecurityCasePriorityId = types.StringValue(val)
     } else {
-        data.MinimumPriority = types.StringNull()
+        data.MinimumSecurityCasePriorityId = types.StringNull()
     }
     if obj, ok := dataMap["detectionSource"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1177,8 +1177,8 @@ func (r *SecurityPlaybookResource) Update(ctx context.Context, req resource.Upda
     if !data.Trigger.IsUnknown() && !state.Trigger.IsUnknown() && !data.Trigger.Equal(state.Trigger) {
         requestDataMap["trigger"] = data.Trigger.ValueString()
     }
-    if !data.MinimumPriority.IsUnknown() && !state.MinimumPriority.IsUnknown() && !data.MinimumPriority.Equal(state.MinimumPriority) {
-        requestDataMap["minimumPriority"] = data.MinimumPriority.ValueString()
+    if !data.MinimumSecurityCasePriorityId.IsUnknown() && !state.MinimumSecurityCasePriorityId.IsUnknown() && !data.MinimumSecurityCasePriorityId.Equal(state.MinimumSecurityCasePriorityId) {
+        requestDataMap["minimumSecurityCasePriorityId"] = data.MinimumSecurityCasePriorityId.ValueString()
     }
     if !data.DetectionSource.IsUnknown() && !state.DetectionSource.IsUnknown() && !data.DetectionSource.Equal(state.DetectionSource) {
         requestDataMap["detectionSource"] = data.DetectionSource.ValueString()
@@ -1227,7 +1227,7 @@ func (r *SecurityPlaybookResource) Update(ctx context.Context, req resource.Upda
         "description": true,
         "isEnabled": true,
         "trigger": true,
-        "minimumPriority": true,
+        "minimumSecurityCasePriorityId": true,
         "detectionSource": true,
         "detectionRuleIds": true,
         "steps": true,
@@ -1388,42 +1388,42 @@ func (r *SecurityPlaybookResource) Update(ctx context.Context, req resource.Upda
     } else {
         data.Trigger = types.StringNull()
     }
-    if obj, ok := dataMap["minimumPriority"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["minimumSecurityCasePriorityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MinimumPriority = types.StringValue(val)
+            data.MinimumSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MinimumPriority = types.StringValue(val)
+            data.MinimumSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.MinimumPriority = types.StringValue(fmt.Sprintf("%v", val))
+            data.MinimumSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MinimumPriority = types.StringValue(string(jsonBytes))
+                data.MinimumSecurityCasePriorityId = types.StringValue(string(jsonBytes))
             } else {
-                data.MinimumPriority = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.MinimumSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MinimumPriority = types.StringValue(string(jsonBytes))
+                data.MinimumSecurityCasePriorityId = types.StringValue(string(jsonBytes))
             } else {
-                data.MinimumPriority = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.MinimumSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.MinimumPriority = types.StringValue(string(jsonBytes))
+            data.MinimumSecurityCasePriorityId = types.StringValue(string(jsonBytes))
         } else {
-            data.MinimumPriority = types.StringNull()
+            data.MinimumSecurityCasePriorityId = types.StringNull()
         }
-    } else if val, ok := dataMap["minimumPriority"].(string); ok {
-        data.MinimumPriority = types.StringValue(val)
+    } else if val, ok := dataMap["minimumSecurityCasePriorityId"].(string); ok {
+        data.MinimumSecurityCasePriorityId = types.StringValue(val)
     } else {
-        data.MinimumPriority = types.StringNull()
+        data.MinimumSecurityCasePriorityId = types.StringNull()
     }
     if obj, ok := dataMap["detectionSource"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1673,8 +1673,8 @@ func (r *SecurityPlaybookResource) keepPlannedValues(data *SecurityPlaybookResou
     if config.Trigger.IsNull() && !plan.Trigger.IsUnknown() {
         data.Trigger = plan.Trigger
     }
-    if config.MinimumPriority.IsNull() && !plan.MinimumPriority.IsUnknown() {
-        data.MinimumPriority = plan.MinimumPriority
+    if config.MinimumSecurityCasePriorityId.IsNull() && !plan.MinimumSecurityCasePriorityId.IsUnknown() {
+        data.MinimumSecurityCasePriorityId = plan.MinimumSecurityCasePriorityId
     }
     if config.DetectionSource.IsNull() && !plan.DetectionSource.IsUnknown() {
         data.DetectionSource = plan.DetectionSource

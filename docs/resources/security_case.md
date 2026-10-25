@@ -34,15 +34,15 @@ resource "oneuptime_security_case" "example" {
 - `labels` (Set of String) Labels to filter and report on cases by. IDs of `oneuptime_label` resources.
 - `mitre_tactics` (String) ATT&CK tactic ids (TA0006) the case's detections are tagged with. A JSON value: write it with `jsonencode()`.
 - `mitre_techniques` (String) ATT&CK technique ids (T1110) the case's detections are tagged with. A JSON value: write it with `jsonencode()`.
-- `priority` (String) Critical, High, Medium, Low or Informational. A case opened by a detection starts at the detection's severity and rises when a more severe one joins it. Defaults to `Medium`.
-- `status` (String) New, Investigating, Contained or Closed. Every case starts New; closing it records a verdict. Defaults to `New`.
+- `security_case_priority_id` (String) ID of the case's priority. Optional on create: a case opened by hand starts at the project's medium priority. The ID of a `oneuptime_security_case_priority`.
+- `security_case_status_id` (String) ID of the case's status. Optional on create: a new case starts in the project's new status. The ID of a `oneuptime_security_case_status`.
 - `verdict` (String) What the case turned out to be, set when it is closed: True Positive, Benign Positive, False Positive or Undetermined.
 
 ### Read-Only
 
 - `acknowledged_at` (String) When somebody first took the case on: assigned it to a person, or moved it out of New. The time to acknowledge is measured to here.
 - `ai_suggested_playbook_id` (String) ID of the project's playbook OneUptime AI suggested running when it triaged the case. It runs only when a person runs it.
-- `ai_suggested_priority` (String) The priority OneUptime AI suggested when it triaged the case. The case's own priority changes only when a person sets it.
+- `ai_suggested_security_case_priority_id` (String) ID of the priority OneUptime AI suggested when it triaged the case. The case's own priority changes only when a person sets it.
 - `ai_triage_prompt_injection_suspected` (Boolean) Whether OneUptime AI found text in the case's data written to steer an AI when it triaged the case. It then leaves the call to a person.
 - `ai_triage_report` (String) The report OneUptime AI wrote when it last triaged the case: what happened, its read and the evidence for it, and the next steps.
 - `ai_triaged_at` (String) When OneUptime AI last finished triaging the case.
@@ -60,9 +60,9 @@ resource "oneuptime_security_case" "example" {
 - `id` (String) Unique identifier for the resource.
 - `incident_id` (String) ID of the OneUptime incident declared for this case. The ID of a `oneuptime_incident`.
 - `last_detected_at` (String) When a detection of the case last fired.
-- `notified_priority` (String) The highest priority people have been told about this case at. They are told again only when it rises above it.
+- `notified_security_case_priority_id` (String) ID of the highest priority people have been told about this case at. They are told again only when it rises above it.
 - `project_id` (String) ID of the project this case belongs to. The ID of a `oneuptime_project`.
-- `source` (String) What opened the case: a Detection Rule, Threat Intel, a Connected Product, or a person (Manual).
+- `source` (String) What opened the case: a Detection Rule, Threat Intel, a Connected Product, Entity Risk, or a person (Manual).
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

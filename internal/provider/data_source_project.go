@@ -77,6 +77,8 @@ type ProjectDataSourceModel struct {
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     EnableAutomaticSecurityCaseTriage types.Bool `tfsdk:"enable_automatic_security_case_triage"`
+    EnableSecurityRiskCases types.Bool `tfsdk:"enable_security_risk_cases"`
+    SecurityRiskCaseThreshold types.Number `tfsdk:"security_risk_case_threshold"`
     EnableAutomaticIncidentRemediation types.Bool `tfsdk:"enable_automatic_incident_remediation"`
     EnableAutomaticAlertRemediation types.Bool `tfsdk:"enable_automatic_alert_remediation"`
     EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
@@ -88,6 +90,9 @@ type ProjectDataSourceModel struct {
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
     EnableAutomaticProfileRemediation types.Bool `tfsdk:"enable_automatic_profile_remediation"`
     EnableAutomaticTraceRemediation types.Bool `tfsdk:"enable_automatic_trace_remediation"`
+    EnableAutomaticExceptionRemediation types.Bool `tfsdk:"enable_automatic_exception_remediation"`
+    EnableAutomaticMetricRemediation types.Bool `tfsdk:"enable_automatic_metric_remediation"`
+    EnableAutomaticLogRemediation types.Bool `tfsdk:"enable_automatic_log_remediation"`
     AutoArchiveNonActionableExceptions types.Bool `tfsdk:"auto_archive_non_actionable_exceptions"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
@@ -387,6 +392,16 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "enable_security_risk_cases": schema.BoolAttribute{
+                MarkdownDescription: "When on, a security case opens about a user, host or IP address whose risk reaches the threshold. On for new projects.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_risk_case_threshold": schema.NumberAttribute{
+                MarkdownDescription: "The risk score at which a case opens about a user, host or IP address: a whole number from 10 to 10000, 100 unless changed.",
+                Optional: true,
+                Computed: true,
+            },
             "enable_automatic_incident_remediation": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime fixes new incidents automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and AI rules - when there are any - choose which incidents are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the incident settles first. Requires AI to be enabled. Fix and telemetry pull requests open only while this is on, as each AI Rule says (openCodeFixPullRequests, openTelemetryPullRequests - on by default, and on with no rule).",
                 Optional: true,
@@ -439,6 +454,21 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "enable_automatic_trace_remediation": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime reads each service's traces once an hour for operations that are slow (their slowest requests repeat a pattern that costs them real time, such as the same database query run many times), operations that fail, and operations or services whose traces cannot say why, and files each as an insight; OneUptime AI looks into it and opens a pull request that fixes the code or adds the tracing it lacks, in a repository connected in Code. A failing operation's pull request opens on its own only once the investigation finds the code at fault. Pull requests are never merged automatically, and honor the repository's open pull request cap. Trace AI rules, when there are any, choose which services' problems are worked on, whether a person approves the pull request first, and which repositories and LLM provider are used. On for new projects created in OneUptime; projects that existed before keep it off. Requires AI to be enabled.",
+                Optional: true,
+                Computed: true,
+            },
+            "enable_automatic_exception_remediation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime looks every 15 minutes for new exceptions, exceptions that suddenly happen far more often than usual, and services whose exceptions carry no stack trace, and files each as an insight; OneUptime AI looks into it and opens a pull request in a repository connected in Code: one that fixes the code when the investigation finds the code at fault, one that improves how the code handles an expected error such as invalid input, or one that makes the service record stack traces. An exception's pull request opens only for an exception raised in your own code. Pull requests are never merged automatically, and honor the repository's open pull request cap. Exception AI rules, when there are any, choose which services' exceptions are worked on, whether a person approves the pull request first, and which repositories and LLM provider are used. While this is off, new and spiking exceptions are handled by AI Insights' own settings. On for new projects created in OneUptime; projects that existed before keep it off. Requires AI to be enabled.",
+                Optional: true,
+                Computed: true,
+            },
+            "enable_automatic_metric_remediation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime reads each hour's metrics for attributes that take too many values (such as user IDs or full URLs) and metric names with IDs in them, for histograms whose buckets do not fit the values they record, and for busy services that send traces but no metrics, and files each as an insight; OneUptime AI looks into it and opens a pull request that improves the metric or adds the missing metrics, in a repository connected in Code. Pull requests are never merged automatically, and honor the repository's open pull request cap. Metric AI rules, when there are any, choose which services' problems are worked on, whether a person approves the pull request first, and which repositories and LLM provider are used. On for new projects created in OneUptime; projects that existed before keep it off. Requires AI to be enabled.",
+                Optional: true,
+                Computed: true,
+            },
+            "enable_automatic_log_remediation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime reads each service's logs once an hour for an error message it logs again and again (one without an exception: errors with an exception are fixed from Exceptions), for requests that fail without writing a log line, for logs that carry no trace context, and for one message that makes up a large share of its logs, and files each as an insight; OneUptime AI looks into it and opens a pull request that fixes the code behind the error, adds the logging that is missing or logs the noisy message less, in a repository connected in Code. An error log's pull request opens on its own only once the investigation finds the code at fault. Pull requests never copy log lines, are never merged automatically, and honor the repository's open pull request cap. Log AI rules, when there are any, choose which services' problems are worked on, whether a person approves the pull request first, and which repositories and LLM provider are used. On for new projects created in OneUptime; projects that existed before keep it off. Requires AI to be enabled.",
                 Optional: true,
                 Computed: true,
             },
@@ -847,6 +877,14 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["enableAutomaticSecurityCaseTriage"] = data.EnableAutomaticSecurityCaseTriage.ValueBool()
         filterNames = append(filterNames, "enable_automatic_security_case_triage = "+fmt.Sprintf("%t", data.EnableAutomaticSecurityCaseTriage.ValueBool()))
     }
+    if !data.EnableSecurityRiskCases.IsNull() && !data.EnableSecurityRiskCases.IsUnknown() {
+        filters["enableSecurityRiskCases"] = data.EnableSecurityRiskCases.ValueBool()
+        filterNames = append(filterNames, "enable_security_risk_cases = "+fmt.Sprintf("%t", data.EnableSecurityRiskCases.ValueBool()))
+    }
+    if !data.SecurityRiskCaseThreshold.IsNull() && !data.SecurityRiskCaseThreshold.IsUnknown() {
+        filters["securityRiskCaseThreshold"] = lookupNumber(data.SecurityRiskCaseThreshold)
+        filterNames = append(filterNames, "security_risk_case_threshold = "+data.SecurityRiskCaseThreshold.ValueBigFloat().String())
+    }
     if !data.EnableAutomaticIncidentRemediation.IsNull() && !data.EnableAutomaticIncidentRemediation.IsUnknown() {
         filters["enableAutomaticIncidentRemediation"] = data.EnableAutomaticIncidentRemediation.ValueBool()
         filterNames = append(filterNames, "enable_automatic_incident_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticIncidentRemediation.ValueBool()))
@@ -890,6 +928,18 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if !data.EnableAutomaticTraceRemediation.IsNull() && !data.EnableAutomaticTraceRemediation.IsUnknown() {
         filters["enableAutomaticTraceRemediation"] = data.EnableAutomaticTraceRemediation.ValueBool()
         filterNames = append(filterNames, "enable_automatic_trace_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticTraceRemediation.ValueBool()))
+    }
+    if !data.EnableAutomaticExceptionRemediation.IsNull() && !data.EnableAutomaticExceptionRemediation.IsUnknown() {
+        filters["enableAutomaticExceptionRemediation"] = data.EnableAutomaticExceptionRemediation.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_exception_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticExceptionRemediation.ValueBool()))
+    }
+    if !data.EnableAutomaticMetricRemediation.IsNull() && !data.EnableAutomaticMetricRemediation.IsUnknown() {
+        filters["enableAutomaticMetricRemediation"] = data.EnableAutomaticMetricRemediation.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_metric_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticMetricRemediation.ValueBool()))
+    }
+    if !data.EnableAutomaticLogRemediation.IsNull() && !data.EnableAutomaticLogRemediation.IsUnknown() {
+        filters["enableAutomaticLogRemediation"] = data.EnableAutomaticLogRemediation.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_log_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticLogRemediation.ValueBool()))
     }
     if !data.AutoArchiveNonActionableExceptions.IsNull() && !data.AutoArchiveNonActionableExceptions.IsUnknown() {
         filters["autoArchiveNonActionableExceptions"] = data.AutoArchiveNonActionableExceptions.ValueBool()
@@ -1094,6 +1144,8 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticSecurityCaseTriage": true,
+        "enableSecurityRiskCases": true,
+        "securityRiskCaseThreshold": true,
         "enableAutomaticIncidentRemediation": true,
         "enableAutomaticAlertRemediation": true,
         "enableAutomaticPostmortemDraft": true,
@@ -1105,6 +1157,9 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "enableInsightFixTasks": true,
         "enableAutomaticProfileRemediation": true,
         "enableAutomaticTraceRemediation": true,
+        "enableAutomaticExceptionRemediation": true,
+        "enableAutomaticMetricRemediation": true,
+        "enableAutomaticLogRemediation": true,
         "autoArchiveNonActionableExceptions": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
@@ -1685,6 +1740,12 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.EnableAutomaticSecurityCaseTriage = types.BoolNull()
     }
+    if val, ok := item["enableSecurityRiskCases"].(bool); ok {
+        data.EnableSecurityRiskCases = types.BoolValue(val)
+    } else {
+        data.EnableSecurityRiskCases = types.BoolNull()
+    }
+    data.SecurityRiskCaseThreshold = numberFromAPI(data.SecurityRiskCaseThreshold, item["securityRiskCaseThreshold"])
     if val, ok := item["enableAutomaticIncidentRemediation"].(bool); ok {
         data.EnableAutomaticIncidentRemediation = types.BoolValue(val)
     } else {
@@ -1739,6 +1800,21 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.EnableAutomaticTraceRemediation = types.BoolValue(val)
     } else {
         data.EnableAutomaticTraceRemediation = types.BoolNull()
+    }
+    if val, ok := item["enableAutomaticExceptionRemediation"].(bool); ok {
+        data.EnableAutomaticExceptionRemediation = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticExceptionRemediation = types.BoolNull()
+    }
+    if val, ok := item["enableAutomaticMetricRemediation"].(bool); ok {
+        data.EnableAutomaticMetricRemediation = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticMetricRemediation = types.BoolNull()
+    }
+    if val, ok := item["enableAutomaticLogRemediation"].(bool); ok {
+        data.EnableAutomaticLogRemediation = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticLogRemediation = types.BoolNull()
     }
     if val, ok := item["autoArchiveNonActionableExceptions"].(bool); ok {
         data.AutoArchiveNonActionableExceptions = types.BoolValue(val)

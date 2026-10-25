@@ -30,10 +30,10 @@ data "oneuptime_security_playbook" "by_id" {
 
 - `created_by_user_id` (String) ID of the person who created the playbook. The ID of a `oneuptime_user` (see the data source).
 - `description` (String) When to use the playbook and what it is for.
-- `detection_source` (String) Run only on cases raised by this source: a Detection Rule, Threat Intel or a Connected Product. Empty runs on every source.
+- `detection_source` (String) Run only on cases raised by this source: a Detection Rule, Threat Intel, a Connected Product or Entity Risk. Empty runs on every source.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Whether the playbook runs on its own. A disabled playbook can still be run by hand from a case.
-- `minimum_priority` (String) Run only on cases at this priority or above. Empty runs on every priority.
+- `minimum_security_case_priority_id` (String) ID of the lowest case priority the playbook runs on by itself. Empty runs on every priority. The ID of a `oneuptime_security_case_priority`.
 - `name` (String) What the playbook does, in a few words.
 - `run_count` (Number) How many times the playbook has been run.
 - `trigger` (String) When the playbook runs on its own: Case Opened, Detection Added (a new detection joins an open case), or Manual (only when somebody runs it).

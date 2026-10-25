@@ -41,7 +41,7 @@ data "oneuptime_security_detection" "by_id" {
 - `security_case_id` (String) ID of the case this detection belongs to. The ID of a `oneuptime_security_case`.
 - `security_event_connection_id` (String) ID of the connection the alert was imported through. The ID of a `oneuptime_security_event_connection`.
 - `severity` (String) OCSF severity of the detection: Informational, Low, Medium, High, Critical or Fatal.
-- `source` (String) What raised it: a Detection Rule, Threat Intel, a Connected Product, or a person (Manual).
+- `source` (String) What raised it: a Detection Rule, Threat Intel, a Connected Product, Entity Risk, or a person (Manual).
 - `threat_intel_feed_id` (String) ID of the feed whose indicator matched. The ID of a `oneuptime_threat_intel_feed`.
 - `title` (String) What fired, about what: the rule's name and the value it grouped on.
 

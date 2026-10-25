@@ -28,9 +28,9 @@ resource "oneuptime_security_playbook" "example" {
 
 - `description` (String) When to use the playbook and what it is for.
 - `detection_rule_ids` (String) Run only on cases with a detection from one of these detection rules. Empty runs on cases from any rule. A JSON value: write it with `jsonencode()`.
-- `detection_source` (String) Run only on cases raised by this source: a Detection Rule, Threat Intel or a Connected Product. Empty runs on every source.
+- `detection_source` (String) Run only on cases raised by this source: a Detection Rule, Threat Intel, a Connected Product or Entity Risk. Empty runs on every source.
 - `is_enabled` (Boolean) Whether the playbook runs on its own. A disabled playbook can still be run by hand from a case. Defaults to `true`.
-- `minimum_priority` (String) Run only on cases at this priority or above. Empty runs on every priority.
+- `minimum_security_case_priority_id` (String) ID of the lowest case priority the playbook runs on by itself. Empty runs on every priority. The ID of a `oneuptime_security_case_priority`.
 - `steps` (String) The steps the playbook takes, in order. Each has an action, its settings, and whether it needs approval, may fail without stopping the run, or runs only when threat intel matched. A JSON value: write it with `jsonencode()`.
 - `trigger` (String) When the playbook runs on its own: Case Opened, Detection Added (a new detection joins an open case), or Manual (only when somebody runs it). Defaults to `Case Opened`.
 

@@ -36,6 +36,7 @@ resource "oneuptime_detection_rule" "example" {
 - `incident_severity_id` (String) ID of the incident severity for incidents opened by this rule. The ID of a `oneuptime_incident_severity`.
 - `is_enabled` (Boolean) Whether this detection rule is evaluated. Defaults to `true`.
 - `match_count_threshold` (Number) Fire only when a group's count — distinct values when a distinct count field is set, matching events otherwise — reaches this number within one evaluation window. 1 fires on any match. Defaults to `1`.
+- `risk_score` (Number) What a match adds to the risk of the user, host or address it is about, from 0 to 100. Empty: by the rule's level.
 - `should_create_alert` (Boolean) Whether matches open OneUptime alerts. Defaults to `true`.
 - `should_create_case` (Boolean) Whether matches open security cases (or join the open case about the same entity), where the security team works them and playbooks respond. Defaults to `true`.
 - `should_create_incident` (Boolean) Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per rule. Defaults to `false`.

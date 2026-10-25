@@ -34,7 +34,7 @@ type SecurityPlaybookDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Trigger types.String `tfsdk:"trigger"`
-    MinimumPriority types.String `tfsdk:"minimum_priority"`
+    MinimumSecurityCasePriorityId types.String `tfsdk:"minimum_security_case_priority_id"`
     DetectionSource types.String `tfsdk:"detection_source"`
     DetectionRuleIds types.String `tfsdk:"detection_rule_ids"`
     Steps types.String `tfsdk:"steps"`
@@ -89,13 +89,13 @@ func (d *SecurityPlaybookDataSource) Schema(ctx context.Context, req datasource.
                 Optional: true,
                 Computed: true,
             },
-            "minimum_priority": schema.StringAttribute{
-                MarkdownDescription: "Run only on cases at this priority or above. Empty runs on every priority.",
+            "minimum_security_case_priority_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the lowest case priority the playbook runs on by itself. Empty runs on every priority. The ID of a `oneuptime_security_case_priority`.",
                 Optional: true,
                 Computed: true,
             },
             "detection_source": schema.StringAttribute{
-                MarkdownDescription: "Run only on cases raised by this source: a Detection Rule, Threat Intel or a Connected Product. Empty runs on every source.",
+                MarkdownDescription: "Run only on cases raised by this source: a Detection Rule, Threat Intel, a Connected Product or Entity Risk. Empty runs on every source.",
                 Optional: true,
                 Computed: true,
             },
@@ -176,9 +176,9 @@ func (d *SecurityPlaybookDataSource) Read(ctx context.Context, req datasource.Re
         filters["trigger"] = data.Trigger.ValueString()
         filterNames = append(filterNames, "trigger = "+fmt.Sprintf("%q", data.Trigger.ValueString()))
     }
-    if !data.MinimumPriority.IsNull() && !data.MinimumPriority.IsUnknown() {
-        filters["minimumPriority"] = data.MinimumPriority.ValueString()
-        filterNames = append(filterNames, "minimum_priority = "+fmt.Sprintf("%q", data.MinimumPriority.ValueString()))
+    if !data.MinimumSecurityCasePriorityId.IsNull() && !data.MinimumSecurityCasePriorityId.IsUnknown() {
+        filters["minimumSecurityCasePriorityId"] = data.MinimumSecurityCasePriorityId.ValueString()
+        filterNames = append(filterNames, "minimum_security_case_priority_id = "+fmt.Sprintf("%q", data.MinimumSecurityCasePriorityId.ValueString()))
     }
     if !data.DetectionSource.IsNull() && !data.DetectionSource.IsUnknown() {
         filters["detectionSource"] = data.DetectionSource.ValueString()
@@ -216,7 +216,7 @@ func (d *SecurityPlaybookDataSource) Read(ctx context.Context, req datasource.Re
         "description": true,
         "isEnabled": true,
         "trigger": true,
-        "minimumPriority": true,
+        "minimumSecurityCasePriorityId": true,
         "detectionSource": true,
         "detectionRuleIds": true,
         "steps": true,
@@ -408,22 +408,22 @@ func (d *SecurityPlaybookDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.Trigger = types.StringNull()
     }
-    if obj, ok := item["minimumPriority"].(map[string]interface{}); ok {
+    if obj, ok := item["minimumSecurityCasePriorityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MinimumPriority = types.StringValue(val)
+            data.MinimumSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.MinimumPriority = types.StringValue(val)
+            data.MinimumSecurityCasePriorityId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.MinimumPriority = types.StringValue(fmt.Sprintf("%v", val))
+            data.MinimumSecurityCasePriorityId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.MinimumPriority = types.StringValue(string(jsonBytes))
+            data.MinimumSecurityCasePriorityId = types.StringValue(string(jsonBytes))
         } else {
-            data.MinimumPriority = types.StringNull()
+            data.MinimumSecurityCasePriorityId = types.StringNull()
         }
-    } else if val, ok := item["minimumPriority"].(string); ok {
-        data.MinimumPriority = types.StringValue(val)
+    } else if val, ok := item["minimumSecurityCasePriorityId"].(string); ok {
+        data.MinimumSecurityCasePriorityId = types.StringValue(val)
     } else {
-        data.MinimumPriority = types.StringNull()
+        data.MinimumSecurityCasePriorityId = types.StringNull()
     }
     if obj, ok := item["detectionSource"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -110,7 +110,7 @@ func (r *AiRuleResource) Schema(ctx context.Context, req resource.SchemaRequest,
 
 func (r *AiRuleResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Which new incidents or alerts OneUptime AI investigates and fixes, and how. A rule investigates what it matches (right away, or only if still open after a wait), and fixes it or not, asking first or not. A fix may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI investigates every one, and fixes every one while automatic fixing is on. These were auto remediation rules, and investigation rules are AI rules now too. A rule whose Trigger Entity Type is Profile decides the same about the slow code OneUptime finds in a service's profiles, and one whose Trigger Entity Type is Trace about the slow and failing operations OneUptime finds in a service's traces, matched by their service; their fix is a pull request in one of the project's code repositories.",
+        MarkdownDescription: "Which new incidents or alerts OneUptime AI investigates and fixes, and how. A rule investigates what it matches (right away, or only if still open after a wait), and fixes it or not, asking first or not. A fix may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI investigates every one, and fixes every one while automatic fixing is on. These were auto remediation rules, and investigation rules are AI rules now too. A rule whose Trigger Entity Type is Profile decides the same about the slow code OneUptime finds in a service's profiles, one whose Trigger Entity Type is Trace about the slow and failing operations OneUptime finds in a service's traces, and one whose Trigger Entity Type is Metric about the problems OneUptime finds in a service's metrics, matched by their service; their fix is a pull request in one of the project's code repositories.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -161,7 +161,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "trigger_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Which kind of signal this rule decides about: Incident or Alert - or Profile, the slow code OneUptime finds in a service's profiles, or Trace, the slow and failing operations OneUptime finds in a service's traces.",
+                MarkdownDescription: "Which kind of signal this rule decides about: Incident or Alert - or Profile, the slow code OneUptime finds in a service's profiles, or Trace, the slow and failing operations OneUptime finds in a service's traces, or Exception, the new and rising exceptions OneUptime finds in a service, or Log, the error, missing and noisy logs OneUptime finds in a service's logs, or Metric, the problems OneUptime finds in a service's metrics.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -312,7 +312,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "Profile and Trace AI rules only: match what OneUptime found in one of these services. Leave empty to match any service. IDs of `oneuptime_service` resources.",
+                MarkdownDescription: "Profile, Trace, Exception, Log and Metric AI rules only: match what OneUptime found in one of these services. Leave empty to match any service. IDs of `oneuptime_service` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -321,7 +321,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "service_labels": schema.SetAttribute{
-                MarkdownDescription: "Profile and Trace AI rules only: match what OneUptime found in a service that carries at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Profile, Trace, Exception, Log and Metric AI rules only: match what OneUptime found in a service that carries at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -330,7 +330,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "service_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Profile and Trace AI rules only: case-insensitive regex matched against the name of the service OneUptime found the problem in. Leave empty to match any name.",
+                MarkdownDescription: "Profile, Trace, Exception, Log and Metric AI rules only: case-insensitive regex matched against the name of the service OneUptime found the problem in. Leave empty to match any name.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

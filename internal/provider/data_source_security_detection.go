@@ -99,7 +99,7 @@ func (d *SecurityDetectionDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "source": schema.StringAttribute{
-                MarkdownDescription: "What raised it: a Detection Rule, Threat Intel, a Connected Product, or a person (Manual).",
+                MarkdownDescription: "What raised it: a Detection Rule, Threat Intel, a Connected Product, Entity Risk, or a person (Manual).",
                 Optional: true,
                 Computed: true,
             },

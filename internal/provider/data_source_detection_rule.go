@@ -42,6 +42,7 @@ type DetectionRuleDataSourceModel struct {
     ShouldWriteDetectionFinding types.Bool `tfsdk:"should_write_detection_finding"`
     ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
     ShouldCreateCase types.Bool `tfsdk:"should_create_case"`
+    RiskScore types.Number `tfsdk:"risk_score"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     LastEvaluatedAt types.String `tfsdk:"last_evaluated_at"`
@@ -133,6 +134,11 @@ func (d *DetectionRuleDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "should_create_case": schema.BoolAttribute{
                 MarkdownDescription: "Whether matches open security cases (or join the open case about the same entity), where the security team works them and playbooks respond.",
+                Optional: true,
+                Computed: true,
+            },
+            "risk_score": schema.NumberAttribute{
+                MarkdownDescription: "What a match adds to the risk of the user, host or address it is about, from 0 to 100. Empty: by the rule's level.",
                 Optional: true,
                 Computed: true,
             },
@@ -251,6 +257,10 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["shouldCreateCase"] = data.ShouldCreateCase.ValueBool()
         filterNames = append(filterNames, "should_create_case = "+fmt.Sprintf("%t", data.ShouldCreateCase.ValueBool()))
     }
+    if !data.RiskScore.IsNull() && !data.RiskScore.IsUnknown() {
+        filters["riskScore"] = lookupNumber(data.RiskScore)
+        filterNames = append(filterNames, "risk_score = "+data.RiskScore.ValueBigFloat().String())
+    }
     if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
         filters["alertSeverityId"] = data.AlertSeverityId.ValueString()
         filterNames = append(filterNames, "alert_severity_id = "+fmt.Sprintf("%q", data.AlertSeverityId.ValueString()))
@@ -299,6 +309,7 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
         "shouldCreateCase": true,
+        "riskScore": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "lastEvaluatedAt": true,
@@ -546,6 +557,7 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.ShouldCreateCase = types.BoolNull()
     }
+    data.RiskScore = numberFromAPI(data.RiskScore, item["riskScore"])
     if obj, ok := item["alertSeverityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.AlertSeverityId = types.StringValue(val)

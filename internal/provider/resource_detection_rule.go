@@ -51,6 +51,7 @@ type DetectionRuleResourceModel struct {
     ShouldWriteDetectionFinding types.Bool `tfsdk:"should_write_detection_finding"`
     ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
     ShouldCreateCase types.Bool `tfsdk:"should_create_case"`
+    RiskScore types.Number `tfsdk:"risk_score"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
@@ -181,6 +182,14 @@ func (r *DetectionRuleResource) schemaDefinition() schema.Schema {
                 Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "risk_score": schema.NumberAttribute{
+                MarkdownDescription: "What a match adds to the risk of the user, host or address it is about, from 0 to 100. Empty: by the rule's level.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "alert_severity_id": schema.StringAttribute{
@@ -322,6 +331,9 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
     if !data.ShouldCreateCase.IsNull() && !data.ShouldCreateCase.IsUnknown() {
         requestDataMap["shouldCreateCase"] = data.ShouldCreateCase.ValueBool()
     }
+    if !data.RiskScore.IsNull() && !data.RiskScore.IsUnknown() {
+        requestDataMap["riskScore"] = r.bigFloatToFloat64(data.RiskScore.ValueBigFloat())
+    }
     if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
@@ -386,6 +398,7 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
         "shouldCreateCase": true,
+        "riskScore": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "createdAt": true,
@@ -639,6 +652,7 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
     if val, ok := dataMap["shouldCreateCase"].(bool); ok {
         data.ShouldCreateCase = types.BoolValue(val)
     }
+    data.RiskScore = numberFromAPI(data.RiskScore, dataMap["riskScore"])
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -874,6 +888,7 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
         "shouldCreateCase": true,
+        "riskScore": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "createdAt": true,
@@ -1128,6 +1143,7 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
     if val, ok := dataMap["shouldCreateCase"].(bool); ok {
         data.ShouldCreateCase = types.BoolValue(val)
     }
+    data.RiskScore = numberFromAPI(data.RiskScore, dataMap["riskScore"])
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1399,6 +1415,9 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     if !data.ShouldCreateCase.IsUnknown() && !state.ShouldCreateCase.IsUnknown() && !data.ShouldCreateCase.Equal(state.ShouldCreateCase) {
         requestDataMap["shouldCreateCase"] = data.ShouldCreateCase.ValueBool()
     }
+    if !data.RiskScore.IsUnknown() && !state.RiskScore.IsUnknown() && !data.RiskScore.Equal(state.RiskScore) {
+        requestDataMap["riskScore"] = r.bigFloatToFloat64(data.RiskScore.ValueBigFloat())
+    }
     if !data.AlertSeverityId.IsUnknown() && !state.AlertSeverityId.IsUnknown() && !data.AlertSeverityId.Equal(state.AlertSeverityId) {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
@@ -1441,6 +1460,7 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
         "shouldCreateCase": true,
+        "riskScore": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "createdAt": true,
@@ -1689,6 +1709,7 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     if val, ok := dataMap["shouldCreateCase"].(bool); ok {
         data.ShouldCreateCase = types.BoolValue(val)
     }
+    data.RiskScore = numberFromAPI(data.RiskScore, dataMap["riskScore"])
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1967,6 +1988,9 @@ func (r *DetectionRuleResource) keepPlannedValues(data *DetectionRuleResourceMod
     }
     if config.ShouldCreateCase.IsNull() && !plan.ShouldCreateCase.IsUnknown() {
         data.ShouldCreateCase = plan.ShouldCreateCase
+    }
+    if config.RiskScore.IsNull() && !plan.RiskScore.IsUnknown() {
+        data.RiskScore = plan.RiskScore
     }
     if config.AlertSeverityId.IsNull() && !plan.AlertSeverityId.IsUnknown() {
         data.AlertSeverityId = plan.AlertSeverityId
