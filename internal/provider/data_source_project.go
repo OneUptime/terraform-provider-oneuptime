@@ -71,6 +71,7 @@ type ProjectDataSourceModel struct {
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
     EnableAi types.Bool `tfsdk:"enable_ai"`
+    AiContext types.String `tfsdk:"ai_context"`
     AiDailyTokenLimit types.Number `tfsdk:"ai_daily_token_limit"`
     AiDailySpendLimitInUsd types.Number `tfsdk:"ai_daily_spend_limit_in_usd"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
@@ -85,6 +86,8 @@ type ProjectDataSourceModel struct {
     LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
+    EnableAutomaticProfileRemediation types.Bool `tfsdk:"enable_automatic_profile_remediation"`
+    EnableAutomaticTraceRemediation types.Bool `tfsdk:"enable_automatic_trace_remediation"`
     AutoArchiveNonActionableExceptions types.Bool `tfsdk:"auto_archive_non_actionable_exceptions"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
@@ -129,7 +132,7 @@ func (d *ProjectDataSource) Metadata(ctx context.Context, req datasource.Metadat
 
 func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "OneUptime Project, and everything happens inside it Look up an existing project by `id`, or by any of its other arguments (`name`, `acknowledge_linked_alerts_when_incident_acknowledged`, `ai_current_balance_in_usd_cents`, ...): each one set must match, and exactly one project may match them all.",
+        MarkdownDescription: "OneUptime Project, and everything happens inside it Look up an existing project by `id`, or by any of its other arguments (`name`, `acknowledge_linked_alerts_when_incident_acknowledged`, `ai_context`, ...): each one set must match, and exactly one project may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -354,6 +357,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "ai_context": schema.StringAttribute{
+                MarkdownDescription: "Notes for OneUptime AI about your systems: what depends on what, who owns which symptom, where the logs are. Markdown, at most 20,000 characters.",
+                Optional: true,
+                Computed: true,
+            },
             "ai_daily_token_limit": schema.NumberAttribute{
                 MarkdownDescription: "The most tokens OneUptime AI may use in this project each UTC day, across every AI feature: Ask AI, investigations, postmortem drafts, fix pull requests, insight triage, workflows, runbooks and Slack or Microsoft Teams questions. Once it is reached, new AI work is refused until midnight UTC. The incident and alert daily limits still apply under it. Unset means no limit; a limit is a whole number of at least 1 (to turn AI off, use Enable AI).",
                 Optional: true,
@@ -421,6 +429,16 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "enable_insight_fix_tasks": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a pull request with a proposed fix, ready for review. Honors any open-PR cap set on the repository. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting.",
+                Optional: true,
+                Computed: true,
+            },
+            "enable_automatic_profile_remediation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime reads each service's profiles once an hour for functions of its own code that take a large or growing share of its time and files each as an insight, and OneUptime AI looks into it and opens a pull request that makes it faster, in a repository connected through the GitHub App. Pull requests are never merged automatically, and honor the repository's open pull request cap. Profile AI rules, when there are any, choose which services' slow code is worked on, whether a person approves the pull request first, and which repositories and LLM provider are used. On for new projects created in OneUptime; projects that existed before keep it off. Requires AI to be enabled.",
+                Optional: true,
+                Computed: true,
+            },
+            "enable_automatic_trace_remediation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime reads each service's traces once an hour for operations that are slow (their slowest requests repeat a pattern that costs them real time, such as the same database query run many times), operations that fail, and operations or services whose traces cannot say why, and files each as an insight; OneUptime AI looks into it and opens a pull request that fixes the code or adds the tracing it lacks, in a repository connected in Code. A failing operation's pull request opens on its own only once the investigation finds the code at fault. Pull requests are never merged automatically, and honor the repository's open pull request cap. Trace AI rules, when there are any, choose which services' problems are worked on, whether a person approves the pull request first, and which repositories and LLM provider are used. On for new projects created in OneUptime; projects that existed before keep it off. Requires AI to be enabled.",
                 Optional: true,
                 Computed: true,
             },
@@ -805,6 +823,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["enableAi"] = data.EnableAi.ValueBool()
         filterNames = append(filterNames, "enable_ai = "+fmt.Sprintf("%t", data.EnableAi.ValueBool()))
     }
+    if !data.AiContext.IsNull() && !data.AiContext.IsUnknown() {
+        filters["aiContext"] = data.AiContext.ValueString()
+        filterNames = append(filterNames, "ai_context = "+fmt.Sprintf("%q", data.AiContext.ValueString()))
+    }
     if !data.AiDailyTokenLimit.IsNull() && !data.AiDailyTokenLimit.IsUnknown() {
         filters["aiDailyTokenLimit"] = lookupNumber(data.AiDailyTokenLimit)
         filterNames = append(filterNames, "ai_daily_token_limit = "+data.AiDailyTokenLimit.ValueBigFloat().String())
@@ -860,6 +882,14 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if !data.EnableInsightFixTasks.IsNull() && !data.EnableInsightFixTasks.IsUnknown() {
         filters["enableInsightFixTasks"] = data.EnableInsightFixTasks.ValueBool()
         filterNames = append(filterNames, "enable_insight_fix_tasks = "+fmt.Sprintf("%t", data.EnableInsightFixTasks.ValueBool()))
+    }
+    if !data.EnableAutomaticProfileRemediation.IsNull() && !data.EnableAutomaticProfileRemediation.IsUnknown() {
+        filters["enableAutomaticProfileRemediation"] = data.EnableAutomaticProfileRemediation.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_profile_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticProfileRemediation.ValueBool()))
+    }
+    if !data.EnableAutomaticTraceRemediation.IsNull() && !data.EnableAutomaticTraceRemediation.IsUnknown() {
+        filters["enableAutomaticTraceRemediation"] = data.EnableAutomaticTraceRemediation.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_trace_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticTraceRemediation.ValueBool()))
     }
     if !data.AutoArchiveNonActionableExceptions.IsNull() && !data.AutoArchiveNonActionableExceptions.IsUnknown() {
         filters["autoArchiveNonActionableExceptions"] = data.AutoArchiveNonActionableExceptions.ValueBool()
@@ -1058,6 +1088,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "aiContext": true,
         "aiDailyTokenLimit": true,
         "aiDailySpendLimitInUSD": true,
         "enableAutomaticIncidentInvestigation": true,
@@ -1072,6 +1103,8 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "limitAlertsToOneEpisode": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
+        "enableAutomaticProfileRemediation": true,
+        "enableAutomaticTraceRemediation": true,
         "autoArchiveNonActionableExceptions": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
@@ -1618,6 +1651,23 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.EnableAi = types.BoolNull()
     }
+    if obj, ok := item["aiContext"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiContext = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if val, ok := item["aiContext"].(string); ok {
+        data.AiContext = types.StringValue(val)
+    } else {
+        data.AiContext = types.StringNull()
+    }
     data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, item["aiDailyTokenLimit"])
     data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, item["aiDailySpendLimitInUSD"])
     if val, ok := item["enableAutomaticIncidentInvestigation"].(bool); ok {
@@ -1679,6 +1729,16 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.EnableInsightFixTasks = types.BoolValue(val)
     } else {
         data.EnableInsightFixTasks = types.BoolNull()
+    }
+    if val, ok := item["enableAutomaticProfileRemediation"].(bool); ok {
+        data.EnableAutomaticProfileRemediation = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticProfileRemediation = types.BoolNull()
+    }
+    if val, ok := item["enableAutomaticTraceRemediation"].(bool); ok {
+        data.EnableAutomaticTraceRemediation = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticTraceRemediation = types.BoolNull()
     }
     if val, ok := item["autoArchiveNonActionableExceptions"].(bool); ok {
         data.AutoArchiveNonActionableExceptions = types.BoolValue(val)

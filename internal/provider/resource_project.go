@@ -66,6 +66,8 @@ type ProjectResourceModel struct {
     EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
+    EnableAutomaticProfileRemediation types.Bool `tfsdk:"enable_automatic_profile_remediation"`
+    EnableAutomaticTraceRemediation types.Bool `tfsdk:"enable_automatic_trace_remediation"`
     AutoArchiveNonActionableExceptions types.Bool `tfsdk:"auto_archive_non_actionable_exceptions"`
     SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     UtmContent types.String `tfsdk:"utm_content"`
@@ -88,6 +90,7 @@ type ProjectResourceModel struct {
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
     EnableAi types.Bool `tfsdk:"enable_ai"`
+    AiContext types.String `tfsdk:"ai_context"`
     AiDailyTokenLimit types.Number `tfsdk:"ai_daily_token_limit"`
     AiDailySpendLimitInUsd types.Number `tfsdk:"ai_daily_spend_limit_in_usd"`
     AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
@@ -374,6 +377,24 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "enable_automatic_profile_remediation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime reads each service's profiles once an hour for functions of its own code that take a large or growing share of its time and files each as an insight, and OneUptime AI looks into it and opens a pull request that makes it faster, in a repository connected through the GitHub App. Pull requests are never merged automatically, and honor the repository's open pull request cap. Profile AI rules, when there are any, choose which services' slow code is worked on, whether a person approves the pull request first, and which repositories and LLM provider are used. On for new projects created in OneUptime; projects that existed before keep it off. Requires AI to be enabled.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_automatic_trace_remediation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime reads each service's traces once an hour for operations that are slow (their slowest requests repeat a pattern that costs them real time, such as the same database query run many times), operations that fail, and operations or services whose traces cannot say why, and files each as an insight; OneUptime AI looks into it and opens a pull request that fixes the code or adds the tracing it lacks, in a repository connected in Code. A failing operation's pull request opens on its own only once the investigation finds the code at fault. Pull requests are never merged automatically, and honor the repository's open pull request cap. Trace AI rules, when there are any, choose which services' problems are worked on, whether a person approves the pull request first, and which repositories and LLM provider are used. On for new projects created in OneUptime; projects that existed before keep it off. Requires AI to be enabled.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "auto_archive_non_actionable_exceptions": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab. On for new projects created in OneUptime; projects that existed before keep their setting.",
                 Optional: true,
@@ -565,6 +586,14 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_context": schema.StringAttribute{
+                MarkdownDescription: "Notes for OneUptime AI about your systems: what depends on what, who owns which symptom, where the logs are. Markdown, at most 20,000 characters.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "ai_daily_token_limit": schema.NumberAttribute{
@@ -1024,6 +1053,12 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.EnableInsightFixTasks.IsNull() && !data.EnableInsightFixTasks.IsUnknown() {
         requestDataMap["enableInsightFixTasks"] = data.EnableInsightFixTasks.ValueBool()
     }
+    if !data.EnableAutomaticProfileRemediation.IsNull() && !data.EnableAutomaticProfileRemediation.IsUnknown() {
+        requestDataMap["enableAutomaticProfileRemediation"] = data.EnableAutomaticProfileRemediation.ValueBool()
+    }
+    if !data.EnableAutomaticTraceRemediation.IsNull() && !data.EnableAutomaticTraceRemediation.IsUnknown() {
+        requestDataMap["enableAutomaticTraceRemediation"] = data.EnableAutomaticTraceRemediation.ValueBool()
+    }
     if !data.AutoArchiveNonActionableExceptions.IsNull() && !data.AutoArchiveNonActionableExceptions.IsUnknown() {
         requestDataMap["autoArchiveNonActionableExceptions"] = data.AutoArchiveNonActionableExceptions.ValueBool()
     }
@@ -1121,6 +1156,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableAutomaticPostmortemDraft": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
+        "enableAutomaticProfileRemediation": true,
+        "enableAutomaticTraceRemediation": true,
         "autoArchiveNonActionableExceptions": true,
         "sendInvoicesByEmail": true,
         "useGlobalRunners": true,
@@ -1142,6 +1179,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "aiContext": true,
         "aiDailyTokenLimit": true,
         "aiDailySpendLimitInUSD": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
@@ -1661,6 +1699,12 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["enableInsightFixTasks"].(bool); ok {
         data.EnableInsightFixTasks = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableAutomaticProfileRemediation"].(bool); ok {
+        data.EnableAutomaticProfileRemediation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticTraceRemediation"].(bool); ok {
+        data.EnableAutomaticTraceRemediation = types.BoolValue(val)
+    }
     if val, ok := dataMap["autoArchiveNonActionableExceptions"].(bool); ok {
         data.AutoArchiveNonActionableExceptions = types.BoolValue(val)
     }
@@ -1747,6 +1791,43 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeAiWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["aiContext"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiContext = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiContext"].(string); ok {
+        data.AiContext = types.StringValue(val)
+    } else {
+        data.AiContext = types.StringNull()
     }
     data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, dataMap["aiDailyTokenLimit"])
     data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, dataMap["aiDailySpendLimitInUSD"])
@@ -2507,6 +2588,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableAutomaticPostmortemDraft": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
+        "enableAutomaticProfileRemediation": true,
+        "enableAutomaticTraceRemediation": true,
         "autoArchiveNonActionableExceptions": true,
         "sendInvoicesByEmail": true,
         "useGlobalRunners": true,
@@ -2528,6 +2611,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "aiContext": true,
         "aiDailyTokenLimit": true,
         "aiDailySpendLimitInUSD": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
@@ -3048,6 +3132,12 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["enableInsightFixTasks"].(bool); ok {
         data.EnableInsightFixTasks = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableAutomaticProfileRemediation"].(bool); ok {
+        data.EnableAutomaticProfileRemediation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticTraceRemediation"].(bool); ok {
+        data.EnableAutomaticTraceRemediation = types.BoolValue(val)
+    }
     if val, ok := dataMap["autoArchiveNonActionableExceptions"].(bool); ok {
         data.AutoArchiveNonActionableExceptions = types.BoolValue(val)
     }
@@ -3134,6 +3224,43 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeAiWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["aiContext"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiContext = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiContext"].(string); ok {
+        data.AiContext = types.StringValue(val)
+    } else {
+        data.AiContext = types.StringNull()
     }
     data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, dataMap["aiDailyTokenLimit"])
     data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, dataMap["aiDailySpendLimitInUSD"])
@@ -3969,6 +4096,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAi.IsUnknown() && !state.EnableAi.IsUnknown() && !data.EnableAi.Equal(state.EnableAi) {
         requestDataMap["enableAi"] = data.EnableAi.ValueBool()
     }
+    if !data.AiContext.IsUnknown() && !state.AiContext.IsUnknown() && !data.AiContext.Equal(state.AiContext) {
+        requestDataMap["aiContext"] = data.AiContext.ValueString()
+    }
     if !data.AiDailyTokenLimit.IsUnknown() && !state.AiDailyTokenLimit.IsUnknown() && !data.AiDailyTokenLimit.Equal(state.AiDailyTokenLimit) {
         requestDataMap["aiDailyTokenLimit"] = r.bigFloatToFloat64(data.AiDailyTokenLimit.ValueBigFloat())
     }
@@ -4010,6 +4140,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if !data.EnableInsightFixTasks.IsUnknown() && !state.EnableInsightFixTasks.IsUnknown() && !data.EnableInsightFixTasks.Equal(state.EnableInsightFixTasks) {
         requestDataMap["enableInsightFixTasks"] = data.EnableInsightFixTasks.ValueBool()
+    }
+    if !data.EnableAutomaticProfileRemediation.IsUnknown() && !state.EnableAutomaticProfileRemediation.IsUnknown() && !data.EnableAutomaticProfileRemediation.Equal(state.EnableAutomaticProfileRemediation) {
+        requestDataMap["enableAutomaticProfileRemediation"] = data.EnableAutomaticProfileRemediation.ValueBool()
+    }
+    if !data.EnableAutomaticTraceRemediation.IsUnknown() && !state.EnableAutomaticTraceRemediation.IsUnknown() && !data.EnableAutomaticTraceRemediation.Equal(state.EnableAutomaticTraceRemediation) {
+        requestDataMap["enableAutomaticTraceRemediation"] = data.EnableAutomaticTraceRemediation.ValueBool()
     }
     if !data.AutoArchiveNonActionableExceptions.IsUnknown() && !state.AutoArchiveNonActionableExceptions.IsUnknown() && !data.AutoArchiveNonActionableExceptions.Equal(state.AutoArchiveNonActionableExceptions) {
         requestDataMap["autoArchiveNonActionableExceptions"] = data.AutoArchiveNonActionableExceptions.ValueBool()
@@ -4156,6 +4292,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableAutomaticPostmortemDraft": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
+        "enableAutomaticProfileRemediation": true,
+        "enableAutomaticTraceRemediation": true,
         "autoArchiveNonActionableExceptions": true,
         "sendInvoicesByEmail": true,
         "useGlobalRunners": true,
@@ -4177,6 +4315,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "aiContext": true,
         "aiDailyTokenLimit": true,
         "aiDailySpendLimitInUSD": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
@@ -4691,6 +4830,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["enableInsightFixTasks"].(bool); ok {
         data.EnableInsightFixTasks = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableAutomaticProfileRemediation"].(bool); ok {
+        data.EnableAutomaticProfileRemediation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticTraceRemediation"].(bool); ok {
+        data.EnableAutomaticTraceRemediation = types.BoolValue(val)
+    }
     if val, ok := dataMap["autoArchiveNonActionableExceptions"].(bool); ok {
         data.AutoArchiveNonActionableExceptions = types.BoolValue(val)
     }
@@ -4777,6 +4922,43 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeAiWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["aiContext"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiContext = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiContext"].(string); ok {
+        data.AiContext = types.StringValue(val)
+    } else {
+        data.AiContext = types.StringNull()
     }
     data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, dataMap["aiDailyTokenLimit"])
     data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, dataMap["aiDailySpendLimitInUSD"])
@@ -5611,6 +5793,12 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     if config.EnableInsightFixTasks.IsNull() && !plan.EnableInsightFixTasks.IsUnknown() {
         data.EnableInsightFixTasks = plan.EnableInsightFixTasks
     }
+    if config.EnableAutomaticProfileRemediation.IsNull() && !plan.EnableAutomaticProfileRemediation.IsUnknown() {
+        data.EnableAutomaticProfileRemediation = plan.EnableAutomaticProfileRemediation
+    }
+    if config.EnableAutomaticTraceRemediation.IsNull() && !plan.EnableAutomaticTraceRemediation.IsUnknown() {
+        data.EnableAutomaticTraceRemediation = plan.EnableAutomaticTraceRemediation
+    }
     if config.AutoArchiveNonActionableExceptions.IsNull() && !plan.AutoArchiveNonActionableExceptions.IsUnknown() {
         data.AutoArchiveNonActionableExceptions = plan.AutoArchiveNonActionableExceptions
     }
@@ -5673,6 +5861,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.EnableAi.IsNull() && !plan.EnableAi.IsUnknown() {
         data.EnableAi = plan.EnableAi
+    }
+    if config.AiContext.IsNull() && !plan.AiContext.IsUnknown() {
+        data.AiContext = plan.AiContext
     }
     if config.AiDailyTokenLimit.IsNull() && !plan.AiDailyTokenLimit.IsUnknown() {
         data.AiDailyTokenLimit = plan.AiDailyTokenLimit

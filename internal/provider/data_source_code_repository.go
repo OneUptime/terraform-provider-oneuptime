@@ -61,7 +61,7 @@ func (d *CodeRepositoryDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Connect and manage code repositories from GitHub, GitLab, and other providers Look up an existing code repository by `id`, or by any of its other arguments (`name`, `build_command`, `created_by_user_id`, ...): each one set must match, and exactly one code repository may match them all.",
+        MarkdownDescription: "Connect and manage code repositories from GitHub, GitLab, Forgejo, Gitea and any other Git server Look up an existing code repository by `id`, or by any of its other arguments (`name`, `build_command`, `created_by_user_id`, ...): each one set must match, and exactly one code repository may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -97,12 +97,12 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "repository_hosted_at": schema.StringAttribute{
-                MarkdownDescription: "Where is this repository hosted (GitHub, GitLab, etc.).",
+                MarkdownDescription: "Where this repository is hosted, and so how OneUptime reaches it: GitHub (the GitHub App), GitLab, Forgejo (Forgejo, Gitea and Codeberg) or Git (any Git server over HTTPS).",
                 Optional: true,
                 Computed: true,
             },
             "organization_name": schema.StringAttribute{
-                MarkdownDescription: "GitHub organization or username that owns this repository.",
+                MarkdownDescription: "The organization, group or user that owns this repository, as its host names it (a GitLab group's full path, such as my-group/backend).",
                 Optional: true,
                 Computed: true,
             },
@@ -162,7 +162,7 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "repository_url": schema.StringAttribute{
-                MarkdownDescription: "The HTTPS URL to the repository.",
+                MarkdownDescription: "The repository's address: its page on GitHub, GitLab or Forgejo, or the HTTPS address a Git repository is cloned with.",
                 Optional: true,
                 Computed: true,
             },
@@ -172,7 +172,7 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "git_lab_project_id": schema.StringAttribute{
-                MarkdownDescription: "The GitLab project ID for this repository.",
+                MarkdownDescription: "The GitLab project ID OneUptime reads this repository by. Set when the repository is connected.",
                 Optional: true,
                 Computed: true,
             },

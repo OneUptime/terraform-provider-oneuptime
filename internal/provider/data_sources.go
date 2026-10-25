@@ -39,6 +39,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewSecurityPlaybookRunDataSource,
         NewProtectedEntityDataSource,
         NewSecurityEventDestinationDataSource,
+        NewAuditLogExportDataSource,
         NewSecurityLogSourceDataSource,
         NewLogScrubRuleDataSource,
         NewMetricPipelineRuleDataSource,

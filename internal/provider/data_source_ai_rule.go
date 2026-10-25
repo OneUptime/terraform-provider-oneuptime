@@ -62,11 +62,15 @@ type AiRuleDataSourceModel struct {
     MonitorLabels types.Set `tfsdk:"monitor_labels"`
     TitlePattern types.String `tfsdk:"title_pattern"`
     DescriptionPattern types.String `tfsdk:"description_pattern"`
+    Services types.Set `tfsdk:"services"`
+    ServiceLabels types.Set `tfsdk:"service_labels"`
+    ServiceNamePattern types.String `tfsdk:"service_name_pattern"`
     Runbooks types.Set `tfsdk:"runbooks"`
     ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
     RunnerId types.String `tfsdk:"runner_id"`
     CodeRepositories types.Set `tfsdk:"code_repositories"`
     LlmProviderId types.String `tfsdk:"llm_provider_id"`
+    AiContext types.String `tfsdk:"ai_context"`
     OpenCodeFixPullRequests types.Bool `tfsdk:"open_code_fix_pull_requests"`
     OpenTelemetryPullRequests types.Bool `tfsdk:"open_telemetry_pull_requests"`
     VerificationWindowMinutes types.Number `tfsdk:"verification_window_minutes"`
@@ -84,7 +88,7 @@ func (d *AiRuleDataSource) Metadata(ctx context.Context, req datasource.Metadata
 
 func (d *AiRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Which new incidents or alerts OneUptime AI investigates and fixes, and how. A rule investigates what it matches (right away, or only if still open after a wait), and fixes it or not, asking first or not. A fix may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI investigates every one, and fixes every one while automatic fixing is on. These were auto remediation rules, and investigation rules are AI rules now too. Look up an existing ai rule by `id`, or by any of its other arguments (`name`, `ai_composes_commands`, `ai_selects_runbook`, ...): each one set must match, and exactly one ai rule may match them all.",
+        MarkdownDescription: "Which new incidents or alerts OneUptime AI investigates and fixes, and how. A rule investigates what it matches (right away, or only if still open after a wait), and fixes it or not, asking first or not. A fix may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI investigates every one, and fixes every one while automatic fixing is on. These were auto remediation rules, and investigation rules are AI rules now too. A rule whose Trigger Entity Type is Profile decides the same about the slow code OneUptime finds in a service's profiles, and one whose Trigger Entity Type is Trace about the slow and failing operations OneUptime finds in a service's traces, matched by their service; their fix is a pull request in one of the project's code repositories. Look up an existing ai rule by `id`, or by any of its other arguments (`name`, `ai_composes_commands`, `ai_context`, ...): each one set must match, and exactly one ai rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -124,7 +128,7 @@ func (d *AiRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 Computed: true,
             },
             "trigger_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Which kind of new signal this rule decides about: Incident or Alert.",
+                MarkdownDescription: "Which kind of signal this rule decides about: Incident or Alert - or Profile, the slow code OneUptime finds in a service's profiles, or Trace, the slow and failing operations OneUptime finds in a service's traces.",
                 Optional: true,
                 Computed: true,
             },
@@ -207,6 +211,21 @@ func (d *AiRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 Optional: true,
                 Computed: true,
             },
+            "services": schema.SetAttribute{
+                MarkdownDescription: "Profile and Trace AI rules only: match what OneUptime found in one of these services. Leave empty to match any service. IDs of `oneuptime_service` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "service_labels": schema.SetAttribute{
+                MarkdownDescription: "Profile and Trace AI rules only: match what OneUptime found in a service that carries at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "service_name_pattern": schema.StringAttribute{
+                MarkdownDescription: "Profile and Trace AI rules only: case-insensitive regex matched against the name of the service OneUptime found the problem in. Leave empty to match any name.",
+                Optional: true,
+                Computed: true,
+            },
             "runbooks": schema.SetAttribute{
                 MarkdownDescription: "The runbooks OneUptime AI may pick and run for this rule. Leave empty to let it pick any of the project's runbooks. A rule whose Fix With is Runbooks starts every one of them for every match instead. IDs of `oneuptime_runbook` resources.",
                 Computed: true,
@@ -229,6 +248,11 @@ func (d *AiRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
             },
             "llm_provider_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the LLM provider OneUptime AI uses for everything this rule starts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_context": schema.StringAttribute{
+                MarkdownDescription: "Notes OneUptime AI reads after the project's AI context when it investigates or fixes what this rule matches. Markdown, at most 5,000 characters.",
                 Optional: true,
                 Computed: true,
             },
@@ -351,6 +375,10 @@ func (d *AiRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         filters["descriptionPattern"] = data.DescriptionPattern.ValueString()
         filterNames = append(filterNames, "description_pattern = "+fmt.Sprintf("%q", data.DescriptionPattern.ValueString()))
     }
+    if !data.ServiceNamePattern.IsNull() && !data.ServiceNamePattern.IsUnknown() {
+        filters["serviceNamePattern"] = data.ServiceNamePattern.ValueString()
+        filterNames = append(filterNames, "service_name_pattern = "+fmt.Sprintf("%q", data.ServiceNamePattern.ValueString()))
+    }
     if !data.RunnerId.IsNull() && !data.RunnerId.IsUnknown() {
         filters["runnerId"] = data.RunnerId.ValueString()
         filterNames = append(filterNames, "runner_id = "+fmt.Sprintf("%q", data.RunnerId.ValueString()))
@@ -358,6 +386,10 @@ func (d *AiRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     if !data.LlmProviderId.IsNull() && !data.LlmProviderId.IsUnknown() {
         filters["llmProviderId"] = data.LlmProviderId.ValueString()
         filterNames = append(filterNames, "llm_provider_id = "+fmt.Sprintf("%q", data.LlmProviderId.ValueString()))
+    }
+    if !data.AiContext.IsNull() && !data.AiContext.IsUnknown() {
+        filters["aiContext"] = data.AiContext.ValueString()
+        filterNames = append(filterNames, "ai_context = "+fmt.Sprintf("%q", data.AiContext.ValueString()))
     }
     if !data.OpenCodeFixPullRequests.IsNull() && !data.OpenCodeFixPullRequests.IsUnknown() {
         filters["openCodeFixPullRequests"] = data.OpenCodeFixPullRequests.ValueBool()
@@ -420,11 +452,15 @@ func (d *AiRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
+        "services": true,
+        "serviceLabels": true,
+        "serviceNamePattern": true,
         "runbooks": true,
         "externalMcpServers": true,
         "runnerId": true,
         "codeRepositories": true,
         "llmProviderId": true,
+        "aiContext": true,
         "openCodeFixPullRequests": true,
         "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
@@ -882,6 +918,71 @@ func (d *AiRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     } else {
         data.DescriptionPattern = types.StringNull()
     }
+    if val, ok := item["services"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Services = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Services = types.SetNull(types.StringType)
+    }
+    if val, ok := item["serviceLabels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.ServiceLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.ServiceLabels = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["serviceNamePattern"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ServiceNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ServiceNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ServiceNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceNamePattern = types.StringNull()
+        }
+    } else if val, ok := item["serviceNamePattern"].(string); ok {
+        data.ServiceNamePattern = types.StringValue(val)
+    } else {
+        data.ServiceNamePattern = types.StringNull()
+    }
     if val, ok := item["runbooks"].([]interface{}); ok {
         var setItems []attr.Value
         for _, item := range val {
@@ -987,6 +1088,23 @@ func (d *AiRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         data.LlmProviderId = types.StringValue(val)
     } else {
         data.LlmProviderId = types.StringNull()
+    }
+    if obj, ok := item["aiContext"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiContext = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if val, ok := item["aiContext"].(string); ok {
+        data.AiContext = types.StringValue(val)
+    } else {
+        data.AiContext = types.StringNull()
     }
     if val, ok := item["openCodeFixPullRequests"].(bool); ok {
         data.OpenCodeFixPullRequests = types.BoolValue(val)

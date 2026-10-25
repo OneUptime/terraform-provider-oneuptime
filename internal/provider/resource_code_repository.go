@@ -57,13 +57,13 @@ type CodeRepositoryResourceModel struct {
     IsProductionReviewEnabled types.Bool `tfsdk:"is_production_review_enabled"`
     ProductionReviewPullRequestContent types.String `tfsdk:"production_review_pull_request_content"`
     RepositoryUrl types.String `tfsdk:"repository_url"`
-    GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
     SecretToken types.String `tfsdk:"secret_token"`
     Labels types.Set `tfsdk:"labels"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
+    GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -77,7 +77,7 @@ func (r *CodeRepositoryResource) Schema(ctx context.Context, req resource.Schema
 
 func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Connect and manage code repositories from GitHub, GitLab, and other providers",
+        MarkdownDescription: "Connect and manage code repositories from GitHub, GitLab, Forgejo, Gitea and any other Git server",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -107,14 +107,14 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 },
             },
             "repository_hosted_at": schema.StringAttribute{
-                MarkdownDescription: "Where is this repository hosted (GitHub, GitLab, etc.).",
+                MarkdownDescription: "Where this repository is hosted, and so how OneUptime reaches it: GitHub (the GitHub App), GitLab, Forgejo (Forgejo, Gitea and Codeberg) or Git (any Git server over HTTPS).",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "organization_name": schema.StringAttribute{
-                MarkdownDescription: "GitHub organization or username that owns this repository.",
+                MarkdownDescription: "The organization, group or user that owns this repository, as its host names it (a GitLab group's full path, such as my-group/backend).",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -209,16 +209,7 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 },
             },
             "repository_url": schema.StringAttribute{
-                MarkdownDescription: "The HTTPS URL to the repository.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
-                },
-            },
-            "git_lab_project_id": schema.StringAttribute{
-                MarkdownDescription: "The GitLab project ID for this repository.",
+                MarkdownDescription: "The repository's address: its page on GitHub, GitLab or Forgejo, or the HTTPS address a Git repository is cloned with.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -258,6 +249,10 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
             },
             "git_hub_app_installation_id": schema.StringAttribute{
                 MarkdownDescription: "The GitHub App installation ID used to authenticate with this repository.",
+                Computed: true,
+            },
+            "git_lab_project_id": schema.StringAttribute{
+                MarkdownDescription: "The GitLab project ID OneUptime reads this repository by. Set when the repository is connected.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -368,9 +363,6 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     if !data.RepositoryUrl.IsNull() && !data.RepositoryUrl.IsUnknown() {
         requestDataMap["repositoryUrl"] = data.RepositoryUrl.ValueString()
     }
-    if !data.GitLabProjectId.IsNull() && !data.GitLabProjectId.IsUnknown() {
-        requestDataMap["gitLabProjectId"] = data.GitLabProjectId.ValueString()
-    }
     if !data.SecretToken.IsNull() && !data.SecretToken.IsUnknown() {
         requestDataMap["secretToken"] = data.SecretToken.ValueString()
     }
@@ -439,12 +431,12 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
         "isProductionReviewEnabled": true,
         "productionReviewPullRequestContent": true,
         "repositoryUrl": true,
-        "gitLabProjectId": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "gitHubAppInstallationId": true,
+        "gitLabProjectId": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -979,43 +971,6 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     } else {
         data.RepositoryUrl = types.StringNull()
     }
-    if obj, ok := dataMap["gitLabProjectId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.GitLabProjectId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.GitLabProjectId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.GitLabProjectId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.GitLabProjectId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.GitLabProjectId = types.StringValue(string(jsonBytes))
-        } else {
-            data.GitLabProjectId = types.StringNull()
-        }
-    } else if val, ok := dataMap["gitLabProjectId"].(string); ok {
-        data.GitLabProjectId = types.StringValue(val)
-    } else {
-        data.GitLabProjectId = types.StringNull()
-    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1144,6 +1099,43 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     } else {
         data.GitHubAppInstallationId = types.StringNull()
     }
+    if obj, ok := dataMap["gitLabProjectId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitLabProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.GitLabProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.GitLabProjectId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.GitLabProjectId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.GitLabProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitLabProjectId = types.StringNull()
+        }
+    } else if val, ok := dataMap["gitLabProjectId"].(string); ok {
+        data.GitLabProjectId = types.StringValue(val)
+    } else {
+        data.GitLabProjectId = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1228,12 +1220,12 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         "isProductionReviewEnabled": true,
         "productionReviewPullRequestContent": true,
         "repositoryUrl": true,
-        "gitLabProjectId": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "gitHubAppInstallationId": true,
+        "gitLabProjectId": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1769,43 +1761,6 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.RepositoryUrl = types.StringNull()
     }
-    if obj, ok := dataMap["gitLabProjectId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.GitLabProjectId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.GitLabProjectId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.GitLabProjectId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.GitLabProjectId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.GitLabProjectId = types.StringValue(string(jsonBytes))
-        } else {
-            data.GitLabProjectId = types.StringNull()
-        }
-    } else if val, ok := dataMap["gitLabProjectId"].(string); ok {
-        data.GitLabProjectId = types.StringValue(val)
-    } else {
-        data.GitLabProjectId = types.StringNull()
-    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1933,6 +1888,43 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         data.GitHubAppInstallationId = types.StringValue(val)
     } else {
         data.GitHubAppInstallationId = types.StringNull()
+    }
+    if obj, ok := dataMap["gitLabProjectId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitLabProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.GitLabProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.GitLabProjectId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.GitLabProjectId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.GitLabProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitLabProjectId = types.StringNull()
+        }
+    } else if val, ok := dataMap["gitLabProjectId"].(string); ok {
+        data.GitLabProjectId = types.StringValue(val)
+    } else {
+        data.GitLabProjectId = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2096,12 +2088,12 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         "isProductionReviewEnabled": true,
         "productionReviewPullRequestContent": true,
         "repositoryUrl": true,
-        "gitLabProjectId": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
         "gitHubAppInstallationId": true,
+        "gitLabProjectId": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -2631,43 +2623,6 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     } else {
         data.RepositoryUrl = types.StringNull()
     }
-    if obj, ok := dataMap["gitLabProjectId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.GitLabProjectId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.GitLabProjectId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.GitLabProjectId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.GitLabProjectId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.GitLabProjectId = types.StringValue(string(jsonBytes))
-        } else {
-            data.GitLabProjectId = types.StringNull()
-        }
-    } else if val, ok := dataMap["gitLabProjectId"].(string); ok {
-        data.GitLabProjectId = types.StringValue(val)
-    } else {
-        data.GitLabProjectId = types.StringNull()
-    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -2795,6 +2750,43 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         data.GitHubAppInstallationId = types.StringValue(val)
     } else {
         data.GitHubAppInstallationId = types.StringNull()
+    }
+    if obj, ok := dataMap["gitLabProjectId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitLabProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.GitLabProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.GitLabProjectId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.GitLabProjectId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.GitLabProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitLabProjectId = types.StringNull()
+        }
+    } else if val, ok := dataMap["gitLabProjectId"].(string); ok {
+        data.GitLabProjectId = types.StringValue(val)
+    } else {
+        data.GitLabProjectId = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2925,9 +2917,6 @@ func (r *CodeRepositoryResource) keepPlannedValues(data *CodeRepositoryResourceM
     }
     if config.RepositoryUrl.IsNull() && !plan.RepositoryUrl.IsUnknown() {
         data.RepositoryUrl = plan.RepositoryUrl
-    }
-    if config.GitLabProjectId.IsNull() && !plan.GitLabProjectId.IsUnknown() {
-        data.GitLabProjectId = plan.GitLabProjectId
     }
     if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
         data.Labels = plan.Labels

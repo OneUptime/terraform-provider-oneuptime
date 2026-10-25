@@ -35,6 +35,7 @@ func GetResources() []func() resource.Resource {
         NewSecurityPlaybookRunResource,
         NewProtectedEntityResource,
         NewSecurityEventDestinationResource,
+        NewAuditLogExportResource,
         NewSecurityLogSourceResource,
         NewLogScrubRuleResource,
         NewMetricPipelineRuleResource,

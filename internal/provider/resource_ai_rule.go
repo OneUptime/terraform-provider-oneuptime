@@ -75,11 +75,15 @@ type AiRuleResourceModel struct {
     MonitorLabels types.Set `tfsdk:"monitor_labels"`
     TitlePattern types.String `tfsdk:"title_pattern"`
     DescriptionPattern types.String `tfsdk:"description_pattern"`
+    Services types.Set `tfsdk:"services"`
+    ServiceLabels types.Set `tfsdk:"service_labels"`
+    ServiceNamePattern types.String `tfsdk:"service_name_pattern"`
     Runbooks types.Set `tfsdk:"runbooks"`
     ExternalMcpServers types.Set `tfsdk:"external_mcp_servers"`
     RunnerId types.String `tfsdk:"runner_id"`
     CodeRepositories types.Set `tfsdk:"code_repositories"`
     LlmProviderId types.String `tfsdk:"llm_provider_id"`
+    AiContext types.String `tfsdk:"ai_context"`
     OpenCodeFixPullRequests types.Bool `tfsdk:"open_code_fix_pull_requests"`
     OpenTelemetryPullRequests types.Bool `tfsdk:"open_telemetry_pull_requests"`
     VerificationWindowMinutes types.Number `tfsdk:"verification_window_minutes"`
@@ -106,7 +110,7 @@ func (r *AiRuleResource) Schema(ctx context.Context, req resource.SchemaRequest,
 
 func (r *AiRuleResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Which new incidents or alerts OneUptime AI investigates and fixes, and how. A rule investigates what it matches (right away, or only if still open after a wait), and fixes it or not, asking first or not. A fix may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI investigates every one, and fixes every one while automatic fixing is on. These were auto remediation rules, and investigation rules are AI rules now too.",
+        MarkdownDescription: "Which new incidents or alerts OneUptime AI investigates and fixes, and how. A rule investigates what it matches (right away, or only if still open after a wait), and fixes it or not, asking first or not. A fix may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI investigates every one, and fixes every one while automatic fixing is on. These were auto remediation rules, and investigation rules are AI rules now too. A rule whose Trigger Entity Type is Profile decides the same about the slow code OneUptime finds in a service's profiles, and one whose Trigger Entity Type is Trace about the slow and failing operations OneUptime finds in a service's traces, matched by their service; their fix is a pull request in one of the project's code repositories.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -157,7 +161,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "trigger_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Which kind of new signal this rule decides about: Incident or Alert.",
+                MarkdownDescription: "Which kind of signal this rule decides about: Incident or Alert - or Profile, the slow code OneUptime finds in a service's profiles, or Trace, the slow and failing operations OneUptime finds in a service's traces.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -307,6 +311,32 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "services": schema.SetAttribute{
+                MarkdownDescription: "Profile and Trace AI rules only: match what OneUptime found in one of these services. Leave empty to match any service. IDs of `oneuptime_service` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "service_labels": schema.SetAttribute{
+                MarkdownDescription: "Profile and Trace AI rules only: match what OneUptime found in a service that carries at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "service_name_pattern": schema.StringAttribute{
+                MarkdownDescription: "Profile and Trace AI rules only: case-insensitive regex matched against the name of the service OneUptime found the problem in. Leave empty to match any name.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "runbooks": schema.SetAttribute{
                 MarkdownDescription: "The runbooks OneUptime AI may pick and run for this rule. Leave empty to let it pick any of the project's runbooks. A rule whose Fix With is Runbooks starts every one of them for every match instead. IDs of `oneuptime_runbook` resources.",
                 Optional: true,
@@ -344,6 +374,14 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
             },
             "llm_provider_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the LLM provider OneUptime AI uses for everything this rule starts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_context": schema.StringAttribute{
+                MarkdownDescription: "Notes OneUptime AI reads after the project's AI context when it investigates or fixes what this rule matches. Markdown, at most 5,000 characters.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -537,6 +575,15 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
     if !data.DescriptionPattern.IsNull() && !data.DescriptionPattern.IsUnknown() {
         requestDataMap["descriptionPattern"] = data.DescriptionPattern.ValueString()
     }
+    if !data.Services.IsNull() && !data.Services.IsUnknown() {
+        requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
+    }
+    if !data.ServiceLabels.IsNull() && !data.ServiceLabels.IsUnknown() {
+        requestDataMap["serviceLabels"] = r.convertTerraformSetToInterface(data.ServiceLabels)
+    }
+    if !data.ServiceNamePattern.IsNull() && !data.ServiceNamePattern.IsUnknown() {
+        requestDataMap["serviceNamePattern"] = data.ServiceNamePattern.ValueString()
+    }
     if !data.Runbooks.IsNull() && !data.Runbooks.IsUnknown() {
         requestDataMap["runbooks"] = r.convertTerraformSetToInterface(data.Runbooks)
     }
@@ -551,6 +598,9 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
     }
     if !data.LlmProviderId.IsNull() && !data.LlmProviderId.IsUnknown() {
         requestDataMap["llmProviderId"] = data.LlmProviderId.ValueString()
+    }
+    if !data.AiContext.IsNull() && !data.AiContext.IsUnknown() {
+        requestDataMap["aiContext"] = data.AiContext.ValueString()
     }
     if !data.OpenCodeFixPullRequests.IsNull() && !data.OpenCodeFixPullRequests.IsUnknown() {
         requestDataMap["openCodeFixPullRequests"] = data.OpenCodeFixPullRequests.ValueBool()
@@ -631,11 +681,15 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
+        "services": true,
+        "serviceLabels": true,
+        "serviceNamePattern": true,
         "runbooks": true,
         "externalMcpServers": true,
         "runnerId": true,
         "codeRepositories": true,
         "llmProviderId": true,
+        "aiContext": true,
         "openCodeFixPullRequests": true,
         "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
@@ -1227,6 +1281,107 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.DescriptionPattern = types.StringNull()
     }
+    if val, ok := dataMap["services"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Services = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Services = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["serviceLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ServiceLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ServiceLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["serviceNamePattern"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ServiceNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ServiceNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ServiceNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceNamePattern = types.StringNull()
+        }
+    } else if val, ok := dataMap["serviceNamePattern"].(string); ok {
+        data.ServiceNamePattern = types.StringValue(val)
+    } else {
+        data.ServiceNamePattern = types.StringNull()
+    }
     if val, ok := dataMap["runbooks"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1397,6 +1552,43 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.LlmProviderId = types.StringNull()
     }
+    if obj, ok := dataMap["aiContext"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiContext = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiContext"].(string); ok {
+        data.AiContext = types.StringValue(val)
+    } else {
+        data.AiContext = types.StringNull()
+    }
     if val, ok := dataMap["openCodeFixPullRequests"].(bool); ok {
         data.OpenCodeFixPullRequests = types.BoolValue(val)
     }
@@ -1518,11 +1710,15 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
+        "services": true,
+        "serviceLabels": true,
+        "serviceNamePattern": true,
         "runbooks": true,
         "externalMcpServers": true,
         "runnerId": true,
         "codeRepositories": true,
         "llmProviderId": true,
+        "aiContext": true,
         "openCodeFixPullRequests": true,
         "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
@@ -2115,6 +2311,107 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else {
         data.DescriptionPattern = types.StringNull()
     }
+    if val, ok := dataMap["services"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Services = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Services = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["serviceLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ServiceLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ServiceLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["serviceNamePattern"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ServiceNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ServiceNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ServiceNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceNamePattern = types.StringNull()
+        }
+    } else if val, ok := dataMap["serviceNamePattern"].(string); ok {
+        data.ServiceNamePattern = types.StringValue(val)
+    } else {
+        data.ServiceNamePattern = types.StringNull()
+    }
     if val, ok := dataMap["runbooks"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -2284,6 +2581,43 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
         data.LlmProviderId = types.StringValue(val)
     } else {
         data.LlmProviderId = types.StringNull()
+    }
+    if obj, ok := dataMap["aiContext"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiContext = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiContext"].(string); ok {
+        data.AiContext = types.StringValue(val)
+    } else {
+        data.AiContext = types.StringNull()
     }
     if val, ok := dataMap["openCodeFixPullRequests"].(bool); ok {
         data.OpenCodeFixPullRequests = types.BoolValue(val)
@@ -2467,6 +2801,15 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
     if !data.DescriptionPattern.IsUnknown() && !state.DescriptionPattern.IsUnknown() && !data.DescriptionPattern.Equal(state.DescriptionPattern) {
         requestDataMap["descriptionPattern"] = data.DescriptionPattern.ValueString()
     }
+    if !data.Services.IsUnknown() && !state.Services.IsUnknown() && !data.Services.Equal(state.Services) {
+        requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
+    }
+    if !data.ServiceLabels.IsUnknown() && !state.ServiceLabels.IsUnknown() && !data.ServiceLabels.Equal(state.ServiceLabels) {
+        requestDataMap["serviceLabels"] = r.convertTerraformSetToInterface(data.ServiceLabels)
+    }
+    if !data.ServiceNamePattern.IsUnknown() && !state.ServiceNamePattern.IsUnknown() && !data.ServiceNamePattern.Equal(state.ServiceNamePattern) {
+        requestDataMap["serviceNamePattern"] = data.ServiceNamePattern.ValueString()
+    }
     if !data.Runbooks.IsUnknown() && !state.Runbooks.IsUnknown() && !data.Runbooks.Equal(state.Runbooks) {
         requestDataMap["runbooks"] = r.convertTerraformSetToInterface(data.Runbooks)
     }
@@ -2481,6 +2824,9 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
     }
     if !data.LlmProviderId.IsUnknown() && !state.LlmProviderId.IsUnknown() && !data.LlmProviderId.Equal(state.LlmProviderId) {
         requestDataMap["llmProviderId"] = data.LlmProviderId.ValueString()
+    }
+    if !data.AiContext.IsUnknown() && !state.AiContext.IsUnknown() && !data.AiContext.Equal(state.AiContext) {
+        requestDataMap["aiContext"] = data.AiContext.ValueString()
     }
     if !data.OpenCodeFixPullRequests.IsUnknown() && !state.OpenCodeFixPullRequests.IsUnknown() && !data.OpenCodeFixPullRequests.Equal(state.OpenCodeFixPullRequests) {
         requestDataMap["openCodeFixPullRequests"] = data.OpenCodeFixPullRequests.ValueBool()
@@ -2539,11 +2885,15 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
+        "services": true,
+        "serviceLabels": true,
+        "serviceNamePattern": true,
         "runbooks": true,
         "externalMcpServers": true,
         "runnerId": true,
         "codeRepositories": true,
         "llmProviderId": true,
+        "aiContext": true,
         "openCodeFixPullRequests": true,
         "openTelemetryPullRequests": true,
         "verificationWindowMinutes": true,
@@ -3130,6 +3480,107 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
     } else {
         data.DescriptionPattern = types.StringNull()
     }
+    if val, ok := dataMap["services"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Services = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Services = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["serviceLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ServiceLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ServiceLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["serviceNamePattern"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ServiceNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ServiceNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ServiceNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceNamePattern = types.StringNull()
+        }
+    } else if val, ok := dataMap["serviceNamePattern"].(string); ok {
+        data.ServiceNamePattern = types.StringValue(val)
+    } else {
+        data.ServiceNamePattern = types.StringNull()
+    }
     if val, ok := dataMap["runbooks"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -3299,6 +3750,43 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
         data.LlmProviderId = types.StringValue(val)
     } else {
         data.LlmProviderId = types.StringNull()
+    }
+    if obj, ok := dataMap["aiContext"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiContext = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiContext = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiContext = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiContext = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiContext"].(string); ok {
+        data.AiContext = types.StringValue(val)
+    } else {
+        data.AiContext = types.StringNull()
     }
     if val, ok := dataMap["openCodeFixPullRequests"].(bool); ok {
         data.OpenCodeFixPullRequests = types.BoolValue(val)
@@ -3483,6 +3971,15 @@ func (r *AiRuleResource) keepPlannedValues(data *AiRuleResourceModel, plan *AiRu
     if config.DescriptionPattern.IsNull() && !plan.DescriptionPattern.IsUnknown() {
         data.DescriptionPattern = plan.DescriptionPattern
     }
+    if config.Services.IsNull() && !plan.Services.IsUnknown() {
+        data.Services = plan.Services
+    }
+    if config.ServiceLabels.IsNull() && !plan.ServiceLabels.IsUnknown() {
+        data.ServiceLabels = plan.ServiceLabels
+    }
+    if config.ServiceNamePattern.IsNull() && !plan.ServiceNamePattern.IsUnknown() {
+        data.ServiceNamePattern = plan.ServiceNamePattern
+    }
     if config.Runbooks.IsNull() && !plan.Runbooks.IsUnknown() {
         data.Runbooks = plan.Runbooks
     }
@@ -3497,6 +3994,9 @@ func (r *AiRuleResource) keepPlannedValues(data *AiRuleResourceModel, plan *AiRu
     }
     if config.LlmProviderId.IsNull() && !plan.LlmProviderId.IsUnknown() {
         data.LlmProviderId = plan.LlmProviderId
+    }
+    if config.AiContext.IsNull() && !plan.AiContext.IsUnknown() {
+        data.AiContext = plan.AiContext
     }
     if config.OpenCodeFixPullRequests.IsNull() && !plan.OpenCodeFixPullRequests.IsUnknown() {
         data.OpenCodeFixPullRequests = plan.OpenCodeFixPullRequests
