@@ -51,6 +51,7 @@ type CodeRepositoryResourceModel struct {
     BuildCommand types.String `tfsdk:"build_command"`
     TestCommand types.String `tfsdk:"test_command"`
     RunnerId types.String `tfsdk:"runner_id"`
+    IsGlobalRunnerPicked types.Bool `tfsdk:"is_global_runner_picked"`
     MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
     IsGitHubCommandsEnabled types.Bool `tfsdk:"is_git_hub_commands_enabled"`
     GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
@@ -160,11 +161,19 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 },
             },
             "runner_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.",
+                MarkdownDescription: "ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means the project's default Runner when it has one, and otherwise a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_global_runner_picked": schema.BoolAttribute{
+                MarkdownDescription: "Whether this repository runs on a global Runner, one OneUptime runs for every project, even when the project has a default Runner. Read only when the repository picks no Runner of its own. Unset, a repository that picks no Runner follows the project's default Runner, and runs on a global Runner while there is none.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "max_open_fix_pull_requests": schema.NumberAttribute{
@@ -345,6 +354,9 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     if !data.RunnerId.IsNull() && !data.RunnerId.IsUnknown() {
         requestDataMap["runnerId"] = data.RunnerId.ValueString()
     }
+    if !data.IsGlobalRunnerPicked.IsNull() && !data.IsGlobalRunnerPicked.IsUnknown() {
+        requestDataMap["isGlobalRunnerPicked"] = data.IsGlobalRunnerPicked.ValueBool()
+    }
     if !data.MaxOpenFixPullRequests.IsNull() && !data.MaxOpenFixPullRequests.IsUnknown() {
         requestDataMap["maxOpenFixPullRequests"] = r.bigFloatToFloat64(data.MaxOpenFixPullRequests.ValueBigFloat())
     }
@@ -425,6 +437,7 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
         "buildCommand": true,
         "testCommand": true,
         "runnerId": true,
+        "isGlobalRunnerPicked": true,
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
@@ -851,6 +864,11 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     } else {
         data.RunnerId = types.StringNull()
     }
+    if val, ok := dataMap["isGlobalRunnerPicked"].(bool); ok {
+        data.IsGlobalRunnerPicked = types.BoolValue(val)
+    } else {
+        data.IsGlobalRunnerPicked = types.BoolNull()
+    }
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
@@ -1214,6 +1232,7 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         "buildCommand": true,
         "testCommand": true,
         "runnerId": true,
+        "isGlobalRunnerPicked": true,
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
@@ -1641,6 +1660,11 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.RunnerId = types.StringNull()
     }
+    if val, ok := dataMap["isGlobalRunnerPicked"].(bool); ok {
+        data.IsGlobalRunnerPicked = types.BoolValue(val)
+    } else {
+        data.IsGlobalRunnerPicked = types.BoolNull()
+    }
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
@@ -2027,6 +2051,9 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     if !data.RunnerId.IsUnknown() && !state.RunnerId.IsUnknown() && !data.RunnerId.Equal(state.RunnerId) {
         requestDataMap["runnerId"] = data.RunnerId.ValueString()
     }
+    if !data.IsGlobalRunnerPicked.IsUnknown() && !state.IsGlobalRunnerPicked.IsUnknown() && !data.IsGlobalRunnerPicked.Equal(state.IsGlobalRunnerPicked) {
+        requestDataMap["isGlobalRunnerPicked"] = data.IsGlobalRunnerPicked.ValueBool()
+    }
     if !data.MaxOpenFixPullRequests.IsUnknown() && !state.MaxOpenFixPullRequests.IsUnknown() && !data.MaxOpenFixPullRequests.Equal(state.MaxOpenFixPullRequests) {
         requestDataMap["maxOpenFixPullRequests"] = r.bigFloatToFloat64(data.MaxOpenFixPullRequests.ValueBigFloat())
     }
@@ -2082,6 +2109,7 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         "buildCommand": true,
         "testCommand": true,
         "runnerId": true,
+        "isGlobalRunnerPicked": true,
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
@@ -2503,6 +2531,11 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     } else {
         data.RunnerId = types.StringNull()
     }
+    if val, ok := dataMap["isGlobalRunnerPicked"].(bool); ok {
+        data.IsGlobalRunnerPicked = types.BoolValue(val)
+    } else {
+        data.IsGlobalRunnerPicked = types.BoolNull()
+    }
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, dataMap["maxOpenFixPullRequests"])
     if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
         data.IsGitHubCommandsEnabled = types.BoolValue(val)
@@ -2899,6 +2932,9 @@ func (r *CodeRepositoryResource) keepPlannedValues(data *CodeRepositoryResourceM
     }
     if config.RunnerId.IsNull() && !plan.RunnerId.IsUnknown() {
         data.RunnerId = plan.RunnerId
+    }
+    if config.IsGlobalRunnerPicked.IsNull() && !plan.IsGlobalRunnerPicked.IsUnknown() {
+        data.IsGlobalRunnerPicked = plan.IsGlobalRunnerPicked
     }
     if config.MaxOpenFixPullRequests.IsNull() && !plan.MaxOpenFixPullRequests.IsUnknown() {
         data.MaxOpenFixPullRequests = plan.MaxOpenFixPullRequests

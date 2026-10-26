@@ -43,6 +43,7 @@ type CodeRepositoryDataSourceModel struct {
     BuildCommand types.String `tfsdk:"build_command"`
     TestCommand types.String `tfsdk:"test_command"`
     RunnerId types.String `tfsdk:"runner_id"`
+    IsGlobalRunnerPicked types.Bool `tfsdk:"is_global_runner_picked"`
     MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
     IsGitHubCommandsEnabled types.Bool `tfsdk:"is_git_hub_commands_enabled"`
     GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
@@ -132,7 +133,12 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "runner_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.",
+                MarkdownDescription: "ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means the project's default Runner when it has one, and otherwise a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_global_runner_picked": schema.BoolAttribute{
+                MarkdownDescription: "Whether this repository runs on a global Runner, one OneUptime runs for every project, even when the project has a default Runner. Read only when the repository picks no Runner of its own. Unset, a repository that picks no Runner follows the project's default Runner, and runs on a global Runner while there is none.",
                 Optional: true,
                 Computed: true,
             },
@@ -269,6 +275,10 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         filters["runnerId"] = data.RunnerId.ValueString()
         filterNames = append(filterNames, "runner_id = "+fmt.Sprintf("%q", data.RunnerId.ValueString()))
     }
+    if !data.IsGlobalRunnerPicked.IsNull() && !data.IsGlobalRunnerPicked.IsUnknown() {
+        filters["isGlobalRunnerPicked"] = data.IsGlobalRunnerPicked.ValueBool()
+        filterNames = append(filterNames, "is_global_runner_picked = "+fmt.Sprintf("%t", data.IsGlobalRunnerPicked.ValueBool()))
+    }
     if !data.MaxOpenFixPullRequests.IsNull() && !data.MaxOpenFixPullRequests.IsUnknown() {
         filters["maxOpenFixPullRequests"] = lookupNumber(data.MaxOpenFixPullRequests)
         filterNames = append(filterNames, "max_open_fix_pull_requests = "+data.MaxOpenFixPullRequests.ValueBigFloat().String())
@@ -336,6 +346,7 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         "buildCommand": true,
         "testCommand": true,
         "runnerId": true,
+        "isGlobalRunnerPicked": true,
         "maxOpenFixPullRequests": true,
         "isGitHubCommandsEnabled": true,
         "gitHubTriggerLabel": true,
@@ -661,6 +672,11 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         data.RunnerId = types.StringValue(val)
     } else {
         data.RunnerId = types.StringNull()
+    }
+    if val, ok := item["isGlobalRunnerPicked"].(bool); ok {
+        data.IsGlobalRunnerPicked = types.BoolValue(val)
+    } else {
+        data.IsGlobalRunnerPicked = types.BoolNull()
     }
     data.MaxOpenFixPullRequests = numberFromAPI(data.MaxOpenFixPullRequests, item["maxOpenFixPullRequests"])
     if val, ok := item["isGitHubCommandsEnabled"].(bool); ok {
