@@ -401,6 +401,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewServerlessFunctionUserOwnerDataSource,
         NewServerlessFunctionLabelRuleDataSource,
         NewServerlessFunctionOwnerRuleDataSource,
+        NewCloudAccountDataSource,
         NewCloudConnectionDataSource,
         NewCloudResourceDataSource,
         NewCloudResourceTeamOwnerDataSource,

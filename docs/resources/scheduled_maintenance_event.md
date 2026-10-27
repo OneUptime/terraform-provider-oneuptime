@@ -49,6 +49,7 @@ resource "oneuptime_scheduled_maintenance_event" "example" {
 - `next_subscriber_notification_before_the_event_at` (String) When will the next notification to subscribers be sent out?
 - `podman_hosts` (Set of String) List of Podman hosts affected by this event. IDs of `oneuptime_podman_host` resources.
 - `proxmox_clusters` (Set of String) List of Proxmox clusters affected by this event. IDs of `oneuptime_proxmox_cluster` resources.
+- `publish_on_status_page_at` (String) When this event first shows on its status pages and their subscribers hear about it. Left empty, it shows as soon as it is created.
 - `send_subscriber_notifications_on_before_the_event` (String) Should subscribers be notified before the event? A JSON value: write it with `jsonencode()`.
 - `services` (Set of String) List of services affected by this event. IDs of `oneuptime_service` resources.
 - `should_status_page_subscribers_be_notified_on_event_created` (Boolean) Should subscribers be notified about this event creation? Defaults to `true`.

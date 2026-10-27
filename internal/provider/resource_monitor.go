@@ -57,6 +57,7 @@ type MonitorResourceModel struct {
     VmwareVCenters types.Set `tfsdk:"vmware_v_centers"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     StorageArrays types.Set `tfsdk:"storage_arrays"`
+    CloudResources types.Set `tfsdk:"cloud_resources"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     IotFleets types.Set `tfsdk:"iot_fleets"`
     DatabaseServers types.Set `tfsdk:"database_servers"`
@@ -237,6 +238,15 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
             },
             "storage_arrays": schema.SetAttribute{
                 MarkdownDescription: "Storage arrays this monitor watches. Incidents and alerts it creates are linked to them. IDs of `oneuptime_storage_array` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "cloud_resources": schema.SetAttribute{
+                MarkdownDescription: "Cloud resources this monitor watches. Incidents and alerts it creates are linked to them. IDs of `oneuptime_cloud_resource` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -601,6 +611,9 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.StorageArrays.IsNull() && !data.StorageArrays.IsUnknown() {
         requestDataMap["storageArrays"] = r.convertTerraformSetToInterface(data.StorageArrays)
     }
+    if !data.CloudResources.IsNull() && !data.CloudResources.IsUnknown() {
+        requestDataMap["cloudResources"] = r.convertTerraformSetToInterface(data.CloudResources)
+    }
     if !data.DockerSwarmClusters.IsNull() && !data.DockerSwarmClusters.IsUnknown() {
         requestDataMap["dockerSwarmClusters"] = r.convertTerraformSetToInterface(data.DockerSwarmClusters)
     }
@@ -720,6 +733,7 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         "vmwareVCenters": true,
         "cephClusters": true,
         "storageArrays": true,
+        "cloudResources": true,
         "dockerSwarmClusters": true,
         "iotFleets": true,
         "databaseServers": true,
@@ -1229,6 +1243,38 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         // For sets, always use empty set instead of null to match default values
         data.StorageArrays = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["cloudResources"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CloudResources = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CloudResources = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["dockerSwarmClusters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2155,6 +2201,7 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         "vmwareVCenters": true,
         "cephClusters": true,
         "storageArrays": true,
+        "cloudResources": true,
         "dockerSwarmClusters": true,
         "iotFleets": true,
         "databaseServers": true,
@@ -2665,6 +2712,38 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         // For sets, always use empty set instead of null to match default values
         data.StorageArrays = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["cloudResources"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CloudResources = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CloudResources = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["dockerSwarmClusters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -3631,6 +3710,9 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.StorageArrays.IsUnknown() && !state.StorageArrays.IsUnknown() && !data.StorageArrays.Equal(state.StorageArrays) {
         requestDataMap["storageArrays"] = r.convertTerraformSetToInterface(data.StorageArrays)
     }
+    if !data.CloudResources.IsUnknown() && !state.CloudResources.IsUnknown() && !data.CloudResources.Equal(state.CloudResources) {
+        requestDataMap["cloudResources"] = r.convertTerraformSetToInterface(data.CloudResources)
+    }
     if !data.DockerSwarmClusters.IsUnknown() && !state.DockerSwarmClusters.IsUnknown() && !data.DockerSwarmClusters.Equal(state.DockerSwarmClusters) {
         requestDataMap["dockerSwarmClusters"] = r.convertTerraformSetToInterface(data.DockerSwarmClusters)
     }
@@ -3715,6 +3797,7 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         "vmwareVCenters": true,
         "cephClusters": true,
         "storageArrays": true,
+        "cloudResources": true,
         "dockerSwarmClusters": true,
         "iotFleets": true,
         "databaseServers": true,
@@ -4219,6 +4302,38 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         // For sets, always use empty set instead of null to match default values
         data.StorageArrays = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["cloudResources"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CloudResources = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CloudResources = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["dockerSwarmClusters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -5195,6 +5310,9 @@ func (r *MonitorResource) keepPlannedValues(data *MonitorResourceModel, plan *Mo
     }
     if config.StorageArrays.IsNull() && !plan.StorageArrays.IsUnknown() {
         data.StorageArrays = plan.StorageArrays
+    }
+    if config.CloudResources.IsNull() && !plan.CloudResources.IsUnknown() {
+        data.CloudResources = plan.CloudResources
     }
     if config.DockerSwarmClusters.IsNull() && !plan.DockerSwarmClusters.IsUnknown() {
         data.DockerSwarmClusters = plan.DockerSwarmClusters

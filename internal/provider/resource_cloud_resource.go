@@ -61,6 +61,11 @@ type CloudResourceResourceModel struct {
     ProviderResourceId types.String `tfsdk:"provider_resource_id"`
     CloudResourceGroup types.String `tfsdk:"cloud_resource_group"`
     TelemetryAttributes JSONSubsetValue `tfsdk:"telemetry_attributes"`
+    CloudTags JSONSubsetValue `tfsdk:"cloud_tags"`
+    CloudProperties JSONSubsetValue `tfsdk:"cloud_properties"`
+    CloudRelationships JSONSubsetValue `tfsdk:"cloud_relationships"`
+    CloudEndpoints JSONSubsetValue `tfsdk:"cloud_endpoints"`
+    InventoriedAt RFC3339Value `tfsdk:"inventoried_at"`
     CloudConnectionId types.String `tfsdk:"cloud_connection_id"`
     RuntimeName types.String `tfsdk:"runtime_name"`
     RuntimeVersion types.String `tfsdk:"runtime_version"`
@@ -229,6 +234,31 @@ func (r *CloudResourceResource) schemaDefinition() schema.Schema {
             "telemetry_attributes": schema.StringAttribute{
                 MarkdownDescription: "For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "cloud_tags": schema.StringAttribute{
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: its tags in the cloud (AWS tags, Azure tags, Google Cloud labels), at most 50. Label and owner rules can match them. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "cloud_properties": schema.StringAttribute{
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: the properties a person reads first, such as an instance's type or a database's engine and version, keyed by their path in the cloud's description. Never anything that can hold a secret. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "cloud_relationships": schema.StringAttribute{
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: what it runs in, is part of, sends traffic to or is protected by, each as the other resource's id in the cloud. The edges of the account's topology. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "cloud_endpoints": schema.StringAttribute{
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: the host names and addresses it answers on, such as a load balancer's DNS name. Monitors of those hosts are linked to it. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "inventoried_at": schema.StringAttribute{
+                MarkdownDescription: "When a cloud connection's inventory last listed this resource. Empty for a resource only its metrics or telemetry have found.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "cloud_connection_id": schema.StringAttribute{
@@ -428,6 +458,11 @@ func (r *CloudResourceResource) Create(ctx context.Context, req resource.CreateR
         "providerResourceId": true,
         "cloudResourceGroup": true,
         "telemetryAttributes": true,
+        "cloudTags": true,
+        "cloudProperties": true,
+        "cloudRelationships": true,
+        "cloudEndpoints": true,
+        "inventoriedAt": true,
         "cloudConnectionId": true,
         "runtimeName": true,
         "runtimeVersion": true,
@@ -1057,6 +1092,165 @@ func (r *CloudResourceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.TelemetryAttributes = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["cloudTags"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudTags = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudTags = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudTags = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudTags = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudTags = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudTags = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudTags = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudTags = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudTags = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudTags"].(string); ok {
+        data.CloudTags = NewJSONSubsetValue(val)
+    } else {
+        data.CloudTags = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["cloudProperties"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudProperties = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudProperties = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudProperties = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudProperties"].(string); ok {
+        data.CloudProperties = NewJSONSubsetValue(val)
+    } else {
+        data.CloudProperties = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["cloudRelationships"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudRelationships = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudRelationships = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudRelationships = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudRelationships = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudRelationships = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudRelationships = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudRelationships = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudRelationships = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudRelationships = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudRelationships"].(string); ok {
+        data.CloudRelationships = NewJSONSubsetValue(val)
+    } else {
+        data.CloudRelationships = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["cloudEndpoints"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudEndpoints = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudEndpoints = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudEndpoints = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudEndpoints = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudEndpoints = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudEndpoints = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudEndpoints = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudEndpoints = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudEndpoints = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudEndpoints"].(string); ok {
+        data.CloudEndpoints = NewJSONSubsetValue(val)
+    } else {
+        data.CloudEndpoints = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["inventoriedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.InventoriedAt = NewRFC3339Value(val)
+        } else {
+            data.InventoriedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["inventoriedAt"].(string); ok && val != "" {
+        data.InventoriedAt = NewRFC3339Value(val)
+    } else {
+        data.InventoriedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["cloudConnectionId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1399,6 +1593,11 @@ func (r *CloudResourceResource) Read(ctx context.Context, req resource.ReadReque
         "providerResourceId": true,
         "cloudResourceGroup": true,
         "telemetryAttributes": true,
+        "cloudTags": true,
+        "cloudProperties": true,
+        "cloudRelationships": true,
+        "cloudEndpoints": true,
+        "inventoriedAt": true,
         "cloudConnectionId": true,
         "runtimeName": true,
         "runtimeVersion": true,
@@ -2029,6 +2228,165 @@ func (r *CloudResourceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.TelemetryAttributes = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["cloudTags"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudTags = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudTags = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudTags = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudTags = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudTags = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudTags = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudTags = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudTags = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudTags = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudTags"].(string); ok {
+        data.CloudTags = NewJSONSubsetValue(val)
+    } else {
+        data.CloudTags = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["cloudProperties"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudProperties = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudProperties = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudProperties = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudProperties"].(string); ok {
+        data.CloudProperties = NewJSONSubsetValue(val)
+    } else {
+        data.CloudProperties = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["cloudRelationships"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudRelationships = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudRelationships = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudRelationships = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudRelationships = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudRelationships = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudRelationships = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudRelationships = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudRelationships = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudRelationships = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudRelationships"].(string); ok {
+        data.CloudRelationships = NewJSONSubsetValue(val)
+    } else {
+        data.CloudRelationships = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["cloudEndpoints"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudEndpoints = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudEndpoints = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudEndpoints = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudEndpoints = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudEndpoints = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudEndpoints = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudEndpoints = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudEndpoints = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudEndpoints = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudEndpoints"].(string); ok {
+        data.CloudEndpoints = NewJSONSubsetValue(val)
+    } else {
+        data.CloudEndpoints = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["inventoriedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.InventoriedAt = NewRFC3339Value(val)
+        } else {
+            data.InventoriedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["inventoriedAt"].(string); ok && val != "" {
+        data.InventoriedAt = NewRFC3339Value(val)
+    } else {
+        data.InventoriedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["cloudConnectionId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2430,6 +2788,11 @@ func (r *CloudResourceResource) Update(ctx context.Context, req resource.UpdateR
         "providerResourceId": true,
         "cloudResourceGroup": true,
         "telemetryAttributes": true,
+        "cloudTags": true,
+        "cloudProperties": true,
+        "cloudRelationships": true,
+        "cloudEndpoints": true,
+        "inventoriedAt": true,
         "cloudConnectionId": true,
         "runtimeName": true,
         "runtimeVersion": true,
@@ -3053,6 +3416,165 @@ func (r *CloudResourceResource) Update(ctx context.Context, req resource.UpdateR
         data.TelemetryAttributes = NewJSONSubsetValue(val)
     } else {
         data.TelemetryAttributes = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["cloudTags"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudTags = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudTags = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudTags = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudTags = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudTags = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudTags = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudTags = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudTags = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudTags = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudTags"].(string); ok {
+        data.CloudTags = NewJSONSubsetValue(val)
+    } else {
+        data.CloudTags = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["cloudProperties"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudProperties = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudProperties = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudProperties = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudProperties"].(string); ok {
+        data.CloudProperties = NewJSONSubsetValue(val)
+    } else {
+        data.CloudProperties = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["cloudRelationships"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudRelationships = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudRelationships = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudRelationships = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudRelationships = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudRelationships = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudRelationships = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudRelationships = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudRelationships = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudRelationships = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudRelationships"].(string); ok {
+        data.CloudRelationships = NewJSONSubsetValue(val)
+    } else {
+        data.CloudRelationships = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["cloudEndpoints"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudEndpoints = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudEndpoints = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudEndpoints = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudEndpoints = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudEndpoints = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudEndpoints = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CloudEndpoints = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudEndpoints = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CloudEndpoints = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["cloudEndpoints"].(string); ok {
+        data.CloudEndpoints = NewJSONSubsetValue(val)
+    } else {
+        data.CloudEndpoints = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["inventoriedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.InventoriedAt = NewRFC3339Value(val)
+        } else {
+            data.InventoriedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["inventoriedAt"].(string); ok && val != "" {
+        data.InventoriedAt = NewRFC3339Value(val)
+    } else {
+        data.InventoriedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["cloudConnectionId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

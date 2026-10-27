@@ -363,6 +363,7 @@ func GetResources() []func() resource.Resource {
         NewServerlessFunctionUserOwnerResource,
         NewServerlessFunctionLabelRuleResource,
         NewServerlessFunctionOwnerRuleResource,
+        NewCloudAccountResource,
         NewCloudConnectionResource,
         NewCloudResourceResource,
         NewCloudResourceTeamOwnerResource,

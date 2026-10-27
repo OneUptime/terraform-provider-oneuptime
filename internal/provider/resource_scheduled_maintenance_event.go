@@ -70,6 +70,7 @@ type ScheduledMaintenanceEventResourceModel struct {
     SendSubscriberNotificationsOnBeforeTheEvent JSONSubsetValue `tfsdk:"send_subscriber_notifications_on_before_the_event"`
     NextSubscriberNotificationBeforeTheEventAt RFC3339Value `tfsdk:"next_subscriber_notification_before_the_event_at"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    PublishOnStatusPageAt RFC3339Value `tfsdk:"publish_on_status_page_at"`
     EnableReminders types.Bool `tfsdk:"enable_reminders"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -365,6 +366,15 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "publish_on_status_page_at": schema.StringAttribute{
+                MarkdownDescription: "When this event first shows on its status pages and their subscribers hear about it. Left empty, it shows as soon as it is created.",
+                CustomType: RFC3339Type{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "enable_reminders": schema.BoolAttribute{
                 MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project.",
                 Optional: true,
@@ -567,6 +577,9 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     if !data.IsVisibleOnStatusPage.IsNull() && !data.IsVisibleOnStatusPage.IsUnknown() {
         requestDataMap["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
     }
+    if !data.PublishOnStatusPageAt.IsNull() && !data.PublishOnStatusPageAt.IsUnknown() {
+        requestDataMap["publishOnStatusPageAt"] = data.PublishOnStatusPageAt.ValueString()
+    }
     if !data.EnableReminders.IsNull() && !data.EnableReminders.IsUnknown() {
         requestDataMap["enableReminders"] = data.EnableReminders.ValueBool()
     }
@@ -645,6 +658,7 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         "sendSubscriberNotificationsOnBeforeTheEvent": true,
         "nextSubscriberNotificationBeforeTheEventAt": true,
         "isVisibleOnStatusPage": true,
+        "publishOnStatusPageAt": true,
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1479,6 +1493,17 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if obj, ok := dataMap["publishOnStatusPageAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PublishOnStatusPageAt = NewRFC3339Value(val)
+        } else {
+            data.PublishOnStatusPageAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["publishOnStatusPageAt"].(string); ok && val != "" {
+        data.PublishOnStatusPageAt = NewRFC3339Value(val)
+    } else {
+        data.PublishOnStatusPageAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["enableReminders"].(bool); ok {
         data.EnableReminders = types.BoolValue(val)
     }
@@ -1765,6 +1790,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "sendSubscriberNotificationsOnBeforeTheEvent": true,
         "nextSubscriberNotificationBeforeTheEventAt": true,
         "isVisibleOnStatusPage": true,
+        "publishOnStatusPageAt": true,
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
@@ -2600,6 +2626,17 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if obj, ok := dataMap["publishOnStatusPageAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PublishOnStatusPageAt = NewRFC3339Value(val)
+        } else {
+            data.PublishOnStatusPageAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["publishOnStatusPageAt"].(string); ok && val != "" {
+        data.PublishOnStatusPageAt = NewRFC3339Value(val)
+    } else {
+        data.PublishOnStatusPageAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["enableReminders"].(bool); ok {
         data.EnableReminders = types.BoolValue(val)
     }
@@ -2957,6 +2994,9 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     if !data.IsVisibleOnStatusPage.IsUnknown() && !state.IsVisibleOnStatusPage.IsUnknown() && !data.IsVisibleOnStatusPage.Equal(state.IsVisibleOnStatusPage) {
         requestDataMap["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
     }
+    if !data.PublishOnStatusPageAt.IsUnknown() && !state.PublishOnStatusPageAt.IsUnknown() && !data.PublishOnStatusPageAt.Equal(state.PublishOnStatusPageAt) {
+        requestDataMap["publishOnStatusPageAt"] = data.PublishOnStatusPageAt.ValueString()
+    }
     if !data.EnableReminders.IsUnknown() && !state.EnableReminders.IsUnknown() && !data.EnableReminders.Equal(state.EnableReminders) {
         requestDataMap["enableReminders"] = data.EnableReminders.ValueBool()
     }
@@ -3013,6 +3053,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "sendSubscriberNotificationsOnBeforeTheEvent": true,
         "nextSubscriberNotificationBeforeTheEventAt": true,
         "isVisibleOnStatusPage": true,
+        "publishOnStatusPageAt": true,
         "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
@@ -3842,6 +3883,17 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if obj, ok := dataMap["publishOnStatusPageAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.PublishOnStatusPageAt = NewRFC3339Value(val)
+        } else {
+            data.PublishOnStatusPageAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["publishOnStatusPageAt"].(string); ok && val != "" {
+        data.PublishOnStatusPageAt = NewRFC3339Value(val)
+    } else {
+        data.PublishOnStatusPageAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["enableReminders"].(bool); ok {
         data.EnableReminders = types.BoolValue(val)
     }
@@ -4202,6 +4254,9 @@ func (r *ScheduledMaintenanceEventResource) keepPlannedValues(data *ScheduledMai
     }
     if config.IsVisibleOnStatusPage.IsNull() && !plan.IsVisibleOnStatusPage.IsUnknown() {
         data.IsVisibleOnStatusPage = plan.IsVisibleOnStatusPage
+    }
+    if config.PublishOnStatusPageAt.IsNull() && !plan.PublishOnStatusPageAt.IsUnknown() {
+        data.PublishOnStatusPageAt = plan.PublishOnStatusPageAt
     }
     if config.EnableReminders.IsNull() && !plan.EnableReminders.IsUnknown() {
         data.EnableReminders = plan.EnableReminders

@@ -26,6 +26,7 @@ resource "oneuptime_cloud_resource_owner_rule" "example" {
 
 ### Optional
 
+- `cloud_tag_pattern` (String) Regex (case-insensitive) matched against each of the resource's cloud tags, written key=value: ^team=payments$ matches every resource tagged team=payments, ^env= every resource with an env tag. Leave empty to match any tags.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of this rule.
 - `description_regex_pattern` (String) Regex (case-insensitive) matched against the resource description. Leave empty to match any description.

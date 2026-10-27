@@ -83,6 +83,7 @@ resource "oneuptime_monitor" "example" {
 ### Optional
 
 - `ceph_clusters` (Set of String) Ceph clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_ceph_cluster` resources.
+- `cloud_resources` (Set of String) Cloud resources this monitor watches. Incidents and alerts it creates are linked to them. IDs of `oneuptime_cloud_resource` resources.
 - `current_monitor_status_id` (String) Whats the current status ID of this monitor? The ID of a `oneuptime_monitor_status`.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
 - `database_servers` (Set of String) Databases this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_database` resources.

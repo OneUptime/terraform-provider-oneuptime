@@ -55,7 +55,12 @@ data "oneuptime_cloud_resource" "by_id" {
 
 - `archived_at` (String) When was this cloud resource archived?
 - `auto_archived_at` (String) For a resource: when it was archived automatically for sending no metrics for the auto-archive period. Cleared when it reports again.
+- `cloud_endpoints` (String) For a resource a cloud connection's inventory lists: the host names and addresses it answers on, such as a load balancer's DNS name. Monitors of those hosts are linked to it. A JSON value: write it with `jsonencode()`.
+- `cloud_properties` (String) For a resource a cloud connection's inventory lists: the properties a person reads first, such as an instance's type or a database's engine and version, keyed by their path in the cloud's description. Never anything that can hold a secret. A JSON value: write it with `jsonencode()`.
+- `cloud_relationships` (String) For a resource a cloud connection's inventory lists: what it runs in, is part of, sends traffic to or is protected by, each as the other resource's id in the cloud. The edges of the account's topology. A JSON value: write it with `jsonencode()`.
+- `cloud_tags` (String) For a resource a cloud connection's inventory lists: its tags in the cloud (AWS tags, Azure tags, Google Cloud labels), at most 50. Label and owner rules can match them. A JSON value: write it with `jsonencode()`.
 - `created_at` (String) Date and Time when the object was created.
+- `inventoried_at` (String) When a cloud connection's inventory last listed this resource. Empty for a resource only its metrics or telemetry have found.
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When telemetry was last received for this resource.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

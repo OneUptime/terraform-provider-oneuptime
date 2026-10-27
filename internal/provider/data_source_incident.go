@@ -52,6 +52,7 @@ type IncidentDataSourceModel struct {
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     StorageArrays types.Set `tfsdk:"storage_arrays"`
+    CloudResources types.Set `tfsdk:"cloud_resources"`
     DatabaseServers types.Set `tfsdk:"database_servers"`
     DockerResources types.Set `tfsdk:"docker_resources"`
     PodmanResources types.Set `tfsdk:"podman_resources"`
@@ -221,6 +222,11 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "storage_arrays": schema.SetAttribute{
                 MarkdownDescription: "List of storage arrays affected by this incident. IDs of `oneuptime_storage_array` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "cloud_resources": schema.SetAttribute{
+                MarkdownDescription: "List of cloud resources affected by this incident. IDs of `oneuptime_cloud_resource` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -661,6 +667,7 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         "dockerSwarmClusters": true,
         "cephClusters": true,
         "storageArrays": true,
+        "cloudResources": true,
         "databaseServers": true,
         "dockerResources": true,
         "podmanResources": true,
@@ -1267,6 +1274,30 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.StorageArrays = types.SetValueMust(types.StringType, setItems)
     } else {
         data.StorageArrays = types.SetNull(types.StringType)
+    }
+    if val, ok := item["cloudResources"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.CloudResources = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.CloudResources = types.SetNull(types.StringType)
     }
     if val, ok := item["databaseServers"].([]interface{}); ok {
         var setItems []attr.Value

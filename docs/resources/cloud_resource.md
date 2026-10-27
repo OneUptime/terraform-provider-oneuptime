@@ -45,12 +45,17 @@ resource "oneuptime_cloud_resource" "example" {
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `auto_archived_at` (String) For a resource: when it was archived automatically for sending no metrics for the auto-archive period. Cleared when it reports again.
 - `cloud_connection_id` (String) For a resource: ID of the cloud connection that reads it, when one does. The ID of a `oneuptime_cloud_connection`.
+- `cloud_endpoints` (String) For a resource a cloud connection's inventory lists: the host names and addresses it answers on, such as a load balancer's DNS name. Monitors of those hosts are linked to it. A JSON value: write it with `jsonencode()`.
+- `cloud_properties` (String) For a resource a cloud connection's inventory lists: the properties a person reads first, such as an instance's type or a database's engine and version, keyed by their path in the cloud's description. Never anything that can hold a secret. A JSON value: write it with `jsonencode()`.
+- `cloud_relationships` (String) For a resource a cloud connection's inventory lists: what it runs in, is part of, sends traffic to or is protected by, each as the other resource's id in the cloud. The edges of the account's topology. A JSON value: write it with `jsonencode()`.
 - `cloud_resource_group` (String) For an Azure resource: the resource group it belongs to.
 - `cloud_resource_kind` (String) environment: a managed compute environment discovered from the cloud.platform, cloud.account.id and cloud.region resource attributes of a workload's own telemetry. resource: one IaaS or PaaS resource (a virtual machine, a load balancer, a bucket, a managed database, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch or Google Cloud Monitoring publish about it.
 - `cloud_resource_type` (String) For a resource: the provider's type for it - the Azure Resource Manager type (Microsoft.Compute/virtualMachines), the AWS CloudFormation type (AWS::EC2::Instance) or the Google Cloud Monitoring resource type (gce_instance).
+- `cloud_tags` (String) For a resource a cloud connection's inventory lists: its tags in the cloud (AWS tags, Azure tags, Google Cloud labels), at most 50. Label and owner rules can match them. A JSON value: write it with `jsonencode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
+- `inventoried_at` (String) When a cloud connection's inventory last listed this resource. Empty for a resource only its metrics or telemetry have found.
 - `last_seen_at` (String) When telemetry was last received for this resource.
 - `otel_collector_status` (String) Whether telemetry is currently being received (connected) or has gone stale (disconnected).
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

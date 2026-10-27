@@ -30,6 +30,7 @@ resource "oneuptime_incident" "example" {
 
 - `ceph_clusters` (Set of String) List of Ceph clusters affected by this incident. IDs of `oneuptime_ceph_cluster` resources.
 - `change_monitor_status_to_id` (String) Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the incident is created. The ID of a `oneuptime_monitor_status`.
+- `cloud_resources` (Set of String) List of cloud resources affected by this incident. IDs of `oneuptime_cloud_resource` resources.
 - `current_incident_state_id` (String) Current Incident State ID. The ID of a `oneuptime_incident_state`.
 - `custom_fields` (String) The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only. A JSON value: write it with `jsonencode()`.
 - `database_servers` (Set of String) List of databases affected by this incident. IDs of `oneuptime_database` resources.

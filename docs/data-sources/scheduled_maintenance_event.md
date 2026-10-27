@@ -67,6 +67,7 @@ data "oneuptime_scheduled_maintenance_event" "by_id" {
 - `podman_hosts` (Set of String) List of Podman hosts affected by this event. IDs of `oneuptime_podman_host` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `proxmox_clusters` (Set of String) List of Proxmox clusters affected by this event. IDs of `oneuptime_proxmox_cluster` resources.
+- `publish_on_status_page_at` (String) When this event first shows on its status pages and their subscribers hear about it. Left empty, it shows as soon as it is created.
 - `send_subscriber_notifications_on_before_the_event` (String) Should subscribers be notified before the event? A JSON value: write it with `jsonencode()`.
 - `services` (Set of String) List of services affected by this event. IDs of `oneuptime_service` resources.
 - `starts_at` (String) When does this event start?

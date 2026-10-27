@@ -45,6 +45,11 @@ type CloudResourceDataSourceModel struct {
     ProviderResourceId types.String `tfsdk:"provider_resource_id"`
     CloudResourceGroup types.String `tfsdk:"cloud_resource_group"`
     TelemetryAttributes types.String `tfsdk:"telemetry_attributes"`
+    CloudTags types.String `tfsdk:"cloud_tags"`
+    CloudProperties types.String `tfsdk:"cloud_properties"`
+    CloudRelationships types.String `tfsdk:"cloud_relationships"`
+    CloudEndpoints types.String `tfsdk:"cloud_endpoints"`
+    InventoriedAt types.String `tfsdk:"inventoried_at"`
     CloudConnectionId types.String `tfsdk:"cloud_connection_id"`
     RuntimeName types.String `tfsdk:"runtime_name"`
     RuntimeVersion types.String `tfsdk:"runtime_version"`
@@ -149,6 +154,26 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "telemetry_attributes": schema.StringAttribute{
                 MarkdownDescription: "For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "cloud_tags": schema.StringAttribute{
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: its tags in the cloud (AWS tags, Azure tags, Google Cloud labels), at most 50. Label and owner rules can match them. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "cloud_properties": schema.StringAttribute{
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: the properties a person reads first, such as an instance's type or a database's engine and version, keyed by their path in the cloud's description. Never anything that can hold a secret. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "cloud_relationships": schema.StringAttribute{
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: what it runs in, is part of, sends traffic to or is protected by, each as the other resource's id in the cloud. The edges of the account's topology. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "cloud_endpoints": schema.StringAttribute{
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: the host names and addresses it answers on, such as a load balancer's DNS name. Monitors of those hosts are linked to it. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "inventoried_at": schema.StringAttribute{
+                MarkdownDescription: "When a cloud connection's inventory last listed this resource. Empty for a resource only its metrics or telemetry have found.",
                 Computed: true,
             },
             "cloud_connection_id": schema.StringAttribute{
@@ -373,6 +398,11 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         "providerResourceId": true,
         "cloudResourceGroup": true,
         "telemetryAttributes": true,
+        "cloudTags": true,
+        "cloudProperties": true,
+        "cloudRelationships": true,
+        "cloudEndpoints": true,
+        "inventoriedAt": true,
         "cloudConnectionId": true,
         "runtimeName": true,
         "runtimeVersion": true,
@@ -736,6 +766,91 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.TelemetryAttributes = types.StringValue(val)
     } else {
         data.TelemetryAttributes = types.StringNull()
+    }
+    if obj, ok := item["cloudTags"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudTags = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudTags = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudTags = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudTags = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudTags = types.StringNull()
+        }
+    } else if val, ok := item["cloudTags"].(string); ok {
+        data.CloudTags = types.StringValue(val)
+    } else {
+        data.CloudTags = types.StringNull()
+    }
+    if obj, ok := item["cloudProperties"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudProperties = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudProperties = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudProperties = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudProperties = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudProperties = types.StringNull()
+        }
+    } else if val, ok := item["cloudProperties"].(string); ok {
+        data.CloudProperties = types.StringValue(val)
+    } else {
+        data.CloudProperties = types.StringNull()
+    }
+    if obj, ok := item["cloudRelationships"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudRelationships = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudRelationships = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudRelationships = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudRelationships = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudRelationships = types.StringNull()
+        }
+    } else if val, ok := item["cloudRelationships"].(string); ok {
+        data.CloudRelationships = types.StringValue(val)
+    } else {
+        data.CloudRelationships = types.StringNull()
+    }
+    if obj, ok := item["cloudEndpoints"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudEndpoints = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudEndpoints = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudEndpoints = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudEndpoints = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudEndpoints = types.StringNull()
+        }
+    } else if val, ok := item["cloudEndpoints"].(string); ok {
+        data.CloudEndpoints = types.StringValue(val)
+    } else {
+        data.CloudEndpoints = types.StringNull()
+    }
+    if obj, ok := item["inventoriedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.InventoriedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.InventoriedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.InventoriedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.InventoriedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.InventoriedAt = types.StringNull()
+        }
+    } else if val, ok := item["inventoriedAt"].(string); ok {
+        data.InventoriedAt = types.StringValue(val)
+    } else {
+        data.InventoriedAt = types.StringNull()
     }
     if obj, ok := item["cloudConnectionId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

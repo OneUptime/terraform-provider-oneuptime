@@ -39,6 +39,7 @@ type CloudResourceOwnerRuleDataSourceModel struct {
     NotifyOwners types.Bool `tfsdk:"notify_owners"`
     MatchLabels types.Set `tfsdk:"match_labels"`
     NameRegexPattern types.String `tfsdk:"name_regex_pattern"`
+    CloudTagPattern types.String `tfsdk:"cloud_tag_pattern"`
     DescriptionRegexPattern types.String `tfsdk:"description_regex_pattern"`
     OwnerUsers types.Set `tfsdk:"owner_users"`
     OwnerTeams types.Set `tfsdk:"owner_teams"`
@@ -51,7 +52,7 @@ func (d *CloudResourceOwnerRuleDataSource) Metadata(ctx context.Context, req dat
 
 func (d *CloudResourceOwnerRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Rules for automatically assigning owners to cloud resources when matching resources are created. Look up an existing cloud resource owner rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one cloud resource owner rule may match them all.",
+        MarkdownDescription: "Rules for automatically assigning owners to cloud resources when matching resources are created. Look up an existing cloud resource owner rule by `id`, or by any of its other arguments (`name`, `cloud_tag_pattern`, `created_by_user_id`, ...): each one set must match, and exactly one cloud resource owner rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -102,6 +103,11 @@ func (d *CloudResourceOwnerRuleDataSource) Schema(ctx context.Context, req datas
             },
             "name_regex_pattern": schema.StringAttribute{
                 MarkdownDescription: "Regex (case-insensitive) matched against the resource name. Leave empty to match any name.",
+                Optional: true,
+                Computed: true,
+            },
+            "cloud_tag_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against each of the resource's cloud tags, written key=value: ^team=payments$ matches every resource tagged team=payments, ^env= every resource with an env tag. Leave empty to match any tags.",
                 Optional: true,
                 Computed: true,
             },
@@ -184,6 +190,10 @@ func (d *CloudResourceOwnerRuleDataSource) Read(ctx context.Context, req datasou
         filters["nameRegexPattern"] = data.NameRegexPattern.ValueString()
         filterNames = append(filterNames, "name_regex_pattern = "+fmt.Sprintf("%q", data.NameRegexPattern.ValueString()))
     }
+    if !data.CloudTagPattern.IsNull() && !data.CloudTagPattern.IsUnknown() {
+        filters["cloudTagPattern"] = data.CloudTagPattern.ValueString()
+        filterNames = append(filterNames, "cloud_tag_pattern = "+fmt.Sprintf("%q", data.CloudTagPattern.ValueString()))
+    }
     if !data.DescriptionRegexPattern.IsNull() && !data.DescriptionRegexPattern.IsUnknown() {
         filters["descriptionRegexPattern"] = data.DescriptionRegexPattern.ValueString()
         filterNames = append(filterNames, "description_regex_pattern = "+fmt.Sprintf("%q", data.DescriptionRegexPattern.ValueString()))
@@ -219,6 +229,7 @@ func (d *CloudResourceOwnerRuleDataSource) Read(ctx context.Context, req datasou
         "notifyOwners": true,
         "matchLabels": true,
         "nameRegexPattern": true,
+        "cloudTagPattern": true,
         "descriptionRegexPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
@@ -453,6 +464,23 @@ func (d *CloudResourceOwnerRuleDataSource) Read(ctx context.Context, req datasou
         data.NameRegexPattern = types.StringValue(val)
     } else {
         data.NameRegexPattern = types.StringNull()
+    }
+    if obj, ok := item["cloudTagPattern"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudTagPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudTagPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudTagPattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudTagPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudTagPattern = types.StringNull()
+        }
+    } else if val, ok := item["cloudTagPattern"].(string); ok {
+        data.CloudTagPattern = types.StringValue(val)
+    } else {
+        data.CloudTagPattern = types.StringNull()
     }
     if obj, ok := item["descriptionRegexPattern"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

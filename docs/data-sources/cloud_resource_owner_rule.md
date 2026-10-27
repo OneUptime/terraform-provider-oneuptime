@@ -28,6 +28,7 @@ data "oneuptime_cloud_resource_owner_rule" "by_id" {
 
 ### Optional
 
+- `cloud_tag_pattern` (String) Regex (case-insensitive) matched against each of the resource's cloud tags, written key=value: ^team=payments$ matches every resource tagged team=payments, ^env= every resource with an env tag. Leave empty to match any tags.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Description of this rule.
 - `description_regex_pattern` (String) Regex (case-insensitive) matched against the resource description. Leave empty to match any description.

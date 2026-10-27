@@ -68,6 +68,7 @@ type ScheduledMaintenanceEventDataSourceModel struct {
     ScheduledMaintenanceNumber types.Number `tfsdk:"scheduled_maintenance_number"`
     ScheduledMaintenanceNumberWithPrefix types.String `tfsdk:"scheduled_maintenance_number_with_prefix"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    PublishOnStatusPageAt types.String `tfsdk:"publish_on_status_page_at"`
     EnableReminders types.Bool `tfsdk:"enable_reminders"`
     NextReminderNotificationAt types.String `tfsdk:"next_reminder_notification_at"`
     ReminderNotificationSentCount types.Number `tfsdk:"reminder_notification_sent_count"`
@@ -274,6 +275,10 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
                 Optional: true,
                 Computed: true,
             },
+            "publish_on_status_page_at": schema.StringAttribute{
+                MarkdownDescription: "When this event first shows on its status pages and their subscribers hear about it. Left empty, it shows as soon as it is created.",
+                Computed: true,
+            },
             "enable_reminders": schema.BoolAttribute{
                 MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project.",
                 Optional: true,
@@ -451,6 +456,7 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         "scheduledMaintenanceNumber": true,
         "scheduledMaintenanceNumberWithPrefix": true,
         "isVisibleOnStatusPage": true,
+        "publishOnStatusPageAt": true,
         "enableReminders": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
@@ -1230,6 +1236,23 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     } else {
         data.IsVisibleOnStatusPage = types.BoolNull()
+    }
+    if obj, ok := item["publishOnStatusPageAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PublishOnStatusPageAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PublishOnStatusPageAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PublishOnStatusPageAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PublishOnStatusPageAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.PublishOnStatusPageAt = types.StringNull()
+        }
+    } else if val, ok := item["publishOnStatusPageAt"].(string); ok {
+        data.PublishOnStatusPageAt = types.StringValue(val)
+    } else {
+        data.PublishOnStatusPageAt = types.StringNull()
     }
     if val, ok := item["enableReminders"].(bool); ok {
         data.EnableReminders = types.BoolValue(val)

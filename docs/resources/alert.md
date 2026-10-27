@@ -29,6 +29,7 @@ resource "oneuptime_alert" "example" {
 ### Optional
 
 - `ceph_clusters` (Set of String) List of Ceph clusters affected by this alert. IDs of `oneuptime_ceph_cluster` resources.
+- `cloud_resources` (Set of String) List of cloud resources affected by this alert. IDs of `oneuptime_cloud_resource` resources.
 - `current_alert_state_id` (String) Current Alert State ID. The ID of a `oneuptime_alert_state`.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
 - `database_servers` (Set of String) List of databases affected by this alert. IDs of `oneuptime_database` resources.

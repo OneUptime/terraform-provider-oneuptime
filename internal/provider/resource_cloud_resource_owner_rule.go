@@ -48,6 +48,7 @@ type CloudResourceOwnerRuleResourceModel struct {
     NotifyOwners types.Bool `tfsdk:"notify_owners"`
     MatchLabels types.Set `tfsdk:"match_labels"`
     NameRegexPattern types.String `tfsdk:"name_regex_pattern"`
+    CloudTagPattern types.String `tfsdk:"cloud_tag_pattern"`
     DescriptionRegexPattern types.String `tfsdk:"description_regex_pattern"`
     OwnerUsers types.Set `tfsdk:"owner_users"`
     OwnerTeams types.Set `tfsdk:"owner_teams"`
@@ -136,6 +137,14 @@ func (r *CloudResourceOwnerRuleResource) schemaDefinition() schema.Schema {
             },
             "name_regex_pattern": schema.StringAttribute{
                 MarkdownDescription: "Regex (case-insensitive) matched against the resource name. Leave empty to match any name.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "cloud_tag_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against each of the resource's cloud tags, written key=value: ^team=payments$ matches every resource tagged team=payments, ^env= every resource with an env tag. Leave empty to match any tags.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -262,6 +271,9 @@ func (r *CloudResourceOwnerRuleResource) Create(ctx context.Context, req resourc
     if !data.NameRegexPattern.IsNull() && !data.NameRegexPattern.IsUnknown() {
         requestDataMap["nameRegexPattern"] = data.NameRegexPattern.ValueString()
     }
+    if !data.CloudTagPattern.IsNull() && !data.CloudTagPattern.IsUnknown() {
+        requestDataMap["cloudTagPattern"] = data.CloudTagPattern.ValueString()
+    }
     if !data.DescriptionRegexPattern.IsNull() && !data.DescriptionRegexPattern.IsUnknown() {
         requestDataMap["descriptionRegexPattern"] = data.DescriptionRegexPattern.ValueString()
     }
@@ -324,6 +336,7 @@ func (r *CloudResourceOwnerRuleResource) Create(ctx context.Context, req resourc
         "notifyOwners": true,
         "matchLabels": true,
         "nameRegexPattern": true,
+        "cloudTagPattern": true,
         "descriptionRegexPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
@@ -559,6 +572,43 @@ func (r *CloudResourceOwnerRuleResource) Create(ctx context.Context, req resourc
     } else {
         data.NameRegexPattern = types.StringNull()
     }
+    if obj, ok := dataMap["cloudTagPattern"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudTagPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudTagPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudTagPattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudTagPattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudTagPattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudTagPattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudTagPattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudTagPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudTagPattern = types.StringNull()
+        }
+    } else if val, ok := dataMap["cloudTagPattern"].(string); ok {
+        data.CloudTagPattern = types.StringValue(val)
+    } else {
+        data.CloudTagPattern = types.StringNull()
+    }
     if obj, ok := dataMap["descriptionRegexPattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -757,6 +807,7 @@ func (r *CloudResourceOwnerRuleResource) Read(ctx context.Context, req resource.
         "notifyOwners": true,
         "matchLabels": true,
         "nameRegexPattern": true,
+        "cloudTagPattern": true,
         "descriptionRegexPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
@@ -993,6 +1044,43 @@ func (r *CloudResourceOwnerRuleResource) Read(ctx context.Context, req resource.
     } else {
         data.NameRegexPattern = types.StringNull()
     }
+    if obj, ok := dataMap["cloudTagPattern"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudTagPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudTagPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudTagPattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudTagPattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudTagPattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudTagPattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudTagPattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudTagPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudTagPattern = types.StringNull()
+        }
+    } else if val, ok := dataMap["cloudTagPattern"].(string); ok {
+        data.CloudTagPattern = types.StringValue(val)
+    } else {
+        data.CloudTagPattern = types.StringNull()
+    }
     if obj, ok := dataMap["descriptionRegexPattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1222,6 +1310,9 @@ func (r *CloudResourceOwnerRuleResource) Update(ctx context.Context, req resourc
     if !data.NameRegexPattern.IsUnknown() && !state.NameRegexPattern.IsUnknown() && !data.NameRegexPattern.Equal(state.NameRegexPattern) {
         requestDataMap["nameRegexPattern"] = data.NameRegexPattern.ValueString()
     }
+    if !data.CloudTagPattern.IsUnknown() && !state.CloudTagPattern.IsUnknown() && !data.CloudTagPattern.Equal(state.CloudTagPattern) {
+        requestDataMap["cloudTagPattern"] = data.CloudTagPattern.ValueString()
+    }
     if !data.DescriptionRegexPattern.IsUnknown() && !state.DescriptionRegexPattern.IsUnknown() && !data.DescriptionRegexPattern.Equal(state.DescriptionRegexPattern) {
         requestDataMap["descriptionRegexPattern"] = data.DescriptionRegexPattern.ValueString()
     }
@@ -1262,6 +1353,7 @@ func (r *CloudResourceOwnerRuleResource) Update(ctx context.Context, req resourc
         "notifyOwners": true,
         "matchLabels": true,
         "nameRegexPattern": true,
+        "cloudTagPattern": true,
         "descriptionRegexPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
@@ -1491,6 +1583,43 @@ func (r *CloudResourceOwnerRuleResource) Update(ctx context.Context, req resourc
         data.NameRegexPattern = types.StringValue(val)
     } else {
         data.NameRegexPattern = types.StringNull()
+    }
+    if obj, ok := dataMap["cloudTagPattern"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudTagPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudTagPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudTagPattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudTagPattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudTagPattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudTagPattern = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudTagPattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudTagPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudTagPattern = types.StringNull()
+        }
+    } else if val, ok := dataMap["cloudTagPattern"].(string); ok {
+        data.CloudTagPattern = types.StringValue(val)
+    } else {
+        data.CloudTagPattern = types.StringNull()
     }
     if obj, ok := dataMap["descriptionRegexPattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1726,6 +1855,9 @@ func (r *CloudResourceOwnerRuleResource) keepPlannedValues(data *CloudResourceOw
     }
     if config.NameRegexPattern.IsNull() && !plan.NameRegexPattern.IsUnknown() {
         data.NameRegexPattern = plan.NameRegexPattern
+    }
+    if config.CloudTagPattern.IsNull() && !plan.CloudTagPattern.IsUnknown() {
+        data.CloudTagPattern = plan.CloudTagPattern
     }
     if config.DescriptionRegexPattern.IsNull() && !plan.DescriptionRegexPattern.IsUnknown() {
         data.DescriptionRegexPattern = plan.DescriptionRegexPattern

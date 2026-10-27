@@ -53,6 +53,7 @@ data "oneuptime_alert" "by_id" {
 ### Read-Only
 
 - `ceph_clusters` (Set of String) List of Ceph clusters affected by this alert. IDs of `oneuptime_ceph_cluster` resources.
+- `cloud_resources` (Set of String) List of cloud resources affected by this alert. IDs of `oneuptime_cloud_resource` resources.
 - `created_at` (String) Date and Time when the object was created.
 - `created_state_log` (String) A JSON value: write it with `jsonencode()`.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
