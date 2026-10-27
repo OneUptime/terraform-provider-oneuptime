@@ -81,7 +81,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
 
 func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Network discovery scans that sweep an address space — a CIDR subnet or an octet range — from a probe and report the hosts found, so they can be imported as Network Devices. Every sweep pings; scans with Check SNMP on also query each live host over SNMP.",
+        MarkdownDescription: "Network discovery scans that sweep an address space — a CIDR subnet or an octet range — from a probe and report the hosts found, so they can be imported as Network Devices. Every sweep pings; an SNMP scan also queries each live host over SNMP, an ICMP scan asks nothing more.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -127,7 +127,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "is_snmp_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether hosts that answer the ping sweep are then queried over SNMP. Turn it off for an ICMP-only scan, which reports every host that answers ping and asks nothing else of them.",
+                MarkdownDescription: "The scan method: true for an SNMP scan (the default), which also asks each host that answers ping for its name and vendor over SNMP; false for an ICMP scan, which only pings.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -145,7 +145,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "snmp_version": schema.StringAttribute{
-                MarkdownDescription: "SNMP version tried against every host in the subnet (V1, V2c, V3). Ignored when Check SNMP is off.",
+                MarkdownDescription: "SNMP version tried against every host in the subnet (V1, V2c, V3). Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -153,7 +153,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "snmp_community_string": schema.StringAttribute{
-                MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c). Ignored when Check SNMP is off.",
+                MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c). Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -161,7 +161,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "snmp_port": schema.NumberAttribute{
-                MarkdownDescription: "UDP port tried against every host in the subnet. Ignored when Check SNMP is off.",
+                MarkdownDescription: "UDP port tried against every host in the subnet. Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -169,7 +169,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "snmp_v3_security_level": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv. Ignored when Check SNMP is off.",
+                MarkdownDescription: "SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv. Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -177,7 +177,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "snmp_v3_username": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 security name (username) tried against every host. Ignored when Check SNMP is off.",
+                MarkdownDescription: "SNMP v3 security name (username) tried against every host. Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -185,7 +185,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "snmp_v3_auth_protocol": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512. Ignored when Check SNMP is off.",
+                MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512. Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -193,7 +193,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "snmp_v3_auth_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Ignored when Check SNMP is off.",
+                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -201,7 +201,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "snmp_v3_priv_protocol": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256. Ignored when Check SNMP is off.",
+                MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256. Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -209,7 +209,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 },
             },
             "snmp_v3_priv_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Ignored when Check SNMP is off.",
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -273,7 +273,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "responded_host_count": schema.NumberAttribute{
-                MarkdownDescription: "Number of hosts that answered the check this scan performed: SNMP responders on a scan with Check SNMP on, hosts that answered the ping sweep on an ICMP-only one. Managed by the scanning probe.",
+                MarkdownDescription: "Number of hosts that answered the check this scan performed: SNMP responders on an SNMP scan, hosts that answered the ping sweep on an ICMP scan. Managed by the scanning probe.",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{

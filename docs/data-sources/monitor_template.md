@@ -36,7 +36,7 @@ data "oneuptime_monitor_template" "by_id" {
 - `monitor_type` (String) What is the type of monitor created from this template?
 - `monitoring_interval` (String) Default monitoring interval for monitors created from this template. A 5-field cron expression, not a label: "*/5 * * * *" is every five minutes.
 - `slug` (String) Friendly globally unique name for your object.
-- `template_description` (String) Description of the Monitor Template.
+- `template_description` (String) What the template is for, shown in the template list. Optional.
 - `template_name` (String) Name of the Monitor Template.
 
 ### Read-Only

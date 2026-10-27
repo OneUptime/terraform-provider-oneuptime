@@ -117,7 +117,7 @@ func (d *OnCallPolicyDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "repeat_policy_if_no_one_acknowledges_no_of_times": schema.NumberAttribute{
-                MarkdownDescription: "Repeat the policy X number of times if no one acknowledges the alert.",
+                MarkdownDescription: "How many more times the policy starts again from its first escalation rule when nobody acknowledges: a whole number of 1 or more while Repeat Policy If No One Acknowledges is on.",
                 Optional: true,
                 Computed: true,
             },

@@ -89,8 +89,12 @@ func (r *MonitorTemplateResource) schemaDefinition() schema.Schema {
                 Required: true,
             },
             "template_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the Monitor Template.",
-                Required: true,
+                MarkdownDescription: "What the template is for, shown in the template list. Optional.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "monitor_name": schema.StringAttribute{
                 MarkdownDescription: "Default name applied to monitors created from this template. Users can override on creation. Leave it blank to name each monitor after the resource it watches.",
@@ -1852,6 +1856,9 @@ func (r *MonitorTemplateResource) ImportState(ctx context.Context, req resource.
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
 func (r *MonitorTemplateResource) keepPlannedValues(data *MonitorTemplateResourceModel, plan *MonitorTemplateResourceModel, config *MonitorTemplateResourceModel) {
+    if config.TemplateDescription.IsNull() && !plan.TemplateDescription.IsUnknown() {
+        data.TemplateDescription = plan.TemplateDescription
+    }
     if config.MonitorName.IsNull() && !plan.MonitorName.IsUnknown() {
         data.MonitorName = plan.MonitorName
     }

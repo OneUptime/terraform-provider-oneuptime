@@ -104,7 +104,7 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
                 },
             },
             "model_name": schema.StringAttribute{
-                MarkdownDescription: "The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name.",
+                MarkdownDescription: "The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name. Optional: left empty, the provider's default model is used, and an OpenAI-compatible server is asked for the first model it lists.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

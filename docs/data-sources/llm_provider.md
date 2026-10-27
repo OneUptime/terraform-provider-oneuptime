@@ -36,7 +36,7 @@ data "oneuptime_llm_provider" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_default` (Boolean) Is this the default LLM provider for the project? When set, the global LLM provider will not be used.
 - `llm_type` (String) The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAICompatible, etc.).
-- `model_name` (String) The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name.
+- `model_name` (String) The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name. Optional: left empty, the provider's default model is used, and an OpenAI-compatible server is asked for the first model it lists.
 - `name` (String) A friendly name for this LLM configuration.
 - `slug` (String) Friendly globally unique name for your object.
 

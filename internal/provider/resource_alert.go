@@ -357,7 +357,6 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "remediation_notes": schema.StringAttribute{
@@ -3778,6 +3777,9 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         } else {
             requestDataMap["customFields"] = data.CustomFields.ValueString()
         }
+    }
+    if !data.RootCause.IsUnknown() && !state.RootCause.IsUnknown() && !data.RootCause.Equal(state.RootCause) {
+        requestDataMap["rootCause"] = data.RootCause.ValueString()
     }
     if !data.RemediationNotes.IsUnknown() && !state.RemediationNotes.IsUnknown() && !data.RemediationNotes.Equal(state.RemediationNotes) {
         requestDataMap["remediationNotes"] = data.RemediationNotes.ValueString()

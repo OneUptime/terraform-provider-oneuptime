@@ -45,6 +45,7 @@ type StatusPageDataSourceModel struct {
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     FaviconFileId types.String `tfsdk:"favicon_file_id"`
     LogoFileId types.String `tfsdk:"logo_file_id"`
+    DarkThemeLogoFileId types.String `tfsdk:"dark_theme_logo_file_id"`
     CoverImageFileId types.String `tfsdk:"cover_image_file_id"`
     HeaderHtml types.String `tfsdk:"header_html"`
     FooterHtml types.String `tfsdk:"footer_html"`
@@ -198,6 +199,11 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "logo_file_id": schema.StringAttribute{
                 MarkdownDescription: "Status Page Logo File ID. The ID of a `oneuptime_file`.",
+                Optional: true,
+                Computed: true,
+            },
+            "dark_theme_logo_file_id": schema.StringAttribute{
+                MarkdownDescription: "Status Page Dark Theme Logo File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
             },
@@ -597,6 +603,10 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         filters["logoFileId"] = data.LogoFileId.ValueString()
         filterNames = append(filterNames, "logo_file_id = "+fmt.Sprintf("%q", data.LogoFileId.ValueString()))
     }
+    if !data.DarkThemeLogoFileId.IsNull() && !data.DarkThemeLogoFileId.IsUnknown() {
+        filters["darkThemeLogoFileId"] = data.DarkThemeLogoFileId.ValueString()
+        filterNames = append(filterNames, "dark_theme_logo_file_id = "+fmt.Sprintf("%q", data.DarkThemeLogoFileId.ValueString()))
+    }
     if !data.CoverImageFileId.IsNull() && !data.CoverImageFileId.IsUnknown() {
         filters["coverImageFileId"] = data.CoverImageFileId.ValueString()
         filterNames = append(filterNames, "cover_image_file_id = "+fmt.Sprintf("%q", data.CoverImageFileId.ValueString()))
@@ -850,6 +860,7 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "archivedByUserId": true,
         "faviconFileId": true,
         "logoFileId": true,
+        "darkThemeLogoFileId": true,
         "coverImageFileId": true,
         "headerHTML": true,
         "footerHTML": true,
@@ -1246,6 +1257,23 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.LogoFileId = types.StringValue(val)
     } else {
         data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := item["darkThemeLogoFileId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DarkThemeLogoFileId = types.StringNull()
+        }
+    } else if val, ok := item["darkThemeLogoFileId"].(string); ok {
+        data.DarkThemeLogoFileId = types.StringValue(val)
+    } else {
+        data.DarkThemeLogoFileId = types.StringNull()
     }
     if obj, ok := item["coverImageFileId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

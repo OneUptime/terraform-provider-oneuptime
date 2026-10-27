@@ -34,7 +34,7 @@ resource "oneuptime_incoming_call_policy" "example" {
 - `no_one_available_message` (String) Message when no one is on-call or reachable.
 - `project_call_sms_config_id` (String) ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply.
 - `repeat_policy_if_no_one_answers` (Boolean) Restart from first rule if all fail. Defaults to `false`.
-- `repeat_policy_if_no_one_answers_times` (Number) Maximum repeat attempts if no one answers. Defaults to `1`.
+- `repeat_policy_if_no_one_answers_times` (Number) How many more times the escalation rules ring again from the first when nobody answers: a whole number of 1 or more while Repeat Policy If No One Answers is on. Defaults to `1`.
 
 ### Read-Only
 

@@ -78,7 +78,7 @@ func (d *MonitorTemplateDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "template_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the Monitor Template.",
+                MarkdownDescription: "What the template is for, shown in the template list. Optional.",
                 Optional: true,
                 Computed: true,
             },

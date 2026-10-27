@@ -36,7 +36,7 @@ data "oneuptime_scheduled_maintenance_reminder_rule" "by_id" {
 - `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
 - `remind_while_scheduled` (Boolean) Send reminders while the event is still scheduled (before it starts). When disabled, reminders only begin once the event has started.
 - `reminder_interval_in_minutes` (Number) How often (in minutes) to remind scheduled maintenance event owners while the event is still not complete. For example, set to 30 to remind owners every 30 minutes.
-- `stop_reminders_on_state` (String) Stop sending reminders once the scheduled maintenance event reaches this state. Select Ongoing to stop reminders when the event starts, or Completed to keep reminding until the event is completed.
+- `stop_reminders_on_state` (String) Stop sending reminders once the scheduled maintenance event reaches this state. Select Ongoing to stop reminders when the event starts, or Completed to keep reminding until the event is completed. Ongoing needs Remind While Event is Scheduled on: a rule that waits for the event to start and stops when it starts would never remind, so it is refused.
 
 ### Read-Only
 

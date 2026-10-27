@@ -145,7 +145,7 @@ func (r *IncomingCallPolicyResource) schemaDefinition() schema.Schema {
                 },
             },
             "repeat_policy_if_no_one_answers_times": schema.NumberAttribute{
-                MarkdownDescription: "Maximum repeat attempts if no one answers.",
+                MarkdownDescription: "How many more times the escalation rules ring again from the first when nobody answers: a whole number of 1 or more while Repeat Policy If No One Answers is on.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),

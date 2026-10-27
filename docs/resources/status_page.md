@@ -36,6 +36,7 @@ resource "oneuptime_status_page" "example" {
 - `custom_css` (String) Status Page Custom CSS. Served only from a verified custom domain.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
 - `custom_java_script` (String) Status Page Custom JavaScript. This runs when the status page is loaded from a verified custom domain.
+- `dark_theme_logo_file_id` (String) Status Page Dark Theme Logo File ID. The ID of a `oneuptime_file`.
 - `default_bar_color` (String) Default color of the bar on the overview page.
 - `default_language` (String) Default language that the status page is shown in when a visitor arrives for the first time. Defaults to `en`.
 - `description` (String) Friendly description that will help you remember.

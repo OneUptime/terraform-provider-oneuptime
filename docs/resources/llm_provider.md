@@ -33,7 +33,7 @@ resource "oneuptime_llm_provider" "example" {
 - `base_url` (String) The base URL for the LLM API. Required for Azure OpenAI / Microsoft Foundry (the resource's endpoint, such as https://<resource>.openai.azure.com/openai/v1), Ollama and OpenAI-compatible servers, optional for others. The API key and the Additional Parameters are sent to it, so only project owners and admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.
 - `description` (String) Description of this LLM configuration.
 - `is_default` (Boolean) Is this the default LLM provider for the project? When set, the global LLM provider will not be used. Defaults to `false`.
-- `model_name` (String) The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name.
+- `model_name` (String) The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name. Optional: left empty, the provider's default model is used, and an OpenAI-compatible server is asked for the first model it lists.
 
 ### Read-Only
 

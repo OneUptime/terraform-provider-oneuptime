@@ -36,7 +36,7 @@ data "oneuptime_on_call_policy" "by_id" {
 - `is_archived` (Boolean) Archived on-call policies are hidden from the On-Call Policies list and page no one: incidents and alerts that use them skip them. Unarchiving puts them back in service.
 - `name` (String) Any friendly name of this object.
 - `repeat_policy_if_no_one_acknowledges` (Boolean) Repeat the policy if no one acknowledges the alert.
-- `repeat_policy_if_no_one_acknowledges_no_of_times` (Number) Repeat the policy X number of times if no one acknowledges the alert.
+- `repeat_policy_if_no_one_acknowledges_no_of_times` (Number) How many more times the policy starts again from its first escalation rule when nobody acknowledges: a whole number of 1 or more while Repeat Policy If No One Acknowledges is on.
 - `slug` (String) Friendly globally unique name for your object.
 
 ### Read-Only

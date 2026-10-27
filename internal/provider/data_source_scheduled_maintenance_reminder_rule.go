@@ -100,7 +100,7 @@ func (d *ScheduledMaintenanceReminderRuleDataSource) Schema(ctx context.Context,
                 Computed: true,
             },
             "stop_reminders_on_state": schema.StringAttribute{
-                MarkdownDescription: "Stop sending reminders once the scheduled maintenance event reaches this state. Select Ongoing to stop reminders when the event starts, or Completed to keep reminding until the event is completed.",
+                MarkdownDescription: "Stop sending reminders once the scheduled maintenance event reaches this state. Select Ongoing to stop reminders when the event starts, or Completed to keep reminding until the event is completed. Ongoing needs Remind While Event is Scheduled on: a rule that waits for the event to start and stops when it starts would never remind, so it is refused.",
                 Optional: true,
                 Computed: true,
             },

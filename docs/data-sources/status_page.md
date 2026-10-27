@@ -39,6 +39,7 @@ data "oneuptime_status_page" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `custom_css` (String) Status Page Custom CSS. Served only from a verified custom domain.
 - `custom_java_script` (String) Status Page Custom JavaScript. This runs when the status page is loaded from a verified custom domain.
+- `dark_theme_logo_file_id` (String) Status Page Dark Theme Logo File ID. The ID of a `oneuptime_file`.
 - `default_language` (String) Default language that the status page is shown in when a visitor arrives for the first time.
 - `description` (String) Friendly description that will help you remember.
 - `embedded_overall_status_token` (String) Security token required to access the embedded overall status badge. This token must be provided in the URL.

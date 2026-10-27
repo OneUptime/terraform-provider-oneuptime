@@ -53,6 +53,7 @@ type StatusPageResourceModel struct {
     IsArchived types.Bool `tfsdk:"is_archived"`
     FaviconFileId types.String `tfsdk:"favicon_file_id"`
     LogoFileId types.String `tfsdk:"logo_file_id"`
+    DarkThemeLogoFileId types.String `tfsdk:"dark_theme_logo_file_id"`
     CoverImageFileId types.String `tfsdk:"cover_image_file_id"`
     HeaderHtml types.String `tfsdk:"header_html"`
     FooterHtml types.String `tfsdk:"footer_html"`
@@ -217,6 +218,14 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
             },
             "logo_file_id": schema.StringAttribute{
                 MarkdownDescription: "Status Page Logo File ID. The ID of a `oneuptime_file`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "dark_theme_logo_file_id": schema.StringAttribute{
+                MarkdownDescription: "Status Page Dark Theme Logo File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -902,6 +911,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if !data.LogoFileId.IsNull() && !data.LogoFileId.IsUnknown() {
         requestDataMap["logoFileId"] = data.LogoFileId.ValueString()
     }
+    if !data.DarkThemeLogoFileId.IsNull() && !data.DarkThemeLogoFileId.IsUnknown() {
+        requestDataMap["darkThemeLogoFileId"] = data.DarkThemeLogoFileId.ValueString()
+    }
     if !data.CoverImageFileId.IsNull() && !data.CoverImageFileId.IsUnknown() {
         requestDataMap["coverImageFileId"] = data.CoverImageFileId.ValueString()
     }
@@ -1143,6 +1155,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "isArchived": true,
         "faviconFileId": true,
         "logoFileId": true,
+        "darkThemeLogoFileId": true,
         "coverImageFileId": true,
         "headerHTML": true,
         "footerHTML": true,
@@ -1515,6 +1528,43 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         data.LogoFileId = types.StringValue(val)
     } else {
         data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := dataMap["darkThemeLogoFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DarkThemeLogoFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["darkThemeLogoFileId"].(string); ok {
+        data.DarkThemeLogoFileId = types.StringValue(val)
+    } else {
+        data.DarkThemeLogoFileId = types.StringNull()
     }
     if obj, ok := dataMap["coverImageFileId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2807,6 +2857,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "isArchived": true,
         "faviconFileId": true,
         "logoFileId": true,
+        "darkThemeLogoFileId": true,
         "coverImageFileId": true,
         "headerHTML": true,
         "footerHTML": true,
@@ -3180,6 +3231,43 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         data.LogoFileId = types.StringValue(val)
     } else {
         data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := dataMap["darkThemeLogoFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DarkThemeLogoFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["darkThemeLogoFileId"].(string); ok {
+        data.DarkThemeLogoFileId = types.StringValue(val)
+    } else {
+        data.DarkThemeLogoFileId = types.StringNull()
     }
     if obj, ok := dataMap["coverImageFileId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4502,6 +4590,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.LogoFileId.IsUnknown() && !state.LogoFileId.IsUnknown() && !data.LogoFileId.Equal(state.LogoFileId) {
         requestDataMap["logoFileId"] = data.LogoFileId.ValueString()
     }
+    if !data.DarkThemeLogoFileId.IsUnknown() && !state.DarkThemeLogoFileId.IsUnknown() && !data.DarkThemeLogoFileId.Equal(state.DarkThemeLogoFileId) {
+        requestDataMap["darkThemeLogoFileId"] = data.DarkThemeLogoFileId.ValueString()
+    }
     if !data.CoverImageFileId.IsUnknown() && !state.CoverImageFileId.IsUnknown() && !data.CoverImageFileId.Equal(state.CoverImageFileId) {
         requestDataMap["coverImageFileId"] = data.CoverImageFileId.ValueString()
     }
@@ -4746,6 +4837,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "isArchived": true,
         "faviconFileId": true,
         "logoFileId": true,
+        "darkThemeLogoFileId": true,
         "coverImageFileId": true,
         "headerHTML": true,
         "footerHTML": true,
@@ -5113,6 +5205,43 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         data.LogoFileId = types.StringValue(val)
     } else {
         data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := dataMap["darkThemeLogoFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DarkThemeLogoFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["darkThemeLogoFileId"].(string); ok {
+        data.DarkThemeLogoFileId = types.StringValue(val)
+    } else {
+        data.DarkThemeLogoFileId = types.StringNull()
     }
     if obj, ok := dataMap["coverImageFileId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -6445,6 +6574,9 @@ func (r *StatusPageResource) keepPlannedValues(data *StatusPageResourceModel, pl
     }
     if config.LogoFileId.IsNull() && !plan.LogoFileId.IsUnknown() {
         data.LogoFileId = plan.LogoFileId
+    }
+    if config.DarkThemeLogoFileId.IsNull() && !plan.DarkThemeLogoFileId.IsUnknown() {
+        data.DarkThemeLogoFileId = plan.DarkThemeLogoFileId
     }
     if config.CoverImageFileId.IsNull() && !plan.CoverImageFileId.IsUnknown() {
         data.CoverImageFileId = plan.CoverImageFileId

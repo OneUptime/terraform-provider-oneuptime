@@ -2,12 +2,12 @@
 page_title: "oneuptime_network_device_discovery_scan Resource - oneuptime"
 subcategory: "Other"
 description: |-
-  Network discovery scans that sweep an address space — a CIDR subnet or an octet range — from a probe and report the hosts found, so they can be imported as Network Devices. Every sweep pings; scans with Check SNMP on also query each live host over SNMP.
+  Network discovery scans that sweep an address space — a CIDR subnet or an octet range — from a probe and report the hosts found, so they can be imported as Network Devices. Every sweep pings; an SNMP scan also queries each live host over SNMP, an ICMP scan asks nothing more.
 ---
 
 # oneuptime_network_device_discovery_scan (Resource)
 
-Network discovery scans that sweep an address space — a CIDR subnet or an octet range — from a probe and report the hosts found, so they can be imported as Network Devices. Every sweep pings; scans with Check SNMP on also query each live host over SNMP.
+Network discovery scans that sweep an address space — a CIDR subnet or an octet range — from a probe and report the hosts found, so they can be imported as Network Devices. Every sweep pings; an SNMP scan also queries each live host over SNMP, an ICMP scan asks nothing more.
 
 ## Example Usage
 
@@ -30,19 +30,19 @@ resource "oneuptime_network_device_discovery_scan" "example" {
 
 - `is_netbios_lookup_enabled` (Boolean) Whether hosts with no SNMP name are asked for their NetBIOS name over UDP 137, including hosts reverse DNS already named. A NetBIOS name is the name the host reports for itself, so it names the device ahead of its reverse DNS name. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes. Defaults to `false`.
 - `is_recurring` (Boolean) Re-run this scan automatically every Rescan Interval minutes to keep discovery continuous. Defaults to `false`.
-- `is_snmp_enabled` (Boolean) Whether hosts that answer the ping sweep are then queried over SNMP. Turn it off for an ICMP-only scan, which reports every host that answers ping and asks nothing else of them. Defaults to `true`.
+- `is_snmp_enabled` (Boolean) The scan method: true for an SNMP scan (the default), which also asks each host that answers ping for its name and vendor over SNMP; false for an ICMP scan, which only pings. Defaults to `true`.
 - `name` (String) Optional name for this scan, so it can be told apart from other scans at a glance. Falls back to the scan target when empty.
 - `rescan_interval_in_minutes` (Number) How often a recurring scan re-runs, in minutes. Ignored unless Is Recurring is on.
-- `snmp_community_string` (String) Community string tried against every host in the subnet (SNMP v1/v2c). Ignored when Check SNMP is off.
+- `snmp_community_string` (String) Community string tried against every host in the subnet (SNMP v1/v2c). Ignored on an ICMP scan.
 - `snmp_configs` (String) Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row. A JSON value: write it with `jsonencode()`.
-- `snmp_port` (Number) UDP port tried against every host in the subnet. Ignored when Check SNMP is off.
-- `snmp_v3_auth_key` (String) SNMP v3 authentication passphrase tried against every host. Ignored when Check SNMP is off.
-- `snmp_v3_auth_protocol` (String) SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512. Ignored when Check SNMP is off.
-- `snmp_v3_priv_key` (String) SNMP v3 privacy (encryption) passphrase tried against every host. Ignored when Check SNMP is off.
-- `snmp_v3_priv_protocol` (String) SNMP v3 privacy (encryption) protocol: DES, AES, or AES256. Ignored when Check SNMP is off.
-- `snmp_v3_security_level` (String) SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv. Ignored when Check SNMP is off.
-- `snmp_v3_username` (String) SNMP v3 security name (username) tried against every host. Ignored when Check SNMP is off.
-- `snmp_version` (String) SNMP version tried against every host in the subnet (V1, V2c, V3). Ignored when Check SNMP is off.
+- `snmp_port` (Number) UDP port tried against every host in the subnet. Ignored on an ICMP scan.
+- `snmp_v3_auth_key` (String) SNMP v3 authentication passphrase tried against every host. Ignored on an ICMP scan.
+- `snmp_v3_auth_protocol` (String) SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512. Ignored on an ICMP scan.
+- `snmp_v3_priv_key` (String) SNMP v3 privacy (encryption) passphrase tried against every host. Ignored on an ICMP scan.
+- `snmp_v3_priv_protocol` (String) SNMP v3 privacy (encryption) protocol: DES, AES, or AES256. Ignored on an ICMP scan.
+- `snmp_v3_security_level` (String) SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv. Ignored on an ICMP scan.
+- `snmp_v3_username` (String) SNMP v3 security name (username) tried against every host. Ignored on an ICMP scan.
+- `snmp_version` (String) SNMP version tried against every host in the subnet (V1, V2c, V3). Ignored on an ICMP scan.
 - `use_short_device_names` (Boolean) Name imported devices by their short hostname (the first label of a fully qualified name, e.g. 'core-sw-01' rather than 'core-sw-01.corp.example.com'). The full reverse-DNS name is still stored on the device as its DNS Name. Defaults to `false`.
 
 ### Read-Only
@@ -55,7 +55,7 @@ resource "oneuptime_network_device_discovery_scan" "example" {
 - `id` (String) Unique identifier for the resource.
 - `next_scan_at` (String) When a recurring scan is next due to run. Managed by the server.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `responded_host_count` (Number) Number of hosts that answered the check this scan performed: SNMP responders on a scan with Check SNMP on, hosts that answered the ping sweep on an ICMP-only one. Managed by the scanning probe.
+- `responded_host_count` (Number) Number of hosts that answered the check this scan performed: SNMP responders on an SNMP scan, hosts that answered the ping sweep on an ICMP scan. Managed by the scanning probe.
 - `scanned_host_count` (Number) Total number of host addresses swept in the subnet. Managed by the scanning probe.
 - `started_at` (String) When the scanning probe started this scan. Managed by the scanning probe.
 - `status` (String) Status of this discovery scan: "Pending", "In Progress", "Completed" or "Failed". Managed by the scanning probe.

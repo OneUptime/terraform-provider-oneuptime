@@ -126,7 +126,7 @@ func (r *OnCallPolicyResource) schemaDefinition() schema.Schema {
                 },
             },
             "repeat_policy_if_no_one_acknowledges_no_of_times": schema.NumberAttribute{
-                MarkdownDescription: "Repeat the policy X number of times if no one acknowledges the alert.",
+                MarkdownDescription: "How many more times the policy starts again from its first escalation rule when nobody acknowledges: a whole number of 1 or more while Repeat Policy If No One Acknowledges is on.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),

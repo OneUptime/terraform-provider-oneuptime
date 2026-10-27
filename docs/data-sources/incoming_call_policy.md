@@ -41,7 +41,7 @@ data "oneuptime_incoming_call_policy" "by_id" {
 - `phone_number_country_code` (String) Country code of the phone number (US, GB, etc.).
 - `project_call_sms_config_id` (String) ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply.
 - `repeat_policy_if_no_one_answers` (Boolean) Restart from first rule if all fail.
-- `repeat_policy_if_no_one_answers_times` (Number) Maximum repeat attempts if no one answers.
+- `repeat_policy_if_no_one_answers_times` (Number) How many more times the escalation rules ring again from the first when nobody answers: a whole number of 1 or more while Repeat Policy If No One Answers is on.
 - `slug` (String) Friendly globally unique name for your object.
 
 ### Read-Only
