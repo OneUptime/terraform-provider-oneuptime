@@ -89,7 +89,7 @@ func (d *TeamPermissionDataSource) Schema(ctx context.Context, req datasource.Sc
                 ElementType: types.StringType,
             },
             "is_block_permission": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Edit Team Permissions]",
                 Optional: true,
                 Computed: true,
             },

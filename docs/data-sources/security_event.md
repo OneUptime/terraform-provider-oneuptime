@@ -50,10 +50,13 @@ data "oneuptime_security_event" "by_id" {
 - `process_name` (String) Process.
 - `process_path` (String) Process Path.
 - `product_name` (String) Product.
+- `request_outcome` (String) Request Outcome.
 - `rule_id` (String) Rule ID.
 - `rule_name` (String) Rule Name.
+- `session_id` (String) Session ID.
 - `severity_id` (Number) Severity ID.
 - `severity_name` (String) Severity.
+- `span_id` (String) Span ID.
 - `status_name` (String) Status.
 - `target_host` (String) Target Host.
 - `target_ip` (String) Target IP.
@@ -61,6 +64,7 @@ data "oneuptime_security_event" "by_id" {
 - `target_resource` (String) Target Resource.
 - `target_user` (String) Target User.
 - `time` (String) Time.
+- `trace_id` (String) Trace ID.
 - `vendor_name` (String) Vendor.
 
 ### Read-Only

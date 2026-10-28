@@ -28,6 +28,7 @@ data "oneuptime_alert_on_call_rule" "by_id" {
 
 ### Optional
 
+- `ai_hold_time_in_minutes` (Number) When When to Page is After OneUptime AI: how many minutes OneUptime AI may hold the page while it investigates and fixes (1 to 30). Empty: 10. If OneUptime AI has not resolved the record by then, the policies page as usual.
 - `alert_description_pattern` (String) Regular expression pattern to match alert descriptions. Leave empty to match any description.
 - `alert_title_pattern` (String) Regular expression pattern to match alert titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
@@ -37,7 +38,7 @@ data "oneuptime_alert_on_call_rule" "by_id" {
 - `monitor_description_pattern` (String) Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.
 - `name` (String) Name of this alert on-call rule.
-- `when_to_page` (String) When the on-call policies of this rule page: Right Away, as soon as a record matches it, or Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin.
+- `when_to_page` (String) When the on-call policies of this rule page: Right Away, as soon as a record matches it; Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin; or After OneUptime AI, for alert and incident rules - when OneUptime AI may fix what the record is about, it responds first, and the policies page only if it has not resolved the record within the hold time.
 - `working_hours_timezone` (String) The IANA time zone the working hours of this rule are in: Europe/London.
 
 ### Read-Only

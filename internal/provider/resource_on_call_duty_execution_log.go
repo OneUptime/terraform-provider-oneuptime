@@ -59,6 +59,7 @@ type OnCallDutyExecutionLogResourceModel struct {
     ScheduleGapRetryCount types.Number `tfsdk:"schedule_gap_retry_count"`
     PagingStartsAt RFC3339Value `tfsdk:"paging_starts_at"`
     PagingStartedEarlyReason types.String `tfsdk:"paging_started_early_reason"`
+    AiHoldOutcome types.String `tfsdk:"ai_hold_outcome"`
     AcknowledgementTimeoutStartedAt RFC3339Value `tfsdk:"acknowledgement_timeout_started_at"`
     PageAgainNumber types.Number `tfsdk:"page_again_number"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
@@ -231,6 +232,10 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
             },
             "paging_started_early_reason": schema.StringAttribute{
                 MarkdownDescription: "Why this run started paging before the working hours it waited for began: its record came to match an on-call rule that pages right away. Empty for every other run.",
+                Computed: true,
+            },
+            "ai_hold_outcome": schema.StringAttribute{
+                MarkdownDescription: "For a run OneUptime AI held while it investigated and fixed: Holding while it waits, then how the hold ended - Resolved by AI, Recovered on its own, Handled by a person, Handed off, Hold time ran out or Page now pressed. Empty for every other run.",
                 Computed: true,
             },
             "acknowledgement_timeout_started_at": schema.StringAttribute{
@@ -418,6 +423,7 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
         "scheduleGapRetryCount": true,
         "pagingStartsAt": true,
         "pagingStartedEarlyReason": true,
+        "aiHoldOutcome": true,
         "acknowledgementTimeoutStartedAt": true,
         "pageAgainNumber": true,
         "triggeredByUserId": true,
@@ -994,6 +1000,43 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     } else {
         data.PagingStartedEarlyReason = types.StringNull()
     }
+    if obj, ok := dataMap["aiHoldOutcome"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiHoldOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiHoldOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiHoldOutcome = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiHoldOutcome = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiHoldOutcome = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiHoldOutcome = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiHoldOutcome = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiHoldOutcome = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldOutcome = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiHoldOutcome"].(string); ok {
+        data.AiHoldOutcome = types.StringValue(val)
+    } else {
+        data.AiHoldOutcome = types.StringNull()
+    }
     if obj, ok := dataMap["acknowledgementTimeoutStartedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.AcknowledgementTimeoutStartedAt = NewRFC3339Value(val)
@@ -1168,6 +1211,7 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         "scheduleGapRetryCount": true,
         "pagingStartsAt": true,
         "pagingStartedEarlyReason": true,
+        "aiHoldOutcome": true,
         "acknowledgementTimeoutStartedAt": true,
         "pageAgainNumber": true,
         "triggeredByUserId": true,
@@ -1744,6 +1788,43 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         data.PagingStartedEarlyReason = types.StringValue(val)
     } else {
         data.PagingStartedEarlyReason = types.StringNull()
+    }
+    if obj, ok := dataMap["aiHoldOutcome"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiHoldOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiHoldOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiHoldOutcome = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiHoldOutcome = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiHoldOutcome = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiHoldOutcome = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiHoldOutcome = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiHoldOutcome = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldOutcome = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiHoldOutcome"].(string); ok {
+        data.AiHoldOutcome = types.StringValue(val)
+    } else {
+        data.AiHoldOutcome = types.StringNull()
     }
     if obj, ok := dataMap["acknowledgementTimeoutStartedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

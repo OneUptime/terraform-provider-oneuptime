@@ -48,6 +48,7 @@ type OnCallDutyExecutionLogDataSourceModel struct {
     ScheduleGapRetryCount types.Number `tfsdk:"schedule_gap_retry_count"`
     PagingStartsAt types.String `tfsdk:"paging_starts_at"`
     PagingStartedEarlyReason types.String `tfsdk:"paging_started_early_reason"`
+    AiHoldOutcome types.String `tfsdk:"ai_hold_outcome"`
     AcknowledgementTimeoutStartedAt types.String `tfsdk:"acknowledgement_timeout_started_at"`
     PageAgainNumber types.Number `tfsdk:"page_again_number"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
@@ -61,7 +62,7 @@ func (d *OnCallDutyExecutionLogDataSource) Metadata(ctx context.Context, req dat
 
 func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Logs for on-call duty policy execution. Look up an existing on call duty execution log by `id`, or by any of its other arguments (`acknowledged_by_team_id`, `acknowledged_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one on call duty execution log may match them all.",
+        MarkdownDescription: "Logs for on-call duty policy execution. Look up an existing on call duty execution log by `id`, or by any of its other arguments (`acknowledged_by_team_id`, `acknowledged_by_user_id`, `ai_hold_outcome`, ...): each one set must match, and exactly one on call duty execution log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -166,6 +167,11 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
             },
             "paging_started_early_reason": schema.StringAttribute{
                 MarkdownDescription: "Why this run started paging before the working hours it waited for began: its record came to match an on-call rule that pages right away. Empty for every other run.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_hold_outcome": schema.StringAttribute{
+                MarkdownDescription: "For a run OneUptime AI held while it investigated and fixed: Holding while it waits, then how the hold ended - Resolved by AI, Recovered on its own, Handled by a person, Handed off, Hold time ran out or Page now pressed. Empty for every other run.",
                 Optional: true,
                 Computed: true,
             },
@@ -296,6 +302,10 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         filters["pagingStartedEarlyReason"] = data.PagingStartedEarlyReason.ValueString()
         filterNames = append(filterNames, "paging_started_early_reason = "+fmt.Sprintf("%q", data.PagingStartedEarlyReason.ValueString()))
     }
+    if !data.AiHoldOutcome.IsNull() && !data.AiHoldOutcome.IsUnknown() {
+        filters["aiHoldOutcome"] = data.AiHoldOutcome.ValueString()
+        filterNames = append(filterNames, "ai_hold_outcome = "+fmt.Sprintf("%q", data.AiHoldOutcome.ValueString()))
+    }
     if !data.PageAgainNumber.IsNull() && !data.PageAgainNumber.IsUnknown() {
         filters["pageAgainNumber"] = lookupNumber(data.PageAgainNumber)
         filterNames = append(filterNames, "page_again_number = "+data.PageAgainNumber.ValueBigFloat().String())
@@ -350,6 +360,7 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         "scheduleGapRetryCount": true,
         "pagingStartsAt": true,
         "pagingStartedEarlyReason": true,
+        "aiHoldOutcome": true,
         "acknowledgementTimeoutStartedAt": true,
         "pageAgainNumber": true,
         "triggeredByUserId": true,
@@ -741,6 +752,23 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         data.PagingStartedEarlyReason = types.StringValue(val)
     } else {
         data.PagingStartedEarlyReason = types.StringNull()
+    }
+    if obj, ok := item["aiHoldOutcome"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiHoldOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiHoldOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiHoldOutcome = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiHoldOutcome = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldOutcome = types.StringNull()
+        }
+    } else if val, ok := item["aiHoldOutcome"].(string); ok {
+        data.AiHoldOutcome = types.StringValue(val)
+    } else {
+        data.AiHoldOutcome = types.StringNull()
     }
     if obj, ok := item["acknowledgementTimeoutStartedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

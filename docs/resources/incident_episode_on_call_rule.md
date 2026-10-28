@@ -26,6 +26,7 @@ resource "oneuptime_incident_episode_on_call_rule" "example" {
 
 ### Optional
 
+- `ai_hold_time_in_minutes` (Number) When When to Page is After OneUptime AI: how many minutes OneUptime AI may hold the page while it investigates and fixes (1 to 30). Empty: 10. If OneUptime AI has not resolved the record by then, the policies page as usual.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of this incident episode on-call rule.
 - `episode_description_pattern` (String) Regex (case-insensitive) matched against the episode description.
@@ -34,7 +35,7 @@ resource "oneuptime_incident_episode_on_call_rule" "example" {
 - `incident_severities` (Set of String) Only trigger for episodes with these severities. Leave empty to match any severity. IDs of `oneuptime_incident_severity` resources.
 - `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
 - `on_call_duty_policies` (Set of String) On-call duty policies to execute when an incident episode matches this rule. IDs of `oneuptime_on_call_policy` resources.
-- `when_to_page` (String) When the on-call policies of this rule page: Right Away, as soon as a record matches it, or Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin. Defaults to `Right Away`.
+- `when_to_page` (String) When the on-call policies of this rule page: Right Away, as soon as a record matches it; Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin; or After OneUptime AI, for alert and incident rules - when OneUptime AI may fix what the record is about, it responds first, and the policies page only if it has not resolved the record within the hold time. Defaults to `Right Away`.
 - `working_hours` (String) When this rule may page, when When to Page is Working Hours: the same daily or weekly windows as an on-call schedule layer's restriction times, read in the time zone of this rule. A JSON value: write it with `jsonencode()`.
 - `working_hours_timezone` (String) The IANA time zone the working hours of this rule are in: Europe/London.
 

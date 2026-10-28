@@ -36,6 +36,7 @@ data "oneuptime_span" "by_id" {
 - `has_exception` (Boolean) Has Exception.
 - `host_entity_key` (String) Host Entity Key.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_entry_span` (Boolean) Is Entry Span.
 - `is_llm_span` (Boolean) Is LLM Span.
 - `is_root_span` (Boolean) Is Root Span.
 - `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key.

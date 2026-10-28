@@ -32,7 +32,7 @@ data "oneuptime_team_permission" "by_id" {
 - `custom_role_id` (String) ID of the custom role this permission comes from. Empty when the permission was given to the team directly. The ID of a `oneuptime_custom_role`.
 - `custom_role_permission_id` (String) ID of the custom role's own permission this one copies. Empty when the permission was given to the team directly. The ID of a `oneuptime_custom_role_permission`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `is_block_permission` (Boolean) Permissions - Create: [Project Owner, Project Admin, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]
+- `is_block_permission` (Boolean) Permissions - Create: [Project Owner, Project Admin, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Edit Team Permissions]
 - `scope` (String) Scope of this permission row. One of: All, Owned, Labels. Defaults to All so new permissions apply to every resource in the project unless explicitly narrowed.
 - `team_custom_role_id` (String) ID of the custom role given to the team that brought this permission. Empty when the permission was given to the team directly. The ID of a `oneuptime_team_custom_role`.
 - `team_id` (String) ID of Team this permission belongs in. The ID of a `oneuptime_team`.

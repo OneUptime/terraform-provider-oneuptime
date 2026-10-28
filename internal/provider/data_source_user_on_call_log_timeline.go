@@ -54,6 +54,7 @@ type UserOnCallLogTimelineDataSourceModel struct {
     UserSlackId types.String `tfsdk:"user_slack_id"`
     UserMicrosoftTeamsId types.String `tfsdk:"user_microsoft_teams_id"`
     UserWebhookId types.String `tfsdk:"user_webhook_id"`
+    CustomNotificationChannelId types.String `tfsdk:"custom_notification_channel_id"`
     UserEmailId types.String `tfsdk:"user_email_id"`
     UserPushId types.String `tfsdk:"user_push_id"`
 }
@@ -64,7 +65,7 @@ func (d *UserOnCallLogTimelineDataSource) Metadata(ctx context.Context, req data
 
 func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Timeline events for user on-call log. Look up an existing user on call log timeline by `id`, or by any of its other arguments (`created_by_user_id`, `is_acknowledged`, `on_call_duty_policy_escalation_rule_id`, ...): each one set must match, and exactly one user on call log timeline may match them all.",
+        MarkdownDescription: "Timeline events for user on-call log. Look up an existing user on call log timeline by `id`, or by any of its other arguments (`created_by_user_id`, `custom_notification_channel_id`, `is_acknowledged`, ...): each one set must match, and exactly one user on call log timeline may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -203,6 +204,11 @@ func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req dataso
             },
             "user_webhook_id": schema.StringAttribute{
                 MarkdownDescription: "ID of User Webhook in which this object belongs.",
+                Optional: true,
+                Computed: true,
+            },
+            "custom_notification_channel_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Custom Channel this notification was sent on.",
                 Optional: true,
                 Computed: true,
             },
@@ -351,6 +357,10 @@ func (d *UserOnCallLogTimelineDataSource) Read(ctx context.Context, req datasour
         filters["userWebhookId"] = data.UserWebhookId.ValueString()
         filterNames = append(filterNames, "user_webhook_id = "+fmt.Sprintf("%q", data.UserWebhookId.ValueString()))
     }
+    if !data.CustomNotificationChannelId.IsNull() && !data.CustomNotificationChannelId.IsUnknown() {
+        filters["customNotificationChannelId"] = data.CustomNotificationChannelId.ValueString()
+        filterNames = append(filterNames, "custom_notification_channel_id = "+fmt.Sprintf("%q", data.CustomNotificationChannelId.ValueString()))
+    }
     if !data.UserEmailId.IsNull() && !data.UserEmailId.IsUnknown() {
         filters["userEmailId"] = data.UserEmailId.ValueString()
         filterNames = append(filterNames, "user_email_id = "+fmt.Sprintf("%q", data.UserEmailId.ValueString()))
@@ -404,6 +414,7 @@ func (d *UserOnCallLogTimelineDataSource) Read(ctx context.Context, req datasour
         "userSlackId": true,
         "userMicrosoftTeamsId": true,
         "userWebhookId": true,
+        "customNotificationChannelId": true,
         "userEmailId": true,
         "userPushId": true,
         "_id": true,
@@ -930,6 +941,23 @@ func (d *UserOnCallLogTimelineDataSource) Read(ctx context.Context, req datasour
         data.UserWebhookId = types.StringValue(val)
     } else {
         data.UserWebhookId = types.StringNull()
+    }
+    if obj, ok := item["customNotificationChannelId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomNotificationChannelId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CustomNotificationChannelId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CustomNotificationChannelId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomNotificationChannelId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomNotificationChannelId = types.StringNull()
+        }
+    } else if val, ok := item["customNotificationChannelId"].(string); ok {
+        data.CustomNotificationChannelId = types.StringValue(val)
+    } else {
+        data.CustomNotificationChannelId = types.StringNull()
     }
     if obj, ok := item["userEmailId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

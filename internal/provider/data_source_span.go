@@ -59,6 +59,7 @@ type SpanDataSourceModel struct {
     Kind types.String `tfsdk:"kind"`
     HasException types.Bool `tfsdk:"has_exception"`
     IsRootSpan types.Bool `tfsdk:"is_root_span"`
+    IsEntrySpan types.Bool `tfsdk:"is_entry_span"`
     IsLlmSpan types.Bool `tfsdk:"is_llm_span"`
     LlmSystem types.String `tfsdk:"llm_system"`
     LlmOperation types.String `tfsdk:"llm_operation"`
@@ -238,6 +239,11 @@ func (d *SpanDataSource) Schema(ctx context.Context, req datasource.SchemaReques
             },
             "is_root_span": schema.BoolAttribute{
                 MarkdownDescription: "Is Root Span.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_entry_span": schema.BoolAttribute{
+                MarkdownDescription: "Is Entry Span.",
                 Optional: true,
                 Computed: true,
             },
@@ -470,6 +476,10 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         filters["isRootSpan"] = data.IsRootSpan.ValueBool()
         filterNames = append(filterNames, "is_root_span = "+fmt.Sprintf("%t", data.IsRootSpan.ValueBool()))
     }
+    if !data.IsEntrySpan.IsNull() && !data.IsEntrySpan.IsUnknown() {
+        filters["isEntrySpan"] = data.IsEntrySpan.ValueBool()
+        filterNames = append(filterNames, "is_entry_span = "+fmt.Sprintf("%t", data.IsEntrySpan.ValueBool()))
+    }
     if !data.IsLlmSpan.IsNull() && !data.IsLlmSpan.IsUnknown() {
         filters["isLlmSpan"] = data.IsLlmSpan.ValueBool()
         filterNames = append(filterNames, "is_llm_span = "+fmt.Sprintf("%t", data.IsLlmSpan.ValueBool()))
@@ -585,6 +595,7 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "kind": true,
         "hasException": true,
         "isRootSpan": true,
+        "isEntrySpan": true,
         "isLlmSpan": true,
         "llmSystem": true,
         "llmOperation": true,
@@ -1155,6 +1166,11 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.IsRootSpan = types.BoolValue(val)
     } else {
         data.IsRootSpan = types.BoolNull()
+    }
+    if val, ok := item["isEntrySpan"].(bool); ok {
+        data.IsEntrySpan = types.BoolValue(val)
+    } else {
+        data.IsEntrySpan = types.BoolNull()
     }
     if val, ok := item["isLlmSpan"].(bool); ok {
         data.IsLlmSpan = types.BoolValue(val)

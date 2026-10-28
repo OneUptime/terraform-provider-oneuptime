@@ -65,6 +65,10 @@ type SecurityEventDataSourceModel struct {
     TargetPort types.Number `tfsdk:"target_port"`
     TargetResource types.String `tfsdk:"target_resource"`
     Observables types.Set `tfsdk:"observables"`
+    TraceId types.String `tfsdk:"trace_id"`
+    SpanId types.String `tfsdk:"span_id"`
+    SessionId types.String `tfsdk:"session_id"`
+    RequestOutcome types.String `tfsdk:"request_outcome"`
     Attributes types.String `tfsdk:"attributes"`
     AttributeKeys types.Set `tfsdk:"attribute_keys"`
 }
@@ -262,6 +266,26 @@ func (d *SecurityEventDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "trace_id": schema.StringAttribute{
+                MarkdownDescription: "Trace ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "span_id": schema.StringAttribute{
+                MarkdownDescription: "Span ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "session_id": schema.StringAttribute{
+                MarkdownDescription: "Session ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "request_outcome": schema.StringAttribute{
+                MarkdownDescription: "Request Outcome.",
+                Optional: true,
+                Computed: true,
+            },
             "attributes": schema.StringAttribute{
                 MarkdownDescription: "Attributes.",
                 Optional: true,
@@ -439,6 +463,22 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["targetResource"] = data.TargetResource.ValueString()
         filterNames = append(filterNames, "target_resource = "+fmt.Sprintf("%q", data.TargetResource.ValueString()))
     }
+    if !data.TraceId.IsNull() && !data.TraceId.IsUnknown() {
+        filters["traceId"] = data.TraceId.ValueString()
+        filterNames = append(filterNames, "trace_id = "+fmt.Sprintf("%q", data.TraceId.ValueString()))
+    }
+    if !data.SpanId.IsNull() && !data.SpanId.IsUnknown() {
+        filters["spanId"] = data.SpanId.ValueString()
+        filterNames = append(filterNames, "span_id = "+fmt.Sprintf("%q", data.SpanId.ValueString()))
+    }
+    if !data.SessionId.IsNull() && !data.SessionId.IsUnknown() {
+        filters["sessionId"] = data.SessionId.ValueString()
+        filterNames = append(filterNames, "session_id = "+fmt.Sprintf("%q", data.SessionId.ValueString()))
+    }
+    if !data.RequestOutcome.IsNull() && !data.RequestOutcome.IsUnknown() {
+        filters["requestOutcome"] = data.RequestOutcome.ValueString()
+        filterNames = append(filterNames, "request_outcome = "+fmt.Sprintf("%q", data.RequestOutcome.ValueString()))
+    }
     if !data.Attributes.IsNull() && !data.Attributes.IsUnknown() {
         filters["attributes"] = data.Attributes.ValueString()
         filterNames = append(filterNames, "attributes = "+fmt.Sprintf("%q", data.Attributes.ValueString()))
@@ -496,6 +536,10 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
         "targetPort": true,
         "targetResource": true,
         "observables": true,
+        "traceId": true,
+        "spanId": true,
+        "sessionId": true,
+        "requestOutcome": true,
         "attributes": true,
         "attributeKeys": true,
         "_id": true,
@@ -1144,6 +1188,74 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Observables = types.SetValueMust(types.StringType, setItems)
     } else {
         data.Observables = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["traceId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TraceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TraceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TraceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TraceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TraceId = types.StringNull()
+        }
+    } else if val, ok := item["traceId"].(string); ok {
+        data.TraceId = types.StringValue(val)
+    } else {
+        data.TraceId = types.StringNull()
+    }
+    if obj, ok := item["spanId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SpanId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SpanId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SpanId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SpanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SpanId = types.StringNull()
+        }
+    } else if val, ok := item["spanId"].(string); ok {
+        data.SpanId = types.StringValue(val)
+    } else {
+        data.SpanId = types.StringNull()
+    }
+    if obj, ok := item["sessionId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SessionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SessionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SessionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionId = types.StringNull()
+        }
+    } else if val, ok := item["sessionId"].(string); ok {
+        data.SessionId = types.StringValue(val)
+    } else {
+        data.SessionId = types.StringNull()
+    }
+    if obj, ok := item["requestOutcome"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RequestOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RequestOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RequestOutcome = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RequestOutcome = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestOutcome = types.StringNull()
+        }
+    } else if val, ok := item["requestOutcome"].(string); ok {
+        data.RequestOutcome = types.StringValue(val)
+    } else {
+        data.RequestOutcome = types.StringNull()
     }
     if obj, ok := item["attributes"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

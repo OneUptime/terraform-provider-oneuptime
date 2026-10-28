@@ -46,6 +46,7 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 
 - `acknowledged_by_user_id` (String) User ID who acknowledged this object (if this object was acknowledged by a User). The ID of a `oneuptime_user` (see the data source).
 - `acknowledgement_timeout_started_at` (String) When the acknowledgement timeout started counting for this run's record: its last acknowledgement. Empty when it is not counting.
+- `ai_hold_outcome` (String) For a run OneUptime AI held while it investigated and fixed: Holding while it waits, then how the hold ended - Resolved by AI, Recovered on its own, Handled by a person, Handed off, Hold time ran out or Page now pressed. Empty for every other run.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.

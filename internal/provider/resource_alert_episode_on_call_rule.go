@@ -21,6 +21,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
@@ -45,6 +46,7 @@ type AlertEpisodeOnCallRuleResourceModel struct {
     WhenToPage types.String `tfsdk:"when_to_page"`
     WorkingHours JSONSubsetValue `tfsdk:"working_hours"`
     WorkingHoursTimezone types.String `tfsdk:"working_hours_timezone"`
+    AiHoldTimeInMinutes types.Number `tfsdk:"ai_hold_time_in_minutes"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
@@ -92,7 +94,7 @@ func (r *AlertEpisodeOnCallRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "when_to_page": schema.StringAttribute{
-                MarkdownDescription: "When the on-call policies of this rule page: Right Away, as soon as a record matches it, or Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin.",
+                MarkdownDescription: "When the on-call policies of this rule page: Right Away, as soon as a record matches it; Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin; or After OneUptime AI, for alert and incident rules - when OneUptime AI may fix what the record is about, it responds first, and the policies page only if it has not resolved the record within the hold time.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Right Away"),
@@ -118,6 +120,14 @@ func (r *AlertEpisodeOnCallRuleResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_hold_time_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "When When to Page is After OneUptime AI: how many minutes OneUptime AI may hold the page while it investigates and fixes (1 to 30). Empty: 10. If OneUptime AI has not resolved the record by then, the policies page as usual.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "project_id": schema.StringAttribute{
@@ -276,6 +286,9 @@ func (r *AlertEpisodeOnCallRuleResource) Create(ctx context.Context, req resourc
     if !data.WorkingHoursTimezone.IsNull() && !data.WorkingHoursTimezone.IsUnknown() {
         requestDataMap["workingHoursTimezone"] = data.WorkingHoursTimezone.ValueString()
     }
+    if !data.AiHoldTimeInMinutes.IsNull() && !data.AiHoldTimeInMinutes.IsUnknown() {
+        requestDataMap["aiHoldTimeInMinutes"] = r.bigFloatToFloat64(data.AiHoldTimeInMinutes.ValueBigFloat())
+    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         requestDataMap["name"] = data.Name.ValueString()
     }
@@ -349,6 +362,7 @@ func (r *AlertEpisodeOnCallRuleResource) Create(ctx context.Context, req resourc
         "whenToPage": true,
         "workingHours": true,
         "workingHoursTimezone": true,
+        "aiHoldTimeInMinutes": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -541,6 +555,7 @@ func (r *AlertEpisodeOnCallRuleResource) Create(ctx context.Context, req resourc
     } else {
         data.WorkingHoursTimezone = types.StringNull()
     }
+    data.AiHoldTimeInMinutes = numberFromAPI(data.AiHoldTimeInMinutes, dataMap["aiHoldTimeInMinutes"])
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -892,6 +907,7 @@ func (r *AlertEpisodeOnCallRuleResource) Read(ctx context.Context, req resource.
         "whenToPage": true,
         "workingHours": true,
         "workingHoursTimezone": true,
+        "aiHoldTimeInMinutes": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -1085,6 +1101,7 @@ func (r *AlertEpisodeOnCallRuleResource) Read(ctx context.Context, req resource.
     } else {
         data.WorkingHoursTimezone = types.StringNull()
     }
+    data.AiHoldTimeInMinutes = numberFromAPI(data.AiHoldTimeInMinutes, dataMap["aiHoldTimeInMinutes"])
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1467,6 +1484,9 @@ func (r *AlertEpisodeOnCallRuleResource) Update(ctx context.Context, req resourc
     if !data.WorkingHoursTimezone.IsUnknown() && !state.WorkingHoursTimezone.IsUnknown() && !data.WorkingHoursTimezone.Equal(state.WorkingHoursTimezone) {
         requestDataMap["workingHoursTimezone"] = data.WorkingHoursTimezone.ValueString()
     }
+    if !data.AiHoldTimeInMinutes.IsUnknown() && !state.AiHoldTimeInMinutes.IsUnknown() && !data.AiHoldTimeInMinutes.Equal(state.AiHoldTimeInMinutes) {
+        requestDataMap["aiHoldTimeInMinutes"] = r.bigFloatToFloat64(data.AiHoldTimeInMinutes.ValueBigFloat())
+    }
     if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
         requestDataMap["name"] = data.Name.ValueString()
     }
@@ -1518,6 +1538,7 @@ func (r *AlertEpisodeOnCallRuleResource) Update(ctx context.Context, req resourc
         "whenToPage": true,
         "workingHours": true,
         "workingHoursTimezone": true,
+        "aiHoldTimeInMinutes": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -1705,6 +1726,7 @@ func (r *AlertEpisodeOnCallRuleResource) Update(ctx context.Context, req resourc
     } else {
         data.WorkingHoursTimezone = types.StringNull()
     }
+    data.AiHoldTimeInMinutes = numberFromAPI(data.AiHoldTimeInMinutes, dataMap["aiHoldTimeInMinutes"])
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -2090,6 +2112,9 @@ func (r *AlertEpisodeOnCallRuleResource) keepPlannedValues(data *AlertEpisodeOnC
     }
     if config.WorkingHoursTimezone.IsNull() && !plan.WorkingHoursTimezone.IsUnknown() {
         data.WorkingHoursTimezone = plan.WorkingHoursTimezone
+    }
+    if config.AiHoldTimeInMinutes.IsNull() && !plan.AiHoldTimeInMinutes.IsUnknown() {
+        data.AiHoldTimeInMinutes = plan.AiHoldTimeInMinutes
     }
     if config.Description.IsNull() && !plan.Description.IsUnknown() {
         data.Description = plan.Description

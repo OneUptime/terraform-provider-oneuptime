@@ -35,6 +35,7 @@ type AlertOnCallRuleDataSourceModel struct {
     WhenToPage types.String `tfsdk:"when_to_page"`
     WorkingHours types.String `tfsdk:"working_hours"`
     WorkingHoursTimezone types.String `tfsdk:"working_hours_timezone"`
+    AiHoldTimeInMinutes types.Number `tfsdk:"ai_hold_time_in_minutes"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
@@ -57,7 +58,7 @@ func (d *AlertOnCallRuleDataSource) Metadata(ctx context.Context, req datasource
 
 func (d *AlertOnCallRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure rules for automatically executing on-call duty policies when matching alerts are created Look up an existing alert on call rule by `id`, or by any of its other arguments (`name`, `alert_description_pattern`, `alert_title_pattern`, ...): each one set must match, and exactly one alert on call rule may match them all.",
+        MarkdownDescription: "Configure rules for automatically executing on-call duty policies when matching alerts are created Look up an existing alert on call rule by `id`, or by any of its other arguments (`name`, `ai_hold_time_in_minutes`, `alert_description_pattern`, ...): each one set must match, and exactly one alert on call rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -78,7 +79,7 @@ func (d *AlertOnCallRuleDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "when_to_page": schema.StringAttribute{
-                MarkdownDescription: "When the on-call policies of this rule page: Right Away, as soon as a record matches it, or Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin.",
+                MarkdownDescription: "When the on-call policies of this rule page: Right Away, as soon as a record matches it; Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin; or After OneUptime AI, for alert and incident rules - when OneUptime AI may fix what the record is about, it responds first, and the policies page only if it has not resolved the record within the hold time.",
                 Optional: true,
                 Computed: true,
             },
@@ -88,6 +89,11 @@ func (d *AlertOnCallRuleDataSource) Schema(ctx context.Context, req datasource.S
             },
             "working_hours_timezone": schema.StringAttribute{
                 MarkdownDescription: "The IANA time zone the working hours of this rule are in: Europe/London.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_hold_time_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "When When to Page is After OneUptime AI: how many minutes OneUptime AI may hold the page while it investigates and fixes (1 to 30). Empty: 10. If OneUptime AI has not resolved the record by then, the policies page as usual.",
                 Optional: true,
                 Computed: true,
             },
@@ -207,6 +213,10 @@ func (d *AlertOnCallRuleDataSource) Read(ctx context.Context, req datasource.Rea
         filters["workingHoursTimezone"] = data.WorkingHoursTimezone.ValueString()
         filterNames = append(filterNames, "working_hours_timezone = "+fmt.Sprintf("%q", data.WorkingHoursTimezone.ValueString()))
     }
+    if !data.AiHoldTimeInMinutes.IsNull() && !data.AiHoldTimeInMinutes.IsUnknown() {
+        filters["aiHoldTimeInMinutes"] = lookupNumber(data.AiHoldTimeInMinutes)
+        filterNames = append(filterNames, "ai_hold_time_in_minutes = "+data.AiHoldTimeInMinutes.ValueBigFloat().String())
+    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
@@ -262,6 +272,7 @@ func (d *AlertOnCallRuleDataSource) Read(ctx context.Context, req datasource.Rea
         "whenToPage": true,
         "workingHours": true,
         "workingHoursTimezone": true,
+        "aiHoldTimeInMinutes": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -456,6 +467,7 @@ func (d *AlertOnCallRuleDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.WorkingHoursTimezone = types.StringNull()
     }
+    data.AiHoldTimeInMinutes = numberFromAPI(data.AiHoldTimeInMinutes, item["aiHoldTimeInMinutes"])
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)

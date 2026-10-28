@@ -29,6 +29,7 @@ data "oneuptime_user_on_call_log_timeline" "by_id" {
 ### Optional
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `custom_notification_channel_id` (String) ID of the Custom Channel this notification was sent on.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_acknowledged` (Boolean)
 - `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule where this timeline event belongs. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_escalation_rule`.
