@@ -28,6 +28,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewLogPipelineProcessorDataSource,
         NewLogDropFilterDataSource,
         NewDetectionRuleDataSource,
+        NewRuleExceptionDataSource,
         NewSecurityEventConnectionDataSource,
         NewSecurityEventConnectionRunDataSource,
         NewThreatIntelFeedDataSource,

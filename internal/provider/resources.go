@@ -27,6 +27,7 @@ func GetResources() []func() resource.Resource {
         NewLogPipelineProcessorResource,
         NewLogDropFilterResource,
         NewDetectionRuleResource,
+        NewRuleExceptionResource,
         NewSecurityEventConnectionResource,
         NewThreatIntelFeedResource,
         NewSecurityCaseResource,
