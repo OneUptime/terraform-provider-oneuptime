@@ -48,6 +48,8 @@ type SecurityCasePriorityResourceModel struct {
     IsLowPriority types.Bool `tfsdk:"is_low_priority"`
     IsInformationalPriority types.Bool `tfsdk:"is_informational_priority"`
     Order types.Number `tfsdk:"order"`
+    AcknowledgeWithinInMinutes types.Number `tfsdk:"acknowledge_within_in_minutes"`
+    ContainWithinInMinutes types.Number `tfsdk:"contain_within_in_minutes"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -146,6 +148,22 @@ func (r *SecurityCasePriorityResource) schemaDefinition() schema.Schema {
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Where this priority ranks among the project's security case priorities: 1 is the most urgent. Detections open their cases at the critical, high, medium, low and informational priorities, so those have to stay in that order. A new priority without a number goes to the end of the list. Setting a number moves the priority to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "acknowledge_within_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How long a case at this priority may wait for somebody to take it on, in minutes, from when it opens. Empty for no target.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "contain_within_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How long a case at this priority may take to be contained or closed, in minutes, from when it opens. Empty for no target.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -274,6 +292,12 @@ func (r *SecurityCasePriorityResource) Create(ctx context.Context, req resource.
     if !data.Order.IsNull() && !data.Order.IsUnknown() {
         requestDataMap["order"] = r.bigFloatToFloat64(data.Order.ValueBigFloat())
     }
+    if !data.AcknowledgeWithinInMinutes.IsNull() && !data.AcknowledgeWithinInMinutes.IsUnknown() {
+        requestDataMap["acknowledgeWithinInMinutes"] = r.bigFloatToFloat64(data.AcknowledgeWithinInMinutes.ValueBigFloat())
+    }
+    if !data.ContainWithinInMinutes.IsNull() && !data.ContainWithinInMinutes.IsUnknown() {
+        requestDataMap["containWithinInMinutes"] = r.bigFloatToFloat64(data.ContainWithinInMinutes.ValueBigFloat())
+    }
     if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
         requestDataMap["isArchived"] = data.IsArchived.ValueBool()
     }
@@ -332,6 +356,8 @@ func (r *SecurityCasePriorityResource) Create(ctx context.Context, req resource.
         "isLowPriority": true,
         "isInformationalPriority": true,
         "order": true,
+        "acknowledgeWithinInMinutes": true,
+        "containWithinInMinutes": true,
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
@@ -519,6 +545,8 @@ func (r *SecurityCasePriorityResource) Create(ctx context.Context, req resource.
         data.IsInformationalPriority = types.BoolNull()
     }
     data.Order = numberFromAPI(data.Order, dataMap["order"])
+    data.AcknowledgeWithinInMinutes = numberFromAPI(data.AcknowledgeWithinInMinutes, dataMap["acknowledgeWithinInMinutes"])
+    data.ContainWithinInMinutes = numberFromAPI(data.ContainWithinInMinutes, dataMap["containWithinInMinutes"])
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -706,6 +734,8 @@ func (r *SecurityCasePriorityResource) Read(ctx context.Context, req resource.Re
         "isLowPriority": true,
         "isInformationalPriority": true,
         "order": true,
+        "acknowledgeWithinInMinutes": true,
+        "containWithinInMinutes": true,
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
@@ -894,6 +924,8 @@ func (r *SecurityCasePriorityResource) Read(ctx context.Context, req resource.Re
         data.IsInformationalPriority = types.BoolNull()
     }
     data.Order = numberFromAPI(data.Order, dataMap["order"])
+    data.AcknowledgeWithinInMinutes = numberFromAPI(data.AcknowledgeWithinInMinutes, dataMap["acknowledgeWithinInMinutes"])
+    data.ContainWithinInMinutes = numberFromAPI(data.ContainWithinInMinutes, dataMap["containWithinInMinutes"])
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -1116,6 +1148,12 @@ func (r *SecurityCasePriorityResource) Update(ctx context.Context, req resource.
     if !data.Order.IsUnknown() && !state.Order.IsUnknown() && !data.Order.Equal(state.Order) {
         requestDataMap["order"] = r.bigFloatToFloat64(data.Order.ValueBigFloat())
     }
+    if !data.AcknowledgeWithinInMinutes.IsUnknown() && !state.AcknowledgeWithinInMinutes.IsUnknown() && !data.AcknowledgeWithinInMinutes.Equal(state.AcknowledgeWithinInMinutes) {
+        requestDataMap["acknowledgeWithinInMinutes"] = r.bigFloatToFloat64(data.AcknowledgeWithinInMinutes.ValueBigFloat())
+    }
+    if !data.ContainWithinInMinutes.IsUnknown() && !state.ContainWithinInMinutes.IsUnknown() && !data.ContainWithinInMinutes.Equal(state.ContainWithinInMinutes) {
+        requestDataMap["containWithinInMinutes"] = r.bigFloatToFloat64(data.ContainWithinInMinutes.ValueBigFloat())
+    }
     if !data.IsArchived.IsUnknown() && !state.IsArchived.IsUnknown() && !data.IsArchived.Equal(state.IsArchived) {
         requestDataMap["isArchived"] = data.IsArchived.ValueBool()
     }
@@ -1152,6 +1190,8 @@ func (r *SecurityCasePriorityResource) Update(ctx context.Context, req resource.
         "isLowPriority": true,
         "isInformationalPriority": true,
         "order": true,
+        "acknowledgeWithinInMinutes": true,
+        "containWithinInMinutes": true,
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1334,6 +1374,8 @@ func (r *SecurityCasePriorityResource) Update(ctx context.Context, req resource.
         data.IsInformationalPriority = types.BoolNull()
     }
     data.Order = numberFromAPI(data.Order, dataMap["order"])
+    data.AcknowledgeWithinInMinutes = numberFromAPI(data.AcknowledgeWithinInMinutes, dataMap["acknowledgeWithinInMinutes"])
+    data.ContainWithinInMinutes = numberFromAPI(data.ContainWithinInMinutes, dataMap["containWithinInMinutes"])
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -1558,6 +1600,12 @@ func (r *SecurityCasePriorityResource) keepPlannedValues(data *SecurityCasePrior
     }
     if config.Order.IsNull() && !plan.Order.IsUnknown() {
         data.Order = plan.Order
+    }
+    if config.AcknowledgeWithinInMinutes.IsNull() && !plan.AcknowledgeWithinInMinutes.IsUnknown() {
+        data.AcknowledgeWithinInMinutes = plan.AcknowledgeWithinInMinutes
+    }
+    if config.ContainWithinInMinutes.IsNull() && !plan.ContainWithinInMinutes.IsUnknown() {
+        data.ContainWithinInMinutes = plan.ContainWithinInMinutes
     }
     if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
         data.IsArchived = plan.IsArchived

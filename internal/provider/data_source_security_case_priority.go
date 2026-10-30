@@ -40,6 +40,8 @@ type SecurityCasePriorityDataSourceModel struct {
     IsLowPriority types.Bool `tfsdk:"is_low_priority"`
     IsInformationalPriority types.Bool `tfsdk:"is_informational_priority"`
     Order types.Number `tfsdk:"order"`
+    AcknowledgeWithinInMinutes types.Number `tfsdk:"acknowledge_within_in_minutes"`
+    ContainWithinInMinutes types.Number `tfsdk:"contain_within_in_minutes"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     ArchivedAt types.String `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
@@ -52,7 +54,7 @@ func (d *SecurityCasePriorityDataSource) Metadata(ctx context.Context, req datas
 
 func (d *SecurityCasePriorityDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "How urgent a security case is, most urgent first (Critical, High, Medium, Low, Informational and your own). Add, rename, reorder or archive them. Look up an existing security case priority by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one security case priority may match them all.",
+        MarkdownDescription: "How urgent a security case is, most urgent first (Critical, High, Medium, Low, Informational and your own). Add, rename, reorder or archive them. Look up an existing security case priority by `id`, or by any of its other arguments (`name`, `acknowledge_within_in_minutes`, `archived_by_user_id`, ...): each one set must match, and exactly one security case priority may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -118,6 +120,16 @@ func (d *SecurityCasePriorityDataSource) Schema(ctx context.Context, req datasou
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Where this priority ranks among the project's security case priorities: 1 is the most urgent. Detections open their cases at the critical, high, medium, low and informational priorities, so those have to stay in that order. A new priority without a number goes to the end of the list. Setting a number moves the priority to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.",
+                Optional: true,
+                Computed: true,
+            },
+            "acknowledge_within_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How long a case at this priority may wait for somebody to take it on, in minutes, from when it opens. Empty for no target.",
+                Optional: true,
+                Computed: true,
+            },
+            "contain_within_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How long a case at this priority may take to be contained or closed, in minutes, from when it opens. Empty for no target.",
                 Optional: true,
                 Computed: true,
             },
@@ -215,6 +227,14 @@ func (d *SecurityCasePriorityDataSource) Read(ctx context.Context, req datasourc
         filters["order"] = lookupNumber(data.Order)
         filterNames = append(filterNames, "order = "+data.Order.ValueBigFloat().String())
     }
+    if !data.AcknowledgeWithinInMinutes.IsNull() && !data.AcknowledgeWithinInMinutes.IsUnknown() {
+        filters["acknowledgeWithinInMinutes"] = lookupNumber(data.AcknowledgeWithinInMinutes)
+        filterNames = append(filterNames, "acknowledge_within_in_minutes = "+data.AcknowledgeWithinInMinutes.ValueBigFloat().String())
+    }
+    if !data.ContainWithinInMinutes.IsNull() && !data.ContainWithinInMinutes.IsUnknown() {
+        filters["containWithinInMinutes"] = lookupNumber(data.ContainWithinInMinutes)
+        filterNames = append(filterNames, "contain_within_in_minutes = "+data.ContainWithinInMinutes.ValueBigFloat().String())
+    }
     if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
         filters["isArchived"] = data.IsArchived.ValueBool()
         filterNames = append(filterNames, "is_archived = "+fmt.Sprintf("%t", data.IsArchived.ValueBool()))
@@ -257,6 +277,8 @@ func (d *SecurityCasePriorityDataSource) Read(ctx context.Context, req datasourc
         "isLowPriority": true,
         "isInformationalPriority": true,
         "order": true,
+        "acknowledgeWithinInMinutes": true,
+        "containWithinInMinutes": true,
         "isArchived": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -484,6 +506,8 @@ func (d *SecurityCasePriorityDataSource) Read(ctx context.Context, req datasourc
         data.IsInformationalPriority = types.BoolNull()
     }
     data.Order = numberFromAPI(data.Order, item["order"])
+    data.AcknowledgeWithinInMinutes = numberFromAPI(data.AcknowledgeWithinInMinutes, item["acknowledgeWithinInMinutes"])
+    data.ContainWithinInMinutes = numberFromAPI(data.ContainWithinInMinutes, item["containWithinInMinutes"])
     if val, ok := item["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     } else {

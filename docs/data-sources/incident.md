@@ -85,6 +85,7 @@ data "oneuptime_incident" "by_id" {
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 - `monitor_summary` (String) The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.
 - `monitors` (Set of String) List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.
+- `network_devices` (Set of String) List of network devices affected by this incident. IDs of `oneuptime_network_device` resources.
 - `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this incident? This is set automatically based on the reminder rules configured for this project.
 - `on_call_duty_policies` (Set of String) List of on-call duty policies affected by this incident. IDs of `oneuptime_on_call_policy` resources.
 - `podman_hosts` (Set of String) List of Podman hosts affected by this incident. IDs of `oneuptime_podman_host` resources.

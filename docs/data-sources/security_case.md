@@ -54,9 +54,15 @@ data "oneuptime_security_case" "by_id" {
 
 ### Read-Only
 
+- `acknowledge_due_at` (String) When the case must be acknowledged by, from its priority's Acknowledge Within target. Empty when its priority has no target, or when it was acknowledged as it opened.
+- `acknowledge_missed_at` (String) When the case passed its acknowledge due time without being acknowledged. Empty while it has not.
+- `acknowledge_warned_at` (String) When OneUptime told the people on the case that it was about to miss its acknowledge target.
 - `acknowledged_at` (String) When somebody first took the case on: assigned it to a person, or moved it out of New. The time to acknowledge is measured to here.
 - `ai_triaged_at` (String) When OneUptime AI last finished triaging the case.
 - `closed_at` (String) When the case was closed. Cleared if it is reopened. The time to close is measured to here.
+- `contain_due_at` (String) When the case must be contained or closed by, from its priority's Contain Within target. Empty when its priority has no target.
+- `contain_missed_at` (String) When the case passed its contain due time without being contained or closed. Empty while it has not.
+- `contain_warned_at` (String) When OneUptime told the people on the case that it was about to miss its contain target.
 - `contained_at` (String) When the case first reached Contained. The time to contain is measured to here.
 - `created_at` (String) Date and Time when the object was created.
 - `entities` (String) The users, hosts, IP addresses, domains and files the case is about, each as { type, value }. Detections add theirs as they join the case. A JSON value: write it with `jsonencode()`.
@@ -65,5 +71,7 @@ data "oneuptime_security_case" "by_id" {
 - `last_detected_at` (String) When a detection of the case last fired.
 - `mitre_tactics` (String) ATT&CK tactic ids (TA0006) the case's detections are tagged with. A JSON value: write it with `jsonencode()`.
 - `mitre_techniques` (String) ATT&CK technique ids (T1110) the case's detections are tagged with. A JSON value: write it with `jsonencode()`.
+- `next_due_at` (String) The earliest due time of a response target the case has not met yet, a missed one included. Empty when every target is met or the case has none.
+- `next_target_check_at` (String) When OneUptime next checks the case's response targets: when one is about to be missed, or is missed. Empty when there is nothing left to check.
 - `project_id` (String) ID of the project this case belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

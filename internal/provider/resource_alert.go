@@ -47,6 +47,7 @@ type AlertResourceModel struct {
     MonitorId types.String `tfsdk:"monitor_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     Hosts types.Set `tfsdk:"hosts"`
+    NetworkDevices types.Set `tfsdk:"network_devices"`
     KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
     KubernetesResources types.Set `tfsdk:"kubernetes_resources"`
     KubernetesContainers types.Set `tfsdk:"kubernetes_containers"`
@@ -160,6 +161,15 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
             },
             "hosts": schema.SetAttribute{
                 MarkdownDescription: "List of hosts affected by this alert. IDs of `oneuptime_host` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "network_devices": schema.SetAttribute{
+                MarkdownDescription: "List of network devices affected by this alert. IDs of `oneuptime_network_device` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -559,6 +569,9 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     if !data.Hosts.IsNull() && !data.Hosts.IsUnknown() {
         requestDataMap["hosts"] = r.convertTerraformSetToInterface(data.Hosts)
     }
+    if !data.NetworkDevices.IsNull() && !data.NetworkDevices.IsUnknown() {
+        requestDataMap["networkDevices"] = r.convertTerraformSetToInterface(data.NetworkDevices)
+    }
     if !data.KubernetesClusters.IsNull() && !data.KubernetesClusters.IsUnknown() {
         requestDataMap["kubernetesClusters"] = r.convertTerraformSetToInterface(data.KubernetesClusters)
     }
@@ -692,6 +705,7 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
         "monitorId": true,
         "onCallDutyPolicies": true,
         "hosts": true,
+        "networkDevices": true,
         "kubernetesClusters": true,
         "kubernetesResources": true,
         "kubernetesContainers": true,
@@ -964,6 +978,38 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Hosts = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["networkDevices"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.NetworkDevices = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.NetworkDevices = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["kubernetesClusters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2228,6 +2274,7 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "monitorId": true,
         "onCallDutyPolicies": true,
         "hosts": true,
+        "networkDevices": true,
         "kubernetesClusters": true,
         "kubernetesResources": true,
         "kubernetesContainers": true,
@@ -2501,6 +2548,38 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Hosts = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["networkDevices"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.NetworkDevices = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.NetworkDevices = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["kubernetesClusters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -3789,6 +3868,9 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
     if !data.Hosts.IsUnknown() && !state.Hosts.IsUnknown() && !data.Hosts.Equal(state.Hosts) {
         requestDataMap["hosts"] = r.convertTerraformSetToInterface(data.Hosts)
     }
+    if !data.NetworkDevices.IsUnknown() && !state.NetworkDevices.IsUnknown() && !data.NetworkDevices.Equal(state.NetworkDevices) {
+        requestDataMap["networkDevices"] = r.convertTerraformSetToInterface(data.NetworkDevices)
+    }
     if !data.KubernetesClusters.IsUnknown() && !state.KubernetesClusters.IsUnknown() && !data.KubernetesClusters.Equal(state.KubernetesClusters) {
         requestDataMap["kubernetesClusters"] = r.convertTerraformSetToInterface(data.KubernetesClusters)
     }
@@ -3910,6 +3992,7 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         "monitorId": true,
         "onCallDutyPolicies": true,
         "hosts": true,
+        "networkDevices": true,
         "kubernetesClusters": true,
         "kubernetesResources": true,
         "kubernetesContainers": true,
@@ -4177,6 +4260,38 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Hosts = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["networkDevices"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.NetworkDevices = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.NetworkDevices = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["kubernetesClusters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -5475,6 +5590,9 @@ func (r *AlertResource) keepPlannedValues(data *AlertResourceModel, plan *AlertR
     }
     if config.Hosts.IsNull() && !plan.Hosts.IsUnknown() {
         data.Hosts = plan.Hosts
+    }
+    if config.NetworkDevices.IsNull() && !plan.NetworkDevices.IsUnknown() {
+        data.NetworkDevices = plan.NetworkDevices
     }
     if config.KubernetesClusters.IsNull() && !plan.KubernetesClusters.IsUnknown() {
         data.KubernetesClusters = plan.KubernetesClusters

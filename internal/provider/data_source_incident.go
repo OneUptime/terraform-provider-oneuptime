@@ -41,6 +41,7 @@ type IncidentDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Monitors types.Set `tfsdk:"monitors"`
     Hosts types.Set `tfsdk:"hosts"`
+    NetworkDevices types.Set `tfsdk:"network_devices"`
     KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
     KubernetesResources types.Set `tfsdk:"kubernetes_resources"`
     KubernetesContainers types.Set `tfsdk:"kubernetes_containers"`
@@ -167,6 +168,11 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "hosts": schema.SetAttribute{
                 MarkdownDescription: "List of hosts affected by this incident. IDs of `oneuptime_host` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "network_devices": schema.SetAttribute{
+                MarkdownDescription: "List of network devices affected by this incident. IDs of `oneuptime_network_device` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -656,6 +662,7 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         "createdByUserId": true,
         "monitors": true,
         "hosts": true,
+        "networkDevices": true,
         "kubernetesClusters": true,
         "kubernetesResources": true,
         "kubernetesContainers": true,
@@ -1010,6 +1017,30 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.Hosts = types.SetValueMust(types.StringType, setItems)
     } else {
         data.Hosts = types.SetNull(types.StringType)
+    }
+    if val, ok := item["networkDevices"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.NetworkDevices = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.NetworkDevices = types.SetNull(types.StringType)
     }
     if val, ok := item["kubernetesClusters"].([]interface{}); ok {
         var setItems []attr.Value

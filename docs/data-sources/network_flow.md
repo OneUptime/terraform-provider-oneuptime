@@ -29,6 +29,7 @@ data "oneuptime_network_flow" "by_id" {
 ### Optional
 
 - `dst_ip` (String) Destination IP.
+- `dst_name` (String) Destination Name.
 - `dst_port` (Number) Destination Port.
 - `exporter_ip` (String) Exporter IP.
 - `flow_count` (Number) Flow Count.
@@ -46,6 +47,7 @@ data "oneuptime_network_flow" "by_id" {
 - `protocol` (Number) Protocol.
 - `sampling_rate` (Number) Sampling Rate.
 - `src_ip` (String) Source IP.
+- `src_name` (String) Source Name.
 - `src_port` (Number) Source Port.
 
 ### Read-Only

@@ -46,6 +46,8 @@ type NetworkFlowDataSourceModel struct {
     SamplingRate types.Number `tfsdk:"sampling_rate"`
     FlowCount types.Number `tfsdk:"flow_count"`
     ProbeId types.String `tfsdk:"probe_id"`
+    SrcName types.String `tfsdk:"src_name"`
+    DstName types.String `tfsdk:"dst_name"`
 }
 
 func (d *NetworkFlowDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -54,7 +56,7 @@ func (d *NetworkFlowDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *NetworkFlowDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "API endpoints for Network Flow Look up an existing network flow by `id`, or by any of its other arguments (`dst_ip`, `dst_port`, `exporter_ip`, ...): each one set must match, and exactly one network flow may match them all.",
+        MarkdownDescription: "API endpoints for Network Flow Look up an existing network flow by `id`, or by any of its other arguments (`dst_ip`, `dst_name`, `dst_port`, ...): each one set must match, and exactly one network flow may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -153,6 +155,16 @@ func (d *NetworkFlowDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "probe_id": schema.StringAttribute{
                 MarkdownDescription: "Probe ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "src_name": schema.StringAttribute{
+                MarkdownDescription: "Source Name.",
+                Optional: true,
+                Computed: true,
+            },
+            "dst_name": schema.StringAttribute{
+                MarkdownDescription: "Destination Name.",
                 Optional: true,
                 Computed: true,
             },
@@ -267,6 +279,14 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["probeId"] = data.ProbeId.ValueString()
         filterNames = append(filterNames, "probe_id = "+fmt.Sprintf("%q", data.ProbeId.ValueString()))
     }
+    if !data.SrcName.IsNull() && !data.SrcName.IsUnknown() {
+        filters["srcName"] = data.SrcName.ValueString()
+        filterNames = append(filterNames, "src_name = "+fmt.Sprintf("%q", data.SrcName.ValueString()))
+    }
+    if !data.DstName.IsNull() && !data.DstName.IsUnknown() {
+        filters["dstName"] = data.DstName.ValueString()
+        filterNames = append(filterNames, "dst_name = "+fmt.Sprintf("%q", data.DstName.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -303,6 +323,8 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         "samplingRate": true,
         "flowCount": true,
         "probeId": true,
+        "srcName": true,
+        "dstName": true,
         "_id": true,
     }
 
@@ -591,6 +613,40 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.ProbeId = types.StringValue(val)
     } else {
         data.ProbeId = types.StringNull()
+    }
+    if obj, ok := item["srcName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SrcName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SrcName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SrcName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SrcName = types.StringValue(string(jsonBytes))
+        } else {
+            data.SrcName = types.StringNull()
+        }
+    } else if val, ok := item["srcName"].(string); ok {
+        data.SrcName = types.StringValue(val)
+    } else {
+        data.SrcName = types.StringNull()
+    }
+    if obj, ok := item["dstName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DstName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DstName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DstName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DstName = types.StringValue(string(jsonBytes))
+        } else {
+            data.DstName = types.StringNull()
+        }
+    } else if val, ok := item["dstName"].(string); ok {
+        data.DstName = types.StringValue(val)
+    } else {
+        data.DstName = types.StringNull()
     }
 
     // Write logs using the tflog package

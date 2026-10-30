@@ -108,6 +108,7 @@ type NetworkDeviceResourceModel struct {
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
     LastWalkLog JSONSubsetValue `tfsdk:"last_walk_log"`
+    RefreshRequestedAt RFC3339Value `tfsdk:"refresh_requested_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
@@ -697,6 +698,11 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
+            "refresh_requested_at": schema.StringAttribute{
+                MarkdownDescription: "When someone last asked for this device to be read again now (Refresh). Its probe reads it within a minute. Managed by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
@@ -989,6 +995,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "updatedAt": true,
         "slug": true,
         "lastWalkLog": true,
+        "refreshRequestedAt": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -2842,6 +2849,17 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.LastWalkLog = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["refreshRequestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RefreshRequestedAt = NewRFC3339Value(val)
+        } else {
+            data.RefreshRequestedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["refreshRequestedAt"].(string); ok && val != "" {
+        data.RefreshRequestedAt = NewRFC3339Value(val)
+    } else {
+        data.RefreshRequestedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3024,6 +3042,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "updatedAt": true,
         "slug": true,
         "lastWalkLog": true,
+        "refreshRequestedAt": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -4878,6 +4897,17 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.LastWalkLog = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["refreshRequestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RefreshRequestedAt = NewRFC3339Value(val)
+        } else {
+            data.RefreshRequestedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["refreshRequestedAt"].(string); ok && val != "" {
+        data.RefreshRequestedAt = NewRFC3339Value(val)
+    } else {
+        data.RefreshRequestedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5308,6 +5338,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "updatedAt": true,
         "slug": true,
         "lastWalkLog": true,
+        "refreshRequestedAt": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -7155,6 +7186,17 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.LastWalkLog = NewJSONSubsetValue(val)
     } else {
         data.LastWalkLog = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["refreshRequestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RefreshRequestedAt = NewRFC3339Value(val)
+        } else {
+            data.RefreshRequestedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["refreshRequestedAt"].(string); ok && val != "" {
+        data.RefreshRequestedAt = NewRFC3339Value(val)
+    } else {
+        data.RefreshRequestedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

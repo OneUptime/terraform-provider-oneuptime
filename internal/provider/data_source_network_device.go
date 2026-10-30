@@ -91,6 +91,7 @@ type NetworkDeviceDataSourceModel struct {
     IsReachable types.Bool `tfsdk:"is_reachable"`
     IsSnmpReachable types.Bool `tfsdk:"is_snmp_reachable"`
     LastSnmpSeenAt types.String `tfsdk:"last_snmp_seen_at"`
+    RefreshRequestedAt types.String `tfsdk:"refresh_requested_at"`
     InterfacesTotal types.Number `tfsdk:"interfaces_total"`
     InterfacesUp types.Number `tfsdk:"interfaces_up"`
     InterfacesDown types.Number `tfsdk:"interfaces_down"`
@@ -406,6 +407,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "last_snmp_seen_at": schema.StringAttribute{
                 MarkdownDescription: "When the last SUCCESSFUL SNMP walk of this device completed — the moment its interfaces, inventory and health OIDs were last refreshed. Only moves on a successful walk, so it stays honest while lastSeenAt keeps moving on ping alone. Managed by the probe.",
+                Computed: true,
+            },
+            "refresh_requested_at": schema.StringAttribute{
+                MarkdownDescription: "When someone last asked for this device to be read again now (Refresh). Its probe reads it within a minute. Managed by the server.",
                 Computed: true,
             },
             "interfaces_total": schema.NumberAttribute{
@@ -769,6 +774,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "isReachable": true,
         "isSnmpReachable": true,
         "lastSnmpSeenAt": true,
+        "refreshRequestedAt": true,
         "interfacesTotal": true,
         "interfacesUp": true,
         "interfacesDown": true,
@@ -1792,6 +1798,23 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.LastSnmpSeenAt = types.StringValue(val)
     } else {
         data.LastSnmpSeenAt = types.StringNull()
+    }
+    if obj, ok := item["refreshRequestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RefreshRequestedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RefreshRequestedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RefreshRequestedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RefreshRequestedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshRequestedAt = types.StringNull()
+        }
+    } else if val, ok := item["refreshRequestedAt"].(string); ok {
+        data.RefreshRequestedAt = types.StringValue(val)
+    } else {
+        data.RefreshRequestedAt = types.StringNull()
     }
     data.InterfacesTotal = numberFromAPI(data.InterfacesTotal, item["interfacesTotal"])
     data.InterfacesUp = numberFromAPI(data.InterfacesUp, item["interfacesUp"])

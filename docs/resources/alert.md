@@ -48,6 +48,7 @@ resource "oneuptime_alert" "example" {
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 - `monitor_id` (String) ID of the monitor this alert belongs to. The ID of a `oneuptime_monitor`.
 - `monitor_status_when_this_alert_was_created_id` (String) Monitor Status ID when this alert was created. The ID of a `oneuptime_monitor_status`.
+- `network_devices` (Set of String) List of network devices affected by this alert. IDs of `oneuptime_network_device` resources.
 - `on_call_duty_policies` (Set of String) List of on-call duty policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.
 - `podman_hosts` (Set of String) List of Podman hosts affected by this alert. IDs of `oneuptime_podman_host` resources.
 - `podman_resources` (Set of String) List of Podman resources (containers, images, networks, volumes) affected by this alert.

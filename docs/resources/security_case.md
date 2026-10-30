@@ -40,6 +40,9 @@ resource "oneuptime_security_case" "example" {
 
 ### Read-Only
 
+- `acknowledge_due_at` (String) When the case must be acknowledged by, from its priority's Acknowledge Within target. Empty when its priority has no target, or when it was acknowledged as it opened.
+- `acknowledge_missed_at` (String) When the case passed its acknowledge due time without being acknowledged. Empty while it has not.
+- `acknowledge_warned_at` (String) When OneUptime told the people on the case that it was about to miss its acknowledge target.
 - `acknowledged_at` (String) When somebody first took the case on: assigned it to a person, or moved it out of New. The time to acknowledge is measured to here.
 - `ai_suggested_playbook_id` (String) ID of the project's playbook OneUptime AI suggested running when it triaged the case. It runs only when a person runs it.
 - `ai_suggested_security_case_priority_id` (String) ID of the priority OneUptime AI suggested when it triaged the case. The case's own priority changes only when a person sets it.
@@ -51,6 +54,9 @@ resource "oneuptime_security_case" "example" {
 - `case_number_with_prefix` (String) The case number with the project's case number prefix in front of it, like CASE-42.
 - `closed_at` (String) When the case was closed. Cleared if it is reopened. The time to close is measured to here.
 - `closed_by_user_id` (String) ID of the person who closed the case. The ID of a `oneuptime_user` (see the data source).
+- `contain_due_at` (String) When the case must be contained or closed by, from its priority's Contain Within target. Empty when its priority has no target.
+- `contain_missed_at` (String) When the case passed its contain due time without being contained or closed. Empty while it has not.
+- `contain_warned_at` (String) When OneUptime told the people on the case that it was about to miss its contain target.
 - `contained_at` (String) When the case first reached Contained. The time to contain is measured to here.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) ID of the person who opened the case by hand. The ID of a `oneuptime_user` (see the data source).
@@ -60,6 +66,8 @@ resource "oneuptime_security_case" "example" {
 - `id` (String) Unique identifier for the resource.
 - `incident_id` (String) ID of the OneUptime incident declared for this case. The ID of a `oneuptime_incident`.
 - `last_detected_at` (String) When a detection of the case last fired.
+- `next_due_at` (String) The earliest due time of a response target the case has not met yet, a missed one included. Empty when every target is met or the case has none.
+- `next_target_check_at` (String) When OneUptime next checks the case's response targets: when one is about to be missed, or is missed. Empty when there is nothing left to check.
 - `notified_security_case_priority_id` (String) ID of the highest priority people have been told about this case at. They are told again only when it rises above it.
 - `project_id` (String) ID of the project this case belongs to. The ID of a `oneuptime_project`.
 - `source` (String) What opened the case: a Detection Rule, Threat Intel, a Connected Product, Entity Risk, or a person (Manual).

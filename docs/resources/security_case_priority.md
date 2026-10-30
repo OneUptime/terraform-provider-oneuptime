@@ -28,6 +28,8 @@ resource "oneuptime_security_case_priority" "example" {
 
 ### Optional
 
+- `acknowledge_within_in_minutes` (Number) How long a case at this priority may wait for somebody to take it on, in minutes, from when it opens. Empty for no target.
+- `contain_within_in_minutes` (Number) How long a case at this priority may take to be contained or closed, in minutes, from when it opens. Empty for no target.
 - `description` (String) How fast a case at this priority needs a person, in a sentence.
 - `is_archived` (Boolean) Archived priorities stay on the cases at them, but can't be picked again. The built-in priorities can't be archived. Defaults to `false`.
 - `is_critical_priority` (Boolean) Is it the priority Critical detections open cases at? From it up, a case can't wait. A project has one; it can't be deleted or archived.

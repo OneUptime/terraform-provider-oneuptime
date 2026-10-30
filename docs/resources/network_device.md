@@ -98,6 +98,7 @@ resource "oneuptime_network_device" "example" {
 - `id` (String) Unique identifier for the resource.
 - `last_walk_log` (String) The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server. A JSON value: write it with `jsonencode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `refresh_requested_at` (String) When someone last asked for this device to be read again now (Refresh). Its probe reads it within a minute. Managed by the server.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.
 

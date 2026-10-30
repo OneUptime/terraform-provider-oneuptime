@@ -62,6 +62,14 @@ type SecurityCaseResourceModel struct {
     AcknowledgedAt RFC3339Value `tfsdk:"acknowledged_at"`
     ContainedAt RFC3339Value `tfsdk:"contained_at"`
     ClosedAt RFC3339Value `tfsdk:"closed_at"`
+    AcknowledgeDueAt RFC3339Value `tfsdk:"acknowledge_due_at"`
+    ContainDueAt RFC3339Value `tfsdk:"contain_due_at"`
+    AcknowledgeWarnedAt RFC3339Value `tfsdk:"acknowledge_warned_at"`
+    AcknowledgeMissedAt RFC3339Value `tfsdk:"acknowledge_missed_at"`
+    ContainWarnedAt RFC3339Value `tfsdk:"contain_warned_at"`
+    ContainMissedAt RFC3339Value `tfsdk:"contain_missed_at"`
+    NextDueAt RFC3339Value `tfsdk:"next_due_at"`
+    NextTargetCheckAt RFC3339Value `tfsdk:"next_target_check_at"`
     ClosedByUserId types.String `tfsdk:"closed_by_user_id"`
     GroupingKey types.String `tfsdk:"grouping_key"`
     NotifiedSecurityCasePriorityId types.String `tfsdk:"notified_security_case_priority_id"`
@@ -258,6 +266,46 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
             },
             "closed_at": schema.StringAttribute{
                 MarkdownDescription: "When the case was closed. Cleared if it is reopened. The time to close is measured to here.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "acknowledge_due_at": schema.StringAttribute{
+                MarkdownDescription: "When the case must be acknowledged by, from its priority's Acknowledge Within target. Empty when its priority has no target, or when it was acknowledged as it opened.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "contain_due_at": schema.StringAttribute{
+                MarkdownDescription: "When the case must be contained or closed by, from its priority's Contain Within target. Empty when its priority has no target.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "acknowledge_warned_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime told the people on the case that it was about to miss its acknowledge target.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "acknowledge_missed_at": schema.StringAttribute{
+                MarkdownDescription: "When the case passed its acknowledge due time without being acknowledged. Empty while it has not.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "contain_warned_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime told the people on the case that it was about to miss its contain target.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "contain_missed_at": schema.StringAttribute{
+                MarkdownDescription: "When the case passed its contain due time without being contained or closed. Empty while it has not.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "next_due_at": schema.StringAttribute{
+                MarkdownDescription: "The earliest due time of a response target the case has not met yet, a missed one included. Empty when every target is met or the case has none.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "next_target_check_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime next checks the case's response targets: when one is about to be missed, or is missed. Empty when there is nothing left to check.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -467,6 +515,14 @@ func (r *SecurityCaseResource) Create(ctx context.Context, req resource.CreateRe
         "acknowledgedAt": true,
         "containedAt": true,
         "closedAt": true,
+        "acknowledgeDueAt": true,
+        "containDueAt": true,
+        "acknowledgeWarnedAt": true,
+        "acknowledgeMissedAt": true,
+        "containWarnedAt": true,
+        "containMissedAt": true,
+        "nextDueAt": true,
+        "nextTargetCheckAt": true,
         "closedByUserId": true,
         "groupingKey": true,
         "notifiedSecurityCasePriorityId": true,
@@ -1113,6 +1169,94 @@ func (r *SecurityCaseResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.ClosedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["acknowledgeDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgeDueAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgeDueAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgeDueAt"].(string); ok && val != "" {
+        data.AcknowledgeDueAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgeDueAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["containDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ContainDueAt = NewRFC3339Value(val)
+        } else {
+            data.ContainDueAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["containDueAt"].(string); ok && val != "" {
+        data.ContainDueAt = NewRFC3339Value(val)
+    } else {
+        data.ContainDueAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["acknowledgeWarnedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgeWarnedAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgeWarnedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgeWarnedAt"].(string); ok && val != "" {
+        data.AcknowledgeWarnedAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgeWarnedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["acknowledgeMissedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgeMissedAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgeMissedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgeMissedAt"].(string); ok && val != "" {
+        data.AcknowledgeMissedAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgeMissedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["containWarnedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ContainWarnedAt = NewRFC3339Value(val)
+        } else {
+            data.ContainWarnedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["containWarnedAt"].(string); ok && val != "" {
+        data.ContainWarnedAt = NewRFC3339Value(val)
+    } else {
+        data.ContainWarnedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["containMissedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ContainMissedAt = NewRFC3339Value(val)
+        } else {
+            data.ContainMissedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["containMissedAt"].(string); ok && val != "" {
+        data.ContainMissedAt = NewRFC3339Value(val)
+    } else {
+        data.ContainMissedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["nextDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextDueAt = NewRFC3339Value(val)
+        } else {
+            data.NextDueAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextDueAt"].(string); ok && val != "" {
+        data.NextDueAt = NewRFC3339Value(val)
+    } else {
+        data.NextDueAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["nextTargetCheckAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextTargetCheckAt = NewRFC3339Value(val)
+        } else {
+            data.NextTargetCheckAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextTargetCheckAt"].(string); ok && val != "" {
+        data.NextTargetCheckAt = NewRFC3339Value(val)
+    } else {
+        data.NextTargetCheckAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["closedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1516,6 +1660,14 @@ func (r *SecurityCaseResource) Read(ctx context.Context, req resource.ReadReques
         "acknowledgedAt": true,
         "containedAt": true,
         "closedAt": true,
+        "acknowledgeDueAt": true,
+        "containDueAt": true,
+        "acknowledgeWarnedAt": true,
+        "acknowledgeMissedAt": true,
+        "containWarnedAt": true,
+        "containMissedAt": true,
+        "nextDueAt": true,
+        "nextTargetCheckAt": true,
         "closedByUserId": true,
         "groupingKey": true,
         "notifiedSecurityCasePriorityId": true,
@@ -2163,6 +2315,94 @@ func (r *SecurityCaseResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.ClosedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["acknowledgeDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgeDueAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgeDueAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgeDueAt"].(string); ok && val != "" {
+        data.AcknowledgeDueAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgeDueAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["containDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ContainDueAt = NewRFC3339Value(val)
+        } else {
+            data.ContainDueAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["containDueAt"].(string); ok && val != "" {
+        data.ContainDueAt = NewRFC3339Value(val)
+    } else {
+        data.ContainDueAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["acknowledgeWarnedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgeWarnedAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgeWarnedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgeWarnedAt"].(string); ok && val != "" {
+        data.AcknowledgeWarnedAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgeWarnedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["acknowledgeMissedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgeMissedAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgeMissedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgeMissedAt"].(string); ok && val != "" {
+        data.AcknowledgeMissedAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgeMissedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["containWarnedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ContainWarnedAt = NewRFC3339Value(val)
+        } else {
+            data.ContainWarnedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["containWarnedAt"].(string); ok && val != "" {
+        data.ContainWarnedAt = NewRFC3339Value(val)
+    } else {
+        data.ContainWarnedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["containMissedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ContainMissedAt = NewRFC3339Value(val)
+        } else {
+            data.ContainMissedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["containMissedAt"].(string); ok && val != "" {
+        data.ContainMissedAt = NewRFC3339Value(val)
+    } else {
+        data.ContainMissedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["nextDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextDueAt = NewRFC3339Value(val)
+        } else {
+            data.NextDueAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextDueAt"].(string); ok && val != "" {
+        data.NextDueAt = NewRFC3339Value(val)
+    } else {
+        data.NextDueAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["nextTargetCheckAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextTargetCheckAt = NewRFC3339Value(val)
+        } else {
+            data.NextTargetCheckAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextTargetCheckAt"].(string); ok && val != "" {
+        data.NextTargetCheckAt = NewRFC3339Value(val)
+    } else {
+        data.NextTargetCheckAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["closedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2653,6 +2893,14 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
         "acknowledgedAt": true,
         "containedAt": true,
         "closedAt": true,
+        "acknowledgeDueAt": true,
+        "containDueAt": true,
+        "acknowledgeWarnedAt": true,
+        "acknowledgeMissedAt": true,
+        "containWarnedAt": true,
+        "containMissedAt": true,
+        "nextDueAt": true,
+        "nextTargetCheckAt": true,
         "closedByUserId": true,
         "groupingKey": true,
         "notifiedSecurityCasePriorityId": true,
@@ -3293,6 +3541,94 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
         data.ClosedAt = NewRFC3339Value(val)
     } else {
         data.ClosedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["acknowledgeDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgeDueAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgeDueAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgeDueAt"].(string); ok && val != "" {
+        data.AcknowledgeDueAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgeDueAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["containDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ContainDueAt = NewRFC3339Value(val)
+        } else {
+            data.ContainDueAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["containDueAt"].(string); ok && val != "" {
+        data.ContainDueAt = NewRFC3339Value(val)
+    } else {
+        data.ContainDueAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["acknowledgeWarnedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgeWarnedAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgeWarnedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgeWarnedAt"].(string); ok && val != "" {
+        data.AcknowledgeWarnedAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgeWarnedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["acknowledgeMissedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AcknowledgeMissedAt = NewRFC3339Value(val)
+        } else {
+            data.AcknowledgeMissedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["acknowledgeMissedAt"].(string); ok && val != "" {
+        data.AcknowledgeMissedAt = NewRFC3339Value(val)
+    } else {
+        data.AcknowledgeMissedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["containWarnedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ContainWarnedAt = NewRFC3339Value(val)
+        } else {
+            data.ContainWarnedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["containWarnedAt"].(string); ok && val != "" {
+        data.ContainWarnedAt = NewRFC3339Value(val)
+    } else {
+        data.ContainWarnedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["containMissedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ContainMissedAt = NewRFC3339Value(val)
+        } else {
+            data.ContainMissedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["containMissedAt"].(string); ok && val != "" {
+        data.ContainMissedAt = NewRFC3339Value(val)
+    } else {
+        data.ContainMissedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["nextDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextDueAt = NewRFC3339Value(val)
+        } else {
+            data.NextDueAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextDueAt"].(string); ok && val != "" {
+        data.NextDueAt = NewRFC3339Value(val)
+    } else {
+        data.NextDueAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["nextTargetCheckAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextTargetCheckAt = NewRFC3339Value(val)
+        } else {
+            data.NextTargetCheckAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextTargetCheckAt"].(string); ok && val != "" {
+        data.NextTargetCheckAt = NewRFC3339Value(val)
+    } else {
+        data.NextTargetCheckAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["closedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

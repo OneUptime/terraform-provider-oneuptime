@@ -52,6 +52,14 @@ type SecurityCaseDataSourceModel struct {
     AcknowledgedAt types.String `tfsdk:"acknowledged_at"`
     ContainedAt types.String `tfsdk:"contained_at"`
     ClosedAt types.String `tfsdk:"closed_at"`
+    AcknowledgeDueAt types.String `tfsdk:"acknowledge_due_at"`
+    ContainDueAt types.String `tfsdk:"contain_due_at"`
+    AcknowledgeWarnedAt types.String `tfsdk:"acknowledge_warned_at"`
+    AcknowledgeMissedAt types.String `tfsdk:"acknowledge_missed_at"`
+    ContainWarnedAt types.String `tfsdk:"contain_warned_at"`
+    ContainMissedAt types.String `tfsdk:"contain_missed_at"`
+    NextDueAt types.String `tfsdk:"next_due_at"`
+    NextTargetCheckAt types.String `tfsdk:"next_target_check_at"`
     ClosedByUserId types.String `tfsdk:"closed_by_user_id"`
     GroupingKey types.String `tfsdk:"grouping_key"`
     NotifiedSecurityCasePriorityId types.String `tfsdk:"notified_security_case_priority_id"`
@@ -182,6 +190,38 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "closed_at": schema.StringAttribute{
                 MarkdownDescription: "When the case was closed. Cleared if it is reopened. The time to close is measured to here.",
+                Computed: true,
+            },
+            "acknowledge_due_at": schema.StringAttribute{
+                MarkdownDescription: "When the case must be acknowledged by, from its priority's Acknowledge Within target. Empty when its priority has no target, or when it was acknowledged as it opened.",
+                Computed: true,
+            },
+            "contain_due_at": schema.StringAttribute{
+                MarkdownDescription: "When the case must be contained or closed by, from its priority's Contain Within target. Empty when its priority has no target.",
+                Computed: true,
+            },
+            "acknowledge_warned_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime told the people on the case that it was about to miss its acknowledge target.",
+                Computed: true,
+            },
+            "acknowledge_missed_at": schema.StringAttribute{
+                MarkdownDescription: "When the case passed its acknowledge due time without being acknowledged. Empty while it has not.",
+                Computed: true,
+            },
+            "contain_warned_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime told the people on the case that it was about to miss its contain target.",
+                Computed: true,
+            },
+            "contain_missed_at": schema.StringAttribute{
+                MarkdownDescription: "When the case passed its contain due time without being contained or closed. Empty while it has not.",
+                Computed: true,
+            },
+            "next_due_at": schema.StringAttribute{
+                MarkdownDescription: "The earliest due time of a response target the case has not met yet, a missed one included. Empty when every target is met or the case has none.",
+                Computed: true,
+            },
+            "next_target_check_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime next checks the case's response targets: when one is about to be missed, or is missed. Empty when there is nothing left to check.",
                 Computed: true,
             },
             "closed_by_user_id": schema.StringAttribute{
@@ -410,6 +450,14 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         "acknowledgedAt": true,
         "containedAt": true,
         "closedAt": true,
+        "acknowledgeDueAt": true,
+        "containDueAt": true,
+        "acknowledgeWarnedAt": true,
+        "acknowledgeMissedAt": true,
+        "containWarnedAt": true,
+        "containMissedAt": true,
+        "nextDueAt": true,
+        "nextTargetCheckAt": true,
         "closedByUserId": true,
         "groupingKey": true,
         "notifiedSecurityCasePriorityId": true,
@@ -858,6 +906,142 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.ClosedAt = types.StringValue(val)
     } else {
         data.ClosedAt = types.StringNull()
+    }
+    if obj, ok := item["acknowledgeDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AcknowledgeDueAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AcknowledgeDueAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AcknowledgeDueAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AcknowledgeDueAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AcknowledgeDueAt = types.StringNull()
+        }
+    } else if val, ok := item["acknowledgeDueAt"].(string); ok {
+        data.AcknowledgeDueAt = types.StringValue(val)
+    } else {
+        data.AcknowledgeDueAt = types.StringNull()
+    }
+    if obj, ok := item["containDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ContainDueAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ContainDueAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ContainDueAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ContainDueAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ContainDueAt = types.StringNull()
+        }
+    } else if val, ok := item["containDueAt"].(string); ok {
+        data.ContainDueAt = types.StringValue(val)
+    } else {
+        data.ContainDueAt = types.StringNull()
+    }
+    if obj, ok := item["acknowledgeWarnedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AcknowledgeWarnedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AcknowledgeWarnedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AcknowledgeWarnedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AcknowledgeWarnedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AcknowledgeWarnedAt = types.StringNull()
+        }
+    } else if val, ok := item["acknowledgeWarnedAt"].(string); ok {
+        data.AcknowledgeWarnedAt = types.StringValue(val)
+    } else {
+        data.AcknowledgeWarnedAt = types.StringNull()
+    }
+    if obj, ok := item["acknowledgeMissedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AcknowledgeMissedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AcknowledgeMissedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AcknowledgeMissedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AcknowledgeMissedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AcknowledgeMissedAt = types.StringNull()
+        }
+    } else if val, ok := item["acknowledgeMissedAt"].(string); ok {
+        data.AcknowledgeMissedAt = types.StringValue(val)
+    } else {
+        data.AcknowledgeMissedAt = types.StringNull()
+    }
+    if obj, ok := item["containWarnedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ContainWarnedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ContainWarnedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ContainWarnedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ContainWarnedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ContainWarnedAt = types.StringNull()
+        }
+    } else if val, ok := item["containWarnedAt"].(string); ok {
+        data.ContainWarnedAt = types.StringValue(val)
+    } else {
+        data.ContainWarnedAt = types.StringNull()
+    }
+    if obj, ok := item["containMissedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ContainMissedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ContainMissedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ContainMissedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ContainMissedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ContainMissedAt = types.StringNull()
+        }
+    } else if val, ok := item["containMissedAt"].(string); ok {
+        data.ContainMissedAt = types.StringValue(val)
+    } else {
+        data.ContainMissedAt = types.StringNull()
+    }
+    if obj, ok := item["nextDueAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextDueAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NextDueAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NextDueAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NextDueAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextDueAt = types.StringNull()
+        }
+    } else if val, ok := item["nextDueAt"].(string); ok {
+        data.NextDueAt = types.StringValue(val)
+    } else {
+        data.NextDueAt = types.StringNull()
+    }
+    if obj, ok := item["nextTargetCheckAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextTargetCheckAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NextTargetCheckAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NextTargetCheckAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NextTargetCheckAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextTargetCheckAt = types.StringNull()
+        }
+    } else if val, ok := item["nextTargetCheckAt"].(string); ok {
+        data.NextTargetCheckAt = types.StringValue(val)
+    } else {
+        data.NextTargetCheckAt = types.StringNull()
     }
     if obj, ok := item["closedByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

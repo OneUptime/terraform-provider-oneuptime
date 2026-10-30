@@ -96,6 +96,7 @@ data "oneuptime_network_device" "by_id" {
 - `lldp_neighbors` (String) LLDP neighbors discovered on the last SNMP walk, used to build the network topology graph. Managed by the probe. A JSON value: write it with `jsonencode()`.
 - `next_poll_at` (String) When the assigned probe should next poll this device. Advanced by the claim cycle; a device created now is due immediately.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `refresh_requested_at` (String) When someone last asked for this device to be read again now (Refresh). Its probe reads it within a minute. Managed by the server.
 - `snmp_oids` (String) SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead. A JSON value: write it with `jsonencode()`.
 - `snmp_table_snapshot` (String) The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe. A JSON value: write it with `jsonencode()`.
 - `snmp_tables` (String) SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device. A JSON value: write it with `jsonencode()`.

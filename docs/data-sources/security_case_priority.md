@@ -28,7 +28,9 @@ data "oneuptime_security_case_priority" "by_id" {
 
 ### Optional
 
+- `acknowledge_within_in_minutes` (Number) How long a case at this priority may wait for somebody to take it on, in minutes, from when it opens. Empty for no target.
 - `archived_by_user_id` (String) ID of the person who archived this priority. The ID of a `oneuptime_user` (see the data source).
+- `contain_within_in_minutes` (Number) How long a case at this priority may take to be contained or closed, in minutes, from when it opens. Empty for no target.
 - `created_by_user_id` (String) ID of the person who added this priority. The ID of a `oneuptime_user` (see the data source).
 - `description` (String) How fast a case at this priority needs a person, in a sentence.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
