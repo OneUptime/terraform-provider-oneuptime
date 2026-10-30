@@ -41,6 +41,7 @@ resource "oneuptime_code_repository" "example" {
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
 - `main_branch_name` (String) The name of the main/default branch.
 - `max_open_fix_pull_requests` (Number) Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means no cap; 0 blocks AI fix pull requests for this repository entirely.
+- `production_review_llm_provider_id` (String) ID of the LLM provider OneUptime AI reads this repository's pull requests with in its production reviews. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.
 - `production_review_pull_request_content` (String) What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository.
 - `repository_url` (String) The repository's address: its page on GitHub, GitLab or Forgejo, or the HTTPS address a Git repository is cloned with.
 - `runner_id` (String) ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means the project's default Runner when it has one, and otherwise a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.

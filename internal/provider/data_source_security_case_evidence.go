@@ -40,6 +40,9 @@ type SecurityCaseEvidenceDataSourceModel struct {
     FileType types.String `tfsdk:"file_type"`
     FileSizeInBytes types.Number `tfsdk:"file_size_in_bytes"`
     Sha256 types.String `tfsdk:"sha256"`
+    EventUid types.String `tfsdk:"event_uid"`
+    EventTime types.String `tfsdk:"event_time"`
+    EventSnapshot types.String `tfsdk:"event_snapshot"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -49,7 +52,7 @@ func (d *SecurityCaseEvidenceDataSource) Metadata(ctx context.Context, req datas
 
 func (d *SecurityCaseEvidenceDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Files and links kept on a security case as evidence, each with who added it and when, and a file with the SHA-256 of what was uploaded. Look up an existing security case evidence by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one security case evidence may match them all.",
+        MarkdownDescription: "Files, links and security events kept on a security case as evidence, each with who added it and when: a file with the SHA-256 of what was uploaded, an event as OneUptime read it when it was kept. Look up an existing security case evidence by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one security case evidence may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -75,7 +78,7 @@ func (d *SecurityCaseEvidenceDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "kind": schema.StringAttribute{
-                MarkdownDescription: "What the evidence is: a File uploaded to OneUptime, or a Link to evidence kept somewhere else. It can't be changed.",
+                MarkdownDescription: "What the evidence is: a File uploaded to OneUptime, a Link to evidence kept somewhere else, or an Event bookmarked from Security Events. It can't be changed.",
                 Optional: true,
                 Computed: true,
             },
@@ -117,6 +120,19 @@ func (d *SecurityCaseEvidenceDataSource) Schema(ctx context.Context, req datasou
             "sha256": schema.StringAttribute{
                 MarkdownDescription: "The SHA-256 of the file's bytes as they were uploaded, in hex: compare it with a download's to check it is what was kept.",
                 Optional: true,
+                Computed: true,
+            },
+            "event_uid": schema.StringAttribute{
+                MarkdownDescription: "For Event evidence: the security event's ID, as its source gave it.",
+                Optional: true,
+                Computed: true,
+            },
+            "event_time": schema.StringAttribute{
+                MarkdownDescription: "For Event evidence: when the security event happened.",
+                Computed: true,
+            },
+            "event_snapshot": schema.StringAttribute{
+                MarkdownDescription: "For Event evidence: the security event as OneUptime read it when it was kept - its severity, class, message, who and where - and the hunt that found it. A JSON value: write it with `jsonencode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -203,6 +219,10 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         filters["sha256"] = data.Sha256.ValueString()
         filterNames = append(filterNames, "sha256 = "+fmt.Sprintf("%q", data.Sha256.ValueString()))
     }
+    if !data.EventUid.IsNull() && !data.EventUid.IsUnknown() {
+        filters["eventUid"] = data.EventUid.ValueString()
+        filterNames = append(filterNames, "event_uid = "+fmt.Sprintf("%q", data.EventUid.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -237,6 +257,9 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         "fileType": true,
         "fileSizeInBytes": true,
         "sha256": true,
+        "eventUid": true,
+        "eventTime": true,
+        "eventSnapshot": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -520,6 +543,57 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         data.Sha256 = types.StringValue(val)
     } else {
         data.Sha256 = types.StringNull()
+    }
+    if obj, ok := item["eventUid"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EventUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EventUid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EventUid = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventUid = types.StringNull()
+        }
+    } else if val, ok := item["eventUid"].(string); ok {
+        data.EventUid = types.StringValue(val)
+    } else {
+        data.EventUid = types.StringNull()
+    }
+    if obj, ok := item["eventTime"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventTime = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EventTime = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EventTime = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EventTime = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventTime = types.StringNull()
+        }
+    } else if val, ok := item["eventTime"].(string); ok {
+        data.EventTime = types.StringValue(val)
+    } else {
+        data.EventTime = types.StringNull()
+    }
+    if obj, ok := item["eventSnapshot"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventSnapshot = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EventSnapshot = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EventSnapshot = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EventSnapshot = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventSnapshot = types.StringNull()
+        }
+    } else if val, ok := item["eventSnapshot"].(string); ok {
+        data.EventSnapshot = types.StringValue(val)
+    } else {
+        data.EventSnapshot = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

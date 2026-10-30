@@ -30,6 +30,7 @@ func GetResources() []func() resource.Resource {
         NewRuleExceptionResource,
         NewWatchlistResource,
         NewWatchlistValueResource,
+        NewHuntResource,
         NewSecurityEventConnectionResource,
         NewThreatIntelFeedResource,
         NewSecurityCaseResource,

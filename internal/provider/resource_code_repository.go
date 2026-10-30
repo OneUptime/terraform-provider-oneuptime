@@ -57,6 +57,7 @@ type CodeRepositoryResourceModel struct {
     GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
     IsProductionReviewEnabled types.Bool `tfsdk:"is_production_review_enabled"`
     ProductionReviewPullRequestContent types.String `tfsdk:"production_review_pull_request_content"`
+    ProductionReviewLlmProviderId types.String `tfsdk:"production_review_llm_provider_id"`
     RepositoryUrl types.String `tfsdk:"repository_url"`
     SecretToken types.String `tfsdk:"secret_token"`
     Labels types.Set `tfsdk:"labels"`
@@ -211,6 +212,14 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
             },
             "production_review_pull_request_content": schema.StringAttribute{
                 MarkdownDescription: "What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "production_review_llm_provider_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the LLM provider OneUptime AI reads this repository's pull requests with in its production reviews. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -372,6 +381,9 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     if !data.ProductionReviewPullRequestContent.IsNull() && !data.ProductionReviewPullRequestContent.IsUnknown() {
         requestDataMap["productionReviewPullRequestContent"] = data.ProductionReviewPullRequestContent.ValueString()
     }
+    if !data.ProductionReviewLlmProviderId.IsNull() && !data.ProductionReviewLlmProviderId.IsUnknown() {
+        requestDataMap["productionReviewLlmProviderId"] = data.ProductionReviewLlmProviderId.ValueString()
+    }
     if !data.RepositoryUrl.IsNull() && !data.RepositoryUrl.IsUnknown() {
         requestDataMap["repositoryUrl"] = data.RepositoryUrl.ValueString()
     }
@@ -443,6 +455,7 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
         "gitHubTriggerLabel": true,
         "isProductionReviewEnabled": true,
         "productionReviewPullRequestContent": true,
+        "productionReviewLlmProviderId": true,
         "repositoryUrl": true,
         "labels": true,
         "createdAt": true,
@@ -952,6 +965,43 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     } else {
         data.ProductionReviewPullRequestContent = types.StringNull()
     }
+    if obj, ok := dataMap["productionReviewLlmProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionReviewLlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionReviewLlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewLlmProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionReviewLlmProviderId"].(string); ok {
+        data.ProductionReviewLlmProviderId = types.StringValue(val)
+    } else {
+        data.ProductionReviewLlmProviderId = types.StringNull()
+    }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1238,6 +1288,7 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         "gitHubTriggerLabel": true,
         "isProductionReviewEnabled": true,
         "productionReviewPullRequestContent": true,
+        "productionReviewLlmProviderId": true,
         "repositoryUrl": true,
         "labels": true,
         "createdAt": true,
@@ -1748,6 +1799,43 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.ProductionReviewPullRequestContent = types.StringNull()
     }
+    if obj, ok := dataMap["productionReviewLlmProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionReviewLlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionReviewLlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewLlmProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionReviewLlmProviderId"].(string); ok {
+        data.ProductionReviewLlmProviderId = types.StringValue(val)
+    } else {
+        data.ProductionReviewLlmProviderId = types.StringNull()
+    }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2069,6 +2157,9 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     if !data.ProductionReviewPullRequestContent.IsUnknown() && !state.ProductionReviewPullRequestContent.IsUnknown() && !data.ProductionReviewPullRequestContent.Equal(state.ProductionReviewPullRequestContent) {
         requestDataMap["productionReviewPullRequestContent"] = data.ProductionReviewPullRequestContent.ValueString()
     }
+    if !data.ProductionReviewLlmProviderId.IsUnknown() && !state.ProductionReviewLlmProviderId.IsUnknown() && !data.ProductionReviewLlmProviderId.Equal(state.ProductionReviewLlmProviderId) {
+        requestDataMap["productionReviewLlmProviderId"] = data.ProductionReviewLlmProviderId.ValueString()
+    }
     if !data.SecretToken.IsUnknown() && !state.SecretToken.IsUnknown() && !data.SecretToken.Equal(state.SecretToken) {
         requestDataMap["secretToken"] = data.SecretToken.ValueString()
     }
@@ -2115,6 +2206,7 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         "gitHubTriggerLabel": true,
         "isProductionReviewEnabled": true,
         "productionReviewPullRequestContent": true,
+        "productionReviewLlmProviderId": true,
         "repositoryUrl": true,
         "labels": true,
         "createdAt": true,
@@ -2619,6 +2711,43 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     } else {
         data.ProductionReviewPullRequestContent = types.StringNull()
     }
+    if obj, ok := dataMap["productionReviewLlmProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionReviewLlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductionReviewLlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewLlmProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["productionReviewLlmProviderId"].(string); ok {
+        data.ProductionReviewLlmProviderId = types.StringValue(val)
+    } else {
+        data.ProductionReviewLlmProviderId = types.StringNull()
+    }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2950,6 +3079,9 @@ func (r *CodeRepositoryResource) keepPlannedValues(data *CodeRepositoryResourceM
     }
     if config.ProductionReviewPullRequestContent.IsNull() && !plan.ProductionReviewPullRequestContent.IsUnknown() {
         data.ProductionReviewPullRequestContent = plan.ProductionReviewPullRequestContent
+    }
+    if config.ProductionReviewLlmProviderId.IsNull() && !plan.ProductionReviewLlmProviderId.IsUnknown() {
+        data.ProductionReviewLlmProviderId = plan.ProductionReviewLlmProviderId
     }
     if config.RepositoryUrl.IsNull() && !plan.RepositoryUrl.IsUnknown() {
         data.RepositoryUrl = plan.RepositoryUrl

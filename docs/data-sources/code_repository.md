@@ -42,6 +42,7 @@ data "oneuptime_code_repository" "by_id" {
 - `max_open_fix_pull_requests` (Number) Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means no cap; 0 blocks AI fix pull requests for this repository entirely.
 - `name` (String) A friendly name for this code repository.
 - `organization_name` (String) The organization, group or user that owns this repository, as its host names it (a GitLab group's full path, such as my-group/backend).
+- `production_review_llm_provider_id` (String) ID of the LLM provider OneUptime AI reads this repository's pull requests with in its production reviews. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.
 - `production_review_pull_request_content` (String) What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository.
 - `repository_hosted_at` (String) Where this repository is hosted, and so how OneUptime reaches it: GitHub (the GitHub App), GitLab, Forgejo (Forgejo, Gitea and Codeberg) or Git (any Git server over HTTPS).
 - `repository_name` (String) The name of the repository.

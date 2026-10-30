@@ -49,6 +49,7 @@ type CodeRepositoryDataSourceModel struct {
     GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
     IsProductionReviewEnabled types.Bool `tfsdk:"is_production_review_enabled"`
     ProductionReviewPullRequestContent types.String `tfsdk:"production_review_pull_request_content"`
+    ProductionReviewLlmProviderId types.String `tfsdk:"production_review_llm_provider_id"`
     RepositoryUrl types.String `tfsdk:"repository_url"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
@@ -164,6 +165,11 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "production_review_pull_request_content": schema.StringAttribute{
                 MarkdownDescription: "What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository.",
+                Optional: true,
+                Computed: true,
+            },
+            "production_review_llm_provider_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the LLM provider OneUptime AI reads this repository's pull requests with in its production reviews. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
                 Optional: true,
                 Computed: true,
             },
@@ -299,6 +305,10 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         filters["productionReviewPullRequestContent"] = data.ProductionReviewPullRequestContent.ValueString()
         filterNames = append(filterNames, "production_review_pull_request_content = "+fmt.Sprintf("%q", data.ProductionReviewPullRequestContent.ValueString()))
     }
+    if !data.ProductionReviewLlmProviderId.IsNull() && !data.ProductionReviewLlmProviderId.IsUnknown() {
+        filters["productionReviewLlmProviderId"] = data.ProductionReviewLlmProviderId.ValueString()
+        filterNames = append(filterNames, "production_review_llm_provider_id = "+fmt.Sprintf("%q", data.ProductionReviewLlmProviderId.ValueString()))
+    }
     if !data.RepositoryUrl.IsNull() && !data.RepositoryUrl.IsUnknown() {
         filters["repositoryUrl"] = data.RepositoryUrl.ValueString()
         filterNames = append(filterNames, "repository_url = "+fmt.Sprintf("%q", data.RepositoryUrl.ValueString()))
@@ -352,6 +362,7 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         "gitHubTriggerLabel": true,
         "isProductionReviewEnabled": true,
         "productionReviewPullRequestContent": true,
+        "productionReviewLlmProviderId": true,
         "repositoryUrl": true,
         "gitHubAppInstallationId": true,
         "gitLabProjectId": true,
@@ -722,6 +733,23 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         data.ProductionReviewPullRequestContent = types.StringValue(val)
     } else {
         data.ProductionReviewPullRequestContent = types.StringNull()
+    }
+    if obj, ok := item["productionReviewLlmProviderId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionReviewLlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductionReviewLlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewLlmProviderId = types.StringNull()
+        }
+    } else if val, ok := item["productionReviewLlmProviderId"].(string); ok {
+        data.ProductionReviewLlmProviderId = types.StringValue(val)
+    } else {
+        data.ProductionReviewLlmProviderId = types.StringNull()
     }
     if obj, ok := item["repositoryUrl"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -47,6 +47,9 @@ type SecurityCaseEvidenceResourceModel struct {
     FileType types.String `tfsdk:"file_type"`
     FileSizeInBytes types.Number `tfsdk:"file_size_in_bytes"`
     Sha256 types.String `tfsdk:"sha256"`
+    EventUid types.String `tfsdk:"event_uid"`
+    EventTime RFC3339Value `tfsdk:"event_time"`
+    EventSnapshot JSONSubsetValue `tfsdk:"event_snapshot"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -60,7 +63,7 @@ func (r *SecurityCaseEvidenceResource) Schema(ctx context.Context, req resource.
 
 func (r *SecurityCaseEvidenceResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Files and links kept on a security case as evidence, each with who added it and when, and a file with the SHA-256 of what was uploaded.",
+        MarkdownDescription: "Files, links and security events kept on a security case as evidence, each with who added it and when: a file with the SHA-256 of what was uploaded, an event as OneUptime read it when it was kept.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -85,7 +88,7 @@ func (r *SecurityCaseEvidenceResource) schemaDefinition() schema.Schema {
                 },
             },
             "kind": schema.StringAttribute{
-                MarkdownDescription: "What the evidence is: a File uploaded to OneUptime, or a Link to evidence kept somewhere else. It can't be changed.",
+                MarkdownDescription: "What the evidence is: a File uploaded to OneUptime, a Link to evidence kept somewhere else, or an Event bookmarked from Security Events. It can't be changed.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -148,6 +151,20 @@ func (r *SecurityCaseEvidenceResource) schemaDefinition() schema.Schema {
             },
             "sha256": schema.StringAttribute{
                 MarkdownDescription: "The SHA-256 of the file's bytes as they were uploaded, in hex: compare it with a download's to check it is what was kept.",
+                Computed: true,
+            },
+            "event_uid": schema.StringAttribute{
+                MarkdownDescription: "For Event evidence: the security event's ID, as its source gave it.",
+                Computed: true,
+            },
+            "event_time": schema.StringAttribute{
+                MarkdownDescription: "For Event evidence: when the security event happened.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "event_snapshot": schema.StringAttribute{
+                MarkdownDescription: "For Event evidence: the security event as OneUptime read it when it was kept - its severity, class, message, who and where - and the hunt that found it. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -286,6 +303,9 @@ func (r *SecurityCaseEvidenceResource) Create(ctx context.Context, req resource.
         "fileType": true,
         "fileSizeInBytes": true,
         "sha256": true,
+        "eventUid": true,
+        "eventTime": true,
+        "eventSnapshot": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -686,6 +706,91 @@ func (r *SecurityCaseEvidenceResource) Create(ctx context.Context, req resource.
     } else {
         data.Sha256 = types.StringNull()
     }
+    if obj, ok := dataMap["eventUid"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EventUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EventUid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EventUid = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventUid = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EventUid = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventUid = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EventUid = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventUid = types.StringNull()
+        }
+    } else if val, ok := dataMap["eventUid"].(string); ok {
+        data.EventUid = types.StringValue(val)
+    } else {
+        data.EventUid = types.StringNull()
+    }
+    if obj, ok := dataMap["eventTime"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.EventTime = NewRFC3339Value(val)
+        } else {
+            data.EventTime = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["eventTime"].(string); ok && val != "" {
+        data.EventTime = NewRFC3339Value(val)
+    } else {
+        data.EventTime = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["eventSnapshot"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EventSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EventSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EventSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EventSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EventSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EventSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EventSnapshot = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.EventSnapshot = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["eventSnapshot"].(string); ok {
+        data.EventSnapshot = NewJSONSubsetValue(val)
+    } else {
+        data.EventSnapshot = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -766,6 +871,9 @@ func (r *SecurityCaseEvidenceResource) Read(ctx context.Context, req resource.Re
         "fileType": true,
         "fileSizeInBytes": true,
         "sha256": true,
+        "eventUid": true,
+        "eventTime": true,
+        "eventSnapshot": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1167,6 +1275,91 @@ func (r *SecurityCaseEvidenceResource) Read(ctx context.Context, req resource.Re
     } else {
         data.Sha256 = types.StringNull()
     }
+    if obj, ok := dataMap["eventUid"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EventUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EventUid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EventUid = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventUid = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EventUid = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventUid = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EventUid = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventUid = types.StringNull()
+        }
+    } else if val, ok := dataMap["eventUid"].(string); ok {
+        data.EventUid = types.StringValue(val)
+    } else {
+        data.EventUid = types.StringNull()
+    }
+    if obj, ok := dataMap["eventTime"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.EventTime = NewRFC3339Value(val)
+        } else {
+            data.EventTime = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["eventTime"].(string); ok && val != "" {
+        data.EventTime = NewRFC3339Value(val)
+    } else {
+        data.EventTime = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["eventSnapshot"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EventSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EventSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EventSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EventSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EventSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EventSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EventSnapshot = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.EventSnapshot = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["eventSnapshot"].(string); ok {
+        data.EventSnapshot = NewJSONSubsetValue(val)
+    } else {
+        data.EventSnapshot = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1289,6 +1482,9 @@ func (r *SecurityCaseEvidenceResource) Update(ctx context.Context, req resource.
         "fileType": true,
         "fileSizeInBytes": true,
         "sha256": true,
+        "eventUid": true,
+        "eventTime": true,
+        "eventSnapshot": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1683,6 +1879,91 @@ func (r *SecurityCaseEvidenceResource) Update(ctx context.Context, req resource.
         data.Sha256 = types.StringValue(val)
     } else {
         data.Sha256 = types.StringNull()
+    }
+    if obj, ok := dataMap["eventUid"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EventUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EventUid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EventUid = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventUid = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EventUid = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventUid = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EventUid = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventUid = types.StringNull()
+        }
+    } else if val, ok := dataMap["eventUid"].(string); ok {
+        data.EventUid = types.StringValue(val)
+    } else {
+        data.EventUid = types.StringNull()
+    }
+    if obj, ok := dataMap["eventTime"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.EventTime = NewRFC3339Value(val)
+        } else {
+            data.EventTime = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["eventTime"].(string); ok && val != "" {
+        data.EventTime = NewRFC3339Value(val)
+    } else {
+        data.EventTime = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["eventSnapshot"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EventSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EventSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EventSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EventSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EventSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EventSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EventSnapshot = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.EventSnapshot = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["eventSnapshot"].(string); ok {
+        data.EventSnapshot = NewJSONSubsetValue(val)
+    } else {
+        data.EventSnapshot = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
