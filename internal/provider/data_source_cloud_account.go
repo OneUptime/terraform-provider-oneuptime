@@ -45,6 +45,13 @@ type CloudAccountDataSourceModel struct {
     InventoryListedAt types.String `tfsdk:"inventory_listed_at"`
     Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsAiInvestigationEnabled types.Bool `tfsdk:"is_ai_investigation_enabled"`
+    IsAiLogReadEnabled types.Bool `tfsdk:"is_ai_log_read_enabled"`
+    AiRemediationMode types.String `tfsdk:"ai_remediation_mode"`
+    AiCommandAllowlist types.String `tfsdk:"ai_command_allowlist"`
+    AiAccessLastVerifiedAt types.String `tfsdk:"ai_access_last_verified_at"`
+    AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
+    AiAccessConfiguredAt types.String `tfsdk:"ai_access_configured_at"`
 }
 
 func (d *CloudAccountDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -53,7 +60,7 @@ func (d *CloudAccountDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *CloudAccountDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "AWS accounts, Azure subscriptions and Google Cloud projects: each with every resource its cloud connections list, and what changed in them. Look up an existing cloud account by `id`, or by any of its other arguments (`name`, `account_id`, `cloud_connection_id`, ...): each one set must match, and exactly one cloud account may match them all.",
+        MarkdownDescription: "AWS accounts, Azure subscriptions and Google Cloud projects: each with every resource its cloud connections list, and what changed in them. Look up an existing cloud account by `id`, or by any of its other arguments (`name`, `account_id`, `ai_access_last_error`, ...): each one set must match, and exactly one cloud account may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -135,6 +142,38 @@ func (d *CloudAccountDataSource) Schema(ctx context.Context, req datasource.Sche
                 Optional: true,
                 Computed: true,
             },
+            "is_ai_investigation_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When on, OneUptime AI reads this account live while investigating incidents and alerts linked to its resources — a resource's settings and status, its recent events, load balancer target health and quota usage — through the account's read-only cloud connection, and uses what it read as evidence; it needs no Cloud AI agent for that. Nothing is ever changed by an investigation. On by default. Anyone who may edit the account can turn it on or off.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_ai_log_read_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When on, an investigation may also read this account's recent log lines (CloudWatch Logs, Log Analytics, Cloud Logging) through the read-only connection. Log lines can hold customer data, so this is off until someone turns it on. Anyone who may edit the account can turn it on or off.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_remediation_mode": schema.StringAttribute{
+                MarkdownDescription: "Disabled: AI never proposes or runs a change on this account. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the account's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). The Cloud AI agent's own configuration (ONEUPTIME_AI_FIXES, which its setup command writes) sets the mode once it connects. Anyone who may edit the account can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_command_allowlist": schema.StringAttribute{
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run in this account without approval even though they are riskier changes. Each pattern is one cloud catalog command (cloud <operation> RESOURCE [--flag value]) and is compared with the command word by word: * stands for exactly one word (a resource id, a count), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid change for this account's cloud is refused. Destructive operations (Denied tier) never run regardless, and an operation that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the account can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "ai_access_last_verified_at": schema.StringAttribute{
+                MarkdownDescription: "When an operation from OneUptime AI last succeeded in this account through its Cloud AI agent. Set by the server.",
+                Computed: true,
+            },
+            "ai_access_last_error": schema.StringAttribute{
+                MarkdownDescription: "The most recent failure OneUptime AI hit in this account — an operation that failed, or a Cloud AI agent that could not connect to it — kept until the next success. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_access_configured_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime AI access to this account was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Cloud AI agent that connects later never overwrites a setting an operator chose.",
+                Computed: true,
+            },
         },
     }
 }
@@ -210,6 +249,22 @@ func (d *CloudAccountDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
     }
+    if !data.IsAiInvestigationEnabled.IsNull() && !data.IsAiInvestigationEnabled.IsUnknown() {
+        filters["isAiInvestigationEnabled"] = data.IsAiInvestigationEnabled.ValueBool()
+        filterNames = append(filterNames, "is_ai_investigation_enabled = "+fmt.Sprintf("%t", data.IsAiInvestigationEnabled.ValueBool()))
+    }
+    if !data.IsAiLogReadEnabled.IsNull() && !data.IsAiLogReadEnabled.IsUnknown() {
+        filters["isAiLogReadEnabled"] = data.IsAiLogReadEnabled.ValueBool()
+        filterNames = append(filterNames, "is_ai_log_read_enabled = "+fmt.Sprintf("%t", data.IsAiLogReadEnabled.ValueBool()))
+    }
+    if !data.AiRemediationMode.IsNull() && !data.AiRemediationMode.IsUnknown() {
+        filters["aiRemediationMode"] = data.AiRemediationMode.ValueString()
+        filterNames = append(filterNames, "ai_remediation_mode = "+fmt.Sprintf("%q", data.AiRemediationMode.ValueString()))
+    }
+    if !data.AiAccessLastError.IsNull() && !data.AiAccessLastError.IsUnknown() {
+        filters["aiAccessLastError"] = data.AiAccessLastError.ValueString()
+        filterNames = append(filterNames, "ai_access_last_error = "+fmt.Sprintf("%q", data.AiAccessLastError.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -243,6 +298,13 @@ func (d *CloudAccountDataSource) Read(ctx context.Context, req datasource.ReadRe
         "inventoryListedAt": true,
         "labels": true,
         "createdByUserId": true,
+        "isAiInvestigationEnabled": true,
+        "isAiLogReadEnabled": true,
+        "aiRemediationMode": true,
+        "aiCommandAllowlist": true,
+        "aiAccessLastVerifiedAt": true,
+        "aiAccessLastError": true,
+        "aiAccessConfiguredAt": true,
         "_id": true,
     }
 
@@ -567,6 +629,101 @@ func (d *CloudAccountDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if val, ok := item["isAiInvestigationEnabled"].(bool); ok {
+        data.IsAiInvestigationEnabled = types.BoolValue(val)
+    } else {
+        data.IsAiInvestigationEnabled = types.BoolNull()
+    }
+    if val, ok := item["isAiLogReadEnabled"].(bool); ok {
+        data.IsAiLogReadEnabled = types.BoolValue(val)
+    } else {
+        data.IsAiLogReadEnabled = types.BoolNull()
+    }
+    if obj, ok := item["aiRemediationMode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
+    } else if val, ok := item["aiRemediationMode"].(string); ok {
+        data.AiRemediationMode = types.StringValue(val)
+    } else {
+        data.AiRemediationMode = types.StringNull()
+    }
+    if obj, ok := item["aiCommandAllowlist"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiCommandAllowlist = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiCommandAllowlist = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiCommandAllowlist = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiCommandAllowlist = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = types.StringNull()
+        }
+    } else if val, ok := item["aiCommandAllowlist"].(string); ok {
+        data.AiCommandAllowlist = types.StringValue(val)
+    } else {
+        data.AiCommandAllowlist = types.StringNull()
+    }
+    if obj, ok := item["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessLastVerifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessLastVerifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessLastVerifiedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessLastVerifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastVerifiedAt = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessLastVerifiedAt"].(string); ok {
+        data.AiAccessLastVerifiedAt = types.StringValue(val)
+    } else {
+        data.AiAccessLastVerifiedAt = types.StringNull()
+    }
+    if obj, ok := item["aiAccessLastError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessLastError"].(string); ok {
+        data.AiAccessLastError = types.StringValue(val)
+    } else {
+        data.AiAccessLastError = types.StringNull()
+    }
+    if obj, ok := item["aiAccessConfiguredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessConfiguredAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessConfiguredAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessConfiguredAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessConfiguredAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessConfiguredAt = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessConfiguredAt"].(string); ok {
+        data.AiAccessConfiguredAt = types.StringValue(val)
+    } else {
+        data.AiAccessConfiguredAt = types.StringNull()
     }
 
     // Write logs using the tflog package

@@ -56,6 +56,10 @@ type ExceptionDataSourceModel struct {
     ErrorClass types.String `tfsdk:"error_class"`
     ErrorClassSource types.String `tfsdk:"error_class_source"`
     AiFixDeclinedAt types.String `tfsdk:"ai_fix_declined_at"`
+    RegressedAt types.String `tfsdk:"regressed_at"`
+    ResolvedInReleaseAfter types.String `tfsdk:"resolved_in_release_after"`
+    AiExplanation types.String `tfsdk:"ai_explanation"`
+    AiExplanationGeneratedAt types.String `tfsdk:"ai_explanation_generated_at"`
 }
 
 func (d *ExceptionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -120,19 +124,19 @@ func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "marked_as_resolved_at": schema.StringAttribute{
-                MarkdownDescription: "When did this team member accept invitation.",
+                MarkdownDescription: "When this exception was last resolved. Empty while it is unresolved.",
                 Computed: true,
             },
             "marked_as_archived_at": schema.StringAttribute{
-                MarkdownDescription: "When did this team member accept invitation.",
+                MarkdownDescription: "When this exception was last archived. Empty while it is not archived.",
                 Computed: true,
             },
             "first_seen_at": schema.StringAttribute{
-                MarkdownDescription: "When did this team member accept invitation.",
+                MarkdownDescription: "When the earliest occurrence of this exception happened.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "When did this team member accept invitation.",
+                MarkdownDescription: "When the latest occurrence of this exception happened.",
                 Computed: true,
             },
             "assign_to_user_id": schema.StringAttribute{
@@ -207,6 +211,23 @@ func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "ai_fix_declined_at": schema.StringAttribute{
                 MarkdownDescription: "Set when an AI-authored fix pull request for this exception was closed without merging; suppresses further automatic fix attempts.",
+                Computed: true,
+            },
+            "regressed_at": schema.StringAttribute{
+                MarkdownDescription: "When this exception last came back after it was resolved. Empty when it has not come back since someone last resolved or reopened it.",
+                Computed: true,
+            },
+            "resolved_in_release_after": schema.StringAttribute{
+                MarkdownDescription: "Set when the exception was resolved in the next release: the release it was resolved after. Occurrences from this release do not reopen the exception; an occurrence from any other release does.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_explanation": schema.StringAttribute{
+                MarkdownDescription: "OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: write it with `jsonencode()`.",
+                Computed: true,
+            },
+            "ai_explanation_generated_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime AI last wrote its explanation of this exception.",
                 Computed: true,
             },
         },
@@ -332,6 +353,10 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         filters["errorClassSource"] = data.ErrorClassSource.ValueString()
         filterNames = append(filterNames, "error_class_source = "+fmt.Sprintf("%q", data.ErrorClassSource.ValueString()))
     }
+    if !data.ResolvedInReleaseAfter.IsNull() && !data.ResolvedInReleaseAfter.IsUnknown() {
+        filters["resolvedInReleaseAfter"] = data.ResolvedInReleaseAfter.ValueString()
+        filterNames = append(filterNames, "resolved_in_release_after = "+fmt.Sprintf("%q", data.ResolvedInReleaseAfter.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -378,6 +403,10 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         "errorClass": true,
         "errorClassSource": true,
         "aiFixDeclinedAt": true,
+        "regressedAt": true,
+        "resolvedInReleaseAfter": true,
+        "aiExplanation": true,
+        "aiExplanationGeneratedAt": true,
         "_id": true,
     }
 
@@ -896,6 +925,74 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.AiFixDeclinedAt = types.StringValue(val)
     } else {
         data.AiFixDeclinedAt = types.StringNull()
+    }
+    if obj, ok := item["regressedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RegressedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RegressedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RegressedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RegressedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.RegressedAt = types.StringNull()
+        }
+    } else if val, ok := item["regressedAt"].(string); ok {
+        data.RegressedAt = types.StringValue(val)
+    } else {
+        data.RegressedAt = types.StringNull()
+    }
+    if obj, ok := item["resolvedInReleaseAfter"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResolvedInReleaseAfter = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ResolvedInReleaseAfter = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ResolvedInReleaseAfter = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ResolvedInReleaseAfter = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResolvedInReleaseAfter = types.StringNull()
+        }
+    } else if val, ok := item["resolvedInReleaseAfter"].(string); ok {
+        data.ResolvedInReleaseAfter = types.StringValue(val)
+    } else {
+        data.ResolvedInReleaseAfter = types.StringNull()
+    }
+    if obj, ok := item["aiExplanation"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiExplanation = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiExplanation = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiExplanation = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiExplanation = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiExplanation = types.StringNull()
+        }
+    } else if val, ok := item["aiExplanation"].(string); ok {
+        data.AiExplanation = types.StringValue(val)
+    } else {
+        data.AiExplanation = types.StringNull()
+    }
+    if obj, ok := item["aiExplanationGeneratedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiExplanationGeneratedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiExplanationGeneratedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiExplanationGeneratedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiExplanationGeneratedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiExplanationGeneratedAt = types.StringNull()
+        }
+    } else if val, ok := item["aiExplanationGeneratedAt"].(string); ok {
+        data.AiExplanationGeneratedAt = types.StringValue(val)
+    } else {
+        data.AiExplanationGeneratedAt = types.StringNull()
     }
 
     // Write logs using the tflog package

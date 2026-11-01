@@ -55,6 +55,8 @@ type ExceptionResourceModel struct {
     FirstSeenInRelease types.String `tfsdk:"first_seen_in_release"`
     LastSeenInRelease types.String `tfsdk:"last_seen_in_release"`
     Environment types.String `tfsdk:"environment"`
+    RegressedAt RFC3339Value `tfsdk:"regressed_at"`
+    ResolvedInReleaseAfter types.String `tfsdk:"resolved_in_release_after"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -67,6 +69,8 @@ type ExceptionResourceModel struct {
     ErrorClass types.String `tfsdk:"error_class"`
     ErrorClassSource types.String `tfsdk:"error_class_source"`
     AiFixDeclinedAt RFC3339Value `tfsdk:"ai_fix_declined_at"`
+    AiExplanation JSONSubsetValue `tfsdk:"ai_explanation"`
+    AiExplanationGeneratedAt RFC3339Value `tfsdk:"ai_explanation_generated_at"`
 }
 
 func (r *ExceptionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -142,7 +146,7 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 },
             },
             "first_seen_at": schema.StringAttribute{
-                MarkdownDescription: "When did this team member accept invitation.",
+                MarkdownDescription: "When the earliest occurrence of this exception happened.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -151,7 +155,7 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 },
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "When did this team member accept invitation.",
+                MarkdownDescription: "When the latest occurrence of this exception happened.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -226,6 +230,23 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "regressed_at": schema.StringAttribute{
+                MarkdownDescription: "When this exception last came back after it was resolved. Empty when it has not come back since someone last resolved or reopened it.",
+                CustomType: RFC3339Type{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "resolved_in_release_after": schema.StringAttribute{
+                MarkdownDescription: "Set when the exception was resolved in the next release: the release it was resolved after. Occurrences from this release do not reopen the exception; an occurrence from any other release does.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -247,12 +268,12 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 },
             },
             "marked_as_resolved_at": schema.StringAttribute{
-                MarkdownDescription: "When did this team member accept invitation.",
+                MarkdownDescription: "When this exception was last resolved. Empty while it is unresolved.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "marked_as_archived_at": schema.StringAttribute{
-                MarkdownDescription: "When did this team member accept invitation.",
+                MarkdownDescription: "When this exception was last archived. Empty while it is not archived.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -282,6 +303,16 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
             },
             "ai_fix_declined_at": schema.StringAttribute{
                 MarkdownDescription: "Set when an AI-authored fix pull request for this exception was closed without merging; suppresses further automatic fix attempts.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "ai_explanation": schema.StringAttribute{
+                MarkdownDescription: "OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "ai_explanation_generated_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime AI last wrote its explanation of this exception.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -448,6 +479,8 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
         "firstSeenInRelease": true,
         "lastSeenInRelease": true,
         "environment": true,
+        "regressedAt": true,
+        "resolvedInReleaseAfter": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -460,6 +493,8 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
         "errorClass": true,
         "errorClassSource": true,
         "aiFixDeclinedAt": true,
+        "aiExplanation": true,
+        "aiExplanationGeneratedAt": true,
         "_id": true,
     }
 
@@ -939,6 +974,54 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.Environment = types.StringNull()
     }
+    if obj, ok := dataMap["regressedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RegressedAt = NewRFC3339Value(val)
+        } else {
+            data.RegressedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["regressedAt"].(string); ok && val != "" {
+        data.RegressedAt = NewRFC3339Value(val)
+    } else {
+        data.RegressedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["resolvedInReleaseAfter"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResolvedInReleaseAfter = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResolvedInReleaseAfter = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResolvedInReleaseAfter = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResolvedInReleaseAfter = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResolvedInReleaseAfter = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResolvedInReleaseAfter = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResolvedInReleaseAfter = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResolvedInReleaseAfter = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResolvedInReleaseAfter = types.StringNull()
+        }
+    } else if val, ok := dataMap["resolvedInReleaseAfter"].(string); ok {
+        data.ResolvedInReleaseAfter = types.StringValue(val)
+    } else {
+        data.ResolvedInReleaseAfter = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1219,6 +1302,54 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.AiFixDeclinedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["aiExplanation"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiExplanation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiExplanation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiExplanation = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiExplanation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiExplanation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiExplanation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiExplanation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiExplanation = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiExplanation = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["aiExplanation"].(string); ok {
+        data.AiExplanation = NewJSONSubsetValue(val)
+    } else {
+        data.AiExplanation = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["aiExplanationGeneratedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiExplanationGeneratedAt = NewRFC3339Value(val)
+        } else {
+            data.AiExplanationGeneratedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiExplanationGeneratedAt"].(string); ok && val != "" {
+        data.AiExplanationGeneratedAt = NewRFC3339Value(val)
+    } else {
+        data.AiExplanationGeneratedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1266,6 +1397,8 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
         "firstSeenInRelease": true,
         "lastSeenInRelease": true,
         "environment": true,
+        "regressedAt": true,
+        "resolvedInReleaseAfter": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -1278,6 +1411,8 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
         "errorClass": true,
         "errorClassSource": true,
         "aiFixDeclinedAt": true,
+        "aiExplanation": true,
+        "aiExplanationGeneratedAt": true,
         "_id": true,
     }
 
@@ -1758,6 +1893,54 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.Environment = types.StringNull()
     }
+    if obj, ok := dataMap["regressedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RegressedAt = NewRFC3339Value(val)
+        } else {
+            data.RegressedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["regressedAt"].(string); ok && val != "" {
+        data.RegressedAt = NewRFC3339Value(val)
+    } else {
+        data.RegressedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["resolvedInReleaseAfter"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResolvedInReleaseAfter = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResolvedInReleaseAfter = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResolvedInReleaseAfter = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResolvedInReleaseAfter = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResolvedInReleaseAfter = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResolvedInReleaseAfter = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResolvedInReleaseAfter = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResolvedInReleaseAfter = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResolvedInReleaseAfter = types.StringNull()
+        }
+    } else if val, ok := dataMap["resolvedInReleaseAfter"].(string); ok {
+        data.ResolvedInReleaseAfter = types.StringValue(val)
+    } else {
+        data.ResolvedInReleaseAfter = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2038,6 +2221,54 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.AiFixDeclinedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["aiExplanation"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiExplanation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiExplanation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiExplanation = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiExplanation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiExplanation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiExplanation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiExplanation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiExplanation = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiExplanation = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["aiExplanation"].(string); ok {
+        data.AiExplanation = NewJSONSubsetValue(val)
+    } else {
+        data.AiExplanation = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["aiExplanationGeneratedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiExplanationGeneratedAt = NewRFC3339Value(val)
+        } else {
+            data.AiExplanationGeneratedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiExplanationGeneratedAt"].(string); ok && val != "" {
+        data.AiExplanationGeneratedAt = NewRFC3339Value(val)
+    } else {
+        data.AiExplanationGeneratedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2126,6 +2357,12 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
     if !data.Environment.IsUnknown() && !state.Environment.IsUnknown() && !data.Environment.Equal(state.Environment) {
         requestDataMap["environment"] = data.Environment.ValueString()
     }
+    if !data.RegressedAt.IsUnknown() && !state.RegressedAt.IsUnknown() && !data.RegressedAt.Equal(state.RegressedAt) {
+        requestDataMap["regressedAt"] = data.RegressedAt.ValueString()
+    }
+    if !data.ResolvedInReleaseAfter.IsUnknown() && !state.ResolvedInReleaseAfter.IsUnknown() && !data.ResolvedInReleaseAfter.Equal(state.ResolvedInReleaseAfter) {
+        requestDataMap["resolvedInReleaseAfter"] = data.ResolvedInReleaseAfter.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -2166,6 +2403,8 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
         "firstSeenInRelease": true,
         "lastSeenInRelease": true,
         "environment": true,
+        "regressedAt": true,
+        "resolvedInReleaseAfter": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -2178,6 +2417,8 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
         "errorClass": true,
         "errorClassSource": true,
         "aiFixDeclinedAt": true,
+        "aiExplanation": true,
+        "aiExplanationGeneratedAt": true,
         "_id": true,
     }
 
@@ -2652,6 +2893,54 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
     } else {
         data.Environment = types.StringNull()
     }
+    if obj, ok := dataMap["regressedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RegressedAt = NewRFC3339Value(val)
+        } else {
+            data.RegressedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["regressedAt"].(string); ok && val != "" {
+        data.RegressedAt = NewRFC3339Value(val)
+    } else {
+        data.RegressedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["resolvedInReleaseAfter"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResolvedInReleaseAfter = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResolvedInReleaseAfter = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResolvedInReleaseAfter = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResolvedInReleaseAfter = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResolvedInReleaseAfter = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResolvedInReleaseAfter = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResolvedInReleaseAfter = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResolvedInReleaseAfter = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResolvedInReleaseAfter = types.StringNull()
+        }
+    } else if val, ok := dataMap["resolvedInReleaseAfter"].(string); ok {
+        data.ResolvedInReleaseAfter = types.StringValue(val)
+    } else {
+        data.ResolvedInReleaseAfter = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2932,6 +3221,54 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
     } else {
         data.AiFixDeclinedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["aiExplanation"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiExplanation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiExplanation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiExplanation = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiExplanation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiExplanation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiExplanation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiExplanation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiExplanation = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiExplanation = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["aiExplanation"].(string); ok {
+        data.AiExplanation = NewJSONSubsetValue(val)
+    } else {
+        data.AiExplanation = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["aiExplanationGeneratedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiExplanationGeneratedAt = NewRFC3339Value(val)
+        } else {
+            data.AiExplanationGeneratedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiExplanationGeneratedAt"].(string); ok && val != "" {
+        data.AiExplanationGeneratedAt = NewRFC3339Value(val)
+    } else {
+        data.AiExplanationGeneratedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -3033,6 +3370,12 @@ func (r *ExceptionResource) keepPlannedValues(data *ExceptionResourceModel, plan
     }
     if config.Environment.IsNull() && !plan.Environment.IsUnknown() {
         data.Environment = plan.Environment
+    }
+    if config.RegressedAt.IsNull() && !plan.RegressedAt.IsUnknown() {
+        data.RegressedAt = plan.RegressedAt
+    }
+    if config.ResolvedInReleaseAfter.IsNull() && !plan.ResolvedInReleaseAfter.IsUnknown() {
+        data.ResolvedInReleaseAfter = plan.ResolvedInReleaseAfter
     }
 }
 

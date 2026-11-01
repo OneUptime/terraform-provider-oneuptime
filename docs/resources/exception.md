@@ -30,29 +30,33 @@ resource "oneuptime_exception" "example" {
 - `environment` (String) Deployment environment from deployment.environment resource attribute.
 - `exception_type` (String) Type of the exception that was thrown by the telemetry service.
 - `fingerprint` (String) Finger print of the exception that was thrown by the telemetry service.
-- `first_seen_at` (String) When did this team member accept invitation.
+- `first_seen_at` (String) When the earliest occurrence of this exception happened.
 - `first_seen_in_release` (String) The service version / release in which this exception was first observed.
 - `is_archived` (Boolean) Is this exception archived? Defaults to `false`.
 - `is_resolved` (Boolean) Is this exception resolved? Defaults to `false`.
-- `last_seen_at` (String) When did this team member accept invitation.
+- `last_seen_at` (String) When the latest occurrence of this exception happened.
 - `last_seen_in_release` (String) The most recent service version / release in which this exception was observed.
 - `message` (String) Exception message that was thrown by the telemetry service.
 - `occurance_count` (Number) Number of times this exception has occurred. Defaults to `1`.
 - `primary_entity_type` (String) Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry).
+- `regressed_at` (String) When this exception last came back after it was resolved. Empty when it has not come back since someone last resolved or reopened it.
+- `resolved_in_release_after` (String) Set when the exception was resolved in the next release: the release it was resolved after. Occurrences from this release do not reopen the exception; an occurrence from any other release does.
 - `stack_trace` (String) Stack trace of the exception that was thrown by the telemetry service.
 
 ### Read-Only
 
 - `ai_classification` (String) AI triage verdict for this exception group (code-fault, user-error, expected-denial, infrastructure).
+- `ai_explanation` (String) OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: write it with `jsonencode()`.
+- `ai_explanation_generated_at` (String) When OneUptime AI last wrote its explanation of this exception.
 - `ai_fix_declined_at` (String) Set when an AI-authored fix pull request for this exception was closed without merging; suppresses further automatic fix attempts.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `error_class` (String) Fault domain of this exception group (code-fault, user-error, expected-denial, infrastructure, unknown). Non-actionable classes are excluded from the Issues list.
 - `error_class_source` (String) Where the error class came from: default (unclassified), declared (by the emitting code), ai (triage verdict) or manual (a human).
 - `id` (String) Unique identifier for the resource.
-- `marked_as_archived_at` (String) When did this team member accept invitation.
+- `marked_as_archived_at` (String) When this exception was last archived. Empty while it is not archived.
 - `marked_as_archived_by_user_id` (String) User ID who marked this exception as archived. The ID of a `oneuptime_user` (see the data source).
-- `marked_as_resolved_at` (String) When did this team member accept invitation.
+- `marked_as_resolved_at` (String) When this exception was last resolved. Empty while it is unresolved.
 - `marked_as_resolved_by_user_id` (String) User ID who marked this exception as resolved. The ID of a `oneuptime_user` (see the data source).
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `unhandled` (Boolean) True when at least one occurrence of this exception escaped its span scope (was unhandled, per OTel exception.escaped).

@@ -38,6 +38,7 @@ data "oneuptime_on_call_duty_execution_log" "by_id" {
 - `on_call_duty_policy_id` (String) ID of the On-Call Policy this execution log is a run of. Required when you create one. Empty for a direct page: people, a team or an on-call schedule paged without an on-call policy. The ID of a `oneuptime_on_call_policy`.
 - `on_call_policy_execution_repeat_count` (Number) How many times did we execute this on-call policy?
 - `page_again_number` (Number) For a run that pages again because its record stayed acknowledged without being resolved: which time, from 1. Empty for every other run.
+- `page_message` (String) What the person who paged from Slack or Microsoft Teams wrote to the people this page reaches.
 - `paging_started_early_reason` (String) Why this run started paging before the working hours it waited for began: its record came to match an on-call rule that pages right away. Empty for every other run.
 - `schedule_gap_retry_count` (Number) How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.
 - `status` (String) Status of this execution.

@@ -54,7 +54,7 @@ func (r *EntityCriticalityResource) Schema(ctx context.Context, req resource.Sch
 
 func (r *EntityCriticalityResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "How much each user, host and IP address matters: the risk of an entity an entry names counts less (Low) or more (High, Extreme).",
+        MarkdownDescription: "How much each user, host, IP address and data store matters: the risk of an entity an entry names counts less (Low) or more (High, Extreme).",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -72,11 +72,11 @@ func (r *EntityCriticalityResource) schemaDefinition() schema.Schema {
                 },
             },
             "value": schema.StringAttribute{
-                MarkdownDescription: "The user's sign-in name, the host's name or the address, matched whatever the case. * stands for any run of characters: dc-* names every domain controller.",
+                MarkdownDescription: "The user's sign-in name, the host's name, the address or the data store, matched whatever the case. * stands for any run of characters: dc-* names every domain controller.",
                 Required: true,
             },
             "entity_type": schema.StringAttribute{
-                MarkdownDescription: "User, Host or IP Address: the kind of entity it is for. Empty is any kind.",
+                MarkdownDescription: "User, Host, IP Address or Data Store: the kind of entity it is for. Empty is any kind.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

@@ -14,11 +14,15 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -43,6 +47,10 @@ type CloudAccountResourceModel struct {
     ProviderValue types.String `tfsdk:"provider_value"`
     AccountId types.String `tfsdk:"account_id"`
     Labels types.Set `tfsdk:"labels"`
+    IsAiInvestigationEnabled types.Bool `tfsdk:"is_ai_investigation_enabled"`
+    IsAiLogReadEnabled types.Bool `tfsdk:"is_ai_log_read_enabled"`
+    AiRemediationMode types.String `tfsdk:"ai_remediation_mode"`
+    AiCommandAllowlist JSONSubsetValue `tfsdk:"ai_command_allowlist"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     ProviderAccountName types.String `tfsdk:"provider_account_name"`
@@ -53,6 +61,9 @@ type CloudAccountResourceModel struct {
     LastSeenAt RFC3339Value `tfsdk:"last_seen_at"`
     InventoryListedAt RFC3339Value `tfsdk:"inventory_listed_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    AiAccessLastVerifiedAt RFC3339Value `tfsdk:"ai_access_last_verified_at"`
+    AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
+    AiAccessConfiguredAt RFC3339Value `tfsdk:"ai_access_configured_at"`
 }
 
 func (r *CloudAccountResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -117,6 +128,45 @@ func (r *CloudAccountResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_ai_investigation_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When on, OneUptime AI reads this account live while investigating incidents and alerts linked to its resources — a resource's settings and status, its recent events, load balancer target health and quota usage — through the account's read-only cloud connection, and uses what it read as evidence; it needs no Cloud AI agent for that. Nothing is ever changed by an investigation. On by default. Anyone who may edit the account can turn it on or off.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_ai_log_read_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When on, an investigation may also read this account's recent log lines (CloudWatch Logs, Log Analytics, Cloud Logging) through the read-only connection. Log lines can hold customer data, so this is off until someone turns it on. Anyone who may edit the account can turn it on or off.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_remediation_mode": schema.StringAttribute{
+                MarkdownDescription: "Disabled: AI never proposes or runs a change on this account. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the account's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). The Cloud AI agent's own configuration (ONEUPTIME_AI_FIXES, which its setup command writes) sets the mode once it connects. Anyone who may edit the account can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("Disabled"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_command_allowlist": schema.StringAttribute{
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run in this account without approval even though they are riskier changes. Each pattern is one cloud catalog command (cloud <operation> RESOURCE [--flag value]) and is compared with the command word by word: * stands for exactly one word (a resource id, a count), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid change for this account's cloud is refused. Destructive operations (Denied tier) never run regardless, and an operation that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the account can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -167,6 +217,20 @@ func (r *CloudAccountResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "ai_access_last_verified_at": schema.StringAttribute{
+                MarkdownDescription: "When an operation from OneUptime AI last succeeded in this account through its Cloud AI agent. Set by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "ai_access_last_error": schema.StringAttribute{
+                MarkdownDescription: "The most recent failure OneUptime AI hit in this account — an operation that failed, or a Cloud AI agent that could not connect to it — kept until the next success. Set by the server.",
+                Computed: true,
+            },
+            "ai_access_configured_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime AI access to this account was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Cloud AI agent that connects later never overwrites a setting an operator chose.",
+                CustomType: RFC3339Type{},
+                Computed: true,
             },
         },
     }
@@ -287,6 +351,10 @@ func (r *CloudAccountResource) Create(ctx context.Context, req resource.CreateRe
         "provider": true,
         "accountId": true,
         "labels": true,
+        "isAiInvestigationEnabled": true,
+        "isAiLogReadEnabled": true,
+        "aiRemediationMode": true,
+        "aiCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
         "providerAccountName": true,
@@ -297,6 +365,9 @@ func (r *CloudAccountResource) Create(ctx context.Context, req resource.CreateRe
         "lastSeenAt": true,
         "inventoryListedAt": true,
         "createdByUserId": true,
+        "aiAccessLastVerifiedAt": true,
+        "aiAccessLastError": true,
+        "aiAccessConfiguredAt": true,
         "_id": true,
     }
 
@@ -520,6 +591,86 @@ func (r *CloudAccountResource) Create(ctx context.Context, req resource.CreateRe
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
+        data.IsAiInvestigationEnabled = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isAiLogReadEnabled"].(bool); ok {
+        data.IsAiLogReadEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["aiRemediationMode"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiRemediationMode = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiRemediationMode = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiRemediationMode"].(string); ok {
+        data.AiRemediationMode = types.StringValue(val)
+    } else {
+        data.AiRemediationMode = types.StringNull()
+    }
+    if obj, ok := dataMap["aiCommandAllowlist"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiCommandAllowlist = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiCommandAllowlist = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiCommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiCommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiCommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["aiCommandAllowlist"].(string); ok {
+        data.AiCommandAllowlist = NewJSONSubsetValue(val)
+    } else {
+        data.AiCommandAllowlist = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -714,6 +865,65 @@ func (r *CloudAccountResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
+        } else {
+            data.AiAccessLastVerifiedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAccessLastVerifiedAt"].(string); ok && val != "" {
+        data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
+    } else {
+        data.AiAccessLastVerifiedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["aiAccessLastError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiAccessLastError = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiAccessLastError = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiAccessLastError"].(string); ok {
+        data.AiAccessLastError = types.StringValue(val)
+    } else {
+        data.AiAccessLastError = types.StringNull()
+    }
+    if obj, ok := dataMap["aiAccessConfiguredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAccessConfiguredAt = NewRFC3339Value(val)
+        } else {
+            data.AiAccessConfiguredAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAccessConfiguredAt"].(string); ok && val != "" {
+        data.AiAccessConfiguredAt = NewRFC3339Value(val)
+    } else {
+        data.AiAccessConfiguredAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -750,6 +960,10 @@ func (r *CloudAccountResource) Read(ctx context.Context, req resource.ReadReques
         "provider": true,
         "accountId": true,
         "labels": true,
+        "isAiInvestigationEnabled": true,
+        "isAiLogReadEnabled": true,
+        "aiRemediationMode": true,
+        "aiCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
         "providerAccountName": true,
@@ -760,6 +974,9 @@ func (r *CloudAccountResource) Read(ctx context.Context, req resource.ReadReques
         "lastSeenAt": true,
         "inventoryListedAt": true,
         "createdByUserId": true,
+        "aiAccessLastVerifiedAt": true,
+        "aiAccessLastError": true,
+        "aiAccessConfiguredAt": true,
         "_id": true,
     }
 
@@ -984,6 +1201,86 @@ func (r *CloudAccountResource) Read(ctx context.Context, req resource.ReadReques
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
+        data.IsAiInvestigationEnabled = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isAiLogReadEnabled"].(bool); ok {
+        data.IsAiLogReadEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["aiRemediationMode"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiRemediationMode = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiRemediationMode = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiRemediationMode"].(string); ok {
+        data.AiRemediationMode = types.StringValue(val)
+    } else {
+        data.AiRemediationMode = types.StringNull()
+    }
+    if obj, ok := dataMap["aiCommandAllowlist"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiCommandAllowlist = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiCommandAllowlist = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiCommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiCommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiCommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["aiCommandAllowlist"].(string); ok {
+        data.AiCommandAllowlist = NewJSONSubsetValue(val)
+    } else {
+        data.AiCommandAllowlist = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1178,6 +1475,65 @@ func (r *CloudAccountResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
+        } else {
+            data.AiAccessLastVerifiedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAccessLastVerifiedAt"].(string); ok && val != "" {
+        data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
+    } else {
+        data.AiAccessLastVerifiedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["aiAccessLastError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiAccessLastError = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiAccessLastError = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiAccessLastError"].(string); ok {
+        data.AiAccessLastError = types.StringValue(val)
+    } else {
+        data.AiAccessLastError = types.StringNull()
+    }
+    if obj, ok := dataMap["aiAccessConfiguredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAccessConfiguredAt = NewRFC3339Value(val)
+        } else {
+            data.AiAccessConfiguredAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAccessConfiguredAt"].(string); ok && val != "" {
+        data.AiAccessConfiguredAt = NewRFC3339Value(val)
+    } else {
+        data.AiAccessConfiguredAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1230,6 +1586,23 @@ func (r *CloudAccountResource) Update(ctx context.Context, req resource.UpdateRe
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
+    if !data.IsAiInvestigationEnabled.IsUnknown() && !state.IsAiInvestigationEnabled.IsUnknown() && !data.IsAiInvestigationEnabled.Equal(state.IsAiInvestigationEnabled) {
+        requestDataMap["isAiInvestigationEnabled"] = data.IsAiInvestigationEnabled.ValueBool()
+    }
+    if !data.IsAiLogReadEnabled.IsUnknown() && !state.IsAiLogReadEnabled.IsUnknown() && !data.IsAiLogReadEnabled.Equal(state.IsAiLogReadEnabled) {
+        requestDataMap["isAiLogReadEnabled"] = data.IsAiLogReadEnabled.ValueBool()
+    }
+    if !data.AiRemediationMode.IsUnknown() && !state.AiRemediationMode.IsUnknown() && !data.AiRemediationMode.Equal(state.AiRemediationMode) {
+        requestDataMap["aiRemediationMode"] = data.AiRemediationMode.ValueString()
+    }
+    if !data.AiCommandAllowlist.IsUnknown() && !state.AiCommandAllowlist.IsUnknown() && !data.AiCommandAllowlist.Equal(state.AiCommandAllowlist) {
+        var aicommandallowlistData interface{}
+        if err := json.Unmarshal([]byte(data.AiCommandAllowlist.ValueString()), &aicommandallowlistData); err == nil {
+            requestDataMap["aiCommandAllowlist"] = aicommandallowlistData
+        } else {
+            requestDataMap["aiCommandAllowlist"] = data.AiCommandAllowlist.ValueString()
+        }
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1259,6 +1632,10 @@ func (r *CloudAccountResource) Update(ctx context.Context, req resource.UpdateRe
         "provider": true,
         "accountId": true,
         "labels": true,
+        "isAiInvestigationEnabled": true,
+        "isAiLogReadEnabled": true,
+        "aiRemediationMode": true,
+        "aiCommandAllowlist": true,
         "createdAt": true,
         "updatedAt": true,
         "providerAccountName": true,
@@ -1269,6 +1646,9 @@ func (r *CloudAccountResource) Update(ctx context.Context, req resource.UpdateRe
         "lastSeenAt": true,
         "inventoryListedAt": true,
         "createdByUserId": true,
+        "aiAccessLastVerifiedAt": true,
+        "aiAccessLastError": true,
+        "aiAccessConfiguredAt": true,
         "_id": true,
     }
 
@@ -1487,6 +1867,86 @@ func (r *CloudAccountResource) Update(ctx context.Context, req resource.UpdateRe
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
+        data.IsAiInvestigationEnabled = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isAiLogReadEnabled"].(bool); ok {
+        data.IsAiLogReadEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["aiRemediationMode"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiRemediationMode = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiRemediationMode = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiRemediationMode"].(string); ok {
+        data.AiRemediationMode = types.StringValue(val)
+    } else {
+        data.AiRemediationMode = types.StringNull()
+    }
+    if obj, ok := dataMap["aiCommandAllowlist"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiCommandAllowlist = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiCommandAllowlist = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiCommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiCommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AiCommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["aiCommandAllowlist"].(string); ok {
+        data.AiCommandAllowlist = NewJSONSubsetValue(val)
+    } else {
+        data.AiCommandAllowlist = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1681,6 +2141,65 @@ func (r *CloudAccountResource) Update(ctx context.Context, req resource.UpdateRe
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
+        } else {
+            data.AiAccessLastVerifiedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAccessLastVerifiedAt"].(string); ok && val != "" {
+        data.AiAccessLastVerifiedAt = NewRFC3339Value(val)
+    } else {
+        data.AiAccessLastVerifiedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["aiAccessLastError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiAccessLastError = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiAccessLastError = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiAccessLastError"].(string); ok {
+        data.AiAccessLastError = types.StringValue(val)
+    } else {
+        data.AiAccessLastError = types.StringNull()
+    }
+    if obj, ok := dataMap["aiAccessConfiguredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAccessConfiguredAt = NewRFC3339Value(val)
+        } else {
+            data.AiAccessConfiguredAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAccessConfiguredAt"].(string); ok && val != "" {
+        data.AiAccessConfiguredAt = NewRFC3339Value(val)
+    } else {
+        data.AiAccessConfiguredAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1743,6 +2262,18 @@ func (r *CloudAccountResource) keepPlannedValues(data *CloudAccountResourceModel
     }
     if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
         data.Labels = plan.Labels
+    }
+    if config.IsAiInvestigationEnabled.IsNull() && !plan.IsAiInvestigationEnabled.IsUnknown() {
+        data.IsAiInvestigationEnabled = plan.IsAiInvestigationEnabled
+    }
+    if config.IsAiLogReadEnabled.IsNull() && !plan.IsAiLogReadEnabled.IsUnknown() {
+        data.IsAiLogReadEnabled = plan.IsAiLogReadEnabled
+    }
+    if config.AiRemediationMode.IsNull() && !plan.AiRemediationMode.IsUnknown() {
+        data.AiRemediationMode = plan.AiRemediationMode
+    }
+    if config.AiCommandAllowlist.IsNull() && !plan.AiCommandAllowlist.IsUnknown() {
+        data.AiCommandAllowlist = plan.AiCommandAllowlist
     }
 }
 

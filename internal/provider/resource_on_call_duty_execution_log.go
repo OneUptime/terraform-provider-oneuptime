@@ -65,6 +65,7 @@ type OnCallDutyExecutionLogResourceModel struct {
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
     TriggeredByWorkflowId types.String `tfsdk:"triggered_by_workflow_id"`
     TriggeredByWorkflowName types.String `tfsdk:"triggered_by_workflow_name"`
+    PageMessage types.String `tfsdk:"page_message"`
 }
 
 func (r *OnCallDutyExecutionLogResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -259,6 +260,10 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Name of the workflow whose step started this page, as it was then.",
                 Computed: true,
             },
+            "page_message": schema.StringAttribute{
+                MarkdownDescription: "What the person who paged from Slack or Microsoft Teams wrote to the people this page reaches.",
+                Computed: true,
+            },
         },
     }
 }
@@ -429,6 +434,7 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
         "triggeredByUserId": true,
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
+        "pageMessage": true,
         "_id": true,
     }
 
@@ -1160,6 +1166,43 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     } else {
         data.TriggeredByWorkflowName = types.StringNull()
     }
+    if obj, ok := dataMap["pageMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PageMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PageMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PageMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PageMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PageMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageMessage = types.StringNull()
+        }
+    } else if val, ok := dataMap["pageMessage"].(string); ok {
+        data.PageMessage = types.StringValue(val)
+    } else {
+        data.PageMessage = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1217,6 +1260,7 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         "triggeredByUserId": true,
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
+        "pageMessage": true,
         "_id": true,
     }
 
@@ -1948,6 +1992,43 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         data.TriggeredByWorkflowName = types.StringValue(val)
     } else {
         data.TriggeredByWorkflowName = types.StringNull()
+    }
+    if obj, ok := dataMap["pageMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PageMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PageMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PageMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PageMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PageMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageMessage = types.StringNull()
+        }
+    } else if val, ok := dataMap["pageMessage"].(string); ok {
+        data.PageMessage = types.StringValue(val)
+    } else {
+        data.PageMessage = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

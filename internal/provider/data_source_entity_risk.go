@@ -52,7 +52,7 @@ func (d *EntityRiskDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *EntityRiskDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "The risk of each user, host and IP address: what the detection rules, threat intel and connected products found about it in the last 7 days adds up to. Look up an existing entity risk by `id`, or by any of its other arguments (`contributor_count`, `criticality`, `entity_key`, ...): each one set must match, and exactly one entity risk may match them all.",
+        MarkdownDescription: "The risk of each user, host, IP address and data store: what the detection rules, threat intel, connected products and Data Security found about it in the last 7 days adds up to. Look up an existing entity risk by `id`, or by any of its other arguments (`contributor_count`, `criticality`, `entity_key`, ...): each one set must match, and exactly one entity risk may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -73,7 +73,7 @@ func (d *EntityRiskDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "entity_type": schema.StringAttribute{
-                MarkdownDescription: "What the entity is: a User, a Host or an IP Address.",
+                MarkdownDescription: "What the entity is: a User, a Host, an IP Address or a Data Store.",
                 Optional: true,
                 Computed: true,
             },

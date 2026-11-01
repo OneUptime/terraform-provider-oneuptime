@@ -2,12 +2,12 @@
 page_title: "oneuptime_entity_criticality Resource - oneuptime"
 subcategory: "Other"
 description: |-
-  How much each user, host and IP address matters: the risk of an entity an entry names counts less (Low) or more (High, Extreme).
+  How much each user, host, IP address and data store matters: the risk of an entity an entry names counts less (Low) or more (High, Extreme).
 ---
 
 # oneuptime_entity_criticality (Resource)
 
-How much each user, host and IP address matters: the risk of an entity an entry names counts less (Low) or more (High, Extreme).
+How much each user, host, IP address and data store matters: the risk of an entity an entry names counts less (Low) or more (High, Extreme).
 
 ## Example Usage
 
@@ -24,12 +24,12 @@ resource "oneuptime_entity_criticality" "example" {
 ### Required
 
 - `criticality` (String) How much it matters: Low (its risk counts half), High (one and a half times) or Extreme (twice).
-- `value` (String) The user's sign-in name, the host's name or the address, matched whatever the case. * stands for any run of characters: dc-* names every domain controller.
+- `value` (String) The user's sign-in name, the host's name, the address or the data store, matched whatever the case. * stands for any run of characters: dc-* names every domain controller.
 
 ### Optional
 
 - `description` (String) Why it matters this much, for whoever reads the list later.
-- `entity_type` (String) User, Host or IP Address: the kind of entity it is for. Empty is any kind.
+- `entity_type` (String) User, Host, IP Address or Data Store: the kind of entity it is for. Empty is any kind.
 
 ### Read-Only
 

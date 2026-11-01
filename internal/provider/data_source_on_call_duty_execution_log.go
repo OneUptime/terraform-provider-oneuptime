@@ -54,6 +54,7 @@ type OnCallDutyExecutionLogDataSourceModel struct {
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
     TriggeredByWorkflowId types.String `tfsdk:"triggered_by_workflow_id"`
     TriggeredByWorkflowName types.String `tfsdk:"triggered_by_workflow_name"`
+    PageMessage types.String `tfsdk:"page_message"`
 }
 
 func (d *OnCallDutyExecutionLogDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -199,6 +200,11 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
                 Optional: true,
                 Computed: true,
             },
+            "page_message": schema.StringAttribute{
+                MarkdownDescription: "What the person who paged from Slack or Microsoft Teams wrote to the people this page reaches.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -322,6 +328,10 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         filters["triggeredByWorkflowName"] = data.TriggeredByWorkflowName.ValueString()
         filterNames = append(filterNames, "triggered_by_workflow_name = "+fmt.Sprintf("%q", data.TriggeredByWorkflowName.ValueString()))
     }
+    if !data.PageMessage.IsNull() && !data.PageMessage.IsUnknown() {
+        filters["pageMessage"] = data.PageMessage.ValueString()
+        filterNames = append(filterNames, "page_message = "+fmt.Sprintf("%q", data.PageMessage.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -366,6 +376,7 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         "triggeredByUserId": true,
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
+        "pageMessage": true,
         "_id": true,
     }
 
@@ -838,6 +849,23 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         data.TriggeredByWorkflowName = types.StringValue(val)
     } else {
         data.TriggeredByWorkflowName = types.StringNull()
+    }
+    if obj, ok := item["pageMessage"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PageMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PageMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PageMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageMessage = types.StringNull()
+        }
+    } else if val, ok := item["pageMessage"].(string); ok {
+        data.PageMessage = types.StringValue(val)
+    } else {
+        data.PageMessage = types.StringNull()
     }
 
     // Write logs using the tflog package

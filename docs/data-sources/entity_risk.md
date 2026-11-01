@@ -2,12 +2,12 @@
 page_title: "oneuptime_entity_risk Data Source - oneuptime"
 subcategory: "Other"
 description: |-
-  The risk of each user, host and IP address: what the detection rules, threat intel and connected products found about it in the last 7 days adds up to.
+  The risk of each user, host, IP address and data store: what the detection rules, threat intel, connected products and Data Security found about it in the last 7 days adds up to.
 ---
 
 # oneuptime_entity_risk (Data Source)
 
-The risk of each user, host and IP address: what the detection rules, threat intel and connected products found about it in the last 7 days adds up to.
+The risk of each user, host, IP address and data store: what the detection rules, threat intel, connected products and Data Security found about it in the last 7 days adds up to.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one entity risk may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -31,7 +31,7 @@ data "oneuptime_entity_risk" "by_id" {
 - `contributor_count` (Number) How many different detection rules, threat intel feeds and connected products' rules add to its risk.
 - `criticality` (String) How much it matters, from the project's Entity Criticality list: Low (x0.5), High (x1.5) or Extreme (x2). Empty counts as it is.
 - `entity_key` (String) The entity's value, trimmed and in lower case: one entity's risk, whatever case its findings write it in.
-- `entity_type` (String) What the entity is: a User, a Host or an IP Address.
+- `entity_type` (String) What the entity is: a User, a Host, an IP Address or a Data Store.
 - `entity_value` (String) The user's sign-in name, the host's name or the address, as the first finding about it named it.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `risk_score` (Number) What its sources of the last 7 days add up to, weighted by how much it matters. A case opens at the project's threshold.

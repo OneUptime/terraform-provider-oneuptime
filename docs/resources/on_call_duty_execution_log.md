@@ -51,6 +51,7 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
 - `page_again_number` (Number) For a run that pages again because its record stayed acknowledged without being resolved: which time, from 1. Empty for every other run.
+- `page_message` (String) What the person who paged from Slack or Microsoft Teams wrote to the people this page reaches.
 - `paging_started_early_reason` (String) Why this run started paging before the working hours it waited for began: its record came to match an on-call rule that pages right away. Empty for every other run.
 - `paging_starts_at` (String) When this run starts paging, when it waited to: an on-call rule that pages only during working hours held it until they began. Empty when it paged straight away.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

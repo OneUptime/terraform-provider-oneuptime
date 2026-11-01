@@ -48,16 +48,20 @@ data "oneuptime_exception" "by_id" {
 - `occurance_count` (Number) Number of times this exception has occurred.
 - `primary_entity_id` (String) ID of the resource this exception belongs to (Service / Host / DockerHost / KubernetesCluster, or the projectId for unattributed telemetry — disambiguated by primaryEntityType).
 - `primary_entity_type` (String) Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry).
+- `resolved_in_release_after` (String) Set when the exception was resolved in the next release: the release it was resolved after. Occurrences from this release do not reopen the exception; an occurrence from any other release does.
 - `stack_trace` (String) Stack trace of the exception that was thrown by the telemetry service.
 - `unhandled` (Boolean) True when at least one occurrence of this exception escaped its span scope (was unhandled, per OTel exception.escaped).
 
 ### Read-Only
 
+- `ai_explanation` (String) OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: write it with `jsonencode()`.
+- `ai_explanation_generated_at` (String) When OneUptime AI last wrote its explanation of this exception.
 - `ai_fix_declined_at` (String) Set when an AI-authored fix pull request for this exception was closed without merging; suppresses further automatic fix attempts.
 - `created_at` (String) Date and Time when the object was created.
-- `first_seen_at` (String) When did this team member accept invitation.
-- `last_seen_at` (String) When did this team member accept invitation.
-- `marked_as_archived_at` (String) When did this team member accept invitation.
-- `marked_as_resolved_at` (String) When did this team member accept invitation.
+- `first_seen_at` (String) When the earliest occurrence of this exception happened.
+- `last_seen_at` (String) When the latest occurrence of this exception happened.
+- `marked_as_archived_at` (String) When this exception was last archived. Empty while it is not archived.
+- `marked_as_resolved_at` (String) When this exception was last resolved. Empty while it is unresolved.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `regressed_at` (String) When this exception last came back after it was resolved. Empty when it has not come back since someone last resolved or reopened it.
 - `updated_at` (String) Date and Time when the object was updated.
