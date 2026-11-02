@@ -53,6 +53,7 @@ data "oneuptime_exception_instance" "by_id" {
 - `time` (String) Time.
 - `time_unix_nano` (String) Time (in Unix Nano).
 - `trace_id` (String) Trace ID.
+- `user_id` (String) User ID.
 
 ### Read-Only
 

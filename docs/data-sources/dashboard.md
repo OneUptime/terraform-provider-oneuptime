@@ -30,6 +30,7 @@ data "oneuptime_dashboard" "by_id" {
 
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `dark_theme_logo_file_id` (String) Dashboard Dark Theme Logo File ID. The ID of a `oneuptime_file`.
 - `description` (String) Friendly description that will help you remember.
 - `enable_master_password` (Boolean) Require visitors to enter a master password before viewing a public dashboard.
 - `favicon_file_id` (String) Dashboard Favicon File ID. The ID of a `oneuptime_file`.

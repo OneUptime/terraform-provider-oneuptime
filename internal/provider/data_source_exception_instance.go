@@ -42,6 +42,7 @@ type ExceptionInstanceDataSourceModel struct {
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
     SessionId types.String `tfsdk:"session_id"`
+    UserId types.String `tfsdk:"user_id"`
     Fingerprint types.String `tfsdk:"fingerprint"`
     SpanName types.String `tfsdk:"span_name"`
     Release types.String `tfsdk:"release"`
@@ -133,6 +134,11 @@ func (d *ExceptionInstanceDataSource) Schema(ctx context.Context, req datasource
             },
             "session_id": schema.StringAttribute{
                 MarkdownDescription: "Session ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID.",
                 Optional: true,
                 Computed: true,
             },
@@ -293,6 +299,10 @@ func (d *ExceptionInstanceDataSource) Read(ctx context.Context, req datasource.R
         filters["sessionId"] = data.SessionId.ValueString()
         filterNames = append(filterNames, "session_id = "+fmt.Sprintf("%q", data.SessionId.ValueString()))
     }
+    if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
+        filters["userId"] = data.UserId.ValueString()
+        filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
     if !data.Fingerprint.IsNull() && !data.Fingerprint.IsUnknown() {
         filters["fingerprint"] = data.Fingerprint.ValueString()
         filterNames = append(filterNames, "fingerprint = "+fmt.Sprintf("%q", data.Fingerprint.ValueString()))
@@ -371,6 +381,7 @@ func (d *ExceptionInstanceDataSource) Read(ctx context.Context, req datasource.R
         "traceId": true,
         "spanId": true,
         "sessionId": true,
+        "userId": true,
         "fingerprint": true,
         "spanName": true,
         "release": true,
@@ -655,6 +666,23 @@ func (d *ExceptionInstanceDataSource) Read(ctx context.Context, req datasource.R
         data.SessionId = types.StringValue(val)
     } else {
         data.SessionId = types.StringNull()
+    }
+    if obj, ok := item["userId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if val, ok := item["userId"].(string); ok {
+        data.UserId = types.StringValue(val)
+    } else {
+        data.UserId = types.StringNull()
     }
     if obj, ok := item["fingerprint"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

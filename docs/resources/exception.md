@@ -58,6 +58,9 @@ resource "oneuptime_exception" "example" {
 - `marked_as_archived_by_user_id` (String) User ID who marked this exception as archived. The ID of a `oneuptime_user` (see the data source).
 - `marked_as_resolved_at` (String) When this exception was last resolved. Empty while it is unresolved.
 - `marked_as_resolved_by_user_id` (String) User ID who marked this exception as resolved. The ID of a `oneuptime_user` (see the data source).
+- `merged_at` (String) When this exception was merged into another.
+- `merged_by_user_id` (String) ID of the user who merged this exception into another. The ID of a `oneuptime_user` (see the data source).
+- `merged_into_telemetry_exception_id` (String) ID of the exception this one was merged into as the same bug. Empty for an exception that was not merged. The ID of a `oneuptime_exception`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `unhandled` (Boolean) True when at least one occurrence of this exception escaped its span scope (was unhandled, per OTel exception.escaped).
 - `updated_at` (String) Date and Time when the object was updated.

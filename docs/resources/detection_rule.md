@@ -35,6 +35,7 @@ resource "oneuptime_detection_rule" "example" {
 - `group_by_field` (String) Optional security-event field (e.g. principalHost, principalUser) to group matches by. One alert is opened per distinct value; empty groups all matches into one alert.
 - `incident_severity_id` (String) ID of the incident severity for incidents opened by this rule. The ID of a `oneuptime_incident_severity`.
 - `is_enabled` (Boolean) Whether this detection rule is evaluated. Defaults to `true`.
+- `is_real_time` (Boolean) Whether each event is checked against this rule as it arrives, within seconds, instead of every evaluation interval. Only for a rule that fires on one event: not a correlation, a match count threshold of 1, no distinct count field and no regular expression. Defaults to `false`.
 - `match_count_threshold` (Number) Fire only when a group's count — distinct values when a distinct count field is set, matching events otherwise — reaches this number within one evaluation window. 1 fires on any match. Defaults to `1`.
 - `risk_score` (Number) What a match adds to the risk of the user, host or address it is about, from 0 to 100. Empty: by the rule's level.
 - `should_create_alert` (Boolean) Whether matches open OneUptime alerts. Defaults to `true`.

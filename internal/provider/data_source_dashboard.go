@@ -44,6 +44,7 @@ type DashboardDataSourceModel struct {
     PageTitle types.String `tfsdk:"page_title"`
     PageDescription types.String `tfsdk:"page_description"`
     LogoFileId types.String `tfsdk:"logo_file_id"`
+    DarkThemeLogoFileId types.String `tfsdk:"dark_theme_logo_file_id"`
     FaviconFileId types.String `tfsdk:"favicon_file_id"`
     Theme types.String `tfsdk:"theme"`
     IsPublicDashboard types.Bool `tfsdk:"is_public_dashboard"`
@@ -133,6 +134,11 @@ func (d *DashboardDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "logo_file_id": schema.StringAttribute{
                 MarkdownDescription: "Dashboard Logo File ID. The ID of a `oneuptime_file`.",
+                Optional: true,
+                Computed: true,
+            },
+            "dark_theme_logo_file_id": schema.StringAttribute{
+                MarkdownDescription: "Dashboard Dark Theme Logo File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
             },
@@ -241,6 +247,10 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         filters["logoFileId"] = data.LogoFileId.ValueString()
         filterNames = append(filterNames, "logo_file_id = "+fmt.Sprintf("%q", data.LogoFileId.ValueString()))
     }
+    if !data.DarkThemeLogoFileId.IsNull() && !data.DarkThemeLogoFileId.IsUnknown() {
+        filters["darkThemeLogoFileId"] = data.DarkThemeLogoFileId.ValueString()
+        filterNames = append(filterNames, "dark_theme_logo_file_id = "+fmt.Sprintf("%q", data.DarkThemeLogoFileId.ValueString()))
+    }
     if !data.FaviconFileId.IsNull() && !data.FaviconFileId.IsUnknown() {
         filters["faviconFileId"] = data.FaviconFileId.ValueString()
         filterNames = append(filterNames, "favicon_file_id = "+fmt.Sprintf("%q", data.FaviconFileId.ValueString()))
@@ -293,6 +303,7 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         "pageTitle": true,
         "pageDescription": true,
         "logoFileId": true,
+        "darkThemeLogoFileId": true,
         "faviconFileId": true,
         "theme": true,
         "isPublicDashboard": true,
@@ -626,6 +637,23 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.LogoFileId = types.StringValue(val)
     } else {
         data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := item["darkThemeLogoFileId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DarkThemeLogoFileId = types.StringNull()
+        }
+    } else if val, ok := item["darkThemeLogoFileId"].(string); ok {
+        data.DarkThemeLogoFileId = types.StringValue(val)
+    } else {
+        data.DarkThemeLogoFileId = types.StringNull()
     }
     if obj, ok := item["faviconFileId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

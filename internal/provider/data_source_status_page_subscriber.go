@@ -38,6 +38,7 @@ type StatusPageSubscriberDataSourceModel struct {
     SubscriberWebhook types.String `tfsdk:"subscriber_webhook"`
     SlackWorkspaceName types.String `tfsdk:"slack_workspace_name"`
     MicrosoftTeamsWorkspaceName types.String `tfsdk:"microsoft_teams_workspace_name"`
+    Language types.String `tfsdk:"language"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsSubscriptionConfirmed types.Bool `tfsdk:"is_subscription_confirmed"`
     IsUnsubscribed types.Bool `tfsdk:"is_unsubscribed"`
@@ -102,6 +103,11 @@ func (d *StatusPageSubscriberDataSource) Schema(ctx context.Context, req datasou
             },
             "microsoft_teams_workspace_name": schema.StringAttribute{
                 MarkdownDescription: "Name of the Microsoft Teams workspace for validation and identification.",
+                Optional: true,
+                Computed: true,
+            },
+            "language": schema.StringAttribute{
+                MarkdownDescription: "The language this subscriber is notified in. Empty means the status page's default language.",
                 Optional: true,
                 Computed: true,
             },
@@ -213,6 +219,10 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
         filters["microsoftTeamsWorkspaceName"] = data.MicrosoftTeamsWorkspaceName.ValueString()
         filterNames = append(filterNames, "microsoft_teams_workspace_name = "+fmt.Sprintf("%q", data.MicrosoftTeamsWorkspaceName.ValueString()))
     }
+    if !data.Language.IsNull() && !data.Language.IsUnknown() {
+        filters["language"] = data.Language.ValueString()
+        filterNames = append(filterNames, "language = "+fmt.Sprintf("%q", data.Language.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -271,6 +281,7 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
         "subscriberWebhook": true,
         "slackWorkspaceName": true,
         "microsoftTeamsWorkspaceName": true,
+        "language": true,
         "createdByUserId": true,
         "isSubscriptionConfirmed": true,
         "isUnsubscribed": true,
@@ -512,6 +523,23 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
         data.MicrosoftTeamsWorkspaceName = types.StringValue(val)
     } else {
         data.MicrosoftTeamsWorkspaceName = types.StringNull()
+    }
+    if obj, ok := item["language"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Language = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Language = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Language = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Language = types.StringValue(string(jsonBytes))
+        } else {
+            data.Language = types.StringNull()
+        }
+    } else if val, ok := item["language"].(string); ok {
+        data.Language = types.StringValue(val)
+    } else {
+        data.Language = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

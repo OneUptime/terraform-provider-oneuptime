@@ -2,12 +2,12 @@
 page_title: "oneuptime_network_endpoint Data Source - oneuptime"
 subcategory: "Other"
 description: |-
-  LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices. Rows are upserted by the server; users can classify them.
+  LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices, and from a network controller's client list. Rows are upserted by the server; users can classify them.
 ---
 
 # oneuptime_network_endpoint (Data Source)
 
-LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices. Rows are upserted by the server; users can classify them.
+LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices, and from a network controller's client list. Rows are upserted by the server; users can classify them.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one network endpoint may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -31,8 +31,10 @@ data "oneuptime_network_endpoint" "by_id" {
 - `attached_interface_index` (Number) SNMP ifIndex of the switch port this endpoint was last seen on. Managed by the server.
 - `attached_network_device_id` (String) ID of the Network Device this endpoint was last seen attached to. The ID of a `oneuptime_network_device`.
 - `attached_port_name` (String) Name of the switch port this endpoint was last seen on. Managed by the server.
+- `attachment_source` (String) The network controller that reported where this endpoint is attached, such as meraki. Empty when a walk of a switch or router found it. Managed by the server.
 - `classification` (String) User-editable classification of this endpoint (POS, Kiosk, Camera, Printer, ...).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `hostname` (String) What a network controller calls this endpoint, such as the name in its Meraki client list. Managed by the server.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `ip_address` (String) Last IP address seen for this endpoint in ARP tables. Managed by the server.
 - `mac_address` (String) MAC address of this endpoint, colon-separated hex. One row per MAC per project.

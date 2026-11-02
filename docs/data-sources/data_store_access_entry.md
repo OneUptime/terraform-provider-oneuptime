@@ -36,6 +36,7 @@ data "oneuptime_data_store_access_entry" "by_id" {
 - `is_external` (Boolean) The principal is outside the project's connected accounts.
 - `is_public` (Boolean) The principal is anyone on the internet.
 - `is_seen_in_traces` (Boolean) OneUptime saw this principal use the store in traces.
+- `is_unused` (Boolean) The principal has not been used in 90 days, as far as its cloud can say.
 - `principal` (String) Who or what has access, as its cloud names it: *, an account id, an ARN, an email, a service account.
 - `principal_name` (String) The principal's name, for people.
 - `principal_type` (String) What the principal is: Public, Account, Role, User, Group, Service Principal, Service Account or Service.

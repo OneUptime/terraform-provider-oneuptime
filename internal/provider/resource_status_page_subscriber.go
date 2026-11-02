@@ -49,6 +49,7 @@ type StatusPageSubscriberResourceModel struct {
     SlackWorkspaceName types.String `tfsdk:"slack_workspace_name"`
     MicrosoftTeamsIncomingWebhookUrl types.String `tfsdk:"microsoft_teams_incoming_webhook_url"`
     MicrosoftTeamsWorkspaceName types.String `tfsdk:"microsoft_teams_workspace_name"`
+    Language types.String `tfsdk:"language"`
     IsSubscriptionConfirmed types.Bool `tfsdk:"is_subscription_confirmed"`
     SubscriptionConfirmationToken types.String `tfsdk:"subscription_confirmation_token"`
     IsUnsubscribed types.Bool `tfsdk:"is_unsubscribed"`
@@ -155,6 +156,14 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
             },
             "microsoft_teams_workspace_name": schema.StringAttribute{
                 MarkdownDescription: "Name of the Microsoft Teams workspace for validation and identification.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "language": schema.StringAttribute{
+                MarkdownDescription: "The language this subscriber is notified in. Empty means the status page's default language.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -349,6 +358,9 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
     if !data.MicrosoftTeamsWorkspaceName.IsNull() && !data.MicrosoftTeamsWorkspaceName.IsUnknown() {
         requestDataMap["microsoftTeamsWorkspaceName"] = data.MicrosoftTeamsWorkspaceName.ValueString()
     }
+    if !data.Language.IsNull() && !data.Language.IsUnknown() {
+        requestDataMap["language"] = data.Language.ValueString()
+    }
     if !data.IsSubscriptionConfirmed.IsNull() && !data.IsSubscriptionConfirmed.IsUnknown() {
         requestDataMap["isSubscriptionConfirmed"] = data.IsSubscriptionConfirmed.ValueBool()
     }
@@ -428,6 +440,7 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
         "subscriberWebhook": true,
         "slackWorkspaceName": true,
         "microsoftTeamsWorkspaceName": true,
+        "language": true,
         "isSubscriptionConfirmed": true,
         "isUnsubscribed": true,
         "sendYouHaveSubscribedMessage": true,
@@ -706,6 +719,43 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
     } else {
         data.MicrosoftTeamsWorkspaceName = types.StringNull()
     }
+    if obj, ok := dataMap["language"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Language = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Language = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Language = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Language = types.StringValue(string(jsonBytes))
+            } else {
+                data.Language = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Language = types.StringValue(string(jsonBytes))
+            } else {
+                data.Language = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Language = types.StringValue(string(jsonBytes))
+        } else {
+            data.Language = types.StringNull()
+        }
+    } else if val, ok := dataMap["language"].(string); ok {
+        data.Language = types.StringValue(val)
+    } else {
+        data.Language = types.StringNull()
+    }
     if val, ok := dataMap["isSubscriptionConfirmed"].(bool); ok {
         data.IsSubscriptionConfirmed = types.BoolValue(val)
     }
@@ -937,6 +987,7 @@ func (r *StatusPageSubscriberResource) Read(ctx context.Context, req resource.Re
         "subscriberWebhook": true,
         "slackWorkspaceName": true,
         "microsoftTeamsWorkspaceName": true,
+        "language": true,
         "isSubscriptionConfirmed": true,
         "isUnsubscribed": true,
         "sendYouHaveSubscribedMessage": true,
@@ -1216,6 +1267,43 @@ func (r *StatusPageSubscriberResource) Read(ctx context.Context, req resource.Re
     } else {
         data.MicrosoftTeamsWorkspaceName = types.StringNull()
     }
+    if obj, ok := dataMap["language"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Language = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Language = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Language = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Language = types.StringValue(string(jsonBytes))
+            } else {
+                data.Language = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Language = types.StringValue(string(jsonBytes))
+            } else {
+                data.Language = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Language = types.StringValue(string(jsonBytes))
+        } else {
+            data.Language = types.StringNull()
+        }
+    } else if val, ok := dataMap["language"].(string); ok {
+        data.Language = types.StringValue(val)
+    } else {
+        data.Language = types.StringNull()
+    }
     if val, ok := dataMap["isSubscriptionConfirmed"].(bool); ok {
         data.IsSubscriptionConfirmed = types.BoolValue(val)
     }
@@ -1478,6 +1566,9 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
     if !data.MicrosoftTeamsWorkspaceName.IsUnknown() && !state.MicrosoftTeamsWorkspaceName.IsUnknown() && !data.MicrosoftTeamsWorkspaceName.Equal(state.MicrosoftTeamsWorkspaceName) {
         requestDataMap["microsoftTeamsWorkspaceName"] = data.MicrosoftTeamsWorkspaceName.ValueString()
     }
+    if !data.Language.IsUnknown() && !state.Language.IsUnknown() && !data.Language.Equal(state.Language) {
+        requestDataMap["language"] = data.Language.ValueString()
+    }
     if !data.IsSubscriptionConfirmed.IsUnknown() && !state.IsSubscriptionConfirmed.IsUnknown() && !data.IsSubscriptionConfirmed.Equal(state.IsSubscriptionConfirmed) {
         requestDataMap["isSubscriptionConfirmed"] = data.IsSubscriptionConfirmed.ValueBool()
     }
@@ -1534,6 +1625,7 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
         "subscriberWebhook": true,
         "slackWorkspaceName": true,
         "microsoftTeamsWorkspaceName": true,
+        "language": true,
         "isSubscriptionConfirmed": true,
         "isUnsubscribed": true,
         "sendYouHaveSubscribedMessage": true,
@@ -1807,6 +1899,43 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
     } else {
         data.MicrosoftTeamsWorkspaceName = types.StringNull()
     }
+    if obj, ok := dataMap["language"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Language = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Language = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Language = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Language = types.StringValue(string(jsonBytes))
+            } else {
+                data.Language = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Language = types.StringValue(string(jsonBytes))
+            } else {
+                data.Language = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Language = types.StringValue(string(jsonBytes))
+        } else {
+            data.Language = types.StringNull()
+        }
+    } else if val, ok := dataMap["language"].(string); ok {
+        data.Language = types.StringValue(val)
+    } else {
+        data.Language = types.StringNull()
+    }
     if val, ok := dataMap["isSubscriptionConfirmed"].(bool); ok {
         data.IsSubscriptionConfirmed = types.BoolValue(val)
     }
@@ -2072,6 +2201,9 @@ func (r *StatusPageSubscriberResource) keepPlannedValues(data *StatusPageSubscri
     }
     if config.MicrosoftTeamsWorkspaceName.IsNull() && !plan.MicrosoftTeamsWorkspaceName.IsUnknown() {
         data.MicrosoftTeamsWorkspaceName = plan.MicrosoftTeamsWorkspaceName
+    }
+    if config.Language.IsNull() && !plan.Language.IsUnknown() {
+        data.Language = plan.Language
     }
     if config.IsSubscriptionConfirmed.IsNull() && !plan.IsSubscriptionConfirmed.IsUnknown() {
         data.IsSubscriptionConfirmed = plan.IsSubscriptionConfirmed

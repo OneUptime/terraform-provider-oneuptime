@@ -71,6 +71,9 @@ type ExceptionResourceModel struct {
     AiFixDeclinedAt RFC3339Value `tfsdk:"ai_fix_declined_at"`
     AiExplanation JSONSubsetValue `tfsdk:"ai_explanation"`
     AiExplanationGeneratedAt RFC3339Value `tfsdk:"ai_explanation_generated_at"`
+    MergedIntoTelemetryExceptionId types.String `tfsdk:"merged_into_telemetry_exception_id"`
+    MergedAt RFC3339Value `tfsdk:"merged_at"`
+    MergedByUserId types.String `tfsdk:"merged_by_user_id"`
 }
 
 func (r *ExceptionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -316,6 +319,19 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "merged_into_telemetry_exception_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the exception this one was merged into as the same bug. Empty for an exception that was not merged. The ID of a `oneuptime_exception`.",
+                Computed: true,
+            },
+            "merged_at": schema.StringAttribute{
+                MarkdownDescription: "When this exception was merged into another.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "merged_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the user who merged this exception into another. The ID of a `oneuptime_user` (see the data source).",
+                Computed: true,
+            },
         },
     }
 }
@@ -495,6 +511,9 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
         "aiFixDeclinedAt": true,
         "aiExplanation": true,
         "aiExplanationGeneratedAt": true,
+        "mergedIntoTelemetryExceptionId": true,
+        "mergedAt": true,
+        "mergedByUserId": true,
         "_id": true,
     }
 
@@ -1350,6 +1369,91 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.AiExplanationGeneratedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["mergedIntoTelemetryExceptionId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MergedIntoTelemetryExceptionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MergedIntoTelemetryExceptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedIntoTelemetryExceptionId = types.StringNull()
+        }
+    } else if val, ok := dataMap["mergedIntoTelemetryExceptionId"].(string); ok {
+        data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+    } else {
+        data.MergedIntoTelemetryExceptionId = types.StringNull()
+    }
+    if obj, ok := dataMap["mergedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MergedAt = NewRFC3339Value(val)
+        } else {
+            data.MergedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["mergedAt"].(string); ok && val != "" {
+        data.MergedAt = NewRFC3339Value(val)
+    } else {
+        data.MergedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["mergedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MergedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MergedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MergedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MergedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MergedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["mergedByUserId"].(string); ok {
+        data.MergedByUserId = types.StringValue(val)
+    } else {
+        data.MergedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1413,6 +1517,9 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
         "aiFixDeclinedAt": true,
         "aiExplanation": true,
         "aiExplanationGeneratedAt": true,
+        "mergedIntoTelemetryExceptionId": true,
+        "mergedAt": true,
+        "mergedByUserId": true,
         "_id": true,
     }
 
@@ -2269,6 +2376,91 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.AiExplanationGeneratedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["mergedIntoTelemetryExceptionId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MergedIntoTelemetryExceptionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MergedIntoTelemetryExceptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedIntoTelemetryExceptionId = types.StringNull()
+        }
+    } else if val, ok := dataMap["mergedIntoTelemetryExceptionId"].(string); ok {
+        data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+    } else {
+        data.MergedIntoTelemetryExceptionId = types.StringNull()
+    }
+    if obj, ok := dataMap["mergedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MergedAt = NewRFC3339Value(val)
+        } else {
+            data.MergedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["mergedAt"].(string); ok && val != "" {
+        data.MergedAt = NewRFC3339Value(val)
+    } else {
+        data.MergedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["mergedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MergedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MergedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MergedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MergedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MergedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["mergedByUserId"].(string); ok {
+        data.MergedByUserId = types.StringValue(val)
+    } else {
+        data.MergedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2419,6 +2611,9 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
         "aiFixDeclinedAt": true,
         "aiExplanation": true,
         "aiExplanationGeneratedAt": true,
+        "mergedIntoTelemetryExceptionId": true,
+        "mergedAt": true,
+        "mergedByUserId": true,
         "_id": true,
     }
 
@@ -3268,6 +3463,91 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
         data.AiExplanationGeneratedAt = NewRFC3339Value(val)
     } else {
         data.AiExplanationGeneratedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["mergedIntoTelemetryExceptionId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MergedIntoTelemetryExceptionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedIntoTelemetryExceptionId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MergedIntoTelemetryExceptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedIntoTelemetryExceptionId = types.StringNull()
+        }
+    } else if val, ok := dataMap["mergedIntoTelemetryExceptionId"].(string); ok {
+        data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+    } else {
+        data.MergedIntoTelemetryExceptionId = types.StringNull()
+    }
+    if obj, ok := dataMap["mergedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MergedAt = NewRFC3339Value(val)
+        } else {
+            data.MergedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["mergedAt"].(string); ok && val != "" {
+        data.MergedAt = NewRFC3339Value(val)
+    } else {
+        data.MergedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["mergedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MergedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MergedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MergedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MergedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MergedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MergedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["mergedByUserId"].(string); ok {
+        data.MergedByUserId = types.StringValue(val)
+    } else {
+        data.MergedByUserId = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

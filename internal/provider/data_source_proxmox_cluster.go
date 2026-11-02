@@ -44,6 +44,8 @@ type ProxmoxClusterDataSourceModel struct {
     GuestCount types.Number `tfsdk:"guest_count"`
     StorageCount types.Number `tfsdk:"storage_count"`
     GuestsWithoutBackupCount types.Number `tfsdk:"guests_without_backup_count"`
+    IsQuorate types.Bool `tfsdk:"is_quorate"`
+    LastNotificationAt types.String `tfsdk:"last_notification_at"`
     CephClusterId types.String `tfsdk:"ceph_cluster_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsArchived types.Bool `tfsdk:"is_archived"`
@@ -143,6 +145,15 @@ func (d *ProxmoxClusterDataSource) Schema(ctx context.Context, req datasource.Sc
             "guests_without_backup_count": schema.NumberAttribute{
                 MarkdownDescription: "Cached count of guests not covered by ANY backup job (pve_not_backed_up_total). NULL until the exporter's cluster-level backup-info collector reports. Coverage by a job is NOT the same as recent/successful backups — freshness needs the PVE task log or PBS API.",
                 Optional: true,
+                Computed: true,
+            },
+            "is_quorate": schema.BoolAttribute{
+                MarkdownDescription: "True while the cluster reports corosync quorum (pve_up for cluster/<name>). Null until it reports.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_notification_at": schema.StringAttribute{
+                MarkdownDescription: "When Proxmox VE last sent one of its notifications (backups, replication, fencing, updates) to OneUptime.",
                 Computed: true,
             },
             "ceph_cluster_id": schema.StringAttribute{
@@ -293,6 +304,10 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         filters["guestsWithoutBackupCount"] = lookupNumber(data.GuestsWithoutBackupCount)
         filterNames = append(filterNames, "guests_without_backup_count = "+data.GuestsWithoutBackupCount.ValueBigFloat().String())
     }
+    if !data.IsQuorate.IsNull() && !data.IsQuorate.IsUnknown() {
+        filters["isQuorate"] = data.IsQuorate.ValueBool()
+        filterNames = append(filterNames, "is_quorate = "+fmt.Sprintf("%t", data.IsQuorate.ValueBool()))
+    }
     if !data.CephClusterId.IsNull() && !data.CephClusterId.IsUnknown() {
         filters["cephClusterId"] = data.CephClusterId.ValueString()
         filterNames = append(filterNames, "ceph_cluster_id = "+fmt.Sprintf("%q", data.CephClusterId.ValueString()))
@@ -357,6 +372,8 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         "guestCount": true,
         "storageCount": true,
         "guestsWithoutBackupCount": true,
+        "isQuorate": true,
+        "lastNotificationAt": true,
         "cephClusterId": true,
         "createdByUserId": true,
         "isArchived": true,
@@ -624,6 +641,28 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
     data.GuestCount = numberFromAPI(data.GuestCount, item["guestCount"])
     data.StorageCount = numberFromAPI(data.StorageCount, item["storageCount"])
     data.GuestsWithoutBackupCount = numberFromAPI(data.GuestsWithoutBackupCount, item["guestsWithoutBackupCount"])
+    if val, ok := item["isQuorate"].(bool); ok {
+        data.IsQuorate = types.BoolValue(val)
+    } else {
+        data.IsQuorate = types.BoolNull()
+    }
+    if obj, ok := item["lastNotificationAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastNotificationAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastNotificationAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastNotificationAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastNotificationAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastNotificationAt = types.StringNull()
+        }
+    } else if val, ok := item["lastNotificationAt"].(string); ok {
+        data.LastNotificationAt = types.StringValue(val)
+    } else {
+        data.LastNotificationAt = types.StringNull()
+    }
     if obj, ok := item["cephClusterId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CephClusterId = types.StringValue(val)

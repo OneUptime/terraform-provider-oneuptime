@@ -51,6 +51,9 @@ type DataStoreFindingDataSourceModel struct {
     IsScrubbed types.Bool `tfsdk:"is_scrubbed"`
     IsSuppressed types.Bool `tfsdk:"is_suppressed"`
     SuppressedReason types.String `tfsdk:"suppressed_reason"`
+    IsConfirmed types.Bool `tfsdk:"is_confirmed"`
+    IsAiSuggested types.Bool `tfsdk:"is_ai_suggested"`
+    AiReason types.String `tfsdk:"ai_reason"`
     LastScanId types.String `tfsdk:"last_scan_id"`
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
@@ -62,7 +65,7 @@ func (d *DataStoreFindingDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "What Data Security found in a store: one data type at one location, with its confidence, counts and masked samples. Look up an existing data store finding by `id`, or by any of its other arguments (`confidence`, `data_category`, `data_store_id`, ...): each one set must match, and exactly one data store finding may match them all.",
+        MarkdownDescription: "What Data Security found in a store: one data type at one location, with its confidence, counts and masked samples. Look up an existing data store finding by `id`, or by any of its other arguments (`ai_reason`, `confidence`, `data_category`, ...): each one set must match, and exactly one data store finding may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -183,6 +186,21 @@ func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.
             },
             "suppressed_reason": schema.StringAttribute{
                 MarkdownDescription: "Why the finding was marked not sensitive.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_confirmed": schema.BoolAttribute{
+                MarkdownDescription: "A person confirmed the finding holds this data. A confirmed finding counts as High confidence toward the store's sensitivity and checks, whatever the scan or OneUptime AI was sure of.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_ai_suggested": schema.BoolAttribute{
+                MarkdownDescription: "OneUptime AI suggested this data type for a field no detector placed, from the field's name, the names beside it and the shapes of its values - never a value. It counts only once a person confirms it.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_reason": schema.StringAttribute{
+                MarkdownDescription: "OneUptime AI's reason for its suggestion, in a sentence.",
                 Optional: true,
                 Computed: true,
             },
@@ -318,6 +336,18 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         filters["suppressedReason"] = data.SuppressedReason.ValueString()
         filterNames = append(filterNames, "suppressed_reason = "+fmt.Sprintf("%q", data.SuppressedReason.ValueString()))
     }
+    if !data.IsConfirmed.IsNull() && !data.IsConfirmed.IsUnknown() {
+        filters["isConfirmed"] = data.IsConfirmed.ValueBool()
+        filterNames = append(filterNames, "is_confirmed = "+fmt.Sprintf("%t", data.IsConfirmed.ValueBool()))
+    }
+    if !data.IsAiSuggested.IsNull() && !data.IsAiSuggested.IsUnknown() {
+        filters["isAiSuggested"] = data.IsAiSuggested.ValueBool()
+        filterNames = append(filterNames, "is_ai_suggested = "+fmt.Sprintf("%t", data.IsAiSuggested.ValueBool()))
+    }
+    if !data.AiReason.IsNull() && !data.AiReason.IsUnknown() {
+        filters["aiReason"] = data.AiReason.ValueString()
+        filterNames = append(filterNames, "ai_reason = "+fmt.Sprintf("%q", data.AiReason.ValueString()))
+    }
     if !data.LastScanId.IsNull() && !data.LastScanId.IsUnknown() {
         filters["lastScanId"] = data.LastScanId.ValueString()
         filterNames = append(filterNames, "last_scan_id = "+fmt.Sprintf("%q", data.LastScanId.ValueString()))
@@ -363,6 +393,9 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         "isScrubbed": true,
         "isSuppressed": true,
         "suppressedReason": true,
+        "isConfirmed": true,
+        "isAiSuggested": true,
+        "aiReason": true,
         "lastScanId": true,
         "firstSeenAt": true,
         "lastSeenAt": true,
@@ -711,6 +744,33 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         data.SuppressedReason = types.StringValue(val)
     } else {
         data.SuppressedReason = types.StringNull()
+    }
+    if val, ok := item["isConfirmed"].(bool); ok {
+        data.IsConfirmed = types.BoolValue(val)
+    } else {
+        data.IsConfirmed = types.BoolNull()
+    }
+    if val, ok := item["isAiSuggested"].(bool); ok {
+        data.IsAiSuggested = types.BoolValue(val)
+    } else {
+        data.IsAiSuggested = types.BoolNull()
+    }
+    if obj, ok := item["aiReason"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiReason = types.StringNull()
+        }
+    } else if val, ok := item["aiReason"].(string); ok {
+        data.AiReason = types.StringValue(val)
+    } else {
+        data.AiReason = types.StringNull()
     }
     if obj, ok := item["lastScanId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -35,6 +35,7 @@ type DetectionRuleDataSourceModel struct {
     SigmaRuleYaml types.String `tfsdk:"sigma_rule_yaml"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     EvaluationIntervalInMinutes types.Number `tfsdk:"evaluation_interval_in_minutes"`
+    IsRealTime types.Bool `tfsdk:"is_real_time"`
     GroupByField types.String `tfsdk:"group_by_field"`
     DistinctCountField types.String `tfsdk:"distinct_count_field"`
     MatchCountThreshold types.Number `tfsdk:"match_count_threshold"`
@@ -99,6 +100,11 @@ func (d *DetectionRuleDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "evaluation_interval_in_minutes": schema.NumberAttribute{
                 MarkdownDescription: "How often this rule is evaluated, in minutes. The evaluation window covers the time since the previous evaluation.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_real_time": schema.BoolAttribute{
+                MarkdownDescription: "Whether each event is checked against this rule as it arrives, within seconds, instead of every evaluation interval. Only for a rule that fires on one event: not a correlation, a match count threshold of 1, no distinct count field and no regular expression.",
                 Optional: true,
                 Computed: true,
             },
@@ -229,6 +235,10 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["evaluationIntervalInMinutes"] = lookupNumber(data.EvaluationIntervalInMinutes)
         filterNames = append(filterNames, "evaluation_interval_in_minutes = "+data.EvaluationIntervalInMinutes.ValueBigFloat().String())
     }
+    if !data.IsRealTime.IsNull() && !data.IsRealTime.IsUnknown() {
+        filters["isRealTime"] = data.IsRealTime.ValueBool()
+        filterNames = append(filterNames, "is_real_time = "+fmt.Sprintf("%t", data.IsRealTime.ValueBool()))
+    }
     if !data.GroupByField.IsNull() && !data.GroupByField.IsUnknown() {
         filters["groupByField"] = data.GroupByField.ValueString()
         filterNames = append(filterNames, "group_by_field = "+fmt.Sprintf("%q", data.GroupByField.ValueString()))
@@ -302,6 +312,7 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         "sigmaRuleYaml": true,
         "isEnabled": true,
         "evaluationIntervalInMinutes": true,
+        "isRealTime": true,
         "groupByField": true,
         "distinctCountField": true,
         "matchCountThreshold": true,
@@ -502,6 +513,11 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         data.IsEnabled = types.BoolNull()
     }
     data.EvaluationIntervalInMinutes = numberFromAPI(data.EvaluationIntervalInMinutes, item["evaluationIntervalInMinutes"])
+    if val, ok := item["isRealTime"].(bool); ok {
+        data.IsRealTime = types.BoolValue(val)
+    } else {
+        data.IsRealTime = types.BoolNull()
+    }
     if obj, ok := item["groupByField"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.GroupByField = types.StringValue(val)

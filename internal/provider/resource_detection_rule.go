@@ -44,6 +44,7 @@ type DetectionRuleResourceModel struct {
     SigmaRuleYaml types.String `tfsdk:"sigma_rule_yaml"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     EvaluationIntervalInMinutes types.Number `tfsdk:"evaluation_interval_in_minutes"`
+    IsRealTime types.Bool `tfsdk:"is_real_time"`
     GroupByField types.String `tfsdk:"group_by_field"`
     DistinctCountField types.String `tfsdk:"distinct_count_field"`
     MatchCountThreshold types.Number `tfsdk:"match_count_threshold"`
@@ -121,6 +122,15 @@ func (r *DetectionRuleResource) schemaDefinition() schema.Schema {
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_real_time": schema.BoolAttribute{
+                MarkdownDescription: "Whether each event is checked against this rule as it arrives, within seconds, instead of every evaluation interval. Only for a rule that fires on one event: not a correlation, a match count threshold of 1, no distinct count field and no regular expression.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "group_by_field": schema.StringAttribute{
@@ -310,6 +320,9 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
     if !data.EvaluationIntervalInMinutes.IsNull() && !data.EvaluationIntervalInMinutes.IsUnknown() {
         requestDataMap["evaluationIntervalInMinutes"] = r.bigFloatToFloat64(data.EvaluationIntervalInMinutes.ValueBigFloat())
     }
+    if !data.IsRealTime.IsNull() && !data.IsRealTime.IsUnknown() {
+        requestDataMap["isRealTime"] = data.IsRealTime.ValueBool()
+    }
     if !data.GroupByField.IsNull() && !data.GroupByField.IsUnknown() {
         requestDataMap["groupByField"] = data.GroupByField.ValueString()
     }
@@ -391,6 +404,7 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
         "sigmaRuleYaml": true,
         "isEnabled": true,
         "evaluationIntervalInMinutes": true,
+        "isRealTime": true,
         "groupByField": true,
         "distinctCountField": true,
         "matchCountThreshold": true,
@@ -565,6 +579,9 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
         data.IsEnabled = types.BoolValue(val)
     }
     data.EvaluationIntervalInMinutes = numberFromAPI(data.EvaluationIntervalInMinutes, dataMap["evaluationIntervalInMinutes"])
+    if val, ok := dataMap["isRealTime"].(bool); ok {
+        data.IsRealTime = types.BoolValue(val)
+    }
     if obj, ok := dataMap["groupByField"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -881,6 +898,7 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
         "sigmaRuleYaml": true,
         "isEnabled": true,
         "evaluationIntervalInMinutes": true,
+        "isRealTime": true,
         "groupByField": true,
         "distinctCountField": true,
         "matchCountThreshold": true,
@@ -1056,6 +1074,9 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
         data.IsEnabled = types.BoolValue(val)
     }
     data.EvaluationIntervalInMinutes = numberFromAPI(data.EvaluationIntervalInMinutes, dataMap["evaluationIntervalInMinutes"])
+    if val, ok := dataMap["isRealTime"].(bool); ok {
+        data.IsRealTime = types.BoolValue(val)
+    }
     if obj, ok := dataMap["groupByField"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1394,6 +1415,9 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     if !data.EvaluationIntervalInMinutes.IsUnknown() && !state.EvaluationIntervalInMinutes.IsUnknown() && !data.EvaluationIntervalInMinutes.Equal(state.EvaluationIntervalInMinutes) {
         requestDataMap["evaluationIntervalInMinutes"] = r.bigFloatToFloat64(data.EvaluationIntervalInMinutes.ValueBigFloat())
     }
+    if !data.IsRealTime.IsUnknown() && !state.IsRealTime.IsUnknown() && !data.IsRealTime.Equal(state.IsRealTime) {
+        requestDataMap["isRealTime"] = data.IsRealTime.ValueBool()
+    }
     if !data.GroupByField.IsUnknown() && !state.GroupByField.IsUnknown() && !data.GroupByField.Equal(state.GroupByField) {
         requestDataMap["groupByField"] = data.GroupByField.ValueString()
     }
@@ -1453,6 +1477,7 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
         "sigmaRuleYaml": true,
         "isEnabled": true,
         "evaluationIntervalInMinutes": true,
+        "isRealTime": true,
         "groupByField": true,
         "distinctCountField": true,
         "matchCountThreshold": true,
@@ -1622,6 +1647,9 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
         data.IsEnabled = types.BoolValue(val)
     }
     data.EvaluationIntervalInMinutes = numberFromAPI(data.EvaluationIntervalInMinutes, dataMap["evaluationIntervalInMinutes"])
+    if val, ok := dataMap["isRealTime"].(bool); ok {
+        data.IsRealTime = types.BoolValue(val)
+    }
     if obj, ok := dataMap["groupByField"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1967,6 +1995,9 @@ func (r *DetectionRuleResource) keepPlannedValues(data *DetectionRuleResourceMod
     }
     if config.EvaluationIntervalInMinutes.IsNull() && !plan.EvaluationIntervalInMinutes.IsUnknown() {
         data.EvaluationIntervalInMinutes = plan.EvaluationIntervalInMinutes
+    }
+    if config.IsRealTime.IsNull() && !plan.IsRealTime.IsUnknown() {
+        data.IsRealTime = plan.IsRealTime
     }
     if config.GroupByField.IsNull() && !plan.GroupByField.IsUnknown() {
         data.GroupByField = plan.GroupByField

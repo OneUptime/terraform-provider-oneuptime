@@ -65,6 +65,8 @@ type ProxmoxClusterResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
+    IsQuorate types.Bool `tfsdk:"is_quorate"`
+    LastNotificationAt RFC3339Value `tfsdk:"last_notification_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
@@ -278,6 +280,15 @@ func (r *ProxmoxClusterResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
             },
+            "is_quorate": schema.BoolAttribute{
+                MarkdownDescription: "True while the cluster reports corosync quorum (pve_up for cluster/<name>). Null until it reports.",
+                Computed: true,
+            },
+            "last_notification_at": schema.StringAttribute{
+                MarkdownDescription: "When Proxmox VE last sent one of its notifications (backups, replication, fencing, updates) to OneUptime.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
@@ -450,6 +461,8 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "isQuorate": true,
+        "lastNotificationAt": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -946,6 +959,22 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
     } else {
         data.Slug = types.StringNull()
     }
+    if val, ok := dataMap["isQuorate"].(bool); ok {
+        data.IsQuorate = types.BoolValue(val)
+    } else {
+        data.IsQuorate = types.BoolNull()
+    }
+    if obj, ok := dataMap["lastNotificationAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastNotificationAt = NewRFC3339Value(val)
+        } else {
+            data.LastNotificationAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastNotificationAt"].(string); ok && val != "" {
+        data.LastNotificationAt = NewRFC3339Value(val)
+    } else {
+        data.LastNotificationAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1143,6 +1172,8 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "isQuorate": true,
+        "lastNotificationAt": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -1640,6 +1671,22 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.Slug = types.StringNull()
     }
+    if val, ok := dataMap["isQuorate"].(bool); ok {
+        data.IsQuorate = types.BoolValue(val)
+    } else {
+        data.IsQuorate = types.BoolNull()
+    }
+    if obj, ok := dataMap["lastNotificationAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastNotificationAt = NewRFC3339Value(val)
+        } else {
+            data.LastNotificationAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastNotificationAt"].(string); ok && val != "" {
+        data.LastNotificationAt = NewRFC3339Value(val)
+    } else {
+        data.LastNotificationAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1940,6 +1987,8 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "isQuorate": true,
+        "lastNotificationAt": true,
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -2430,6 +2479,22 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if val, ok := dataMap["isQuorate"].(bool); ok {
+        data.IsQuorate = types.BoolValue(val)
+    } else {
+        data.IsQuorate = types.BoolNull()
+    }
+    if obj, ok := dataMap["lastNotificationAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastNotificationAt = NewRFC3339Value(val)
+        } else {
+            data.LastNotificationAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastNotificationAt"].(string); ok && val != "" {
+        data.LastNotificationAt = NewRFC3339Value(val)
+    } else {
+        data.LastNotificationAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -60,6 +60,9 @@ type ExceptionDataSourceModel struct {
     ResolvedInReleaseAfter types.String `tfsdk:"resolved_in_release_after"`
     AiExplanation types.String `tfsdk:"ai_explanation"`
     AiExplanationGeneratedAt types.String `tfsdk:"ai_explanation_generated_at"`
+    MergedIntoTelemetryExceptionId types.String `tfsdk:"merged_into_telemetry_exception_id"`
+    MergedAt types.String `tfsdk:"merged_at"`
+    MergedByUserId types.String `tfsdk:"merged_by_user_id"`
 }
 
 func (d *ExceptionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -230,6 +233,20 @@ func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "When OneUptime AI last wrote its explanation of this exception.",
                 Computed: true,
             },
+            "merged_into_telemetry_exception_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the exception this one was merged into as the same bug. Empty for an exception that was not merged. The ID of a `oneuptime_exception`.",
+                Optional: true,
+                Computed: true,
+            },
+            "merged_at": schema.StringAttribute{
+                MarkdownDescription: "When this exception was merged into another.",
+                Computed: true,
+            },
+            "merged_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the user who merged this exception into another. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -357,6 +374,14 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         filters["resolvedInReleaseAfter"] = data.ResolvedInReleaseAfter.ValueString()
         filterNames = append(filterNames, "resolved_in_release_after = "+fmt.Sprintf("%q", data.ResolvedInReleaseAfter.ValueString()))
     }
+    if !data.MergedIntoTelemetryExceptionId.IsNull() && !data.MergedIntoTelemetryExceptionId.IsUnknown() {
+        filters["mergedIntoTelemetryExceptionId"] = data.MergedIntoTelemetryExceptionId.ValueString()
+        filterNames = append(filterNames, "merged_into_telemetry_exception_id = "+fmt.Sprintf("%q", data.MergedIntoTelemetryExceptionId.ValueString()))
+    }
+    if !data.MergedByUserId.IsNull() && !data.MergedByUserId.IsUnknown() {
+        filters["mergedByUserId"] = data.MergedByUserId.ValueString()
+        filterNames = append(filterNames, "merged_by_user_id = "+fmt.Sprintf("%q", data.MergedByUserId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -407,6 +432,9 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         "resolvedInReleaseAfter": true,
         "aiExplanation": true,
         "aiExplanationGeneratedAt": true,
+        "mergedIntoTelemetryExceptionId": true,
+        "mergedAt": true,
+        "mergedByUserId": true,
         "_id": true,
     }
 
@@ -993,6 +1021,57 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.AiExplanationGeneratedAt = types.StringValue(val)
     } else {
         data.AiExplanationGeneratedAt = types.StringNull()
+    }
+    if obj, ok := item["mergedIntoTelemetryExceptionId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MergedIntoTelemetryExceptionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MergedIntoTelemetryExceptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedIntoTelemetryExceptionId = types.StringNull()
+        }
+    } else if val, ok := item["mergedIntoTelemetryExceptionId"].(string); ok {
+        data.MergedIntoTelemetryExceptionId = types.StringValue(val)
+    } else {
+        data.MergedIntoTelemetryExceptionId = types.StringNull()
+    }
+    if obj, ok := item["mergedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MergedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MergedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MergedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedAt = types.StringNull()
+        }
+    } else if val, ok := item["mergedAt"].(string); ok {
+        data.MergedAt = types.StringValue(val)
+    } else {
+        data.MergedAt = types.StringNull()
+    }
+    if obj, ok := item["mergedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MergedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MergedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MergedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MergedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["mergedByUserId"].(string); ok {
+        data.MergedByUserId = types.StringValue(val)
+    } else {
+        data.MergedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

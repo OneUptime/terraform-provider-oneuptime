@@ -55,6 +55,8 @@ resource "oneuptime_proxmox_cluster" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
+- `is_quorate` (Boolean) True while the cluster reports corosync quorum (pve_up for cluster/<name>). Null until it reports.
+- `last_notification_at` (String) When Proxmox VE last sent one of its notifications (backups, replication, fencing, updates) to OneUptime.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.

@@ -41,6 +41,7 @@ type DataStoreAccessEntryDataSourceModel struct {
     IsPublic types.Bool `tfsdk:"is_public"`
     IsSeenInTraces types.Bool `tfsdk:"is_seen_in_traces"`
     LastUsedAt types.String `tfsdk:"last_used_at"`
+    IsUnused types.Bool `tfsdk:"is_unused"`
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
 }
@@ -123,6 +124,11 @@ func (d *DataStoreAccessEntryDataSource) Schema(ctx context.Context, req datasou
             },
             "last_used_at": schema.StringAttribute{
                 MarkdownDescription: "When the access was last used, where OneUptime can tell.",
+                Computed: true,
+            },
+            "is_unused": schema.BoolAttribute{
+                MarkdownDescription: "The principal has not been used in 90 days, as far as its cloud can say.",
+                Optional: true,
                 Computed: true,
             },
             "first_seen_at": schema.StringAttribute{
@@ -212,6 +218,10 @@ func (d *DataStoreAccessEntryDataSource) Read(ctx context.Context, req datasourc
         filters["isSeenInTraces"] = data.IsSeenInTraces.ValueBool()
         filterNames = append(filterNames, "is_seen_in_traces = "+fmt.Sprintf("%t", data.IsSeenInTraces.ValueBool()))
     }
+    if !data.IsUnused.IsNull() && !data.IsUnused.IsUnknown() {
+        filters["isUnused"] = data.IsUnused.ValueBool()
+        filterNames = append(filterNames, "is_unused = "+fmt.Sprintf("%t", data.IsUnused.ValueBool()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -243,6 +253,7 @@ func (d *DataStoreAccessEntryDataSource) Read(ctx context.Context, req datasourc
         "isPublic": true,
         "isSeenInTraces": true,
         "lastUsedAt": true,
+        "isUnused": true,
         "firstSeenAt": true,
         "lastSeenAt": true,
         "_id": true,
@@ -524,6 +535,11 @@ func (d *DataStoreAccessEntryDataSource) Read(ctx context.Context, req datasourc
         data.LastUsedAt = types.StringValue(val)
     } else {
         data.LastUsedAt = types.StringNull()
+    }
+    if val, ok := item["isUnused"].(bool); ok {
+        data.IsUnused = types.BoolValue(val)
+    } else {
+        data.IsUnused = types.BoolNull()
     }
     if obj, ok := item["firstSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

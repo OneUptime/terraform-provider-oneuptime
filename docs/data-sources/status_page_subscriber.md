@@ -36,6 +36,7 @@ data "oneuptime_status_page_subscriber" "by_id" {
 - `is_subscribed_to_all_resources` (Boolean) Is Subscriber Subscribed to All Resources on this status page?
 - `is_subscription_confirmed` (Boolean) Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email).
 - `is_unsubscribed` (Boolean) Is Subscriber Unsubscribed?
+- `language` (String) The language this subscriber is notified in. Empty means the status page's default language.
 - `microsoft_teams_workspace_name` (String) Name of the Microsoft Teams workspace for validation and identification.
 - `send_you_have_subscribed_message` (Boolean) Send You Have Subscribed Message when subscriber is created?
 - `slack_workspace_name` (String) Name of the Slack workspace for validation and identification.

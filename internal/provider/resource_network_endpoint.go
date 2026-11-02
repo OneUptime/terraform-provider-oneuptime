@@ -42,6 +42,8 @@ type NetworkEndpointResourceModel struct {
     Vendor types.String `tfsdk:"vendor"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    Hostname types.String `tfsdk:"hostname"`
+    AttachmentSource types.String `tfsdk:"attachment_source"`
     AttachedNetworkDeviceId types.String `tfsdk:"attached_network_device_id"`
     AttachedInterfaceIndex types.Number `tfsdk:"attached_interface_index"`
     AttachedPortName types.String `tfsdk:"attached_port_name"`
@@ -61,7 +63,7 @@ func (r *NetworkEndpointResource) Schema(ctx context.Context, req resource.Schem
 
 func (r *NetworkEndpointResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices. Rows are upserted by the server; users can classify them.",
+        MarkdownDescription: "LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices, and from a network controller's client list. Rows are upserted by the server; users can classify them.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -128,6 +130,14 @@ func (r *NetworkEndpointResource) schemaDefinition() schema.Schema {
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "hostname": schema.StringAttribute{
+                MarkdownDescription: "What a network controller calls this endpoint, such as the name in its Meraki client list. Managed by the server.",
+                Computed: true,
+            },
+            "attachment_source": schema.StringAttribute{
+                MarkdownDescription: "The network controller that reported where this endpoint is attached, such as meraki. Empty when a walk of a switch or router found it. Managed by the server.",
                 Computed: true,
             },
             "attached_network_device_id": schema.StringAttribute{
@@ -278,6 +288,8 @@ func (r *NetworkEndpointResource) Create(ctx context.Context, req resource.Creat
         "vendor": true,
         "createdAt": true,
         "updatedAt": true,
+        "hostname": true,
+        "attachmentSource": true,
         "attachedNetworkDeviceId": true,
         "attachedInterfaceIndex": true,
         "attachedPortName": true,
@@ -535,6 +547,80 @@ func (r *NetworkEndpointResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["hostname"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Hostname = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Hostname = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Hostname = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Hostname = types.StringValue(string(jsonBytes))
+            } else {
+                data.Hostname = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Hostname = types.StringValue(string(jsonBytes))
+            } else {
+                data.Hostname = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Hostname = types.StringValue(string(jsonBytes))
+        } else {
+            data.Hostname = types.StringNull()
+        }
+    } else if val, ok := dataMap["hostname"].(string); ok {
+        data.Hostname = types.StringValue(val)
+    } else {
+        data.Hostname = types.StringNull()
+    }
+    if obj, ok := dataMap["attachmentSource"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AttachmentSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AttachmentSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AttachmentSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AttachmentSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.AttachmentSource = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AttachmentSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.AttachmentSource = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AttachmentSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.AttachmentSource = types.StringNull()
+        }
+    } else if val, ok := dataMap["attachmentSource"].(string); ok {
+        data.AttachmentSource = types.StringValue(val)
+    } else {
+        data.AttachmentSource = types.StringNull()
+    }
     if obj, ok := dataMap["attachedNetworkDeviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -708,6 +794,8 @@ func (r *NetworkEndpointResource) Read(ctx context.Context, req resource.ReadReq
         "vendor": true,
         "createdAt": true,
         "updatedAt": true,
+        "hostname": true,
+        "attachmentSource": true,
         "attachedNetworkDeviceId": true,
         "attachedInterfaceIndex": true,
         "attachedPortName": true,
@@ -966,6 +1054,80 @@ func (r *NetworkEndpointResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["hostname"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Hostname = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Hostname = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Hostname = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Hostname = types.StringValue(string(jsonBytes))
+            } else {
+                data.Hostname = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Hostname = types.StringValue(string(jsonBytes))
+            } else {
+                data.Hostname = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Hostname = types.StringValue(string(jsonBytes))
+        } else {
+            data.Hostname = types.StringNull()
+        }
+    } else if val, ok := dataMap["hostname"].(string); ok {
+        data.Hostname = types.StringValue(val)
+    } else {
+        data.Hostname = types.StringNull()
+    }
+    if obj, ok := dataMap["attachmentSource"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AttachmentSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AttachmentSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AttachmentSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AttachmentSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.AttachmentSource = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AttachmentSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.AttachmentSource = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AttachmentSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.AttachmentSource = types.StringNull()
+        }
+    } else if val, ok := dataMap["attachmentSource"].(string); ok {
+        data.AttachmentSource = types.StringValue(val)
+    } else {
+        data.AttachmentSource = types.StringNull()
+    }
     if obj, ok := dataMap["attachedNetworkDeviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1187,6 +1349,8 @@ func (r *NetworkEndpointResource) Update(ctx context.Context, req resource.Updat
         "vendor": true,
         "createdAt": true,
         "updatedAt": true,
+        "hostname": true,
+        "attachmentSource": true,
         "attachedNetworkDeviceId": true,
         "attachedInterfaceIndex": true,
         "attachedPortName": true,
@@ -1438,6 +1602,80 @@ func (r *NetworkEndpointResource) Update(ctx context.Context, req resource.Updat
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["hostname"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Hostname = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Hostname = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Hostname = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Hostname = types.StringValue(string(jsonBytes))
+            } else {
+                data.Hostname = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Hostname = types.StringValue(string(jsonBytes))
+            } else {
+                data.Hostname = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Hostname = types.StringValue(string(jsonBytes))
+        } else {
+            data.Hostname = types.StringNull()
+        }
+    } else if val, ok := dataMap["hostname"].(string); ok {
+        data.Hostname = types.StringValue(val)
+    } else {
+        data.Hostname = types.StringNull()
+    }
+    if obj, ok := dataMap["attachmentSource"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AttachmentSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AttachmentSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AttachmentSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AttachmentSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.AttachmentSource = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AttachmentSource = types.StringValue(string(jsonBytes))
+            } else {
+                data.AttachmentSource = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AttachmentSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.AttachmentSource = types.StringNull()
+        }
+    } else if val, ok := dataMap["attachmentSource"].(string); ok {
+        data.AttachmentSource = types.StringValue(val)
+    } else {
+        data.AttachmentSource = types.StringNull()
     }
     if obj, ok := dataMap["attachedNetworkDeviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

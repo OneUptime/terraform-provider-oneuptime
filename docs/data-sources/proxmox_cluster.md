@@ -40,6 +40,7 @@ data "oneuptime_proxmox_cluster" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_ai_investigation_enabled` (Boolean) When on, OneUptime AI runs read-only commands (pvesh get on cluster, node, VM and container status) on this Proxmox cluster, through its Proxmox AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the Proxmox cluster can turn it on or off.
 - `is_archived` (Boolean) Is this Proxmox cluster archived? Archived Proxmox clusters are hidden from lists but keep collecting telemetry.
+- `is_quorate` (Boolean) True while the cluster reports corosync quorum (pve_up for cluster/<name>). Null until it reports.
 - `name` (String) Name of this Proxmox cluster. This is the join key — it must match the proxmox.cluster.name OTel resource attribute stamped by the OneUptime Proxmox Agent.
 - `node_count` (Number) Cached count of nodes in this cluster.
 - `online_node_count` (Number) Cached count of nodes currently online (pve_up == 1) in this cluster. Rendered as 'Nodes X/Y online' next to nodeCount.
@@ -57,6 +58,7 @@ data "oneuptime_proxmox_cluster" "by_id" {
 - `archived_at` (String) When was this Proxmox cluster archived?
 - `created_at` (String) Date and Time when the object was created.
 - `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `last_notification_at` (String) When Proxmox VE last sent one of its notifications (backups, replication, fencing, updates) to OneUptime.
 - `last_seen_at` (String) When metrics were last received from this cluster.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `telemetry_retention_config` (String) Per-pillar retention overrides for this Proxmox cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Proxmox cluster default, then the project's retention settings. A JSON value: write it with `jsonencode()`.

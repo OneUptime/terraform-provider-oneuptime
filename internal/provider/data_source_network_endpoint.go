@@ -32,6 +32,8 @@ type NetworkEndpointDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     MacAddress types.String `tfsdk:"mac_address"`
     IpAddress types.String `tfsdk:"ip_address"`
+    Hostname types.String `tfsdk:"hostname"`
+    AttachmentSource types.String `tfsdk:"attachment_source"`
     Vendor types.String `tfsdk:"vendor"`
     Classification types.String `tfsdk:"classification"`
     AttachedNetworkDeviceId types.String `tfsdk:"attached_network_device_id"`
@@ -50,7 +52,7 @@ func (d *NetworkEndpointDataSource) Metadata(ctx context.Context, req datasource
 
 func (d *NetworkEndpointDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices. Rows are upserted by the server; users can classify them. Look up an existing network endpoint by `id`, or by any of its other arguments (`attached_interface_index`, `attached_network_device_id`, `attached_port_name`, ...): each one set must match, and exactly one network endpoint may match them all.",
+        MarkdownDescription: "LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices, and from a network controller's client list. Rows are upserted by the server; users can classify them. Look up an existing network endpoint by `id`, or by any of its other arguments (`attached_interface_index`, `attached_network_device_id`, `attached_port_name`, ...): each one set must match, and exactly one network endpoint may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -77,6 +79,16 @@ func (d *NetworkEndpointDataSource) Schema(ctx context.Context, req datasource.S
             },
             "ip_address": schema.StringAttribute{
                 MarkdownDescription: "Last IP address seen for this endpoint in ARP tables. Managed by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "hostname": schema.StringAttribute{
+                MarkdownDescription: "What a network controller calls this endpoint, such as the name in its Meraki client list. Managed by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "attachment_source": schema.StringAttribute{
+                MarkdownDescription: "The network controller that reported where this endpoint is attached, such as meraki. Empty when a walk of a switch or router found it. Managed by the server.",
                 Optional: true,
                 Computed: true,
             },
@@ -175,6 +187,14 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
         filters["ipAddress"] = data.IpAddress.ValueString()
         filterNames = append(filterNames, "ip_address = "+fmt.Sprintf("%q", data.IpAddress.ValueString()))
     }
+    if !data.Hostname.IsNull() && !data.Hostname.IsUnknown() {
+        filters["hostname"] = data.Hostname.ValueString()
+        filterNames = append(filterNames, "hostname = "+fmt.Sprintf("%q", data.Hostname.ValueString()))
+    }
+    if !data.AttachmentSource.IsNull() && !data.AttachmentSource.IsUnknown() {
+        filters["attachmentSource"] = data.AttachmentSource.ValueString()
+        filterNames = append(filterNames, "attachment_source = "+fmt.Sprintf("%q", data.AttachmentSource.ValueString()))
+    }
     if !data.Vendor.IsNull() && !data.Vendor.IsUnknown() {
         filters["vendor"] = data.Vendor.ValueString()
         filterNames = append(filterNames, "vendor = "+fmt.Sprintf("%q", data.Vendor.ValueString()))
@@ -229,6 +249,8 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
         "projectId": true,
         "macAddress": true,
         "ipAddress": true,
+        "hostname": true,
+        "attachmentSource": true,
         "vendor": true,
         "classification": true,
         "attachedNetworkDeviceId": true,
@@ -401,6 +423,40 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
         data.IpAddress = types.StringValue(val)
     } else {
         data.IpAddress = types.StringNull()
+    }
+    if obj, ok := item["hostname"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Hostname = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Hostname = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Hostname = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Hostname = types.StringValue(string(jsonBytes))
+        } else {
+            data.Hostname = types.StringNull()
+        }
+    } else if val, ok := item["hostname"].(string); ok {
+        data.Hostname = types.StringValue(val)
+    } else {
+        data.Hostname = types.StringNull()
+    }
+    if obj, ok := item["attachmentSource"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AttachmentSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AttachmentSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AttachmentSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AttachmentSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.AttachmentSource = types.StringNull()
+        }
+    } else if val, ok := item["attachmentSource"].(string); ok {
+        data.AttachmentSource = types.StringValue(val)
+    } else {
+        data.AttachmentSource = types.StringNull()
     }
     if obj, ok := item["vendor"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

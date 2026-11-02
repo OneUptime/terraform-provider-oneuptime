@@ -2,12 +2,12 @@
 page_title: "oneuptime_cloud_resource_owner_rule Data Source - oneuptime"
 subcategory: "Other"
 description: |-
-  Rules for automatically assigning owners to cloud resources when matching resources are created.
+  Rules for automatically assigning owners to cloud resources (Cloud) or cloud environments (App Platforms) when matching ones are created.
 ---
 
 # oneuptime_cloud_resource_owner_rule (Data Source)
 
-Rules for automatically assigning owners to cloud resources when matching resources are created.
+Rules for automatically assigning owners to cloud resources (Cloud) or cloud environments (App Platforms) when matching ones are created.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one cloud resource owner rule may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -28,6 +28,7 @@ data "oneuptime_cloud_resource_owner_rule" "by_id" {
 
 ### Optional
 
+- `cloud_resource_kind` (String) environment: App Platforms' environments. resource: the resources of Cloud's accounts. Empty: both, as rules made before the two products split.
 - `cloud_tag_pattern` (String) Regex (case-insensitive) matched against each of the resource's cloud tags, written key=value: ^team=payments$ matches every resource tagged team=payments, ^env= every resource with an env tag. Leave empty to match any tags.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Description of this rule.

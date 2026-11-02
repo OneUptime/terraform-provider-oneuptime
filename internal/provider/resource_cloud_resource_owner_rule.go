@@ -49,6 +49,7 @@ type CloudResourceOwnerRuleResourceModel struct {
     MatchLabels types.Set `tfsdk:"match_labels"`
     NameRegexPattern types.String `tfsdk:"name_regex_pattern"`
     CloudTagPattern types.String `tfsdk:"cloud_tag_pattern"`
+    CloudResourceKind types.String `tfsdk:"cloud_resource_kind"`
     DescriptionRegexPattern types.String `tfsdk:"description_regex_pattern"`
     OwnerUsers types.Set `tfsdk:"owner_users"`
     OwnerTeams types.Set `tfsdk:"owner_teams"`
@@ -67,7 +68,7 @@ func (r *CloudResourceOwnerRuleResource) Schema(ctx context.Context, req resourc
 
 func (r *CloudResourceOwnerRuleResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Rules for automatically assigning owners to cloud resources when matching resources are created.",
+        MarkdownDescription: "Rules for automatically assigning owners to cloud resources (Cloud) or cloud environments (App Platforms) when matching ones are created.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -145,6 +146,14 @@ func (r *CloudResourceOwnerRuleResource) schemaDefinition() schema.Schema {
             },
             "cloud_tag_pattern": schema.StringAttribute{
                 MarkdownDescription: "Regex (case-insensitive) matched against each of the resource's cloud tags, written key=value: ^team=payments$ matches every resource tagged team=payments, ^env= every resource with an env tag. Leave empty to match any tags.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "cloud_resource_kind": schema.StringAttribute{
+                MarkdownDescription: "environment: App Platforms' environments. resource: the resources of Cloud's accounts. Empty: both, as rules made before the two products split.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -274,6 +283,9 @@ func (r *CloudResourceOwnerRuleResource) Create(ctx context.Context, req resourc
     if !data.CloudTagPattern.IsNull() && !data.CloudTagPattern.IsUnknown() {
         requestDataMap["cloudTagPattern"] = data.CloudTagPattern.ValueString()
     }
+    if !data.CloudResourceKind.IsNull() && !data.CloudResourceKind.IsUnknown() {
+        requestDataMap["cloudResourceKind"] = data.CloudResourceKind.ValueString()
+    }
     if !data.DescriptionRegexPattern.IsNull() && !data.DescriptionRegexPattern.IsUnknown() {
         requestDataMap["descriptionRegexPattern"] = data.DescriptionRegexPattern.ValueString()
     }
@@ -337,6 +349,7 @@ func (r *CloudResourceOwnerRuleResource) Create(ctx context.Context, req resourc
         "matchLabels": true,
         "nameRegexPattern": true,
         "cloudTagPattern": true,
+        "cloudResourceKind": true,
         "descriptionRegexPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
@@ -609,6 +622,43 @@ func (r *CloudResourceOwnerRuleResource) Create(ctx context.Context, req resourc
     } else {
         data.CloudTagPattern = types.StringNull()
     }
+    if obj, ok := dataMap["cloudResourceKind"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudResourceKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudResourceKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudResourceKind = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudResourceKind = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudResourceKind = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudResourceKind = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudResourceKind = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudResourceKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudResourceKind = types.StringNull()
+        }
+    } else if val, ok := dataMap["cloudResourceKind"].(string); ok {
+        data.CloudResourceKind = types.StringValue(val)
+    } else {
+        data.CloudResourceKind = types.StringNull()
+    }
     if obj, ok := dataMap["descriptionRegexPattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -808,6 +858,7 @@ func (r *CloudResourceOwnerRuleResource) Read(ctx context.Context, req resource.
         "matchLabels": true,
         "nameRegexPattern": true,
         "cloudTagPattern": true,
+        "cloudResourceKind": true,
         "descriptionRegexPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
@@ -1081,6 +1132,43 @@ func (r *CloudResourceOwnerRuleResource) Read(ctx context.Context, req resource.
     } else {
         data.CloudTagPattern = types.StringNull()
     }
+    if obj, ok := dataMap["cloudResourceKind"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudResourceKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudResourceKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudResourceKind = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudResourceKind = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudResourceKind = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudResourceKind = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudResourceKind = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudResourceKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudResourceKind = types.StringNull()
+        }
+    } else if val, ok := dataMap["cloudResourceKind"].(string); ok {
+        data.CloudResourceKind = types.StringValue(val)
+    } else {
+        data.CloudResourceKind = types.StringNull()
+    }
     if obj, ok := dataMap["descriptionRegexPattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1313,6 +1401,9 @@ func (r *CloudResourceOwnerRuleResource) Update(ctx context.Context, req resourc
     if !data.CloudTagPattern.IsUnknown() && !state.CloudTagPattern.IsUnknown() && !data.CloudTagPattern.Equal(state.CloudTagPattern) {
         requestDataMap["cloudTagPattern"] = data.CloudTagPattern.ValueString()
     }
+    if !data.CloudResourceKind.IsUnknown() && !state.CloudResourceKind.IsUnknown() && !data.CloudResourceKind.Equal(state.CloudResourceKind) {
+        requestDataMap["cloudResourceKind"] = data.CloudResourceKind.ValueString()
+    }
     if !data.DescriptionRegexPattern.IsUnknown() && !state.DescriptionRegexPattern.IsUnknown() && !data.DescriptionRegexPattern.Equal(state.DescriptionRegexPattern) {
         requestDataMap["descriptionRegexPattern"] = data.DescriptionRegexPattern.ValueString()
     }
@@ -1354,6 +1445,7 @@ func (r *CloudResourceOwnerRuleResource) Update(ctx context.Context, req resourc
         "matchLabels": true,
         "nameRegexPattern": true,
         "cloudTagPattern": true,
+        "cloudResourceKind": true,
         "descriptionRegexPattern": true,
         "ownerUsers": true,
         "ownerTeams": true,
@@ -1621,6 +1713,43 @@ func (r *CloudResourceOwnerRuleResource) Update(ctx context.Context, req resourc
     } else {
         data.CloudTagPattern = types.StringNull()
     }
+    if obj, ok := dataMap["cloudResourceKind"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudResourceKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CloudResourceKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CloudResourceKind = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CloudResourceKind = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudResourceKind = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CloudResourceKind = types.StringValue(string(jsonBytes))
+            } else {
+                data.CloudResourceKind = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CloudResourceKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudResourceKind = types.StringNull()
+        }
+    } else if val, ok := dataMap["cloudResourceKind"].(string); ok {
+        data.CloudResourceKind = types.StringValue(val)
+    } else {
+        data.CloudResourceKind = types.StringNull()
+    }
     if obj, ok := dataMap["descriptionRegexPattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1858,6 +1987,9 @@ func (r *CloudResourceOwnerRuleResource) keepPlannedValues(data *CloudResourceOw
     }
     if config.CloudTagPattern.IsNull() && !plan.CloudTagPattern.IsUnknown() {
         data.CloudTagPattern = plan.CloudTagPattern
+    }
+    if config.CloudResourceKind.IsNull() && !plan.CloudResourceKind.IsUnknown() {
+        data.CloudResourceKind = plan.CloudResourceKind
     }
     if config.DescriptionRegexPattern.IsNull() && !plan.DescriptionRegexPattern.IsUnknown() {
         data.DescriptionRegexPattern = plan.DescriptionRegexPattern

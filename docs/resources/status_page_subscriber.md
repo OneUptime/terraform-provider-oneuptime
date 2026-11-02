@@ -30,6 +30,7 @@ resource "oneuptime_status_page_subscriber" "example" {
 - `is_subscribed_to_all_resources` (Boolean) Is Subscriber Subscribed to All Resources on this status page? Defaults to `true`.
 - `is_subscription_confirmed` (Boolean) Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email). Defaults to `false`.
 - `is_unsubscribed` (Boolean) Is Subscriber Unsubscribed? Defaults to `false`.
+- `language` (String) The language this subscriber is notified in. Empty means the status page's default language.
 - `microsoft_teams_incoming_webhook_url` (String) Microsoft Teams incoming webhook URL to send notifications to Teams channel.
 - `microsoft_teams_workspace_name` (String) Name of the Microsoft Teams workspace for validation and identification.
 - `send_you_have_subscribed_message` (Boolean) Send You Have Subscribed Message when subscriber is created? Defaults to `true`.

@@ -28,6 +28,7 @@ data "oneuptime_data_store_finding" "by_id" {
 
 ### Optional
 
+- `ai_reason` (String) OneUptime AI's reason for its suggestion, in a sentence.
 - `confidence` (String) How sure the scan is: High, Medium or Low.
 - `data_category` (String) The data type's category.
 - `data_store_id` (String) The store the finding is in. The ID of a `oneuptime_data_store`.
@@ -36,6 +37,8 @@ data "oneuptime_data_store_finding" "by_id" {
 - `distinct_values` (Number) How many different values matched, estimated from hashes that never leave the scan.
 - `finding_key` (String) The data type and location, which identify the finding within its store.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_ai_suggested` (Boolean) OneUptime AI suggested this data type for a field no detector placed, from the field's name, the names beside it and the shapes of its values - never a value. It counts only once a person confirms it.
+- `is_confirmed` (Boolean) A person confirmed the finding holds this data. A confirmed finding counts as High confidence toward the store's sensitivity and checks, whatever the scan or OneUptime AI was sure of.
 - `is_found_by_name` (Boolean) Found from the location's name alone, for a data type no value pattern can confirm.
 - `is_free_text` (Boolean) The location holds free text, so the finding is about values inside it rather than the whole field.
 - `is_name_hinted` (Boolean) The location's name hints at the data type.

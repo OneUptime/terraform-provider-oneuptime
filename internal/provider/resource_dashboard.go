@@ -50,6 +50,7 @@ type DashboardResourceModel struct {
     PageTitle types.String `tfsdk:"page_title"`
     PageDescription types.String `tfsdk:"page_description"`
     LogoFileId types.String `tfsdk:"logo_file_id"`
+    DarkThemeLogoFileId types.String `tfsdk:"dark_theme_logo_file_id"`
     FaviconFileId types.String `tfsdk:"favicon_file_id"`
     Theme types.String `tfsdk:"theme"`
     IsPublicDashboard types.Bool `tfsdk:"is_public_dashboard"`
@@ -151,6 +152,14 @@ func (r *DashboardResource) schemaDefinition() schema.Schema {
             },
             "logo_file_id": schema.StringAttribute{
                 MarkdownDescription: "Dashboard Logo File ID. The ID of a `oneuptime_file`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "dark_theme_logo_file_id": schema.StringAttribute{
+                MarkdownDescription: "Dashboard Dark Theme Logo File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -319,6 +328,9 @@ func (r *DashboardResource) Create(ctx context.Context, req resource.CreateReque
     if !data.LogoFileId.IsNull() && !data.LogoFileId.IsUnknown() {
         requestDataMap["logoFileId"] = data.LogoFileId.ValueString()
     }
+    if !data.DarkThemeLogoFileId.IsNull() && !data.DarkThemeLogoFileId.IsUnknown() {
+        requestDataMap["darkThemeLogoFileId"] = data.DarkThemeLogoFileId.ValueString()
+    }
     if !data.FaviconFileId.IsNull() && !data.FaviconFileId.IsUnknown() {
         requestDataMap["faviconFileId"] = data.FaviconFileId.ValueString()
     }
@@ -391,6 +403,7 @@ func (r *DashboardResource) Create(ctx context.Context, req resource.CreateReque
         "pageTitle": true,
         "pageDescription": true,
         "logoFileId": true,
+        "darkThemeLogoFileId": true,
         "faviconFileId": true,
         "theme": true,
         "isPublicDashboard": true,
@@ -702,6 +715,43 @@ func (r *DashboardResource) Create(ctx context.Context, req resource.CreateReque
         data.LogoFileId = types.StringValue(val)
     } else {
         data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := dataMap["darkThemeLogoFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DarkThemeLogoFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["darkThemeLogoFileId"].(string); ok {
+        data.DarkThemeLogoFileId = types.StringValue(val)
+    } else {
+        data.DarkThemeLogoFileId = types.StringNull()
     }
     if obj, ok := dataMap["faviconFileId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1040,6 +1090,7 @@ func (r *DashboardResource) Read(ctx context.Context, req resource.ReadRequest, 
         "pageTitle": true,
         "pageDescription": true,
         "logoFileId": true,
+        "darkThemeLogoFileId": true,
         "faviconFileId": true,
         "theme": true,
         "isPublicDashboard": true,
@@ -1352,6 +1403,43 @@ func (r *DashboardResource) Read(ctx context.Context, req resource.ReadRequest, 
         data.LogoFileId = types.StringValue(val)
     } else {
         data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := dataMap["darkThemeLogoFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DarkThemeLogoFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["darkThemeLogoFileId"].(string); ok {
+        data.DarkThemeLogoFileId = types.StringValue(val)
+    } else {
+        data.DarkThemeLogoFileId = types.StringNull()
     }
     if obj, ok := dataMap["faviconFileId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1723,6 +1811,9 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
     if !data.LogoFileId.IsUnknown() && !state.LogoFileId.IsUnknown() && !data.LogoFileId.Equal(state.LogoFileId) {
         requestDataMap["logoFileId"] = data.LogoFileId.ValueString()
     }
+    if !data.DarkThemeLogoFileId.IsUnknown() && !state.DarkThemeLogoFileId.IsUnknown() && !data.DarkThemeLogoFileId.Equal(state.DarkThemeLogoFileId) {
+        requestDataMap["darkThemeLogoFileId"] = data.DarkThemeLogoFileId.ValueString()
+    }
     if !data.FaviconFileId.IsUnknown() && !state.FaviconFileId.IsUnknown() && !data.FaviconFileId.Equal(state.FaviconFileId) {
         requestDataMap["faviconFileId"] = data.FaviconFileId.ValueString()
     }
@@ -1773,6 +1864,7 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
         "pageTitle": true,
         "pageDescription": true,
         "logoFileId": true,
+        "darkThemeLogoFileId": true,
         "faviconFileId": true,
         "theme": true,
         "isPublicDashboard": true,
@@ -2079,6 +2171,43 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
         data.LogoFileId = types.StringValue(val)
     } else {
         data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := dataMap["darkThemeLogoFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DarkThemeLogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.DarkThemeLogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DarkThemeLogoFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["darkThemeLogoFileId"].(string); ok {
+        data.DarkThemeLogoFileId = types.StringValue(val)
+    } else {
+        data.DarkThemeLogoFileId = types.StringNull()
     }
     if obj, ok := dataMap["faviconFileId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2455,6 +2584,9 @@ func (r *DashboardResource) keepPlannedValues(data *DashboardResourceModel, plan
     }
     if config.LogoFileId.IsNull() && !plan.LogoFileId.IsUnknown() {
         data.LogoFileId = plan.LogoFileId
+    }
+    if config.DarkThemeLogoFileId.IsNull() && !plan.DarkThemeLogoFileId.IsUnknown() {
+        data.DarkThemeLogoFileId = plan.DarkThemeLogoFileId
     }
     if config.FaviconFileId.IsNull() && !plan.FaviconFileId.IsUnknown() {
         data.FaviconFileId = plan.FaviconFileId

@@ -2,12 +2,12 @@
 page_title: "oneuptime_network_endpoint Resource - oneuptime"
 subcategory: "Other"
 description: |-
-  LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices. Rows are upserted by the server; users can classify them.
+  LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices, and from a network controller's client list. Rows are upserted by the server; users can classify them.
 ---
 
 # oneuptime_network_endpoint (Resource)
 
-LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices. Rows are upserted by the server; users can classify them.
+LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices, and from a network controller's client list. Rows are upserted by the server; users can classify them.
 
 ## Example Usage
 
@@ -35,9 +35,11 @@ resource "oneuptime_network_endpoint" "example" {
 - `attached_interface_index` (Number) SNMP ifIndex of the switch port this endpoint was last seen on. Managed by the server.
 - `attached_network_device_id` (String) ID of the Network Device this endpoint was last seen attached to. The ID of a `oneuptime_network_device`.
 - `attached_port_name` (String) Name of the switch port this endpoint was last seen on. Managed by the server.
+- `attachment_source` (String) The network controller that reported where this endpoint is attached, such as meraki. Empty when a walk of a switch or router found it. Managed by the server.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `first_seen_at` (String) When this endpoint was first discovered on the network.
+- `hostname` (String) What a network controller calls this endpoint, such as the name in its Meraki client list. Managed by the server.
 - `id` (String) Unique identifier for the resource.
 - `last_seen_at` (String) When this endpoint was last seen in an ARP or FDB walk.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
