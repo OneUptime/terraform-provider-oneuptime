@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncomingCallPolicyEscalationRuleResource{}
 var _ resource.ResourceWithImportState = &IncomingCallPolicyEscalationRuleResource{}
+var _ resource.ResourceWithModifyPlan = &IncomingCallPolicyEscalationRuleResource{}
 
 func NewIncomingCallPolicyEscalationRuleResource() resource.Resource {
     return &IncomingCallPolicyEscalationRuleResource{}
@@ -47,6 +48,7 @@ type IncomingCallPolicyEscalationRuleResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *IncomingCallPolicyEscalationRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -82,6 +84,7 @@ func (r *IncomingCallPolicyEscalationRuleResource) schemaDefinition() schema.Sch
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incoming_call_policy"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Rule name (e.g., 'Primary On-Call', 'Backup Engineer').",
@@ -104,6 +107,7 @@ func (r *IncomingCallPolicyEscalationRuleResource) schemaDefinition() schema.Sch
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -113,6 +117,7 @@ func (r *IncomingCallPolicyEscalationRuleResource) schemaDefinition() schema.Sch
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(20)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -123,14 +128,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) schemaDefinition() schema.Sch
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user to route to directly (mutually exclusive with onCallDutyPolicyScheduleId). The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the user to route to directly (mutually exclusive with onCallDutyPolicyScheduleId). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDValidators("user_email", false),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -152,8 +156,34 @@ func (r *IncomingCallPolicyEscalationRuleResource) schemaDefinition() schema.Sch
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this incoming call policy escalation rule names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncomingCallPolicyEscalationRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncomingCallPolicyEscalationRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -195,6 +225,11 @@ func (r *IncomingCallPolicyEscalationRuleResource) Create(ctx context.Context, r
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -255,6 +290,19 @@ func (r *IncomingCallPolicyEscalationRuleResource) Create(ctx context.Context, r
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := incomingCallPolicyEscalationRuleResponse
+        if wrapper, ok := incomingCallPolicyEscalationRuleResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -581,9 +629,12 @@ func (r *IncomingCallPolicyEscalationRuleResource) Create(ctx context.Context, r
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -614,6 +665,10 @@ func (r *IncomingCallPolicyEscalationRuleResource) Read(ctx context.Context, req
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/incoming-call-policy-escalation-rule/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -907,6 +962,8 @@ func (r *IncomingCallPolicyEscalationRuleResource) Read(ctx context.Context, req
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -938,6 +995,11 @@ func (r *IncomingCallPolicyEscalationRuleResource) Update(ctx context.Context, r
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     incomingCallPolicyEscalationRuleRequest := map[string]interface{}{
@@ -1290,6 +1352,8 @@ func (r *IncomingCallPolicyEscalationRuleResource) Update(ctx context.Context, r
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1355,6 +1419,9 @@ func (r *IncomingCallPolicyEscalationRuleResource) keepPlannedValues(data *Incom
     }
     if config.UserId.IsNull() && !plan.UserId.IsUnknown() {
         data.UserId = plan.UserId
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 

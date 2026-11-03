@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentPostmortemTemplateResource{}
 var _ resource.ResourceWithImportState = &IncidentPostmortemTemplateResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentPostmortemTemplateResource{}
 
 func NewIncidentPostmortemTemplateResource() resource.Resource {
     return &IncidentPostmortemTemplateResource{}
@@ -108,6 +109,17 @@ func (r *IncidentPostmortemTemplateResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentPostmortemTemplateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentPostmortemTemplateResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -446,6 +458,7 @@ func (r *IncidentPostmortemTemplateResource) Create(ctx context.Context, req res
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

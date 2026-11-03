@@ -26,6 +26,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &RunbookVariableResource{}
 var _ resource.ResourceWithImportState = &RunbookVariableResource{}
+var _ resource.ResourceWithModifyPlan = &RunbookVariableResource{}
 
 func NewRunbookVariableResource() resource.Resource {
     return &RunbookVariableResource{}
@@ -88,6 +89,7 @@ func (r *RunbookVariableResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_runbook"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Letters, numbers, hyphens and underscores. Steps use the variable by this name: {{global.variables.NAME}} for a global variable, {{local.variables.NAME}} for one of the runbook's own.",
@@ -132,6 +134,7 @@ func (r *RunbookVariableResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_runner"),
             },
             "is_available_to_global_runners": schema.BoolAttribute{
                 MarkdownDescription: "Whether steps of this project that run on a global Runner get this secret. Global Runners are the ones OneUptime runs for every project; a step of another project never gets it.",
@@ -164,6 +167,17 @@ func (r *RunbookVariableResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *RunbookVariableResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *RunbookVariableResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -596,6 +610,7 @@ func (r *RunbookVariableResource) Create(ctx context.Context, req resource.Creat
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

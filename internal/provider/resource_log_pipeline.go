@@ -25,6 +25,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &LogPipelineResource{}
 var _ resource.ResourceWithImportState = &LogPipelineResource{}
+var _ resource.ResourceWithModifyPlan = &LogPipelineResource{}
 
 func NewLogPipelineResource() resource.Resource {
     return &LogPipelineResource{}
@@ -114,6 +115,7 @@ func (r *LogPipelineResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -139,6 +141,17 @@ func (r *LogPipelineResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *LogPipelineResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *LogPipelineResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -489,6 +502,7 @@ func (r *LogPipelineResource) Create(ctx context.Context, req resource.CreateReq
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

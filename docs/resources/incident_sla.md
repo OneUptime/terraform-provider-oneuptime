@@ -36,7 +36,7 @@ resource "oneuptime_incident_sla" "example" {
 - `resolved_at` (String) The actual time when the incident was resolved.
 - `responded_at` (String) The actual time when the incident was acknowledged.
 - `response_deadline` (String) The deadline by which the incident must be acknowledged to meet the SLA.
-- `status` (String) Current SLA status (On Track, At Risk, Breached, Met). Defaults to `On Track`.
+- `status` (String) Current SLA status (On Track, At Risk, Breached, Met). Allowed values: `On Track`, `At Risk`, `Response Breached`, `Resolution Breached`, `Met`. Defaults to `On Track`.
 
 ### Read-Only
 

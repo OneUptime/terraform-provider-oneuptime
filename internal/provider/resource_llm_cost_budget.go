@@ -20,11 +20,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &LlmCostBudgetResource{}
 var _ resource.ResourceWithImportState = &LlmCostBudgetResource{}
+var _ resource.ResourceWithModifyPlan = &LlmCostBudgetResource{}
 
 func NewLlmCostBudgetResource() resource.Resource {
     return &LlmCostBudgetResource{}
@@ -109,6 +111,9 @@ func (r *LlmCostBudgetResource) schemaDefinition() schema.Schema {
             "daily_budget_in_usd": schema.NumberAttribute{
                 MarkdownDescription: "Daily LLM spend budget in USD, evaluated over the UTC day. Spend and percent-used are published as metrics for monitors to alert on.",
                 Required: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "service_id": schema.StringAttribute{
                 MarkdownDescription: "Optional telemetry service ID scoping this budget. Null means the budget is project-wide. The ID of a `oneuptime_service`.",
@@ -117,6 +122,7 @@ func (r *LlmCostBudgetResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "llm_system": schema.StringAttribute{
                 MarkdownDescription: "Optional provider filter, e.g. openai, anthropic, aws.bedrock (matches the span's gen_ai provider). Leave empty to count every provider.",
@@ -141,6 +147,9 @@ func (r *LlmCostBudgetResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("calls"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("calls", "providers"),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -174,6 +183,17 @@ func (r *LlmCostBudgetResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *LlmCostBudgetResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *LlmCostBudgetResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -661,6 +681,7 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

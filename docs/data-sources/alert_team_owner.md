@@ -28,11 +28,11 @@ data "oneuptime_alert_team_owner" "by_id" {
 
 ### Optional
 
-- `alert_id` (String) ID of your OneUptime Alert in which this object belongs. The ID of a `oneuptime_alert`.
+- `alert_id` (String) ID of the alert the team owns. The ID of a `oneuptime_alert`.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `team_id` (String) ID of the team that owns the alert. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

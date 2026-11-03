@@ -36,15 +36,15 @@ func (p *OneuptimeProvider) Metadata(ctx context.Context, req provider.MetadataR
 
 func (p *OneuptimeProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "OpenAPI specification for OneUptime. This document describes the API endpoints, request and response formats, and other details necessary for developers to interact with the OneUptime API.",
+        MarkdownDescription: "Manage a OneUptime project as code, with Terraform or OpenTofu: monitors, status pages, incidents, on-call policies, teams and everything else the OneUptime API manages.",
 
         Attributes: map[string]schema.Attribute{
             "oneuptime_url": schema.StringAttribute{
-                MarkdownDescription: "The oneuptime URL (without /api path). Defaults to 'oneuptime.com' if not specified. The provider automatically appends '/api' to the URL.",
+                MarkdownDescription: "The address of your OneUptime: https://oneuptime.com, or your own installation's. Leave out /api: the provider adds it. Falls back to the `ONEUPTIME_URL` environment variable, then to https://oneuptime.com.",
                 Optional:            true,
             },
             "api_key": schema.StringAttribute{
-                MarkdownDescription: "Project-scoped API key for authentication. May also be set via the ONEUPTIME_API_KEY environment variable.",
+                MarkdownDescription: "An API key of the project to manage, from its **Settings** > **API Keys**. Falls back to the `ONEUPTIME_API_KEY` environment variable; the provider stops before any plan when neither is set.",
                 Optional:            true,
                 Sensitive:           true,
             },

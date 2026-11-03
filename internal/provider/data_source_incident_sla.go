@@ -74,11 +74,13 @@ func (d *IncidentSlaDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "ID of the incident this SLA record is tracking. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "incident_sla_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the SLA rule that was applied to this incident. The ID of a `oneuptime_incident_sla_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_sla_rule"),
             },
             "response_deadline": schema.StringAttribute{
                 MarkdownDescription: "The deadline by which the incident must be acknowledged to meet the SLA.",
@@ -121,6 +123,7 @@ func (d *IncidentSlaDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

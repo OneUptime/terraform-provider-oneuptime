@@ -25,6 +25,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &DetectionRuleResource{}
 var _ resource.ResourceWithImportState = &DetectionRuleResource{}
+var _ resource.ResourceWithModifyPlan = &DetectionRuleResource{}
 
 func NewDetectionRuleResource() resource.Resource {
     return &DetectionRuleResource{}
@@ -121,6 +122,7 @@ func (r *DetectionRuleResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -155,6 +157,7 @@ func (r *DetectionRuleResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -199,6 +202,7 @@ func (r *DetectionRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -209,6 +213,7 @@ func (r *DetectionRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident severity for incidents opened by this rule. The ID of a `oneuptime_incident_severity`.",
@@ -217,6 +222,7 @@ func (r *DetectionRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -254,6 +260,17 @@ func (r *DetectionRuleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *DetectionRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *DetectionRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -875,6 +892,7 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

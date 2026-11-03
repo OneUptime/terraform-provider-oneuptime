@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_database_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your databases.
 ---
@@ -22,8 +22,8 @@ resource "oneuptime_database_team_owner" "example" {
 
 ### Required
 
-- `database_server_id` (String) ID of your OneUptime Database in which this object belongs. The ID of a `oneuptime_database`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `database_server_id` (String) ID of the database the team owns. The ID of a `oneuptime_database`.
+- `team_id` (String) ID of the team that owns the database. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_database_team_owner" "example" {
 
 ## Import
 
-Import an existing database team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing database team owner by its database and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_database_team_owner.example
-  id = "<id>"
+  id = "<database_server_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_database_team_owner.example <id>
+terraform import oneuptime_database_team_owner.example <database_server_id>/<team_id>
 ```
+
+Its own ID works too.

@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &StatusPageTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageTeamOwnerResource{}
 
 func NewStatusPageTeamOwnerResource() resource.Resource {
     return &StatusPageTeamOwnerResource{}
@@ -71,18 +72,20 @@ func (r *StatusPageTeamOwnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the status page. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime StatusPage in which this object belongs. The ID of a `oneuptime_status_page`.",
+                MarkdownDescription: "ID of the status page the team owns. The ID of a `oneuptime_status_page`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -110,6 +113,17 @@ func (r *StatusPageTeamOwnerResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -400,6 +414,7 @@ func (r *StatusPageTeamOwnerResource) Create(ctx context.Context, req resource.C
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -884,7 +899,22 @@ func (r *StatusPageTeamOwnerResource) Delete(ctx context.Context, req resource.D
 
 
 func (r *StatusPageTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <status_page_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/status-page-owner-team/get-list",
+        parentField:     "statusPageId",
+        parentAttribute: "status_page_id",
+        parentNoun:      "status page",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 

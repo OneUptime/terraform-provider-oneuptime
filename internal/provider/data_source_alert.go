@@ -131,11 +131,13 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the monitor this alert belongs to. The ID of a `oneuptime_monitor`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.",
@@ -238,7 +240,7 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -246,19 +248,22 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 MarkdownDescription: "Current Alert State ID. The ID of a `oneuptime_alert_state`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_state"),
             },
             "alert_severity_id": schema.StringAttribute{
                 MarkdownDescription: "Alert Severity ID. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "monitor_status_when_this_alert_was_created_id": schema.StringAttribute{
                 MarkdownDescription: "Monitor Status ID when this alert was created. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_owner_notified_of_alert_creation": schema.BoolAttribute{
@@ -272,7 +277,7 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "created_state_log": schema.StringAttribute{
-                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_criteria_id": schema.StringAttribute{
@@ -286,17 +291,18 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "series_labels": schema.StringAttribute{
-                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "monitor_summary": schema.StringAttribute{
-                MarkdownDescription: "The monitor summary captured at the moment this alert was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The monitor summary captured at the moment this alert was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_probe_id": schema.StringAttribute{
                 MarkdownDescription: "If this alert was created by a Probe, this is the ID of the probe that created it. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "is_created_automatically": schema.BoolAttribute{
                 MarkdownDescription: "Is this alert created by OneUptime Probe or Workers automatically (and not created manually by a user)?",
@@ -309,7 +315,7 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "telemetry_query": schema.StringAttribute{
-                MarkdownDescription: "Telemetry query for this alert. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Telemetry query for this alert. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "alert_number": schema.NumberAttribute{
@@ -326,6 +332,7 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 MarkdownDescription: "The ID of the latest episode this alert is a member of, if any. Read-only: set by OneUptime when the alert is added to or removed from an episode's members (Alert Episode Member). The ID of a `oneuptime_alert_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_episode"),
             },
             "is_private": schema.BoolAttribute{
                 MarkdownDescription: "If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.",

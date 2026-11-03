@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &UserOverrideResource{}
 var _ resource.ResourceWithImportState = &UserOverrideResource{}
+var _ resource.ResourceWithModifyPlan = &UserOverrideResource{}
 
 func NewUserOverrideResource() resource.Resource {
     return &UserOverrideResource{}
@@ -43,6 +44,8 @@ type UserOverrideResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    OverrideUserEmail types.String `tfsdk:"override_user_email"`
+    RouteAlertsToUserEmail types.String `tfsdk:"route_alerts_to_user_email"`
 }
 
 func (r *UserOverrideResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -80,28 +83,26 @@ func (r *UserOverrideResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "override_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user who is away. While the override is in force, alerts that would page this user go to the user in Route Alerts To User ID instead. With no Route Alerts To User ID, they are skipped: each of their turns in an on-call schedule goes to the next person in the rotation who is not away. The ID of a `oneuptime_user` (see the data source).",
-                Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
-            },
-            "route_alerts_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user who covers. While the override is in force, this user gets the alerts that would page the user in Override User ID. Leave it empty to skip that user instead: each of their turns in an on-call schedule goes to the next person in the rotation who is not away, and teams and escalation rules that name them do not page them until the override ends. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the user who is away. While the override is in force, alerts that would page this user go to the user in Route Alerts To User ID instead. With no Route Alerts To User ID, they are skipped: each of their turns in an on-call schedule goes to the next person in the rotation who is not away. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `override_user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
-                },
+                Validators: personIDValidators("override_user_email", true),
+            },
+            "route_alerts_to_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the user who covers. While the override is in force, this user gets the alerts that would page the user in Override User ID. Leave it empty to skip that user instead: each of their turns in an on-call schedule goes to the next person in the rotation who is not away, and teams and escalation rules that name them do not page them until the override ends. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `route_alerts_to_user_email`.",
+                Optional: true,
+                Computed: true,
+                Validators: personIDValidators("route_alerts_to_user_email", false),
             },
             "starts_at": schema.StringAttribute{
                 MarkdownDescription: "When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns.",
                 CustomType: RFC3339Type{},
                 Required: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.RequiresReplace(),
                 },
             },
@@ -110,6 +111,7 @@ func (r *UserOverrideResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Required: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.RequiresReplace(),
                 },
             },
@@ -133,8 +135,47 @@ func (r *UserOverrideResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "override_user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `override_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("override_user_id"),
+                Validators: personEmailValidators(),
+            },
+            "route_alerts_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `route_alerts_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("route_alerts_to_user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this user override names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *UserOverrideResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "override_user_id",
+        email:    "override_user_email",
+        invites:  false,
+        replaces: true,
+    })
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "route_alerts_to_user_id",
+        email:    "route_alerts_to_user_email",
+        invites:  false,
+        replaces: true,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *UserOverrideResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -176,6 +217,14 @@ func (r *UserOverrideResource) Create(ctx context.Context, req resource.CreateRe
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.OverrideUserId, data.OverrideUserEmail, "override_user_email", &resp.Diagnostics) {
+        return
+    }
+    if !personIDForWrite(ctx, r.client, &data.RouteAlertsToUserId, data.RouteAlertsToUserEmail, "route_alerts_to_user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -230,6 +279,30 @@ func (r *UserOverrideResource) Create(ctx context.Context, req resource.CreateRe
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.OverrideUserId.IsUnknown() {
+        created := userOverrideResponse
+        if wrapper, ok := userOverrideResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["overrideUserId"]); id != "" {
+            data.OverrideUserId = types.StringValue(id)
+        } else {
+            data.OverrideUserId = types.StringNull()
+        }
+    }
+    if data.RouteAlertsToUserId.IsUnknown() {
+        created := userOverrideResponse
+        if wrapper, ok := userOverrideResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["routeAlertsToUserId"]); id != "" {
+            data.RouteAlertsToUserId = types.StringValue(id)
+        } else {
+            data.RouteAlertsToUserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -500,9 +573,13 @@ func (r *UserOverrideResource) Create(ctx context.Context, req resource.CreateRe
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.OverrideUserEmail = personEmailAfterWrite(ctx, r.client, data.OverrideUserId, data.OverrideUserEmail)
+    data.RouteAlertsToUserEmail = personEmailAfterWrite(ctx, r.client, data.RouteAlertsToUserId, data.RouteAlertsToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -531,6 +608,12 @@ func (r *UserOverrideResource) Read(ctx context.Context, req resource.ReadReques
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorOverrideUserId := data.OverrideUserId
+    priorOverrideUserEmail := data.OverrideUserEmail
+    priorRouteAlertsToUserId := data.RouteAlertsToUserId
+    priorRouteAlertsToUserEmail := data.RouteAlertsToUserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-policy-user-override/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -770,6 +853,9 @@ func (r *UserOverrideResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.OverrideUserEmail = personEmailAfterRead(ctx, r.client, priorOverrideUserId, data.OverrideUserId, priorOverrideUserEmail)
+    data.RouteAlertsToUserEmail = personEmailAfterRead(ctx, r.client, priorRouteAlertsToUserId, data.RouteAlertsToUserId, priorRouteAlertsToUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -801,6 +887,14 @@ func (r *UserOverrideResource) Update(ctx context.Context, req resource.UpdateRe
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.OverrideUserId, data.OverrideUserEmail, "override_user_email", &resp.Diagnostics) {
+        return
+    }
+    if !personIDForWrite(ctx, r.client, &data.RouteAlertsToUserId, data.RouteAlertsToUserEmail, "route_alerts_to_user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     userOverrideRequest := map[string]interface{}{
@@ -1078,6 +1172,9 @@ func (r *UserOverrideResource) Update(ctx context.Context, req resource.UpdateRe
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.OverrideUserEmail = personEmailAfterWrite(ctx, r.client, data.OverrideUserId, data.OverrideUserEmail)
+    data.RouteAlertsToUserEmail = personEmailAfterWrite(ctx, r.client, data.RouteAlertsToUserId, data.RouteAlertsToUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1129,8 +1226,17 @@ func (r *UserOverrideResource) keepPlannedValues(data *UserOverrideResourceModel
     if config.OnCallDutyPolicyId.IsNull() && !plan.OnCallDutyPolicyId.IsUnknown() {
         data.OnCallDutyPolicyId = plan.OnCallDutyPolicyId
     }
+    if config.OverrideUserId.IsNull() && !plan.OverrideUserId.IsUnknown() {
+        data.OverrideUserId = plan.OverrideUserId
+    }
     if config.RouteAlertsToUserId.IsNull() && !plan.RouteAlertsToUserId.IsUnknown() {
         data.RouteAlertsToUserId = plan.RouteAlertsToUserId
+    }
+    if config.OverrideUserEmail.IsNull() && !plan.OverrideUserEmail.IsUnknown() {
+        data.OverrideUserEmail = plan.OverrideUserEmail
+    }
+    if config.RouteAlertsToUserEmail.IsNull() && !plan.RouteAlertsToUserEmail.IsUnknown() {
+        data.RouteAlertsToUserEmail = plan.RouteAlertsToUserEmail
     }
 }
 

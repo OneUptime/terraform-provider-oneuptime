@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_log_saved_view Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Save and reuse log explorer views, including the current filters, columns, sorting, and page size.
 ---
@@ -30,7 +30,7 @@ resource "oneuptime_log_saved_view" "example" {
 - `page_size` (Number) Number of logs per page for this saved view. Defaults to `100`.
 - `query` (String) Serialized log query for this saved view. A JSON value: write it with `jsonencode()`.
 - `sort_field` (String) Active sort field for this saved log view.
-- `sort_order` (String) Sort order for this saved log view.
+- `sort_order` (String) Sort order for this saved log view. Allowed values: `ASC`, `DESC`.
 - `time_range` (String) Time selection for this saved view — the rolling range token (e.g. Past 1 Hour), or an absolute window when the range is Custom. A JSON value: write it with `jsonencode()`.
 
 ### Read-Only

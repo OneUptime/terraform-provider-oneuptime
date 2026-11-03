@@ -34,6 +34,7 @@ type TeamMemberDataSourceModel struct {
     UserId types.String `tfsdk:"user_id"`
     HasAcceptedInvitation types.Bool `tfsdk:"has_accepted_invitation"`
     InvitationAcceptedAt types.String `tfsdk:"invitation_accepted_at"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (d *TeamMemberDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -42,7 +43,7 @@ func (d *TeamMemberDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *TeamMemberDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "This model connects users and teams Look up an existing team member by `id`, or by any of its other arguments (`has_accepted_invitation`, `team_id`, `user_id`): each one set must match, and exactly one team member may match them all.",
+        MarkdownDescription: "Add users to your teams. Look up an existing team member by `id`, or by any of its other arguments (`has_accepted_invitation`, `team_id`, `user_email`, ...): each one set must match, and exactly one team member may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -59,27 +60,35 @@ func (d *TeamMemberDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of Team this user belongs to. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team the person is in. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of User who belongs to this team. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the person in the team. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("user_email", false),
             },
             "has_accepted_invitation": schema.BoolAttribute{
-                MarkdownDescription: "Has this team member accepted invitation.",
+                MarkdownDescription: "Whether the person has joined: false while their invitation waits, true once they accept it. Someone in the project already joins at once.",
                 Optional: true,
                 Computed: true,
             },
             "invitation_accepted_at": schema.StringAttribute{
-                MarkdownDescription: "When did this team member accept invitation.",
+                MarkdownDescription: "When the person accepted their invitation.",
                 Computed: true,
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -131,6 +140,14 @@ func (d *TeamMemberDataSource) Read(ctx context.Context, req datasource.ReadRequ
     if !data.HasAcceptedInvitation.IsNull() && !data.HasAcceptedInvitation.IsUnknown() {
         filters["hasAcceptedInvitation"] = data.HasAcceptedInvitation.ValueBool()
         filterNames = append(filterNames, "has_accepted_invitation = "+fmt.Sprintf("%t", data.HasAcceptedInvitation.ValueBool()))
+    }
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["userId"] = personID
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -341,6 +358,7 @@ func (d *TeamMemberDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.InvitationAcceptedAt = types.StringNull()
     }
+    data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

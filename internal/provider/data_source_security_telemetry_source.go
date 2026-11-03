@@ -90,7 +90,7 @@ func (d *SecurityTelemetrySourceDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "last_scan_result": schema.StringAttribute{
-                MarkdownDescription: "What the last scan read and found: the records read, the security events found, and how many of each signal. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the last scan read and found: the records read, the security events found, and how many of each signal. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_error": schema.StringAttribute{
@@ -102,6 +102,7 @@ func (d *SecurityTelemetrySourceDataSource) Schema(ctx context.Context, req data
                 MarkdownDescription: "ID of the user who turned this source on. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

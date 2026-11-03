@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_podman_host_feed Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Log of everything that happened to this Podman host - creation, updates, owner changes and the rules that made them.
 ---
@@ -15,7 +15,7 @@ Log of everything that happened to this Podman host - creation, updates, owner c
 resource "oneuptime_podman_host_feed" "example" {
   podman_host_id              = oneuptime_podman_host.example.id
   feed_info_in_markdown       = "# Heading\n\nThis is **markdown** content"
-  podman_host_feed_event_type = "Example short text"
+  podman_host_feed_event_type = "PodmanHostCreated"
   display_color               = "#ff0000"
 }
 ```
@@ -26,14 +26,15 @@ resource "oneuptime_podman_host_feed" "example" {
 
 - `display_color` (String) Display color for this feed item.
 - `feed_info_in_markdown` (String) Log of the Podman host change in Markdown.
-- `podman_host_feed_event_type` (String) Podman Host Feed Event.
+- `podman_host_feed_event_type` (String) Podman Host Feed Event. Allowed values: `PodmanHostCreated`, `PodmanHostUpdated`, `PodmanHostArchived`, `PodmanHostRestored`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `OwnerRuleExecuted`, `LabelRuleExecuted`.
 - `podman_host_id` (String) Relation to Podman Host ID in which this resource belongs. The ID of a `oneuptime_podman_host`.
 
 ### Optional
 
 - `more_information_in_markdown` (String) More information in Markdown.
 - `posted_at` (String) Date and time when the feed was posted.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

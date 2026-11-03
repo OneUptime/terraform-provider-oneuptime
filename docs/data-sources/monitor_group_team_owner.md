@@ -31,8 +31,8 @@ data "oneuptime_monitor_group_team_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `monitor_group_id` (String) ID of your OneUptime MonitorGroup in which this object belongs. The ID of a `oneuptime_monitor_group`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `monitor_group_id` (String) ID of the monitor group the team owns. The ID of a `oneuptime_monitor_group`.
+- `team_id` (String) ID of the team that owns the monitor group. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_vcenter_team_owner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your vCenters.
 ---
@@ -33,8 +33,8 @@ data "oneuptime_vcenter_team_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
-- `vmware_v_center_id` (String) ID of your OneUptime vCenter in which this object belongs. The ID of a `oneuptime_vcenter`.
+- `team_id` (String) ID of the team that owns the vCenter. The ID of a `oneuptime_team`.
+- `vmware_v_center_id` (String) ID of the vCenter the team owns. The ID of a `oneuptime_vcenter`.
 
 ### Read-Only
 

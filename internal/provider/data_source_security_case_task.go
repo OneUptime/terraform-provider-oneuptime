@@ -37,6 +37,7 @@ type SecurityCaseTaskDataSourceModel struct {
     DoneAt types.String `tfsdk:"done_at"`
     DoneByUserId types.String `tfsdk:"done_by_user_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    AssignedToUserEmail types.String `tfsdk:"assigned_to_user_email"`
 }
 
 func (d *SecurityCaseTaskDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -45,7 +46,7 @@ func (d *SecurityCaseTaskDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *SecurityCaseTaskDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "What has to be done on a security case, who is doing it, and whether it is done. Look up an existing security case task by `id`, or by any of its other arguments (`assigned_to_user_id`, `created_by_user_id`, `done_by_user_id`, ...): each one set must match, and exactly one security case task may match them all.",
+        MarkdownDescription: "What has to be done on a security case, who is doing it, and whether it is done. Look up an existing security case task by `id`, or by any of its other arguments (`assigned_to_user_email`, `assigned_to_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one security case task may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -69,6 +70,7 @@ func (d *SecurityCaseTaskDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the case this task is on. The ID of a `oneuptime_security_case`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "What has to be done, in a line.",
@@ -76,9 +78,10 @@ func (d *SecurityCaseTaskDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "assigned_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the person doing the task. Empty while nobody is. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the person doing the task. Empty while nobody is. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assigned_to_user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("assigned_to_user_email", false),
             },
             "is_done": schema.BoolAttribute{
                 MarkdownDescription: "Whether the task is done. Setting it records who did it and when; clearing it opens the task again.",
@@ -93,11 +96,19 @@ func (d *SecurityCaseTaskDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the person who marked the task done. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the person who added the task. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
+            },
+            "assigned_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -161,6 +172,14 @@ func (d *SecurityCaseTaskDataSource) Read(ctx context.Context, req datasource.Re
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.AssignedToUserEmail.IsNull() && !data.AssignedToUserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.AssignedToUserEmail.ValueString(), "assigned_to_user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["assignedToUserId"] = personID
+        filterNames = append(filterNames, "assigned_to_user_email = "+fmt.Sprintf("%q", data.AssignedToUserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -425,6 +444,7 @@ func (d *SecurityCaseTaskDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    data.AssignedToUserEmail = personEmailAfterLookup(ctx, d.client, data.AssignedToUserId, data.AssignedToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

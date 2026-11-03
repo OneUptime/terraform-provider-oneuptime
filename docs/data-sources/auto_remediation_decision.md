@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_auto_remediation_decision Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   Why auto-remediation did, or did not, act on an incident or alert: what each fix path did, or why it did nothing, each time the rule engine evaluated the signal.
 ---
@@ -36,6 +36,6 @@ data "oneuptime_auto_remediation_decision" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `entries` (String) One entry per fix path - a Kubernetes cluster, an infrastructure resource, an AI rule, or the project - with a reason code saying what it did or why it did nothing. A JSON value: write it with `jsonencode()`.
+- `entries` (String) One entry per fix path - a Kubernetes cluster, an infrastructure resource, an AI rule, or the project - with a reason code saying what it did or why it did nothing. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

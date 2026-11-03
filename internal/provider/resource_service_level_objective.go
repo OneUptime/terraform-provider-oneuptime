@@ -25,11 +25,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ServiceLevelObjectiveResource{}
 var _ resource.ResourceWithImportState = &ServiceLevelObjectiveResource{}
+var _ resource.ResourceWithModifyPlan = &ServiceLevelObjectiveResource{}
 
 func NewServiceLevelObjectiveResource() resource.Resource {
     return &ServiceLevelObjectiveResource{}
@@ -119,13 +121,14 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether this Service Level Objective is enabled. Disabled SLOs are not evaluated.",
@@ -153,6 +156,9 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Monitor Uptime", "Metric"),
+                },
             },
             "multi_monitor_mode": schema.StringAttribute{
                 MarkdownDescription: "How downtime is counted when multiple monitors are attached. 'Any Monitor Down' counts time when any monitor is down. 'Monitor Seconds Average' averages downtime across monitors.",
@@ -161,6 +167,9 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("Any Monitor Down"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Any Monitor Down", "Monitor Seconds Average"),
                 },
             },
             "monitors": schema.SetAttribute{
@@ -171,6 +180,7 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "monitor_labels": schema.SetAttribute{
                 MarkdownDescription: "Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named \"Auto-add monitors with labels\". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead. IDs of `oneuptime_label` resources.",
@@ -180,6 +190,7 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "metric_query_config": schema.StringAttribute{
                 MarkdownDescription: "Query configuration for Metric SLIs: metric name, good-event predicate and optional attribute filters. A JSON value: write it with `jsonencode()`.",
@@ -187,6 +198,7 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -196,6 +208,9 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
             "target_percentage": schema.NumberAttribute{
                 MarkdownDescription: "Target of this Service Level Objective as a percentage (e.g. 99.9). Must be less than 100.",
                 Required: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "window_type": schema.StringAttribute{
                 MarkdownDescription: "Type of compliance window for this objective (Rolling or Calendar Month).",
@@ -205,6 +220,9 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Rolling", "Calendar Month"),
+                },
             },
             "window_days": schema.NumberAttribute{
                 MarkdownDescription: "Length of the rolling compliance window in days (e.g. 7, 28, 30 or 90). Ignored for Calendar Month windows.",
@@ -212,6 +230,7 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(30)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -229,6 +248,7 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(20)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -248,6 +268,9 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "archived_at": schema.StringAttribute{
                 MarkdownDescription: "When this Service Level Objective was archived.",
@@ -321,6 +344,17 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ServiceLevelObjectiveResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ServiceLevelObjectiveResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1211,6 +1245,9 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1991,6 +2028,11 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "metric_query_config": !data.MetricQueryConfig.Equal(state.MetricQueryConfig),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config ServiceLevelObjectiveResourceModel
@@ -2819,6 +2861,9 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2855,6 +2900,9 @@ func (r *ServiceLevelObjectiveResource) Delete(ctx context.Context, req resource
 
 func (r *ServiceLevelObjectiveResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"metric_query_config"})...)
 }
 
 

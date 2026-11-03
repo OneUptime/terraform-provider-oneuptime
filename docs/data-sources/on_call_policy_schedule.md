@@ -41,7 +41,7 @@ data "oneuptime_on_call_policy_schedule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `roster_handoff_at` (String) When does the roster handoff occur for this schedule for the current user?
 - `roster_next_handoff_at` (String) When does the next roster handoff occur for this schedule for the next user?

@@ -25,6 +25,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &PostmortemStatusResource{}
 var _ resource.ResourceWithImportState = &PostmortemStatusResource{}
+var _ resource.ResourceWithModifyPlan = &PostmortemStatusResource{}
 
 func NewPostmortemStatusResource() resource.Resource {
     return &PostmortemStatusResource{}
@@ -131,6 +132,7 @@ func (r *PostmortemStatusResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -159,6 +161,9 @@ func (r *PostmortemStatusResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -178,6 +183,17 @@ func (r *PostmortemStatusResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *PostmortemStatusResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *PostmortemStatusResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -643,6 +659,7 @@ func (r *PostmortemStatusResource) Create(ctx context.Context, req resource.Crea
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

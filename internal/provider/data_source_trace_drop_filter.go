@@ -116,6 +116,7 @@ func (d *TraceDropFilterDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the user who created this trace drop filter. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

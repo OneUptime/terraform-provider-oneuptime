@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &FormDomainResource{}
 var _ resource.ResourceWithImportState = &FormDomainResource{}
+var _ resource.ResourceWithModifyPlan = &FormDomainResource{}
 
 func NewFormDomainResource() resource.Resource {
     return &FormDomainResource{}
@@ -86,6 +87,7 @@ func (r *FormDomainResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_domain"),
             },
             "form_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the form this domain answers with. Fixed once the domain is added: to put the domain on another form, delete it and add it there. The ID of a `oneuptime_form`.",
@@ -93,6 +95,7 @@ func (r *FormDomainResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_form"),
             },
             "subdomain": schema.StringAttribute{
                 MarkdownDescription: "Subdomain label for your form such as 'report'. Leave blank or enter @ to use the root domain.",
@@ -115,6 +118,7 @@ func (r *FormDomainResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "The custom certificate's private key, in PEM format. Used while isCustomCertificate is on.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -171,6 +175,17 @@ func (r *FormDomainResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *FormDomainResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *FormDomainResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -660,6 +675,7 @@ func (r *FormDomainResource) Create(ctx context.Context, req resource.CreateRequ
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

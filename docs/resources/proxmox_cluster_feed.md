@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_proxmox_cluster_feed Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Log of everything that happened to this Proxmox cluster - creation, updates, owner changes and the rules that made them.
 ---
@@ -15,7 +15,7 @@ Log of everything that happened to this Proxmox cluster - creation, updates, own
 resource "oneuptime_proxmox_cluster_feed" "example" {
   proxmox_cluster_id              = oneuptime_proxmox_cluster.example.id
   feed_info_in_markdown           = "# Heading\n\nThis is **markdown** content"
-  proxmox_cluster_feed_event_type = "Example short text"
+  proxmox_cluster_feed_event_type = "ProxmoxClusterCreated"
   display_color                   = "#ff0000"
 }
 ```
@@ -26,14 +26,15 @@ resource "oneuptime_proxmox_cluster_feed" "example" {
 
 - `display_color` (String) Display color for this feed item.
 - `feed_info_in_markdown` (String) Log of the Proxmox cluster change in Markdown.
-- `proxmox_cluster_feed_event_type` (String) Proxmox Cluster Feed Event.
+- `proxmox_cluster_feed_event_type` (String) Proxmox Cluster Feed Event. Allowed values: `ProxmoxClusterCreated`, `ProxmoxClusterUpdated`, `ProxmoxClusterArchived`, `ProxmoxClusterRestored`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `OwnerRuleExecuted`, `LabelRuleExecuted`.
 - `proxmox_cluster_id` (String) Relation to Proxmox Cluster ID in which this resource belongs. The ID of a `oneuptime_proxmox_cluster`.
 
 ### Optional
 
 - `more_information_in_markdown` (String) More information in Markdown.
 - `posted_at` (String) Date and time when the feed was posted.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

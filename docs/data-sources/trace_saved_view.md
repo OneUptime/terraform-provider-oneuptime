@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_trace_saved_view Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Save and reuse traces explorer views, including the current search, filters, time range, and page size.
 ---
@@ -37,5 +37,5 @@ data "oneuptime_trace_saved_view" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of the project this saved trace view belongs to. The ID of a `oneuptime_project`.
-- `query` (String) Serialized traces explorer view state (search, filters, time range, page size) for this saved view. A JSON value: write it with `jsonencode()`.
+- `query` (String) Serialized traces explorer view state (search, filters, time range, page size) for this saved view. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_case Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   A possible threat to investigate: the detections that point at it, who is on it, its priority and status, and the verdict it closed with.
 ---
@@ -15,7 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_security_case" "example" {
-  case_number_with_prefix = "example-case-number-with-prefix"
+  security_case_status_id = oneuptime_security_case_status.example.id
+  assigned_to_user_email  = "alice@example.com"
 }
 
 # Or by id:
@@ -34,7 +35,8 @@ data "oneuptime_security_case" "by_id" {
 - `ai_triage_report` (String) The report OneUptime AI wrote when it last triaged the case: what happened, its read and the evidence for it, and the next steps.
 - `ai_verdict` (String) What OneUptime AI made of the case when it triaged it: Likely Malicious, Likely Benign, Likely False Positive or Inconclusive. A suggestion; a person sets the case's verdict.
 - `assigned_to_team_id` (String) ID of the team whose queue the case is in. The ID of a `oneuptime_team`.
-- `assigned_to_user_id` (String) ID of the person working the case. The ID of a `oneuptime_user` (see the data source).
+- `assigned_to_user_email` (String) Look it up by the email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `assigned_to_user_id` (String) ID of the person working the case. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assigned_to_user_email`.
 - `case_number` (Number) The case's number in this project, counting up from 1 as cases are opened.
 - `case_number_with_prefix` (String) The case number with the project's case number prefix in front of it, like CASE-42.
 - `closed_by_user_id` (String) ID of the person who closed the case. The ID of a `oneuptime_user` (see the data source).
@@ -65,12 +67,12 @@ data "oneuptime_security_case" "by_id" {
 - `contain_warned_at` (String) When OneUptime told the people on the case that it was about to miss its contain target.
 - `contained_at` (String) When the case first reached Contained. The time to contain is measured to here.
 - `created_at` (String) Date and Time when the object was created.
-- `entities` (String) The users, hosts, IP addresses, domains and files the case is about, each as { type, value }. Detections add theirs as they join the case. A JSON value: write it with `jsonencode()`.
+- `entities` (String) The users, hosts, IP addresses, domains and files the case is about, each as { type, value }. Detections add theirs as they join the case. A JSON value: read it with `jsondecode()`.
 - `first_detected_at` (String) When the case's earliest detection fired.
 - `labels` (Set of String) Labels to filter and report on cases by. IDs of `oneuptime_label` resources.
 - `last_detected_at` (String) When a detection of the case last fired.
-- `mitre_tactics` (String) ATT&CK tactic ids (TA0006) the case's detections are tagged with. A JSON value: write it with `jsonencode()`.
-- `mitre_techniques` (String) ATT&CK technique ids (T1110) the case's detections are tagged with. A JSON value: write it with `jsonencode()`.
+- `mitre_tactics` (String) ATT&CK tactic ids (TA0006) the case's detections are tagged with. A JSON value: read it with `jsondecode()`.
+- `mitre_techniques` (String) ATT&CK technique ids (T1110) the case's detections are tagged with. A JSON value: read it with `jsondecode()`.
 - `next_due_at` (String) The earliest due time of a response target the case has not met yet, a missed one included. Empty when every target is met or the case has none.
 - `next_target_check_at` (String) When OneUptime next checks the case's response targets: when one is about to be missed, or is missed. Empty when there is nothing left to check.
 - `project_id` (String) ID of the project this case belongs to. The ID of a `oneuptime_project`.

@@ -100,6 +100,7 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the Service Level Objective this burn rate rule belongs to. The ID of a `oneuptime_service_level_objective`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_service_level_objective"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Name of this burn rate rule.",
@@ -150,6 +151,7 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the Alert Severity of the alert created when this burn rate rule fires. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "On-call duty policies attached to alerts created by this burn rate rule. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.",
@@ -200,6 +202,7 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the Incident Severity of the incident declared when this burn rate rule fires. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "incident_on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "On-call duty policies attached to incidents declared by this burn rate rule. IDs of `oneuptime_on_call_policy` resources.",
@@ -271,6 +274,7 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

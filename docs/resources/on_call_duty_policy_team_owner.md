@@ -2,12 +2,12 @@
 page_title: "oneuptime_on_call_duty_policy_team_owner Resource - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  Add teams as owners to your onCallDutyPolicys.
+  Add teams as owners to your on-call policies.
 ---
 
 # oneuptime_on_call_duty_policy_team_owner (Resource)
 
-Add teams as owners to your onCallDutyPolicys.
+Add teams as owners to your on-call policies.
 
 ## Example Usage
 
@@ -22,8 +22,8 @@ resource "oneuptime_on_call_duty_policy_team_owner" "example" {
 
 ### Required
 
-- `on_call_duty_policy_id` (String) ID of your OneUptime OnCallDutyPolicy in which this object belongs. The ID of a `oneuptime_on_call_policy`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `on_call_duty_policy_id` (String) ID of the on-call policy the team owns. The ID of a `oneuptime_on_call_policy`.
+- `team_id` (String) ID of the team that owns the on-call policy. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_on_call_duty_policy_team_owner" "example" {
 
 ## Import
 
-Import an existing on call duty policy team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing on call duty policy team owner by its on call policy and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_on_call_duty_policy_team_owner.example
-  id = "<id>"
+  id = "<on_call_duty_policy_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_on_call_duty_policy_team_owner.example <id>
+terraform import oneuptime_on_call_duty_policy_team_owner.example <on_call_duty_policy_id>/<team_id>
 ```
+
+Its own ID works too.

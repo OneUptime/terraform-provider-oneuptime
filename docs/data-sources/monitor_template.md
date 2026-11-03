@@ -42,7 +42,7 @@ data "oneuptime_monitor_template" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `custom_fields` (String) Custom Fields on this resource. A JSON value: read it with `jsondecode()`.
 - `labels` (Set of String) Default labels applied to monitors created from this template. IDs of `oneuptime_label` resources.
 - `monitor_steps` (String) Monitor steps and criteria copied to monitors created from this template.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

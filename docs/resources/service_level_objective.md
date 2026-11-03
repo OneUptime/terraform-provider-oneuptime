@@ -32,15 +32,15 @@ resource "oneuptime_service_level_objective" "example" {
 - `description` (String) Description of this Service Level Objective.
 - `is_archived` (Boolean) Archived SLOs are hidden from lists and are not evaluated. Defaults to `false`.
 - `is_enabled` (Boolean) Whether this Service Level Objective is enabled. Disabled SLOs are not evaluated. Defaults to `true`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `metric_query_config` (String) Query configuration for Metric SLIs: metric name, good-event predicate and optional attribute filters. A JSON value: write it with `jsonencode()`.
 - `monitor_labels` (Set of String) Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named "Auto-add monitors with labels". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) Monitors whose uptime is measured by this Service Level Objective (for Monitor Uptime SLIs). IDs of `oneuptime_monitor` resources.
-- `multi_monitor_mode` (String) How downtime is counted when multiple monitors are attached. 'Any Monitor Down' counts time when any monitor is down. 'Monitor Seconds Average' averages downtime across monitors. Defaults to `Any Monitor Down`.
-- `sli_type` (String) Type of Service Level Indicator this objective measures (Monitor Uptime or Metric). Defaults to `Monitor Uptime`.
+- `multi_monitor_mode` (String) How downtime is counted when multiple monitors are attached. 'Any Monitor Down' counts time when any monitor is down. 'Monitor Seconds Average' averages downtime across monitors. Allowed values: `Any Monitor Down`, `Monitor Seconds Average`. Defaults to `Any Monitor Down`.
+- `sli_type` (String) Type of Service Level Indicator this objective measures (Monitor Uptime or Metric). Allowed values: `Monitor Uptime`, `Metric`. Defaults to `Monitor Uptime`.
 - `timezone` (String) IANA timezone (e.g. America/New_York) used for Calendar Month window boundaries. Defaults to UTC when not set.
 - `window_days` (Number) Length of the rolling compliance window in days (e.g. 7, 28, 30 or 90). Ignored for Calendar Month windows. Defaults to `30`.
-- `window_type` (String) Type of compliance window for this objective (Rolling or Calendar Month). Defaults to `Rolling`.
+- `window_type` (String) Type of compliance window for this objective (Rolling or Calendar Month). Allowed values: `Rolling`, `Calendar Month`. Defaults to `Rolling`.
 
 ### Read-Only
 

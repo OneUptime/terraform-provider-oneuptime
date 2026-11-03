@@ -166,6 +166,7 @@ func (d *CephClusterDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this Ceph cluster archived? Archived Ceph clusters are hidden from lists but keep collecting telemetry.",
@@ -180,9 +181,10 @@ func (d *CephClusterDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -192,7 +194,7 @@ func (d *CephClusterDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this Ceph cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Ceph cluster default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-pillar retention overrides for this Ceph cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Ceph cluster default, then the project's retention settings. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
@@ -206,7 +208,7 @@ func (d *CephClusterDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "ai_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this Ceph cluster without approval even though they are riskier changes. Each pattern is one command line for this Ceph cluster's agent (ceph) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this Ceph cluster is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the Ceph cluster can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this Ceph cluster without approval even though they are riskier changes. Each pattern is one command line for this Ceph cluster's agent (ceph) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this Ceph cluster is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the Ceph cluster can remove patterns or clear the list. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{

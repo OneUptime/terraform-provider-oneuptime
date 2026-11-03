@@ -15,7 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_incident_episode_role_member" "example" {
-  user_id = data.oneuptime_user.example.id
+  incident_episode_id = oneuptime_incident_episode.example.id
+  user_email          = "alice@example.com"
 }
 
 # Or by id:
@@ -33,7 +34,8 @@ data "oneuptime_incident_episode_role_member" "by_id" {
 - `incident_episode_id` (String) ID of your OneUptime Incident Episode in which this object belongs. The ID of a `oneuptime_incident_episode`.
 - `incident_role_id` (String) ID of the Incident Role assigned to this user. The ID of a `oneuptime_incident_role`.
 - `notes` (String) Assignment context or notes.
-- `user_id` (String) ID of your OneUptime User assigned to this episode. The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of your OneUptime User assigned to this episode. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

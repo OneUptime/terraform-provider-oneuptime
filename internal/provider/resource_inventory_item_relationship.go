@@ -17,11 +17,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &InventoryItemRelationshipResource{}
 var _ resource.ResourceWithImportState = &InventoryItemRelationshipResource{}
+var _ resource.ResourceWithModifyPlan = &InventoryItemRelationshipResource{}
 
 func NewInventoryItemRelationshipResource() resource.Resource {
     return &InventoryItemRelationshipResource{}
@@ -97,12 +100,18 @@ func (r *InventoryItemRelationshipResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("runs-on", "member-of", "hosted-on", "part-of", "instance-of", "depends-on"),
+                },
             },
             "source": schema.StringAttribute{
                 MarkdownDescription: "Whether this edge was derived from telemetry or drawn manually by a user. Determines whether stale-edge pruning applies.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("discovered", "inventory", "manual"),
                 },
             },
             "first_seen_at": schema.StringAttribute{
@@ -111,6 +120,7 @@ func (r *InventoryItemRelationshipResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -120,6 +130,7 @@ func (r *InventoryItemRelationshipResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -128,6 +139,7 @@ func (r *InventoryItemRelationshipResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -136,6 +148,7 @@ func (r *InventoryItemRelationshipResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -144,6 +157,7 @@ func (r *InventoryItemRelationshipResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -169,6 +183,17 @@ func (r *InventoryItemRelationshipResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *InventoryItemRelationshipResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *InventoryItemRelationshipResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -593,6 +618,7 @@ func (r *InventoryItemRelationshipResource) Create(ctx context.Context, req reso
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

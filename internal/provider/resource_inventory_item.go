@@ -19,11 +19,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &InventoryItemResource{}
 var _ resource.ResourceWithImportState = &InventoryItemResource{}
+var _ resource.ResourceWithModifyPlan = &InventoryItemResource{}
 
 func NewInventoryItemResource() resource.Resource {
     return &InventoryItemResource{}
@@ -93,6 +95,9 @@ func (r *InventoryItemResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("service", "service.instance", "host", "container", "process", "k8s.cluster", "k8s.namespace", "k8s.node", "k8s.pod", "k8s.deployment", "proxmox.cluster", "proxmox.node", "proxmox.guest", "ceph.cluster", "storage.array", "vmware.vcenter", "vmware.cluster", "vmware.host", "vmware.vm", "vmware.datastore", "docker.swarm.cluster", "docker.swarm.node", "docker.swarm.service", "docker.swarm.task", "telemetry.sdk", "database", "remote.service", "database.server", "message.queue", "network.device", "cloud.resource", "serverless.function", "rum.application", "iot.device", "docker.host", "podman.host", "external.service", "external.database", "appliance"),
+                },
             },
             "entity_key": schema.StringAttribute{
                 MarkdownDescription: "Stable identity hash derived from the entity's identifying attributes (matches the keys stamped into signal entityKeys columns).",
@@ -115,6 +120,9 @@ func (r *InventoryItemResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("discovered", "inventory", "manual"),
+                },
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Free-text description. Primarily for manually created entities, where there are no telemetry attributes to explain what the thing is.",
@@ -130,6 +138,7 @@ func (r *InventoryItemResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -142,6 +151,7 @@ func (r *InventoryItemResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -154,6 +164,7 @@ func (r *InventoryItemResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -182,6 +193,7 @@ func (r *InventoryItemResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -191,6 +203,7 @@ func (r *InventoryItemResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -209,6 +222,7 @@ func (r *InventoryItemResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -250,6 +264,17 @@ func (r *InventoryItemResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *InventoryItemResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *InventoryItemResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1042,6 +1067,9 @@ func (r *InventoryItemResource) Create(ctx context.Context, req resource.CreateR
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1727,6 +1755,14 @@ func (r *InventoryItemResource) Update(ctx context.Context, req resource.UpdateR
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "custom_fields": !data.CustomFields.Equal(state.CustomFields),
+        "descriptive_attributes": !data.DescriptiveAttributes.Equal(state.DescriptiveAttributes),
+        "identifying_attributes": !data.IdentifyingAttributes.Equal(state.IdentifyingAttributes),
+        "labels": !data.Labels.Equal(state.Labels),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config InventoryItemResourceModel
@@ -2463,6 +2499,9 @@ func (r *InventoryItemResource) Update(ctx context.Context, req resource.UpdateR
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2499,6 +2538,9 @@ func (r *InventoryItemResource) Delete(ctx context.Context, req resource.DeleteR
 
 func (r *InventoryItemResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "descriptive_attributes", "identifying_attributes", "labels"})...)
 }
 
 

@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SecurityPlaybookRunResource{}
 var _ resource.ResourceWithImportState = &SecurityPlaybookRunResource{}
+var _ resource.ResourceWithModifyPlan = &SecurityPlaybookRunResource{}
 
 func NewSecurityPlaybookRunResource() resource.Resource {
     return &SecurityPlaybookRunResource{}
@@ -86,6 +87,7 @@ func (r *SecurityPlaybookRunResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "security_playbook_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the playbook being run. The ID of a `oneuptime_security_playbook`.",
@@ -93,6 +95,7 @@ func (r *SecurityPlaybookRunResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_security_playbook"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -125,12 +128,12 @@ func (r *SecurityPlaybookRunResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "steps": schema.StringAttribute{
-                MarkdownDescription: "The playbook's steps as they were when the run started. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The playbook's steps as they were when the run started. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "step_results": schema.StringAttribute{
-                MarkdownDescription: "What each step did: its status, when it started and finished, what it reported, and who decided on its approval. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What each step did: its status, when it started and finished, what it reported, and who decided on its approval. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -165,6 +168,17 @@ func (r *SecurityPlaybookRunResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SecurityPlaybookRunResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SecurityPlaybookRunResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -747,6 +761,7 @@ func (r *SecurityPlaybookRunResource) Create(ctx context.Context, req resource.C
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

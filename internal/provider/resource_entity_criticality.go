@@ -16,11 +16,14 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &EntityCriticalityResource{}
 var _ resource.ResourceWithImportState = &EntityCriticalityResource{}
+var _ resource.ResourceWithModifyPlan = &EntityCriticalityResource{}
 
 func NewEntityCriticalityResource() resource.Resource {
     return &EntityCriticalityResource{}
@@ -82,10 +85,16 @@ func (r *EntityCriticalityResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("User", "Host", "IP Address", "Domain", "URL", "File Hash", "Process", "Data Store", "Other"),
+                },
             },
             "criticality": schema.StringAttribute{
                 MarkdownDescription: "How much it matters: Low (its risk counts half), High (one and a half times) or Extreme (twice).",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Low", "High", "Extreme"),
+                },
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Why it matters this much, for whoever reads the list later.",
@@ -117,6 +126,17 @@ func (r *EntityCriticalityResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *EntityCriticalityResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *EntityCriticalityResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -496,6 +516,7 @@ func (r *EntityCriticalityResource) Create(ctx context.Context, req resource.Cre
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

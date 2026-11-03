@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_store_access_entry Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Who and what can reach each store: the internet, other accounts, identities and the services seen using it, with the policy that grants it.
 ---

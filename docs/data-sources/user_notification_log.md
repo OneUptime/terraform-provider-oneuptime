@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_user_notification_log Data Source - oneuptime"
-subcategory: "Teams & Access"
+subcategory: "Notification Logs"
 description: |-
   Log events for user notifications
 ---
@@ -49,7 +49,7 @@ data "oneuptime_user_notification_log" "by_id" {
 
 ### Read-Only
 
-- `acknowledged_at` (String)
+- `acknowledged_at` (String) When the person acknowledged the page. Empty until they do.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

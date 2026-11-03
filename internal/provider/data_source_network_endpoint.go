@@ -106,6 +106,7 @@ func (d *NetworkEndpointDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the Network Device this endpoint was last seen attached to. The ID of a `oneuptime_network_device`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_device"),
             },
             "attached_interface_index": schema.NumberAttribute{
                 MarkdownDescription: "SNMP ifIndex of the switch port this endpoint was last seen on. Managed by the server.",
@@ -126,6 +127,7 @@ func (d *NetworkEndpointDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the Network Site this endpoint belongs to. The ID of a `oneuptime_network_site`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "first_seen_at": schema.StringAttribute{
                 MarkdownDescription: "When this endpoint was first discovered on the network.",
@@ -139,6 +141,7 @@ func (d *NetworkEndpointDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

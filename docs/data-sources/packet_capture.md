@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_packet_capture Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Probes"
 description: |-
   A packet capture run on one of the project's probes, and the pcap file it produced. Captures and their files are deleted 7 days after they start.
 ---

@@ -17,11 +17,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentSlaResource{}
 var _ resource.ResourceWithImportState = &IncidentSlaResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentSlaResource{}
 
 func NewIncidentSlaResource() resource.Resource {
     return &IncidentSlaResource{}
@@ -85,6 +88,7 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "incident_sla_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the SLA rule that was applied to this incident. The ID of a `oneuptime_incident_sla_rule`.",
@@ -92,6 +96,7 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_sla_rule"),
             },
             "response_deadline": schema.StringAttribute{
                 MarkdownDescription: "The deadline by which the incident must be acknowledged to meet the SLA.",
@@ -99,6 +104,7 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -108,6 +114,7 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -119,6 +126,9 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("On Track", "At Risk", "Response Breached", "Resolution Breached", "Met"),
+                },
             },
             "responded_at": schema.StringAttribute{
                 MarkdownDescription: "The actual time when the incident was acknowledged.",
@@ -126,6 +136,7 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -135,6 +146,7 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -144,6 +156,7 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -153,6 +166,7 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -162,6 +176,7 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -170,6 +185,7 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Required: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.RequiresReplace(),
                 },
             },
@@ -195,6 +211,17 @@ func (r *IncidentSlaResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentSlaResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentSlaResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -653,6 +680,7 @@ func (r *IncidentSlaResource) Create(ctx context.Context, req resource.CreateReq
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

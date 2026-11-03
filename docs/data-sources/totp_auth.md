@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_totp_auth Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Teams & Access"
 description: |-
   TOTP Authentication for users
 ---

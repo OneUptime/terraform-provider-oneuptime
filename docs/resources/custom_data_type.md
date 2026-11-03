@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_custom_data_type Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Your own kinds of sensitive data, such as employee IDs or policy numbers: a pattern, the words and field names that confirm it, and an optional checksum.
 ---
@@ -14,8 +14,8 @@ Your own kinds of sensitive data, such as employee IDs or policy numbers: a patt
 ```terraform
 resource "oneuptime_custom_data_type" "example" {
   name        = "Example custom data type"
-  category    = "Example short text"
-  sensitivity = "Example short text"
+  category    = "Contact and identity"
+  sensitivity = "Restricted"
   description = "Managed by Terraform"
 }
 ```
@@ -24,9 +24,9 @@ resource "oneuptime_custom_data_type" "example" {
 
 ### Required
 
-- `category` (String) The category it belongs to.
+- `category` (String) The category it belongs to. Allowed values: `Contact and identity`, `Government ID`, `Financial`, `Health`, `Secrets and credentials`, `Special category`, `Business confidential`.
 - `name` (String) The data type's name, such as Employee ID.
-- `sensitivity` (String) How sensitive it is: Restricted, Confidential, Internal or Public.
+- `sensitivity` (String) How sensitive it is: Restricted, Confidential, Internal or Public. Allowed values: `Restricted`, `Confidential`, `Internal`, `Public`.
 
 ### Optional
 

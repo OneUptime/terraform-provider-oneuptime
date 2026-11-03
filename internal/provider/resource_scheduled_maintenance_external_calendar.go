@@ -26,6 +26,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ScheduledMaintenanceExternalCalendarResource{}
 var _ resource.ResourceWithImportState = &ScheduledMaintenanceExternalCalendarResource{}
+var _ resource.ResourceWithModifyPlan = &ScheduledMaintenanceExternalCalendarResource{}
 
 func NewScheduledMaintenanceExternalCalendarResource() resource.Resource {
     return &ScheduledMaintenanceExternalCalendarResource{}
@@ -121,6 +122,7 @@ func (r *ScheduledMaintenanceExternalCalendarResource) schemaDefinition() schema
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -181,6 +183,17 @@ func (r *ScheduledMaintenanceExternalCalendarResource) schemaDefinition() schema
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ScheduledMaintenanceExternalCalendarResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ScheduledMaintenanceExternalCalendarResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -613,6 +626,7 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Create(ctx context.Contex
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

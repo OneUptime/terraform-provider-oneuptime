@@ -24,6 +24,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &TableViewResource{}
 var _ resource.ResourceWithImportState = &TableViewResource{}
+var _ resource.ResourceWithModifyPlan = &TableViewResource{}
 
 func NewTableViewResource() resource.Resource {
     return &TableViewResource{}
@@ -100,6 +101,7 @@ func (r *TableViewResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -112,6 +114,7 @@ func (r *TableViewResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -124,6 +127,7 @@ func (r *TableViewResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(10)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -133,6 +137,7 @@ func (r *TableViewResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -145,6 +150,7 @@ func (r *TableViewResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -173,6 +179,17 @@ func (r *TableViewResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *TableViewResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *TableViewResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -681,6 +698,9 @@ func (r *TableViewResource) Create(ctx context.Context, req resource.CreateReque
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1100,6 +1120,14 @@ func (r *TableViewResource) Update(ctx context.Context, req resource.UpdateReque
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "columns": !data.Columns.Equal(state.Columns),
+        "facets": !data.Facets.Equal(state.Facets),
+        "query": !data.Query.Equal(state.Query),
+        "sort": !data.Sort.Equal(state.Sort),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config TableViewResourceModel
@@ -1561,6 +1589,9 @@ func (r *TableViewResource) Update(ctx context.Context, req resource.UpdateReque
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1597,6 +1628,9 @@ func (r *TableViewResource) Delete(ctx context.Context, req resource.DeleteReque
 
 func (r *TableViewResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"columns", "facets", "query", "sort"})...)
 }
 
 

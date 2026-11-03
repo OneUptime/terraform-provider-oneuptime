@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ai_conversation_message Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   A message in an AI conversation. Assistant messages carry citations, tool events and cost.
 ---
@@ -40,9 +40,9 @@ data "oneuptime_ai_conversation_message" "by_id" {
 
 ### Read-Only
 
-- `citations` (String) Server-minted citations for this assistant message. Each citation records the tool, the exact validated query arguments and the row count. A JSON value: write it with `jsonencode()`.
+- `citations` (String) Server-minted citations for this assistant message. Each citation records the tool, the exact validated query arguments and the row count. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of the project this message belongs to. The ID of a `oneuptime_project`.
-- `tool_actions` (String) Mutating actions the agent proposed or performed in this turn, with their approval status (pending, approved, denied, executed). A JSON value: write it with `jsonencode()`.
+- `tool_actions` (String) Mutating actions the agent proposed or performed in this turn, with their approval status (pending, approved, denied, executed). A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.
-- `widgets` (String) Inline widgets (charts, tables, trace waterfalls, resource cards) built from this assistant message's tool results and rendered inline in the chat. A JSON value: write it with `jsonencode()`.
+- `widgets` (String) Inline widgets (charts, tables, trace waterfalls, resource cards) built from this assistant message's tool results and rendered inline in the chat. A JSON value: read it with `jsondecode()`.

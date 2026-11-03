@@ -34,7 +34,7 @@ resource "oneuptime_incident_reminder_rule" "example" {
 - `is_enabled` (Boolean) Whether this reminder rule is enabled. Defaults to `true`.
 - `labels` (Set of String) Only apply this reminder rule to incidents with these labels. Leave empty to match incidents with any labels. IDs of `oneuptime_label` resources.
 - `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
-- `stop_reminders_on_state` (String) Stop sending reminders once the incident reaches this state. Select Acknowledged to stop reminders when the incident is acknowledged, or Resolved to keep reminding until the incident is resolved. Defaults to `Resolved`.
+- `stop_reminders_on_state` (String) Stop sending reminders once the incident reaches this state. Select Acknowledged to stop reminders when the incident is acknowledged, or Resolved to keep reminding until the incident is resolved. Allowed values: `Acknowledged`, `Resolved`. Defaults to `Resolved`.
 
 ### Read-Only
 

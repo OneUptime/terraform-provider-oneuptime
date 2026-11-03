@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_vcenter_user_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add users as owners to your vCenters.
 ---
@@ -22,8 +22,8 @@ moved {
 
 ```terraform
 resource "oneuptime_vcenter_user_owner" "example" {
-  user_id            = data.oneuptime_user.example.id
   vmware_v_center_id = oneuptime_vcenter.example.id
+  user_email         = "alice@example.com"
 }
 ```
 
@@ -31,8 +31,12 @@ resource "oneuptime_vcenter_user_owner" "example" {
 
 ### Required
 
-- `user_id` (String) ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).
-- `vmware_v_center_id` (String) ID of your OneUptime vCenter in which this object belongs. The ID of a `oneuptime_vcenter`.
+- `vmware_v_center_id` (String) ID of the vCenter the user owns. The ID of a `oneuptime_vcenter`.
+
+### Optional
+
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of the user who owns the vCenter. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 
@@ -45,17 +49,19 @@ resource "oneuptime_vcenter_user_owner" "example" {
 
 ## Import
 
-Import an existing vcenter user owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing vcenter user owner by its vcenter and the person's email address (or user ID), with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_vcenter_user_owner.example
-  id = "<id>"
+  id = "<vmware_v_center_id>/alice@example.com"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_vcenter_user_owner.example <id>
+terraform import oneuptime_vcenter_user_owner.example <vmware_v_center_id>/alice@example.com
 ```
+
+Imported by an address, the person's `user_email` stays as you wrote it. Its own ID works too.

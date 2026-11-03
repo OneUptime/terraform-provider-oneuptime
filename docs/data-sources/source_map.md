@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_source_map Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Source maps uploaded for telemetry services. Used to resolve minified browser exception stack traces back to the original source code. Maps are matched to exceptions by service and release (the service.version OpenTelemetry resource attribute).
 ---

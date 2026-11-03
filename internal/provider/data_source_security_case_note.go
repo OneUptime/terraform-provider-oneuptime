@@ -65,6 +65,7 @@ func (d *SecurityCaseNoteDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the case this note is on. The ID of a `oneuptime_security_case`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "note": schema.StringAttribute{
                 MarkdownDescription: "The note, in Markdown.",
@@ -75,6 +76,7 @@ func (d *SecurityCaseNoteDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the person who wrote the note. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

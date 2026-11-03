@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_docker_host_user_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add users as owners to your Docker hosts.
 ---
@@ -13,8 +13,8 @@ Add users as owners to your Docker hosts.
 
 ```terraform
 resource "oneuptime_docker_host_user_owner" "example" {
-  user_id        = data.oneuptime_user.example.id
   docker_host_id = oneuptime_docker_host.example.id
+  user_email     = "alice@example.com"
 }
 ```
 
@@ -22,8 +22,12 @@ resource "oneuptime_docker_host_user_owner" "example" {
 
 ### Required
 
-- `docker_host_id` (String) ID of your OneUptime Docker Host in which this object belongs. The ID of a `oneuptime_docker_host`.
-- `user_id` (String) ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).
+- `docker_host_id` (String) ID of the Docker host the user owns. The ID of a `oneuptime_docker_host`.
+
+### Optional
+
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of the user who owns the Docker host. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 
@@ -36,17 +40,19 @@ resource "oneuptime_docker_host_user_owner" "example" {
 
 ## Import
 
-Import an existing docker host user owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing docker host user owner by its docker host and the person's email address (or user ID), with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_docker_host_user_owner.example
-  id = "<id>"
+  id = "<docker_host_id>/alice@example.com"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_docker_host_user_owner.example <id>
+terraform import oneuptime_docker_host_user_owner.example <docker_host_id>/alice@example.com
 ```
+
+Imported by an address, the person's `user_email` stays as you wrote it. Its own ID works too.

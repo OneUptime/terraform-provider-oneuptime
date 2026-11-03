@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &OnCallScheduleLayerResource{}
 var _ resource.ResourceWithImportState = &OnCallScheduleLayerResource{}
+var _ resource.ResourceWithModifyPlan = &OnCallScheduleLayerResource{}
 
 func NewOnCallScheduleLayerResource() resource.Resource {
     return &OnCallScheduleLayerResource{}
@@ -78,11 +79,12 @@ func (r *OnCallScheduleLayerResource) schemaDefinition() schema.Schema {
                 },
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Schedule where this escalation rule belongs. The ID of a `oneuptime_on_call_policy_schedule`.",
+                MarkdownDescription: "ID of the on-call schedule the layer is in. The ID of a `oneuptime_on_call_policy_schedule`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Friendly name for this layer.",
@@ -101,6 +103,7 @@ func (r *OnCallScheduleLayerResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -108,6 +111,9 @@ func (r *OnCallScheduleLayerResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Start date and time of this layer.",
                 CustomType: RFC3339Type{},
                 Required: true,
+                PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
+                },
             },
             "rotation": schema.StringAttribute{
                 MarkdownDescription: "How often would you like to hand off the duty to the next user in this layer? A JSON value: write it with `jsonencode()`.",
@@ -115,6 +121,7 @@ func (r *OnCallScheduleLayerResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -125,6 +132,9 @@ func (r *OnCallScheduleLayerResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Hand off time. When would you like to hand off the duty to the next user in this layer?",
                 CustomType: RFC3339Type{},
                 Required: true,
+                PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
+                },
             },
             "restriction_times": schema.StringAttribute{
                 MarkdownDescription: "Restrict this layer to these times. A JSON value: write it with `jsonencode()`.",
@@ -132,6 +142,7 @@ func (r *OnCallScheduleLayerResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -160,6 +171,17 @@ func (r *OnCallScheduleLayerResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *OnCallScheduleLayerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *OnCallScheduleLayerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -616,6 +638,9 @@ func (r *OnCallScheduleLayerResource) Create(ctx context.Context, req resource.C
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -983,6 +1008,12 @@ func (r *OnCallScheduleLayerResource) Update(ctx context.Context, req resource.U
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "restriction_times": !data.RestrictionTimes.Equal(state.RestrictionTimes),
+        "rotation": !data.Rotation.Equal(state.Rotation),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config OnCallScheduleLayerResourceModel
@@ -1379,6 +1410,9 @@ func (r *OnCallScheduleLayerResource) Update(ctx context.Context, req resource.U
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1415,6 +1449,9 @@ func (r *OnCallScheduleLayerResource) Delete(ctx context.Context, req resource.D
 
 func (r *OnCallScheduleLayerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"restriction_times", "rotation"})...)
 }
 
 

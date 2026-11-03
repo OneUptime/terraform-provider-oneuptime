@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_database_endpoint Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Endpoints (host:port) a database is reached at. Telemetry that names one of these endpoints is shown on that database. Each endpoint belongs to at most one database in a project.
 ---
@@ -14,7 +14,7 @@ Endpoints (host:port) a database is reached at. Telemetry that names one of thes
 ```terraform
 resource "oneuptime_database_endpoint" "example" {
   database_server_id = oneuptime_database.example.id
-  endpoint           = "This is an example of longer text content that might be stored in this field."
+  endpoint           = "orders-db.internal:5432"
 }
 ```
 

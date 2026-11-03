@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_trace_recording_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Derived metrics computed on a schedule from aggregations over spans. Results are written into the metric store as a new series.
 ---

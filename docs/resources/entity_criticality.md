@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_entity_criticality Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   How much each user, host, IP address and data store matters: the risk of an entity an entry names counts less (Low) or more (High, Extreme).
 ---
@@ -14,7 +14,7 @@ How much each user, host, IP address and data store matters: the risk of an enti
 ```terraform
 resource "oneuptime_entity_criticality" "example" {
   value       = "This is an example of longer text content that might be stored in this field."
-  criticality = "Example short text"
+  criticality = "Low"
   description = "Managed by Terraform"
 }
 ```
@@ -23,13 +23,13 @@ resource "oneuptime_entity_criticality" "example" {
 
 ### Required
 
-- `criticality` (String) How much it matters: Low (its risk counts half), High (one and a half times) or Extreme (twice).
+- `criticality` (String) How much it matters: Low (its risk counts half), High (one and a half times) or Extreme (twice). Allowed values: `Low`, `High`, `Extreme`.
 - `value` (String) The user's sign-in name, the host's name, the address or the data store, matched whatever the case. * stands for any run of characters: dc-* names every domain controller.
 
 ### Optional
 
 - `description` (String) Why it matters this much, for whoever reads the list later.
-- `entity_type` (String) User, Host, IP Address or Data Store: the kind of entity it is for. Empty is any kind.
+- `entity_type` (String) User, Host, IP Address or Data Store: the kind of entity it is for. Empty is any kind. Allowed values: `User`, `Host`, `IP Address`, `Domain`, `URL`, `File Hash`, `Process`, `Data Store`, `Other`.
 
 ### Read-Only
 

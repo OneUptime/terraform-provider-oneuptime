@@ -96,7 +96,7 @@ func (d *WorkspaceNotificationSummaryDataSource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "recurring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often should the summary be sent? A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "How often should the summary be sent? A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "number_of_days_of_data": schema.NumberAttribute{
@@ -114,7 +114,7 @@ func (d *WorkspaceNotificationSummaryDataSource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "channel_names": schema.StringAttribute{
-                MarkdownDescription: "List of channel names to post the summary to. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "List of channel names to post the summary to. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "team_name": schema.StringAttribute{
@@ -123,11 +123,11 @@ func (d *WorkspaceNotificationSummaryDataSource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "summary_items": schema.StringAttribute{
-                MarkdownDescription: "Checklist of items to include in the summary. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Checklist of items to include in the summary. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "filters": schema.StringAttribute{
-                MarkdownDescription: "Filter conditions for which items to include in the summary. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Filter conditions for which items to include in the summary. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "filter_condition": schema.StringAttribute{
@@ -152,6 +152,7 @@ func (d *WorkspaceNotificationSummaryDataSource) Schema(ctx context.Context, req
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

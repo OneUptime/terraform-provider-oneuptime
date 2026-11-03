@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_docker_swarm_cluster_owner_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically assigning owner users and teams when matching DockerSwarm clusters are created
 ---
@@ -40,7 +40,7 @@ data "oneuptime_docker_swarm_cluster_owner_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
 - `docker_swarm_cluster_labels` (Set of String) Only trigger for DockerSwarm clusters that have at least one of these labels. Leave empty to match regardless of labels. IDs of `oneuptime_label` resources.
 - `owner_teams` (Set of String) Teams to add as owners on the DockerSwarm cluster when this rule matches. IDs of `oneuptime_team` resources.
 - `owner_users` (Set of String) Users to add as owners on the DockerSwarm cluster when this rule matches. IDs of `oneuptime_user` records.

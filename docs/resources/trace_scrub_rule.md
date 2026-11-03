@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_trace_scrub_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Configure rules to automatically detect and scrub sensitive data (PII) from spans at ingest time.
 ---
@@ -14,7 +14,7 @@ Configure rules to automatically detect and scrub sensitive data (PII) from span
 ```terraform
 resource "oneuptime_trace_scrub_rule" "example" {
   name         = "Example trace scrub rule"
-  pattern_type = "Example short text"
+  pattern_type = "email"
   description  = "Managed by Terraform"
 }
 ```
@@ -24,7 +24,7 @@ resource "oneuptime_trace_scrub_rule" "example" {
 ### Required
 
 - `name` (String) Friendly name for this scrub rule.
-- `pattern_type` (String) The type of sensitive data to detect: email, creditCard, ssn, phoneNumber, ipAddress, sensitiveKeys (the whole value of every attribute whose key looks sensitive, such as password or token), or custom (the regular expression in customRegex). Any other value is refused: it would scrub nothing.
+- `pattern_type` (String) The type of sensitive data to detect: email, creditCard, ssn, phoneNumber, ipAddress, sensitiveKeys (the whole value of every attribute whose key looks sensitive, such as password or token), or custom (the regular expression in customRegex). Any other value is refused: it would scrub nothing. Allowed values: `email`, `creditCard`, `ssn`, `phoneNumber`, `ipAddress`, `sensitiveKeys`, `custom`.
 
 ### Optional
 
@@ -32,7 +32,7 @@ resource "oneuptime_trace_scrub_rule" "example" {
 - `description` (String) Description of what this scrub rule does.
 - `fields_to_scrub` (String) Which span fields to scrub: 'name' (the span name), 'attributes' (attribute values), 'events' (span event attributes), or 'all', the default. A sensitiveKeys rule always scrubs attribute and event attribute values, whatever this says. Defaults to `all`.
 - `is_enabled` (Boolean) Whether this scrub rule is active. Defaults to `true`.
-- `scrub_action` (String) How to scrub matched data: 'redact' replaces it with [REDACTED] (the default), 'mask' partially hides it, 'hash' replaces it with a short hash of the value. Defaults to `redact`.
+- `scrub_action` (String) How to scrub matched data: 'redact' replaces it with [REDACTED] (the default), 'mask' partially hides it, 'hash' replaces it with a short hash of the value. Allowed values: `mask`, `hash`, `redact`. Defaults to `redact`.
 - `sort_order` (Number) Where this rule is applied among the project's span scrub rules, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
 
 ### Read-Only

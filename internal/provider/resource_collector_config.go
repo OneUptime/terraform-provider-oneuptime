@@ -21,11 +21,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &CollectorConfigResource{}
 var _ resource.ResourceWithImportState = &CollectorConfigResource{}
+var _ resource.ResourceWithModifyPlan = &CollectorConfigResource{}
 
 func NewCollectorConfigResource() resource.Resource {
     return &CollectorConfigResource{}
@@ -100,6 +103,9 @@ func (r *CollectorConfigResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("any", "linux", "windows", "darwin"),
+                },
             },
             "labels": schema.SetAttribute{
                 MarkdownDescription: "Only hosts with at least one of these labels get this config. Leave empty for every host of its system. IDs of `oneuptime_label` resources.",
@@ -109,12 +115,14 @@ func (r *CollectorConfigResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Where this config sits in the list. A host runs the first config in the list that applies to it. A new config is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along. In the dashboard, drag the rows to reorder them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -156,6 +164,17 @@ func (r *CollectorConfigResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *CollectorConfigResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *CollectorConfigResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -616,6 +635,7 @@ func (r *CollectorConfigResource) Create(ctx context.Context, req resource.Creat
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

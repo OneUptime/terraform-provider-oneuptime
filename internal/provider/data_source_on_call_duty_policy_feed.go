@@ -38,6 +38,7 @@ type OnCallDutyPolicyFeedDataSourceModel struct {
     DisplayColor types.String `tfsdk:"display_color"`
     UserId types.String `tfsdk:"user_id"`
     PostedAt types.String `tfsdk:"posted_at"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (d *OnCallDutyPolicyFeedDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -70,11 +71,13 @@ func (d *OnCallDutyPolicyFeedDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "Relation to OnCallDutyPolicy ID in which this resource belongs. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "feed_info_in_markdown": schema.StringAttribute{
                 MarkdownDescription: "Log of the entire onCallDutyPolicy state change in Markdown.",
@@ -96,13 +99,20 @@ func (d *OnCallDutyPolicyFeedDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("user_email", false),
             },
             "posted_at": schema.StringAttribute{
                 MarkdownDescription: "Date and time when the feed was posted.",
                 Computed: true,
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -166,6 +176,14 @@ func (d *OnCallDutyPolicyFeedDataSource) Read(ctx context.Context, req datasourc
     if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
         filters["userId"] = data.UserId.ValueString()
         filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["userId"] = personID
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -460,6 +478,7 @@ func (d *OnCallDutyPolicyFeedDataSource) Read(ctx context.Context, req datasourc
     } else {
         data.PostedAt = types.StringNull()
     }
+    data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

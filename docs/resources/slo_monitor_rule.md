@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_slo_monitor_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Configure rules that automatically attach matching monitors to a Service Level Objective, instead of picking every monitor by hand
 ---

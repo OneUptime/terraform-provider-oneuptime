@@ -22,6 +22,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ScheduledMaintenanceStateTimelineResource{}
 var _ resource.ResourceWithImportState = &ScheduledMaintenanceStateTimelineResource{}
+var _ resource.ResourceWithModifyPlan = &ScheduledMaintenanceStateTimelineResource{}
 
 func NewScheduledMaintenanceStateTimelineResource() resource.Resource {
     return &ScheduledMaintenanceStateTimelineResource{}
@@ -82,10 +83,12 @@ func (r *ScheduledMaintenanceStateTimelineResource) schemaDefinition() schema.Sc
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),
             },
             "scheduled_maintenance_state_id": schema.StringAttribute{
-                MarkdownDescription: "Scheduled Maintenance State ID. Which state does this event belongs to? The ID of a `oneuptime_scheduled_maintenance_state`.",
+                MarkdownDescription: "ID of the state the scheduled maintenance event changes to. The ID of a `oneuptime_scheduled_maintenance_state`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_state"),
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
                 MarkdownDescription: "Should subscribers be notified about this state change?",
@@ -102,6 +105,7 @@ func (r *ScheduledMaintenanceStateTimelineResource) schemaDefinition() schema.Sc
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -112,6 +116,7 @@ func (r *ScheduledMaintenanceStateTimelineResource) schemaDefinition() schema.Sc
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -149,6 +154,17 @@ func (r *ScheduledMaintenanceStateTimelineResource) schemaDefinition() schema.Sc
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ScheduledMaintenanceStateTimelineResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ScheduledMaintenanceStateTimelineResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -567,6 +583,7 @@ func (r *ScheduledMaintenanceStateTimelineResource) Create(ctx context.Context, 
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

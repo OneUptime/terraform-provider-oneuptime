@@ -18,11 +18,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &DataSourceResource{}
 var _ resource.ResourceWithImportState = &DataSourceResource{}
+var _ resource.ResourceWithModifyPlan = &DataSourceResource{}
 
 func NewDataSourceResource() resource.Resource {
     return &DataSourceResource{}
@@ -97,6 +99,9 @@ func (r *DataSourceResource) schemaDefinition() schema.Schema {
             "data_source_type": schema.StringAttribute{
                 MarkdownDescription: "The kind of external system this data source connects to (Prometheus, PostgreSQL, MySQL, Microsoft SQL Server, ClickHouse, Loki, Elasticsearch, or REST API).",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Prometheus", "PostgreSQL", "MySQL", "Microsoft SQL Server", "ClickHouse", "Loki", "Elasticsearch", "REST API"),
+                },
             },
             "url": schema.StringAttribute{
                 MarkdownDescription: "Base URL for HTTP-based sources (Prometheus, Loki, Elasticsearch, REST API) — e.g. https://prometheus.example.com.",
@@ -119,6 +124,7 @@ func (r *DataSourceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -152,6 +158,9 @@ func (r *DataSourceResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Extra HTTP headers sent to HTTP-based sources (e.g. auth headers for a proxy). Values are encrypted at rest and never returned by the API. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                },
                 Validators: []validator.String{
                     JSONEnvelopeValidator(),
                 },
@@ -162,6 +171,7 @@ func (r *DataSourceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -184,6 +194,9 @@ func (r *DataSourceResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -194,6 +207,17 @@ func (r *DataSourceResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *DataSourceResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *DataSourceResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -790,6 +814,9 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1285,6 +1312,12 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "additional_options": !data.AdditionalOptions.Equal(state.AdditionalOptions),
+        "custom_headers": !data.CustomHeaders.Equal(state.CustomHeaders),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config DataSourceResourceModel
@@ -1824,6 +1857,9 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1860,6 +1896,9 @@ func (r *DataSourceResource) Delete(ctx context.Context, req resource.DeleteRequ
 
 func (r *DataSourceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"additional_options", "custom_headers"})...)
 }
 
 

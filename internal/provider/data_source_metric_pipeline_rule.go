@@ -77,6 +77,7 @@ func (d *MetricPipelineRuleDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "Optional service ID scoping this rule. Null means the rule is project-wide. The ID of a `oneuptime_service`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Friendly name for this rule.",
@@ -99,7 +100,7 @@ func (d *MetricPipelineRuleDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "filters": schema.StringAttribute{
-                MarkdownDescription: "List of filters evaluated against each metric data point. An empty list matches every data point. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "List of filters evaluated against each metric data point. An empty list matches every data point. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "rename_from_key": schema.StringAttribute{
@@ -146,6 +147,7 @@ func (d *MetricPipelineRuleDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "ID of the user who created this rule. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

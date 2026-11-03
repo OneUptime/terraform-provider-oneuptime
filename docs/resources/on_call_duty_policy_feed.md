@@ -15,7 +15,7 @@ Log of the entire onCallDutyPolicy state change. This is a log of all the on cal
 resource "oneuptime_on_call_duty_policy_feed" "example" {
   on_call_duty_policy_id              = oneuptime_on_call_policy.example.id
   feed_info_in_markdown               = "# Heading\n\nThis is **markdown** content"
-  on_call_duty_policy_feed_event_type = "Example short text"
+  on_call_duty_policy_feed_event_type = "UserAdded"
   display_color                       = "#ff0000"
 }
 ```
@@ -26,14 +26,15 @@ resource "oneuptime_on_call_duty_policy_feed" "example" {
 
 - `display_color` (String) Display color for the onCallDutyPolicy log.
 - `feed_info_in_markdown` (String) Log of the entire onCallDutyPolicy state change in Markdown.
-- `on_call_duty_policy_feed_event_type` (String) On Call Duty Policy Feed Event.
+- `on_call_duty_policy_feed_event_type` (String) On Call Duty Policy Feed Event. Allowed values: `UserAdded`, `UserRemoved`, `TeamAdded`, `TeamRemoved`, `OnCallDutyScheduleAdded`, `OnCallDutyScheduleRemoved`, `OnCallDutyPolicyCreated`, `RosterHandoff`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `UserOverrideAdded`, `UserOverrideRemoved`, `CoverageGapStarted`.
 - `on_call_duty_policy_id` (String) Relation to OnCallDutyPolicy ID in which this resource belongs. The ID of a `oneuptime_on_call_policy`.
 
 ### Optional
 
 - `more_information_in_markdown` (String) More information in Markdown.
 - `posted_at` (String) Date and time when the feed was posted.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

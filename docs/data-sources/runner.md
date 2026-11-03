@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_runner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Runbooks & Runners"
 description: |-
   A self-hosted OneUptime Runner: it executes runbook steps in your own infrastructure, and AI works on it in the code repositories that pick it. Runbook steps and code repositories each pick the Runner that runs them.
 ---
@@ -36,7 +36,6 @@ data "oneuptime_runner" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_global_runner` (Boolean) Whether OneUptime runs this Runner for every project. Global Runners run JavaScript steps in a sandbox that can reach the internet but not your network. Only a master admin creates them.
 - `is_project_default` (Boolean) Whether this is the project's default Runner: runbook steps that pick no Runner run on it instead of the Global Runner.
-- `key` (String) Secret key the agent presents on every request. Anyone who can read this key can claim work as this Runner and receive its secrets in plaintext. Never share it; reset it to revoke the agent.
 - `name` (String) Friendly name for this agent. Names starting with "kubernetes-agent/" are reserved for the in-cluster Runners the Kubernetes agent chart registers, and such a Runner cannot be renamed.
 - `slug` (String) Friendly globally unique name for your object.
 
@@ -44,8 +43,9 @@ data "oneuptime_runner" "by_id" {
 
 - `agent_version` (String) Self-reported version of the Runner binary. Updated on each heartbeat.
 - `created_at` (String) Date and Time when the object was created.
-- `host_info` (String) Self-reported host info (hostname, OS, arch). Updated on each heartbeat. A JSON value: write it with `jsonencode()`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `host_info` (String) Self-reported host info (hostname, OS, arch). Updated on each heartbeat. A JSON value: read it with `jsondecode()`.
+- `key` (String, Sensitive) Secret key the agent presents on every request. Anyone who can read this key can claim work as this Runner and receive its secrets in plaintext. Never share it; reset it to revoke the agent. Leave it out and OneUptime generates one.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_alive` (String) Most recent heartbeat from this agent.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

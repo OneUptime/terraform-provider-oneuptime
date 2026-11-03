@@ -76,6 +76,7 @@ func (d *SecurityCaseEvidenceDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of the case this evidence is kept on. The ID of a `oneuptime_security_case`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "kind": schema.StringAttribute{
                 MarkdownDescription: "What the evidence is: a File uploaded to OneUptime, a Link to evidence kept somewhere else, or an Event bookmarked from Security Events. It can't be changed.",
@@ -96,6 +97,7 @@ func (d *SecurityCaseEvidenceDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of the uploaded file, for File evidence: upload it first, then name it here. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "url": schema.StringAttribute{
                 MarkdownDescription: "Where the evidence is kept, for Link evidence: an http or https address.",
@@ -132,13 +134,14 @@ func (d *SecurityCaseEvidenceDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "event_snapshot": schema.StringAttribute{
-                MarkdownDescription: "For Event evidence: the security event as OneUptime read it when it was kept - its severity, class, message, who and where - and the hunt that found it. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For Event evidence: the security event as OneUptime read it when it was kept - its severity, class, message, who and where - and the hunt that found it. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the person who added the evidence. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

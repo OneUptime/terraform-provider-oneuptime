@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_rum_application Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Browser & mobile applications auto-discovered from OpenTelemetry RUM telemetry (browser.* / device.* resource attributes). One row per application, aggregating all end-user clients.
 ---
@@ -60,15 +60,15 @@ data "oneuptime_rum_application" "by_id" {
 
 - `archived_at` (String) When was this RUM application archived?
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When telemetry was last received for this application.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `session_replay_allowed_origins` (String) Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity. A JSON value: write it with `jsonencode()`.
-- `session_replay_block_selectors` (String) CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked. A JSON value: write it with `jsonencode()`.
+- `session_replay_allowed_origins` (String) Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity. A JSON value: read it with `jsondecode()`.
+- `session_replay_block_selectors` (String) CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked. A JSON value: read it with `jsondecode()`.
 - `session_replay_budget_exceeded_at` (String) When the session replay byte budget was last hit for this application. Non-null means recorders are currently being told to stop.
-- `session_replay_ignore_error_patterns` (String) Regex patterns matched against an uncaught error's message and source URL. Matching errors are still recorded in the session but no longer trigger an upload — the remedy for a chronically-throwing third-party tag that would otherwise convert error-triggered capture into always-on recording. A JSON value: write it with `jsonencode()`.
+- `session_replay_ignore_error_patterns` (String) Regex patterns matched against an uncaught error's message and source URL. Matching errors are still recorded in the session but no longer trigger an upload — the remedy for a chronically-throwing third-party tag that would otherwise convert error-triggered capture into always-on recording. A JSON value: read it with `jsondecode()`.
 - `session_replay_last_chunk_received_at` (String) When a session replay chunk was last accepted for this application.
-- `session_replay_mask_selectors` (String) CSS selectors whose text content the recorder masks, in addition to whatever the masking mode already covers. A JSON value: write it with `jsonencode()`.
-- `session_replay_trace_propagation_origins` (String) APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id. A JSON value: write it with `jsonencode()`.
-- `telemetry_retention_config` (String) Per-pillar retention overrides for this application. Unset fields fall back to the application default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
+- `session_replay_mask_selectors` (String) CSS selectors whose text content the recorder masks, in addition to whatever the masking mode already covers. A JSON value: read it with `jsondecode()`.
+- `session_replay_trace_propagation_origins` (String) APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id. A JSON value: read it with `jsondecode()`.
+- `telemetry_retention_config` (String) Per-pillar retention overrides for this application. Unset fields fall back to the application default, then the project's retention settings. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

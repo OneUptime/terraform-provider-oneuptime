@@ -111,6 +111,7 @@ func (d *LogScrubRuleDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "ID of the user who created this log scrub rule. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

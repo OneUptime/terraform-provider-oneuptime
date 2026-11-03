@@ -28,6 +28,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AlertEpisodeResource{}
 var _ resource.ResourceWithImportState = &AlertEpisodeResource{}
+var _ resource.ResourceWithModifyPlan = &AlertEpisodeResource{}
 
 func NewAlertEpisodeResource() resource.Resource {
     return &AlertEpisodeResource{}
@@ -71,6 +72,7 @@ type AlertEpisodeResourceModel struct {
     AlertCount types.Number `tfsdk:"alert_count"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsOwnerNotifiedOfEpisodeCreation types.Bool `tfsdk:"is_owner_notified_of_episode_creation"`
+    AssignedToUserEmail types.String `tfsdk:"assigned_to_user_email"`
 }
 
 func (r *AlertEpisodeResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -117,6 +119,7 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                     numberplanmodifier.RequiresReplace(),
                 },
@@ -128,6 +131,7 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_state"),
             },
             "alert_severity_id": schema.StringAttribute{
                 MarkdownDescription: "Alert Severity ID. The ID of a `oneuptime_alert_severity`.",
@@ -136,6 +140,7 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "root_cause": schema.StringAttribute{
                 MarkdownDescription: "User-documented root cause of this episode.",
@@ -151,6 +156,7 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -160,16 +166,15 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "assigned_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assigned_to_user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDValidators("assigned_to_user_email", false),
             },
             "assigned_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "Team ID that is assigned to this episode. The ID of a `oneuptime_team`.",
@@ -178,6 +183,7 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "alert_grouping_rule_id": schema.StringAttribute{
                 MarkdownDescription: "Alert Grouping Rule ID that created this episode. The ID of a `oneuptime_alert_grouping_rule`.",
@@ -186,6 +192,7 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_grouping_rule"),
             },
             "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.",
@@ -195,6 +202,7 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_on_call_policy"),
             },
             "title_template": schema.StringAttribute{
                 MarkdownDescription: "Template used to generate the episode title. Stored for dynamic variable updates.",
@@ -225,13 +233,14 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "grouping_key": schema.StringAttribute{
                 MarkdownDescription: "Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule. When a private alert opened the episode, its title is in the key only as a keyed hash.",
@@ -256,6 +265,7 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -287,6 +297,9 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
             "episode_number_with_prefix": schema.StringAttribute{
                 MarkdownDescription: "Episode number with prefix (e.g., 'AE-42' or '#42').",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "all_alerts_resolved_at": schema.StringAttribute{
                 MarkdownDescription: "When all alerts in this episode were first detected as resolved. Used for resolve delay calculation.",
@@ -317,8 +330,34 @@ func (r *AlertEpisodeResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Are owners notified when this episode is created?",
                 Computed: true,
             },
+            "assigned_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("assigned_to_user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this alert episode names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AlertEpisodeResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "assigned_to_user_id",
+        email:    "assigned_to_user_email",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AlertEpisodeResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -360,6 +399,11 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.AssignedToUserId, data.AssignedToUserEmail, "assigned_to_user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -459,6 +503,19 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.AssignedToUserId.IsUnknown() {
+        created := alertEpisodeResponse
+        if wrapper, ok := alertEpisodeResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["assignedToUserId"]); id != "" {
+            data.AssignedToUserId = types.StringValue(id)
+        } else {
+            data.AssignedToUserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -1257,10 +1314,15 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.AssignedToUserEmail = personEmailAfterWrite(ctx, r.client, data.AssignedToUserId, data.AssignedToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1309,6 +1371,10 @@ func (r *AlertEpisodeResource) Read(ctx context.Context, req resource.ReadReques
         "isOwnerNotifiedOfEpisodeCreation": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorAssignedToUserId := data.AssignedToUserId
+    priorAssignedToUserEmail := data.AssignedToUserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/alert-episode/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -2055,6 +2121,8 @@ func (r *AlertEpisodeResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.AssignedToUserEmail = personEmailAfterRead(ctx, r.client, priorAssignedToUserId, data.AssignedToUserId, priorAssignedToUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2079,6 +2147,11 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
     // Use the ID from the current state
     data.Id = state.Id
 
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "post_updates_to_workspace_channels": !data.PostUpdatesToWorkspaceChannels.Equal(state.PostUpdatesToWorkspaceChannels),
+    }
+
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config AlertEpisodeResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -2086,6 +2159,11 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.AssignedToUserId, data.AssignedToUserEmail, "assigned_to_user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     alertEpisodeRequest := map[string]interface{}{
@@ -2942,6 +3020,11 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.AssignedToUserEmail = personEmailAfterWrite(ctx, r.client, data.AssignedToUserId, data.AssignedToUserEmail)
+
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2979,6 +3062,9 @@ func (r *AlertEpisodeResource) Delete(ctx context.Context, req resource.DeleteRe
 
 func (r *AlertEpisodeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"post_updates_to_workspace_channels"})...)
 }
 
 
@@ -3046,6 +3132,9 @@ func (r *AlertEpisodeResource) keepPlannedValues(data *AlertEpisodeResourceModel
     }
     if config.IsPrivate.IsNull() && !plan.IsPrivate.IsUnknown() {
         data.IsPrivate = plan.IsPrivate
+    }
+    if config.AssignedToUserEmail.IsNull() && !plan.AssignedToUserEmail.IsUnknown() {
+        data.AssignedToUserEmail = plan.AssignedToUserEmail
     }
 }
 

@@ -71,6 +71,7 @@ func (d *StatusPageScimDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Any friendly name for this SCIM configuration.",
@@ -84,8 +85,8 @@ func (d *StatusPageScimDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "bearer_token": schema.StringAttribute{
                 MarkdownDescription: "Bearer token for SCIM authentication. Keep this secure.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "oauth_client_secret_expires_at": schema.StringAttribute{
                 MarkdownDescription: "When the connection's OAuth 2.0 client secret stops working. No access token is issued with an expired secret.",
@@ -109,6 +110,7 @@ func (d *StatusPageScimDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }
@@ -160,10 +162,6 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         filters["description"] = data.Description.ValueString()
         filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
-    }
-    if !data.BearerToken.IsNull() && !data.BearerToken.IsUnknown() {
-        filters["bearerToken"] = data.BearerToken.ValueString()
-        filterNames = append(filterNames, "bearer_token = "+fmt.Sprintf("%q", data.BearerToken.ValueString()))
     }
     if !data.AutoProvisionUsers.IsNull() && !data.AutoProvisionUsers.IsUnknown() {
         filters["autoProvisionUsers"] = data.AutoProvisionUsers.ValueBool()

@@ -22,8 +22,8 @@ resource "oneuptime_scheduled_maintenance_template_team_owner" "example" {
 
 ### Required
 
-- `scheduled_maintenance_template_id` (String) ID of your OneUptime Scheduled Maintenance Template in which this object belongs. The ID of a `oneuptime_scheduled_maintenance_template`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `scheduled_maintenance_template_id` (String) ID of the scheduled maintenance template the team owns. The ID of a `oneuptime_scheduled_maintenance_template`.
+- `team_id` (String) ID of the team that owns the scheduled maintenance template. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -35,17 +35,19 @@ resource "oneuptime_scheduled_maintenance_template_team_owner" "example" {
 
 ## Import
 
-Import an existing scheduled maintenance template team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing scheduled maintenance template team owner by its scheduled maintenance template and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_scheduled_maintenance_template_team_owner.example
-  id = "<id>"
+  id = "<scheduled_maintenance_template_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_scheduled_maintenance_template_team_owner.example <id>
+terraform import oneuptime_scheduled_maintenance_template_team_owner.example <scheduled_maintenance_template_id>/<team_id>
 ```
+
+Its own ID works too.

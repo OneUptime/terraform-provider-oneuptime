@@ -16,6 +16,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 ```terraform
 data "oneuptime_scheduled_maintenance_feed" "example" {
   scheduled_maintenance_id = oneuptime_scheduled_maintenance_event.example.id
+  user_email               = "alice@example.com"
 }
 
 # Or by id:
@@ -34,7 +35,8 @@ data "oneuptime_scheduled_maintenance_feed" "by_id" {
 - `more_information_in_markdown` (String) More information in Markdown.
 - `scheduled_maintenance_feed_event_type` (String) ScheduledMaintenance Log Event.
 - `scheduled_maintenance_id` (String) Relation to ScheduledMaintenance ID in which this resource belongs. The ID of a `oneuptime_scheduled_maintenance_event`.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 
@@ -42,5 +44,5 @@ data "oneuptime_scheduled_maintenance_feed" "by_id" {
 - `display_color` (String) Display color for this log.
 - `posted_at` (String) Date and time when the feed was posted.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `saved_from_chat_message` (String) For a note saved from a Slack or Microsoft Teams message: the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). The feed item's user is whoever saved it. Written by OneUptime. A JSON value: write it with `jsonencode()`.
+- `saved_from_chat_message` (String) For a note saved from a Slack or Microsoft Teams message: the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). The feed item's user is whoever saved it. Written by OneUptime. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

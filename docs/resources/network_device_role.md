@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_device_role Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Configure what a device can be on your network (Router, Switch, Firewall and so on), how each role is drawn on the topology map, and which roles sit at the core.
 ---

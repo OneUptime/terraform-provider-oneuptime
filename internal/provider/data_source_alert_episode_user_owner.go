@@ -34,6 +34,7 @@ type AlertEpisodeUserOwnerDataSourceModel struct {
     AlertEpisodeId types.String `tfsdk:"alert_episode_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (d *AlertEpisodeUserOwnerDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -63,24 +64,33 @@ func (d *AlertEpisodeUserOwnerDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user who is the owner. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the user who owns the alert episode. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("user_email", false),
             },
             "alert_episode_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Alert Episode in which this object belongs. The ID of a `oneuptime_alert_episode`.",
+                MarkdownDescription: "ID of the alert episode the user owns. The ID of a `oneuptime_alert_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_episode"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",
                 Optional: true,
                 Computed: true,
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -136,6 +146,14 @@ func (d *AlertEpisodeUserOwnerDataSource) Read(ctx context.Context, req datasour
     if !data.IsOwnerNotified.IsNull() && !data.IsOwnerNotified.IsUnknown() {
         filters["isOwnerNotified"] = data.IsOwnerNotified.ValueBool()
         filterNames = append(filterNames, "is_owner_notified = "+fmt.Sprintf("%t", data.IsOwnerNotified.ValueBool()))
+    }
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["userId"] = personID
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -346,6 +364,7 @@ func (d *AlertEpisodeUserOwnerDataSource) Read(ctx context.Context, req datasour
     } else {
         data.IsOwnerNotified = types.BoolNull()
     }
+    data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

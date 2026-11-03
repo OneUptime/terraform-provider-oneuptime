@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_cloud_resource Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Cloud"
 description: |-
   Cloud environments - managed compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner) - and cloud resources: the IaaS and PaaS resources (virtual machines, load balancers, buckets, managed databases, queues, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch and Google Cloud Monitoring publish about them.
 ---
@@ -34,7 +34,7 @@ resource "oneuptime_cloud_resource" "example" {
 - `cloud_region` (String) Last-seen cloud.region OpenTelemetry resource attribute, e.g. us-east-1.
 - `description` (String) Friendly description that will help you remember.
 - `is_archived` (Boolean) Is this cloud resource archived? Archived cloud resources are hidden from lists but keep collecting telemetry. Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this resource. Leave blank to use the project-wide default.
 - `telemetry_retention_config` (String) Per-pillar retention overrides for this resource. Unset fields fall back to the resource default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
 
@@ -45,13 +45,13 @@ resource "oneuptime_cloud_resource" "example" {
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `auto_archived_at` (String) For a resource: when it was archived automatically for sending no metrics for the auto-archive period. Cleared when it reports again.
 - `cloud_connection_id` (String) For a resource: ID of the cloud connection that reads it, when one does. The ID of a `oneuptime_cloud_connection`.
-- `cloud_endpoints` (String) For a resource a cloud connection's inventory lists: the host names and addresses it answers on, such as a load balancer's DNS name. Monitors of those hosts are linked to it. A JSON value: write it with `jsonencode()`.
-- `cloud_properties` (String) For a resource a cloud connection's inventory lists: the properties a person reads first, such as an instance's type or a database's engine and version, keyed by their path in the cloud's description. Never anything that can hold a secret. A JSON value: write it with `jsonencode()`.
-- `cloud_relationships` (String) For a resource a cloud connection's inventory lists: what it runs in, is part of, sends traffic to or is protected by, each as the other resource's id in the cloud. The edges of the account's topology. A JSON value: write it with `jsonencode()`.
+- `cloud_endpoints` (String) For a resource a cloud connection's inventory lists: the host names and addresses it answers on, such as a load balancer's DNS name. Monitors of those hosts are linked to it. A JSON value: read it with `jsondecode()`.
+- `cloud_properties` (String) For a resource a cloud connection's inventory lists: the properties a person reads first, such as an instance's type or a database's engine and version, keyed by their path in the cloud's description. Never anything that can hold a secret. A JSON value: read it with `jsondecode()`.
+- `cloud_relationships` (String) For a resource a cloud connection's inventory lists: what it runs in, is part of, sends traffic to or is protected by, each as the other resource's id in the cloud. The edges of the account's topology. A JSON value: read it with `jsondecode()`.
 - `cloud_resource_group` (String) For an Azure resource: the resource group it belongs to.
 - `cloud_resource_kind` (String) environment: a managed compute environment discovered from the cloud.platform, cloud.account.id and cloud.region resource attributes of a workload's own telemetry. resource: one IaaS or PaaS resource (a virtual machine, a load balancer, a bucket, a managed database, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch or Google Cloud Monitoring publish about it.
 - `cloud_resource_type` (String) For a resource: the provider's type for it - the Azure Resource Manager type (Microsoft.Compute/virtualMachines), the AWS CloudFormation type (AWS::EC2::Instance) or the Google Cloud Monitoring resource type (gce_instance).
-- `cloud_tags` (String) For a resource a cloud connection's inventory lists: its tags in the cloud (AWS tags, Azure tags, Google Cloud labels), at most 50. Label and owner rules can match them. A JSON value: write it with `jsonencode()`.
+- `cloud_tags` (String) For a resource a cloud connection's inventory lists: its tags in the cloud (AWS tags, Azure tags, Google Cloud labels), at most 50. Label and owner rules can match them. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
@@ -63,7 +63,7 @@ resource "oneuptime_cloud_resource" "example" {
 - `runtime_name` (String) Last-seen process.runtime.name OpenTelemetry resource attribute.
 - `runtime_version` (String) Last-seen process.runtime.version OpenTelemetry resource attribute.
 - `slug` (String) Friendly globally unique name for your object.
-- `telemetry_attributes` (String) For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these. A JSON value: write it with `jsonencode()`.
+- `telemetry_attributes` (String) For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

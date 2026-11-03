@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_incoming_call_log_item Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "On-Call & Escalation"
 description: |-
   Child log for each escalation attempt / user ring within a call.
 ---
@@ -16,6 +16,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 ```terraform
 data "oneuptime_incoming_call_log_item" "example" {
   incoming_call_log_id = data.oneuptime_incoming_call_log.example.id
+  user_email           = "alice@example.com"
 }
 
 # Or by id:
@@ -37,7 +38,8 @@ data "oneuptime_incoming_call_log_item" "by_id" {
 - `is_answered` (Boolean) Whether this user answered the call.
 - `status` (String) Status of this dial attempt.
 - `status_message` (String) Additional status information.
-- `user_id` (String) User ID who was called. The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User ID who was called. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

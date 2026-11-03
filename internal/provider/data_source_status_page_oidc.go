@@ -75,6 +75,7 @@ func (d *StatusPageOidcDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Any friendly name of this object.",
@@ -82,7 +83,7 @@ func (d *StatusPageOidcDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page OIDC], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page OIDC], Update: [Project Owner, Project Admin, Edit Status Page OIDC]",
+                MarkdownDescription: "What this sign-in is for, such as which identity provider it uses.",
                 Optional: true,
                 Computed: true,
             },
@@ -125,14 +126,15 @@ func (d *StatusPageOidcDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page OIDC], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page OIDC], Update: [Project Owner, Project Admin, Edit Status Page OIDC]",
+                MarkdownDescription: "When on, visitors of a private status page can sign in with this provider.",
                 Optional: true,
                 Computed: true,
             },
             "is_tested": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page OIDC], Read: [Project Owner, Project Admin, Read Status Page OIDC], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Whether a sign-in with this provider has been tested. It does not turn the provider on.",
                 Optional: true,
                 Computed: true,
             },

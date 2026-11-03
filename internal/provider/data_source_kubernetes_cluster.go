@@ -144,6 +144,7 @@ func (d *KubernetesClusterDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this Kubernetes cluster archived? Archived Kubernetes clusters are hidden from lists but keep collecting telemetry.",
@@ -158,9 +159,10 @@ func (d *KubernetesClusterDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -170,13 +172,14 @@ func (d *KubernetesClusterDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this Kubernetes cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the cluster default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-pillar retention overrides for this Kubernetes cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the cluster default, then the project's retention settings. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "ai_access_runner_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the in-cluster Runner an older Kubernetes agent chart installed on this cluster. Only this cluster's own in-cluster Runner can be bound. Binding it again needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the cluster can clear it. The ID of a `oneuptime_runner`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_runner"),
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
                 MarkdownDescription: "When on, OneUptime AI runs read-only kubectl commands (get, describe, logs, events, top, rollout status) on this cluster, through the cluster's Kubernetes AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the cluster can turn it on or off.",
@@ -189,7 +192,7 @@ func (d *KubernetesClusterDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "ai_kubectl_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of kubectl command patterns that Automatic mode may run without approval even though they are riskier changes, for example: [\"kubectl set image deployment/web * -n web\"]. A pattern is compared with the command word by word: * stands for exactly one word (an image, a name), never for extra objects, flags or a second -n, every flag the command uses must be written out in the pattern, and the leading \"kubectl\" is optional. At most 100 patterns of at most 500 characters each; a pattern that is not one kubectl command line is refused. Destructive commands (Denied tier) never run regardless, and a write in a protected namespace (kube-system, kube-public, kube-node-lease) or a node drain still needs a human. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the cluster can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Optional JSON array of kubectl command patterns that Automatic mode may run without approval even though they are riskier changes, for example: [\"kubectl set image deployment/web * -n web\"]. A pattern is compared with the command word by word: * stands for exactly one word (an image, a name), never for extra objects, flags or a second -n, every flag the command uses must be written out in the pattern, and the leading \"kubectl\" is optional. At most 100 patterns of at most 500 characters each; a pattern that is not one kubectl command line is refused. Destructive commands (Denied tier) never run regardless, and a write in a protected namespace (kube-system, kube-public, kube-node-lease) or a node drain still needs a human. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the cluster can remove patterns or clear the list. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{

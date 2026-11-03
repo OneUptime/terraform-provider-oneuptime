@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_workspace_notification_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Notification Logs"
 description: |-
   Logs of all workspace activities including messages, channel creation, user invitations, and button interactions for Slack and Microsoft Teams.
 ---
@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_workspace_notification_log" "example" {
-  workspace_type = "example-workspace-type"
+  workspace_type = "Slack"
 }
 
 # Or by id:

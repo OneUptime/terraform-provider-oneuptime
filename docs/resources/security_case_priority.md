@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_case_priority Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   How urgent a security case is, most urgent first (Critical, High, Medium, Low, Informational and your own). Add, rename, reorder or archive them.
 ---

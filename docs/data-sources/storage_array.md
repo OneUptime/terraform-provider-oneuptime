@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_storage_array Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Storage arrays (Pure Storage FlashArray and FlashBlade) that are being monitored in this project. Each array is auto-discovered when the OneUptime Storage Array Agent sends metrics, or can be registered by hand.
 ---
@@ -63,8 +63,8 @@ data "oneuptime_storage_array" "by_id" {
 
 - `archived_at` (String) When was this storage array archived?
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When metrics were last received from this storage array.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `telemetry_retention_config` (String) Per-pillar retention overrides for this storage array (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the storage array default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
+- `telemetry_retention_config` (String) Per-pillar retention overrides for this storage array (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the storage array default, then the project's retention settings. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

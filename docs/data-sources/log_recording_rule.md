@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_log_recording_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Derived metrics computed every minute from logs: a count of matching logs, or the sum, average, min, max or a percentile of a numeric log attribute, optionally split by log attributes. Results are written into the metric store as a new series.
 ---
@@ -39,6 +39,6 @@ data "oneuptime_log_recording_rule" "by_id" {
 
 - `computed_until` (String) The end of the last minute this rule has written into its metric. Null means it has not run yet.
 - `created_at` (String) Date and Time when the object was created.
-- `definition` (String) Which logs count (filter: telemetryServiceIds, severityTexts, body, attributeFilters), how they are aggregated (aggregationType: Count, or Sum / Avg / Min / Max / P50 / P75 / P90 / P95 / P99 of the numeric valueAttribute), the optional groupByAttributes (up to 5 attribute keys) and the output metric's unit. A JSON value: write it with `jsonencode()`.
+- `definition` (String) Which logs count (filter: telemetryServiceIds, severityTexts, body, attributeFilters), how they are aggregated (aggregationType: Count, or Sum / Avg / Min / Max / P50 / P75 / P90 / P95 / P99 of the numeric valueAttribute), the optional groupByAttributes (up to 5 attribute keys) and the output metric's unit. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this recording rule belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

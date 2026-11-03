@@ -107,7 +107,7 @@ func (d *ServiceLevelObjectiveDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -129,6 +129,7 @@ func (d *ServiceLevelObjectiveDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "sli_type": schema.StringAttribute{
                 MarkdownDescription: "Type of Service Level Indicator this objective measures (Monitor Uptime or Metric).",
@@ -161,7 +162,7 @@ func (d *ServiceLevelObjectiveDataSource) Schema(ctx context.Context, req dataso
                 ElementType: types.StringType,
             },
             "metric_query_config": schema.StringAttribute{
-                MarkdownDescription: "Query configuration for Metric SLIs: metric name, good-event predicate and optional attribute filters. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Query configuration for Metric SLIs: metric name, good-event predicate and optional attribute filters. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "target_percentage": schema.NumberAttribute{
@@ -239,6 +240,7 @@ func (d *ServiceLevelObjectiveDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

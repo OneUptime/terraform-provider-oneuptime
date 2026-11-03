@@ -89,6 +89,7 @@ func (d *WatchlistDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "For a list that follows a feed: the ID of the feed whose active indicators are the list's values. The ID of a `oneuptime_threat_intel_feed`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_threat_intel_feed"),
             },
             "value_count": schema.NumberAttribute{
                 MarkdownDescription: "How many values the list holds, counted by OneUptime as values are added and removed. 0 for a list that follows a threat intel feed.",
@@ -99,6 +100,7 @@ func (d *WatchlistDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "ID of the person who created the watchlist. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

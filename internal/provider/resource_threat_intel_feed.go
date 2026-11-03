@@ -22,11 +22,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ThreatIntelFeedResource{}
 var _ resource.ResourceWithImportState = &ThreatIntelFeedResource{}
+var _ resource.ResourceWithModifyPlan = &ThreatIntelFeedResource{}
 
 func NewThreatIntelFeedResource() resource.Resource {
     return &ThreatIntelFeedResource{}
@@ -125,6 +127,9 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("taxii", "list", "google-secops"),
+                },
             },
             "api_root_url": schema.StringAttribute{
                 MarkdownDescription: "The TAXII 2.1 API root, e.g. https://taxii.example.com/api1/. Collections are addressed beneath it.",
@@ -147,6 +152,7 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -157,6 +163,7 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_security_event_connection"),
             },
             "collection_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the TAXII collection to poll for indicator objects.",
@@ -199,6 +206,7 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -208,6 +216,7 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -254,6 +263,7 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident severity for incidents opened by this feed. The ID of a `oneuptime_incident_severity`.",
@@ -262,6 +272,7 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -320,6 +331,17 @@ func (r *ThreatIntelFeedResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ThreatIntelFeedResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ThreatIntelFeedResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1227,6 +1249,7 @@ func (r *ThreatIntelFeedResource) Create(ctx context.Context, req resource.Creat
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

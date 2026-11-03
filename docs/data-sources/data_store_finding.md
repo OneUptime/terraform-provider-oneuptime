@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_store_finding Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   What Data Security found in a store: one data type at one location, with its confidence, counts and masked samples.
 ---
@@ -59,6 +59,6 @@ data "oneuptime_data_store_finding" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `first_seen_at` (String) When a scan first found it.
 - `last_seen_at` (String) When a scan last found it.
-- `masked_samples` (String) At most three masked samples, such as j***@e******.com. Never a raw value. A JSON value: write it with `jsonencode()`.
+- `masked_samples` (String) At most three masked samples, such as j***@e******.com. Never a raw value. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this finding belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

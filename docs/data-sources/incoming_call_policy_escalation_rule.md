@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_incoming_call_policy_escalation_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "On-Call & Escalation"
 description: |-
   Manage escalation rules for incoming call policies that define who to call and in what order
 ---
@@ -15,7 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_incoming_call_policy_escalation_rule" "example" {
-  name = "Example incoming call policy escalation rule"
+  incoming_call_policy_id = oneuptime_incoming_call_policy.example.id
+  user_email              = "alice@example.com"
 }
 
 # Or by id:
@@ -36,7 +37,8 @@ data "oneuptime_incoming_call_policy_escalation_rule" "by_id" {
 - `name` (String) Rule name (e.g., 'Primary On-Call', 'Backup Engineer').
 - `on_call_duty_policy_schedule_id` (String) ID of the on-call schedule to route to (mutually exclusive with userId). The ID of a `oneuptime_on_call_policy_schedule`.
 - `order` (Number) Where this rule sits in the escalation, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
-- `user_id` (String) ID of the user to route to directly (mutually exclusive with onCallDutyPolicyScheduleId). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of the user to route to directly (mutually exclusive with onCallDutyPolicyScheduleId). The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

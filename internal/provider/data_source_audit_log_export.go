@@ -84,7 +84,7 @@ func (d *AuditLogExportDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "config": schema.StringAttribute{
-                MarkdownDescription: "The destination's settings that are not secret, such as the bucket and the region. Keys are defined by the destination. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The destination's settings that are not secret, such as the bucket and the region. Keys are defined by the destination. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
@@ -140,6 +140,7 @@ func (d *AuditLogExportDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the user who created this export. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

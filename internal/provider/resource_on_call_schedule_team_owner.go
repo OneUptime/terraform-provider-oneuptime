@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &OnCallScheduleTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &OnCallScheduleTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &OnCallScheduleTeamOwnerResource{}
 
 func NewOnCallScheduleTeamOwnerResource() resource.Resource {
     return &OnCallScheduleTeamOwnerResource{}
@@ -71,18 +72,20 @@ func (r *OnCallScheduleTeamOwnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the on-call schedule. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime On-Call Schedule in which this object belongs. The ID of a `oneuptime_on_call_policy_schedule`.",
+                MarkdownDescription: "ID of the on-call schedule the team owns. The ID of a `oneuptime_on_call_policy_schedule`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -110,6 +113,17 @@ func (r *OnCallScheduleTeamOwnerResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *OnCallScheduleTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *OnCallScheduleTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -400,6 +414,7 @@ func (r *OnCallScheduleTeamOwnerResource) Create(ctx context.Context, req resour
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -884,7 +899,22 @@ func (r *OnCallScheduleTeamOwnerResource) Delete(ctx context.Context, req resour
 
 
 func (r *OnCallScheduleTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <on_call_duty_policy_schedule_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/on-call-duty-policy-schedule-owner-team/get-list",
+        parentField:     "onCallDutyPolicyScheduleId",
+        parentAttribute: "on_call_duty_policy_schedule_id",
+        parentNoun:      "on call policy schedule",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 

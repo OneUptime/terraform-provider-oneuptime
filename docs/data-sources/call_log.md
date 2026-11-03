@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_call_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Notification Logs"
 description: |-
   Logs of all the Call sent out to all users and subscribers for this project.
 ---
@@ -46,7 +46,7 @@ data "oneuptime_call_log" "by_id" {
 
 ### Read-Only
 
-- `call_data` (String) Content of the data that was sent in the call. A JSON value: write it with `jsonencode()`.
+- `call_data` (String) Content of the data that was sent in the call. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `from_number` (String) Phone Number Call was sent from.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

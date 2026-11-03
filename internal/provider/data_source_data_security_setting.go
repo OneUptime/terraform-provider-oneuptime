@@ -112,6 +112,7 @@ func (d *DataSecuritySettingDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "The severity of the alerts raised. The project's most severe when empty. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "declare_incidents_for_critical_issues": schema.BoolAttribute{
                 MarkdownDescription: "Declare an incident, which runs your incident process, when a Critical issue opens.",
@@ -122,6 +123,7 @@ func (d *DataSecuritySettingDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "The severity of the incidents declared. The project's most severe when empty. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "notify_owners": schema.BoolAttribute{
                 MarkdownDescription: "Tell a store's owners when an issue opens on it.",
@@ -164,17 +166,18 @@ func (d *DataSecuritySettingDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "allowed_values": schema.StringAttribute{
-                MarkdownDescription: "Values that are never findings, such as your own support address. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Values that are never findings, such as your own support address. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "disabled_data_type_ids": schema.StringAttribute{
-                MarkdownDescription: "Built-in data types the project's scans do not look for. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Built-in data types the project's scans do not look for. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the user who created this settings. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

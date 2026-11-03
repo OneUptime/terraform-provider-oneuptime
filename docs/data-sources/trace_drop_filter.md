@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_trace_drop_filter Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Configure rules to drop or sample spans before storage to reduce volume and cost.
 ---

@@ -20,11 +20,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &LogDropFilterResource{}
 var _ resource.ResourceWithImportState = &LogDropFilterResource{}
+var _ resource.ResourceWithModifyPlan = &LogDropFilterResource{}
 
 func NewLogDropFilterResource() resource.Resource {
     return &LogDropFilterResource{}
@@ -103,12 +105,16 @@ func (r *LogDropFilterResource) schemaDefinition() schema.Schema {
             "action": schema.StringAttribute{
                 MarkdownDescription: "What to do with matching logs: 'drop' to discard entirely, 'sample' to keep a percentage.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("drop", "sample"),
+                },
             },
             "sample_percentage": schema.NumberAttribute{
                 MarkdownDescription: "When action is 'sample', the percentage of matching logs to keep (1-99).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -126,6 +132,7 @@ func (r *LogDropFilterResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -160,6 +167,17 @@ func (r *LogDropFilterResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *LogDropFilterResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *LogDropFilterResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -570,6 +588,7 @@ func (r *LogDropFilterResource) Create(ctx context.Context, req resource.CreateR
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

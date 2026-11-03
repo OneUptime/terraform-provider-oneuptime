@@ -19,41 +19,60 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &ProbeOwnerTeamResource{}
-var _ resource.ResourceWithImportState = &ProbeOwnerTeamResource{}
+var _ resource.Resource = &EscalationRuleTeamResource{}
+var _ resource.ResourceWithImportState = &EscalationRuleTeamResource{}
+var _ resource.ResourceWithModifyPlan = &EscalationRuleTeamResource{}
+var _ resource.ResourceWithMoveState = &EscalationRuleTeamResource{}
 
-func NewProbeOwnerTeamResource() resource.Resource {
-    return &ProbeOwnerTeamResource{}
+func NewEscalationRuleTeamResource() resource.Resource {
+    return &EscalationRuleTeamResource{}
 }
 
-// ProbeOwnerTeamResource defines the resource implementation.
-type ProbeOwnerTeamResource struct {
+// NewEscalationRuleTeamLegacyResource registers this resource under the name it
+// had before resource type names kept mixed-case words whole,
+// oneuptime_team_on_call_duty_escalation_rule, so configurations that use it keep
+// working. Deprecated: plans that use it say so.
+func NewEscalationRuleTeamLegacyResource() resource.Resource {
+    return &EscalationRuleTeamResource{isLegacyAlias: true}
+}
+
+// EscalationRuleTeamResource defines the resource implementation.
+type EscalationRuleTeamResource struct {
     client *Client
+    // Registered under the name this resource had before (see NewEscalationRuleTeamLegacyResource).
+    isLegacyAlias bool
 }
 
-// ProbeOwnerTeamResourceModel describes the resource data model.
-type ProbeOwnerTeamResourceModel struct {
+// EscalationRuleTeamResourceModel describes the resource data model.
+type EscalationRuleTeamResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
+    OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
     TeamId types.String `tfsdk:"team_id"`
-    ProbeId types.String `tfsdk:"probe_id"`
+    OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
 }
 
-func (r *ProbeOwnerTeamResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_probe_owner_team"
+func (r *EscalationRuleTeamResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    if r.isLegacyAlias {
+        resp.TypeName = req.ProviderTypeName + "_team_on_call_duty_escalation_rule"
+        return
+    }
+    resp.TypeName = req.ProviderTypeName + "_escalation_rule_team"
 }
 
-func (r *ProbeOwnerTeamResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *EscalationRuleTeamResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = r.schemaDefinition()
+    if r.isLegacyAlias {
+        resp.Schema.DeprecationMessage = "oneuptime_team_on_call_duty_escalation_rule has been renamed to oneuptime_escalation_rule_team. Rename the resource in your configuration and add a moved block (from = oneuptime_team_on_call_duty_escalation_rule.<name>, to = oneuptime_escalation_rule_team.<name>) to keep the existing escalation rule team; the old name keeps working until then."
+    }
 }
 
-func (r *ProbeOwnerTeamResource) schemaDefinition() schema.Schema {
+func (r *EscalationRuleTeamResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Add teams as owners to your probes.",
+        MarkdownDescription: "Add teams to your escalation rules.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -70,19 +89,31 @@ func (r *ProbeOwnerTeamResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+            "on_call_duty_policy_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the on-call policy the escalation rule is in. The ID of a `oneuptime_on_call_policy`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
-            "probe_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Probe in which this object belongs. The ID of a `oneuptime_probe`.",
+            "team_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the team the escalation rule pages. The ID of a `oneuptime_team`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+                Validators: recordIDValidators("oneuptime_team"),
+            },
+            "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the escalation rule that pages the team. The ID of a `oneuptime_escalation_rule`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_escalation_rule"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -104,15 +135,38 @@ func (r *ProbeOwnerTeamResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?",
-                Computed: true,
-            },
         },
     }
 }
 
-func (r *ProbeOwnerTeamResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+// MoveState lets a moved block bring state over from the old name:
+//
+//     moved {
+//       from = oneuptime_team_on_call_duty_escalation_rule.example
+//       to   = oneuptime_escalation_rule_team.example
+//     }
+func (r *EscalationRuleTeamResource) MoveState(ctx context.Context) []resource.StateMover {
+    if r.isLegacyAlias {
+        return nil
+    }
+
+    return []resource.StateMover{
+        legacyNameStateMover("oneuptime_team_on_call_duty_escalation_rule", r.schemaDefinition()),
+    }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *EscalationRuleTeamResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
+}
+
+func (r *EscalationRuleTeamResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -133,8 +187,8 @@ func (r *ProbeOwnerTeamResource) Configure(ctx context.Context, req resource.Con
 }
 
 
-func (r *ProbeOwnerTeamResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data ProbeOwnerTeamResourceModel
+func (r *EscalationRuleTeamResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data EscalationRuleTeamResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -143,48 +197,59 @@ func (r *ProbeOwnerTeamResource) Create(ctx context.Context, req resource.Create
         return
     }
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config EscalationRuleTeamResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
 
 
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    probeOwnerTeamRequest := map[string]interface{}{
+    escalationRuleTeamRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := probeOwnerTeamRequest["data"].(map[string]interface{})
+    requestDataMap := escalationRuleTeamRequest["data"].(map[string]interface{})
 
+    if !data.OnCallDutyPolicyId.IsNull() && !data.OnCallDutyPolicyId.IsUnknown() {
+        requestDataMap["onCallDutyPolicyId"] = data.OnCallDutyPolicyId.ValueString()
+    }
     if !data.TeamId.IsNull() && !data.TeamId.IsUnknown() {
         requestDataMap["teamId"] = data.TeamId.ValueString()
     }
-    if !data.ProbeId.IsNull() && !data.ProbeId.IsUnknown() {
-        requestDataMap["probeId"] = data.ProbeId.ValueString()
+    if !data.OnCallDutyPolicyEscalationRuleId.IsNull() && !data.OnCallDutyPolicyEscalationRuleId.IsUnknown() {
+        requestDataMap["onCallDutyPolicyEscalationRuleId"] = data.OnCallDutyPolicyEscalationRuleId.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/probe-owner-team", probeOwnerTeamRequest)
+    httpResp, err := r.client.Post(ctx, "/on-call-duty-policy-escalation-rule-team", escalationRuleTeamRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create probe_owner_team, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create escalation_rule_team, got error: %s", err))
         return
     }
 
-    var probeOwnerTeamResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &probeOwnerTeamResponse)
+    var escalationRuleTeamResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &escalationRuleTeamResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create probe_owner_team: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create escalation_rule_team: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := probeOwnerTeamResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := escalationRuleTeamResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := probeOwnerTeamResponse["_id"].(string); ok {
+    } else if val, ok := escalationRuleTeamResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for probe_owner_team did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for escalation_rule_team did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -193,7 +258,7 @@ func (r *ProbeOwnerTeamResource) Create(ctx context.Context, req resource.Create
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * probe_owner_team is orphaned server-side — never refreshed, never
+     * escalation_rule_team is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -205,30 +270,30 @@ func (r *ProbeOwnerTeamResource) Create(ctx context.Context, req resource.Create
     // Re-read the resource so state reflects server-normalized values.
     selectParam := map[string]interface{}{
         "projectId": true,
+        "onCallDutyPolicyId": true,
         "teamId": true,
-        "probeId": true,
+        "onCallDutyPolicyEscalationRuleId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
-        "isOwnerNotified": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/probe-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-policy-escalation-rule-team/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created probe_owner_team but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created escalation_rule_team but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created probe_owner_team but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created escalation_rule_team but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -254,6 +319,43 @@ func (r *ProbeOwnerTeamResource) Create(ctx context.Context, req resource.Create
     } else {
         data.ProjectId = types.StringNull()
     }
+    if obj, ok := dataMap["onCallDutyPolicyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OnCallDutyPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OnCallDutyPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OnCallDutyPolicyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["onCallDutyPolicyId"].(string); ok {
+        data.OnCallDutyPolicyId = types.StringValue(val)
+    } else {
+        data.OnCallDutyPolicyId = types.StringNull()
+    }
     if obj, ok := dataMap["teamId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -291,42 +393,42 @@ func (r *ProbeOwnerTeamResource) Create(ctx context.Context, req resource.Create
     } else {
         data.TeamId = types.StringNull()
     }
-    if obj, ok := dataMap["probeId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ProbeId = types.StringValue(val)
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ProbeId = types.StringValue(val)
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
             } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
             } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ProbeId = types.StringValue(string(jsonBytes))
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
         } else {
-            data.ProbeId = types.StringNull()
+            data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
         }
-    } else if val, ok := dataMap["probeId"].(string); ok {
-        data.ProbeId = types.StringValue(val)
+    } else if val, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(string); ok {
+        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
     } else {
-        data.ProbeId = types.StringNull()
+        data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -387,9 +489,6 @@ func (r *ProbeOwnerTeamResource) Create(ctx context.Context, req resource.Create
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -398,15 +497,19 @@ func (r *ProbeOwnerTeamResource) Create(ctx context.Context, req resource.Create
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *ProbeOwnerTeamResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data ProbeOwnerTeamResourceModel
+func (r *EscalationRuleTeamResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data EscalationRuleTeamResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -418,19 +521,19 @@ func (r *ProbeOwnerTeamResource) Read(ctx context.Context, req resource.ReadRequ
     // Create select parameter to get full object
     selectParam := map[string]interface{}{
         "projectId": true,
+        "onCallDutyPolicyId": true,
         "teamId": true,
-        "probeId": true,
+        "onCallDutyPolicyEscalationRuleId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
-        "isOwnerNotified": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/probe-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-policy-escalation-rule-team/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read probe_owner_team, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read escalation_rule_team, got error: %s", err))
         return
     }
 
@@ -439,22 +542,22 @@ func (r *ProbeOwnerTeamResource) Read(ctx context.Context, req resource.ReadRequ
         return
     }
 
-    var probeOwnerTeamResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &probeOwnerTeamResponse)
+    var escalationRuleTeamResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &escalationRuleTeamResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse probe_owner_team response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse escalation_rule_team response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := probeOwnerTeamResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := escalationRuleTeamResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = probeOwnerTeamResponse
+        dataMap = escalationRuleTeamResponse
     }
 
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
@@ -468,6 +571,43 @@ func (r *ProbeOwnerTeamResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.ProjectId = types.StringNull()
     }
+    if obj, ok := dataMap["onCallDutyPolicyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OnCallDutyPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OnCallDutyPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OnCallDutyPolicyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["onCallDutyPolicyId"].(string); ok {
+        data.OnCallDutyPolicyId = types.StringValue(val)
+    } else {
+        data.OnCallDutyPolicyId = types.StringNull()
+    }
     if obj, ok := dataMap["teamId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -505,42 +645,42 @@ func (r *ProbeOwnerTeamResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.TeamId = types.StringNull()
     }
-    if obj, ok := dataMap["probeId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ProbeId = types.StringValue(val)
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ProbeId = types.StringValue(val)
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
             } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
             } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ProbeId = types.StringValue(string(jsonBytes))
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
         } else {
-            data.ProbeId = types.StringNull()
+            data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
         }
-    } else if val, ok := dataMap["probeId"].(string); ok {
-        data.ProbeId = types.StringValue(val)
+    } else if val, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(string); ok {
+        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
     } else {
-        data.ProbeId = types.StringNull()
+        data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -601,9 +741,6 @@ func (r *ProbeOwnerTeamResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -614,9 +751,9 @@ func (r *ProbeOwnerTeamResource) Read(ctx context.Context, req resource.ReadRequ
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *ProbeOwnerTeamResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data ProbeOwnerTeamResourceModel
-    var state ProbeOwnerTeamResourceModel
+func (r *EscalationRuleTeamResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data EscalationRuleTeamResourceModel
+    var state EscalationRuleTeamResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -633,8 +770,16 @@ func (r *ProbeOwnerTeamResource) Update(ctx context.Context, req resource.Update
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config EscalationRuleTeamResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
-    probeOwnerTeamRequest := map[string]interface{}{
+    escalationRuleTeamRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
 
@@ -642,45 +787,45 @@ func (r *ProbeOwnerTeamResource) Update(ctx context.Context, req resource.Update
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(probeOwnerTeamRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/probe-owner-team/" + data.Id.ValueString() + "", probeOwnerTeamRequest)
+    if len(escalationRuleTeamRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/on-call-duty-policy-escalation-rule-team/" + data.Id.ValueString() + "", escalationRuleTeamRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update probe_owner_team, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update escalation_rule_team, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var probeOwnerTeamResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &probeOwnerTeamResponse)
+        var escalationRuleTeamResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &escalationRuleTeamResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update probe_owner_team: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update escalation_rule_team: %s", err))
             return
         }
-        _ = probeOwnerTeamResponse
+        _ = escalationRuleTeamResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
     selectParam := map[string]interface{}{
         "projectId": true,
+        "onCallDutyPolicyId": true,
         "teamId": true,
-        "probeId": true,
+        "onCallDutyPolicyEscalationRuleId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
-        "isOwnerNotified": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/probe-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-policy-escalation-rule-team/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read probe_owner_team after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read escalation_rule_team after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read probe_owner_team after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read escalation_rule_team after update: %s", err))
         return
     }
 
@@ -706,6 +851,43 @@ func (r *ProbeOwnerTeamResource) Update(ctx context.Context, req resource.Update
     } else {
         data.ProjectId = types.StringNull()
     }
+    if obj, ok := dataMap["onCallDutyPolicyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OnCallDutyPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OnCallDutyPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OnCallDutyPolicyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["onCallDutyPolicyId"].(string); ok {
+        data.OnCallDutyPolicyId = types.StringValue(val)
+    } else {
+        data.OnCallDutyPolicyId = types.StringNull()
+    }
     if obj, ok := dataMap["teamId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -743,42 +925,42 @@ func (r *ProbeOwnerTeamResource) Update(ctx context.Context, req resource.Update
     } else {
         data.TeamId = types.StringNull()
     }
-    if obj, ok := dataMap["probeId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ProbeId = types.StringValue(val)
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ProbeId = types.StringValue(val)
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
             } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
             } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ProbeId = types.StringValue(string(jsonBytes))
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
         } else {
-            data.ProbeId = types.StringNull()
+            data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
         }
-    } else if val, ok := dataMap["probeId"].(string); ok {
-        data.ProbeId = types.StringValue(val)
+    } else if val, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(string); ok {
+        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
     } else {
-        data.ProbeId = types.StringNull()
+        data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -839,9 +1021,6 @@ func (r *ProbeOwnerTeamResource) Update(ctx context.Context, req resource.Update
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -849,12 +1028,15 @@ func (r *ProbeOwnerTeamResource) Update(ctx context.Context, req resource.Update
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *ProbeOwnerTeamResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data ProbeOwnerTeamResourceModel
+func (r *EscalationRuleTeamResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data EscalationRuleTeamResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -864,9 +1046,9 @@ func (r *ProbeOwnerTeamResource) Delete(ctx context.Context, req resource.Delete
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/probe-owner-team/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/on-call-duty-policy-escalation-rule-team/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete probe_owner_team, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete escalation_rule_team, got error: %s", err))
         return
     }
 
@@ -874,7 +1056,7 @@ func (r *ProbeOwnerTeamResource) Delete(ctx context.Context, req resource.Delete
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete probe_owner_team: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete escalation_rule_team: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -883,13 +1065,41 @@ func (r *ProbeOwnerTeamResource) Delete(ctx context.Context, req resource.Delete
 }
 
 
-func (r *ProbeOwnerTeamResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+func (r *EscalationRuleTeamResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+    // By its own ID, or by what it joins and who or what joins it: <on_call_duty_policy_escalation_rule_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/on-call-duty-policy-escalation-rule-team/get-list",
+        parentField:     "onCallDutyPolicyEscalationRuleId",
+        parentAttribute: "on_call_duty_policy_escalation_rule_id",
+        parentNoun:      "escalation rule",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "on-call",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *EscalationRuleTeamResource) keepPlannedValues(data *EscalationRuleTeamResourceModel, plan *EscalationRuleTeamResourceModel, config *EscalationRuleTeamResourceModel) {
+    if config.TeamId.IsNull() && !plan.TeamId.IsUnknown() {
+        data.TeamId = plan.TeamId
+    }
+}
+
 // Helper method to convert Terraform map to Go interface{}
-func (r *ProbeOwnerTeamResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *EscalationRuleTeamResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -907,7 +1117,7 @@ func (r *ProbeOwnerTeamResource) convertTerraformMapToInterface(terraformMap typ
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *ProbeOwnerTeamResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *EscalationRuleTeamResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -928,7 +1138,7 @@ func (r *ProbeOwnerTeamResource) convertTerraformListToInterface(terraformList t
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *ProbeOwnerTeamResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *EscalationRuleTeamResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -950,7 +1160,7 @@ func (r *ProbeOwnerTeamResource) convertTerraformSetToInterface(terraformSet typ
 
 
 // Helper method to parse JSON field for complex objects
-func (r *ProbeOwnerTeamResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *EscalationRuleTeamResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -966,7 +1176,7 @@ func (r *ProbeOwnerTeamResource) parseJSONField(terraformString basetypes.String
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *ProbeOwnerTeamResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *EscalationRuleTeamResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -988,7 +1198,7 @@ func (r *ProbeOwnerTeamResource) normalizeURLWrappers(value interface{}) interfa
     }
 }
 
-func (r *ProbeOwnerTeamResource) normalizeURLString(value string) string {
+func (r *EscalationRuleTeamResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -1000,7 +1210,7 @@ func (r *ProbeOwnerTeamResource) normalizeURLString(value string) string {
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *ProbeOwnerTeamResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *EscalationRuleTeamResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -1010,6 +1220,6 @@ func (r *ProbeOwnerTeamResource) bigFloatToFloat64(bf *big.Float) interface{} {
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *ProbeOwnerTeamResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *EscalationRuleTeamResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

@@ -22,11 +22,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &RunnerResource{}
 var _ resource.ResourceWithImportState = &RunnerResource{}
+var _ resource.ResourceWithModifyPlan = &RunnerResource{}
 
 func NewRunnerResource() resource.Resource {
     return &RunnerResource{}
@@ -99,8 +101,13 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Secret key the agent presents on every request. Anyone who can read this key can claim work as this Runner and receive its secrets in plaintext. Never share it; reset it to revoke the agent.",
-                Required: true,
+                MarkdownDescription: "Secret key the agent presents on every request. Anyone who can read this key can claim work as this Runner and receive its secrets in plaintext. Never share it; reset it to revoke the agent. Leave it out and OneUptime generates one.",
+                Optional: true,
+                Computed: true,
+                Sensitive: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "agent_version": schema.StringAttribute{
                 MarkdownDescription: "Self-reported version of the Runner binary. Updated on each heartbeat.",
@@ -123,6 +130,9 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("connected", "disconnected"),
+                },
             },
             "can_run_runbooks": schema.BoolAttribute{
                 MarkdownDescription: "Whether this Runner executes runbook steps. On by default — this is why most Runners are installed. It cannot be turned on for an in-cluster Runner the Kubernetes agent chart registered, which runs kubectl only.",
@@ -143,13 +153,14 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -167,6 +178,9 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "last_alive": schema.StringAttribute{
                 MarkdownDescription: "Most recent heartbeat from this agent.",
@@ -182,7 +196,7 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "host_info": schema.StringAttribute{
-                MarkdownDescription: "Self-reported host info (hostname, OS, arch). Updated on each heartbeat. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Self-reported host info (hostname, OS, arch). Updated on each heartbeat. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -195,6 +209,17 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *RunnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *RunnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -761,6 +786,7 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1783,6 +1809,9 @@ func (r *RunnerResource) ImportState(ctx context.Context, req resource.ImportSta
 func (r *RunnerResource) keepPlannedValues(data *RunnerResourceModel, plan *RunnerResourceModel, config *RunnerResourceModel) {
     if config.Description.IsNull() && !plan.Description.IsUnknown() {
         data.Description = plan.Description
+    }
+    if config.Key.IsNull() && !plan.Key.IsUnknown() {
+        data.Key = plan.Key
     }
     if config.AgentVersion.IsNull() && !plan.AgentVersion.IsUnknown() {
         data.AgentVersion = plan.AgentVersion

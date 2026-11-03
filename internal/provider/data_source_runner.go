@@ -90,9 +90,9 @@ func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 Computed: true,
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Secret key the agent presents on every request. Anyone who can read this key can claim work as this Runner and receive its secrets in plaintext. Never share it; reset it to revoke the agent.",
-                Optional: true,
+                MarkdownDescription: "Secret key the agent presents on every request. Anyone who can read this key can claim work as this Runner and receive its secrets in plaintext. Never share it; reset it to revoke the agent. Leave it out and OneUptime generates one.",
                 Computed: true,
+                Sensitive: true,
             },
             "agent_version": schema.StringAttribute{
                 MarkdownDescription: "Self-reported version of the Runner binary. Updated on each heartbeat.",
@@ -128,16 +128,17 @@ func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 Computed: true,
             },
             "host_info": schema.StringAttribute{
-                MarkdownDescription: "Self-reported host info (hostname, OS, arch). Updated on each heartbeat. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Self-reported host info (hostname, OS, arch). Updated on each heartbeat. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -191,10 +192,6 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
         filters["slug"] = data.Slug.ValueString()
         filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
-    }
-    if !data.Key.IsNull() && !data.Key.IsUnknown() {
-        filters["key"] = data.Key.ValueString()
-        filterNames = append(filterNames, "key = "+fmt.Sprintf("%q", data.Key.ValueString()))
     }
     if !data.ConnectionStatus.IsNull() && !data.ConnectionStatus.IsUnknown() {
         filters["connectionStatus"] = data.ConnectionStatus.ValueString()

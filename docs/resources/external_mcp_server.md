@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_external_mcp_server Resource - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   MCP servers outside OneUptime - such as AWS, Azure or GitHub - whose tools OneUptime AI may use while it investigates and fixes incidents and alerts.
 ---
@@ -28,7 +28,7 @@ resource "oneuptime_external_mcp_server" "example" {
 
 ### Optional
 
-- `auth_type` (String) How OneUptime signs in to the server: None, BearerToken (an API token), Headers (headers of the server's own, such as X-API-Key) or OAuthClientCredentials (a token from an OAuth token URL, with a client ID and secret). Defaults to `None`.
+- `auth_type` (String) How OneUptime signs in to the server: None, BearerToken (an API token), Headers (headers of the server's own, such as X-API-Key) or OAuthClientCredentials (a token from an OAuth token URL, with a client ID and secret). Allowed values: `None`, `BearerToken`, `Headers`, `OAuthClientCredentials`. Defaults to `None`.
 - `bearer_token` (String, Sensitive) For BearerToken: the API token, sent as Authorization: Bearer <token>. Encrypted at rest and never returned by the API.
 - `description` (String) What the server is for, such as 'Our production AWS account, read-only'. OneUptime AI reads it to choose the right server.
 - `headers` (String) For Headers: the headers sent with every request, as a JSON object of names and values. Each value is encrypted at rest and never returned by the API. A JSON value: write it with `jsonencode()`.
@@ -52,7 +52,7 @@ resource "oneuptime_external_mcp_server" "example" {
 - `protocol_version` (String) The MCP protocol version the server agreed on when OneUptime last connected.
 - `server_name` (String) What the server called itself when OneUptime last connected.
 - `server_version` (String) The version the server gave when OneUptime last connected, if any.
-- `tools` (String) The tools the server offered when OneUptime last connected: each one's name, description and whether the server marks it read-only. A JSON value: write it with `jsonencode()`.
+- `tools` (String) The tools the server offered when OneUptime last connected: each one's name, description and whether the server marks it read-only. A JSON value: read it with `jsondecode()`.
 - `transport` (String) How the server talks, as OneUptime found out when it last connected: StreamableHttp or Sse.
 - `updated_at` (String) Date and Time when the object was updated.
 

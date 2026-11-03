@@ -26,6 +26,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &QueueResource{}
 var _ resource.ResourceWithImportState = &QueueResource{}
+var _ resource.ResourceWithModifyPlan = &QueueResource{}
 
 func NewQueueResource() resource.Resource {
     return &QueueResource{}
@@ -151,13 +152,14 @@ func (r *QueueResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -175,6 +177,9 @@ func (r *QueueResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "broker_address": schema.StringAttribute{
                 MarkdownDescription: "The broker address (host[:port]) last reported for this queue by its telemetry, with any credentials removed. Display only - it is not part of the queue's identity.",
@@ -201,7 +206,7 @@ func (r *QueueResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "automatic_assignments": schema.StringAttribute{
-                MarkdownDescription: "Label and owner ids that label rules or owner rules attached automatically. Maintained by OneUptime. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Label and owner ids that label rules or owner rules attached automatically. Maintained by OneUptime. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -223,6 +228,17 @@ func (r *QueueResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *QueueResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *QueueResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -980,6 +996,7 @@ func (r *QueueResource) Create(ctx context.Context, req resource.CreateRequest, 
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

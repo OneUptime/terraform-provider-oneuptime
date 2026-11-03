@@ -69,6 +69,7 @@ func (d *LogPipelineProcessorDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of the log pipeline this processor belongs to. The ID of a `oneuptime_log_pipeline`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_log_pipeline"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Friendly name for this processor.",
@@ -81,7 +82,7 @@ func (d *LogPipelineProcessorDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "configuration": schema.StringAttribute{
-                MarkdownDescription: "Processor-specific configuration as JSON (e.g., grok pattern, source/target fields, mapping rules). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Processor-specific configuration as JSON (e.g., grok pattern, source/target fields, mapping rules). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
@@ -98,6 +99,7 @@ func (d *LogPipelineProcessorDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of the user who created this log pipeline processor. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

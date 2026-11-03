@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_check_setting Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   How a project tunes a built-in check: turn it off, or give its failures another severity.
 ---

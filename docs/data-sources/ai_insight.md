@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ai_insight Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   A preventive finding from OneUptime AI's deterministic telemetry sensors — new or spiking exceptions, error-log spikes, trace-latency regressions and metric drift — surfaced in a quiet insights inbox that never pages and never opens incidents.
 ---
@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_ai_insight" "example" {
-  insight_type = "example-insight-type"
+  insight_type = "NewException"
 }
 
 # Or by id:
@@ -51,7 +51,7 @@ data "oneuptime_ai_insight" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `evidence` (String) The deterministic evidence computed at detect time: counts, baselines, multipliers and (for latency insights) span-tree findings. A JSON value: write it with `jsonencode()`.
+- `evidence` (String) The deterministic evidence computed at detect time: counts, baselines, multipliers and (for latency insights) span-tree findings. A JSON value: read it with `jsondecode()`.
 - `first_seen_at` (String) When this finding was first detected.
 - `human_verdict_at` (String) When the human verdict was recorded (or last changed).
 - `last_seen_at` (String) When this finding was most recently re-detected by the scanner.

@@ -42,7 +42,7 @@ func (d *IncidentTemplateTeamOwnerDataSource) Metadata(ctx context.Context, req 
 
 func (d *IncidentTemplateTeamOwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add teams as owners to your incidents. Look up an existing incident template team owner by `id`, or by any of its other arguments (`created_by_user_id`, `incident_template_id`, `is_owner_notified`, ...): each one set must match, and exactly one incident template team owner may match them all.",
+        MarkdownDescription: "Add teams as owners to your incident templates. Look up an existing incident template team owner by `id`, or by any of its other arguments (`created_by_user_id`, `incident_template_id`, `is_owner_notified`, ...): each one set must match, and exactly one incident template team owner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -63,19 +63,22 @@ func (d *IncidentTemplateTeamOwnerDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the incident template. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "incident_template_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime IncidentTemplate in which this object belongs. The ID of a `oneuptime_incident_template`.",
+                MarkdownDescription: "ID of the incident template the team owns. The ID of a `oneuptime_incident_template`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_template"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",

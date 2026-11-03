@@ -152,11 +152,13 @@ func (d *DetectionRuleDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the alert severity for alerts opened by this rule. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident severity for incidents opened by this rule. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "last_evaluated_at": schema.StringAttribute{
                 MarkdownDescription: "When the detection engine last evaluated this rule. Null means it has never run.",
@@ -175,6 +177,7 @@ func (d *DetectionRuleDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the user who created this detection rule. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

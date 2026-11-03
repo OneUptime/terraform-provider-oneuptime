@@ -56,6 +56,7 @@ type DataSecurityIssueDataSourceModel struct {
     ReopenCount types.Number `tfsdk:"reopen_count"`
     RecheckRequestedAt types.String `tfsdk:"recheck_requested_at"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
+    AssignedToUserEmail types.String `tfsdk:"assigned_to_user_email"`
 }
 
 func (d *DataSecurityIssueDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -88,6 +89,7 @@ func (d *DataSecurityIssueDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "The store the issue is on. The ID of a `oneuptime_data_store`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_data_store"),
             },
             "issue_key": schema.StringAttribute{
                 MarkdownDescription: "The store and check, which identify the issue within the project.",
@@ -125,7 +127,7 @@ func (d *DataSecurityIssueDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "risk_factors": schema.StringAttribute{
-                MarkdownDescription: "Each part of the risk score, with its points. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Each part of the risk score, with its points. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "status": schema.StringAttribute{
@@ -134,11 +136,11 @@ func (d *DataSecurityIssueDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "data_type_ids": schema.StringAttribute{
-                MarkdownDescription: "The sensitive data types the store holds, which make the issue as severe as it is. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The sensitive data types the store holds, which make the issue as severe as it is. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "frameworks": schema.StringAttribute{
-                MarkdownDescription: "The framework requirements the check is evidence for. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The framework requirements the check is evidence for. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "accepted_reason": schema.StringAttribute{
@@ -154,31 +156,37 @@ func (d *DataSecurityIssueDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "The person who accepted the risk. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "assigned_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "The person working on the issue. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "The person working on the issue. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assigned_to_user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("assigned_to_user_email", false),
             },
             "assigned_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "The team working on the issue. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "security_case_id": schema.StringAttribute{
                 MarkdownDescription: "The security case opened for the issue, if any. The ID of a `oneuptime_security_case`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "The alert raised for the issue, if any. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "incident_id": schema.StringAttribute{
                 MarkdownDescription: "The incident declared for the issue, if any. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "first_detected_at": schema.StringAttribute{
                 MarkdownDescription: "When the check first failed.",
@@ -205,6 +213,12 @@ func (d *DataSecurityIssueDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "Whether the store's owners were told about the issue.",
                 Optional: true,
                 Computed: true,
+            },
+            "assigned_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -316,6 +330,14 @@ func (d *DataSecurityIssueDataSource) Read(ctx context.Context, req datasource.R
     if !data.IsOwnerNotified.IsNull() && !data.IsOwnerNotified.IsUnknown() {
         filters["isOwnerNotified"] = data.IsOwnerNotified.ValueBool()
         filterNames = append(filterNames, "is_owner_notified = "+fmt.Sprintf("%t", data.IsOwnerNotified.ValueBool()))
+    }
+    if !data.AssignedToUserEmail.IsNull() && !data.AssignedToUserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.AssignedToUserEmail.ValueString(), "assigned_to_user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["assignedToUserId"] = personID
+        filterNames = append(filterNames, "assigned_to_user_email = "+fmt.Sprintf("%q", data.AssignedToUserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -890,6 +912,7 @@ func (d *DataSecurityIssueDataSource) Read(ctx context.Context, req datasource.R
     } else {
         data.IsOwnerNotified = types.BoolNull()
     }
+    data.AssignedToUserEmail = personEmailAfterLookup(ctx, d.client, data.AssignedToUserId, data.AssignedToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

@@ -17,11 +17,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &OnCallPolicyCustomFieldResource{}
 var _ resource.ResourceWithImportState = &OnCallPolicyCustomFieldResource{}
+var _ resource.ResourceWithModifyPlan = &OnCallPolicyCustomFieldResource{}
 
 func NewOnCallPolicyCustomFieldResource() resource.Resource {
     return &OnCallPolicyCustomFieldResource{}
@@ -38,7 +40,7 @@ type OnCallPolicyCustomFieldResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
-    CustomFieldType JSONSubsetValue `tfsdk:"custom_field_type"`
+    CustomFieldType types.String `tfsdk:"custom_field_type"`
     DropdownOptions types.String `tfsdk:"dropdown_options"`
     MapFromResourceType types.String `tfsdk:"map_from_resource_type"`
     MapFromCustomFieldName types.String `tfsdk:"map_from_custom_field_name"`
@@ -87,8 +89,7 @@ func (r *OnCallPolicyCustomFieldResource) schemaDefinition() schema.Schema {
                 },
             },
             "custom_field_type": schema.StringAttribute{
-                MarkdownDescription: "Is this field Text, Number or Boolean? A JSON value: write it with `jsonencode()`.",
-                CustomType: JSONSubsetType{},
+                MarkdownDescription: "What kind of value the field holds, such as Text, Number or Dropdown.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -96,7 +97,7 @@ func (r *OnCallPolicyCustomFieldResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
                 Validators: []validator.String{
-                    JSONEnvelopeValidator(),
+                    stringvalidator.OneOf("Text", "Number", "Boolean", "Dropdown", "MultiSelectDropdown", "Date", "DateTime", "LongText", "Markdown", "File", "MultipleFiles"),
                 },
             },
             "dropdown_options": schema.StringAttribute{
@@ -113,6 +114,9 @@ func (r *OnCallPolicyCustomFieldResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Monitor"),
                 },
             },
             "map_from_custom_field_name": schema.StringAttribute{
@@ -145,6 +149,17 @@ func (r *OnCallPolicyCustomFieldResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *OnCallPolicyCustomFieldResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *OnCallPolicyCustomFieldResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -202,8 +217,8 @@ func (r *OnCallPolicyCustomFieldResource) Create(ctx context.Context, req resour
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
     }
-    if parsedCustomFieldType := r.parseJSONField(data.CustomFieldType); parsedCustomFieldType != nil {
-        requestDataMap["customFieldType"] = parsedCustomFieldType
+    if !data.CustomFieldType.IsNull() && !data.CustomFieldType.IsUnknown() {
+        requestDataMap["customFieldType"] = data.CustomFieldType.ValueString()
     }
     if !data.DropdownOptions.IsNull() && !data.DropdownOptions.IsUnknown() {
         requestDataMap["dropdownOptions"] = data.DropdownOptions.ValueString()
@@ -387,41 +402,41 @@ func (r *OnCallPolicyCustomFieldResource) Create(ctx context.Context, req resour
         data.Description = types.StringNull()
     }
     if obj, ok := dataMap["customFieldType"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomFieldType = NewJSONSubsetValue(val)
+            data.CustomFieldType = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CustomFieldType = NewJSONSubsetValue(val)
+            data.CustomFieldType = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.CustomFieldType = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.CustomFieldType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CustomFieldType = NewJSONSubsetValue(string(jsonBytes))
+                data.CustomFieldType = types.StringValue(string(jsonBytes))
             } else {
-                data.CustomFieldType = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.CustomFieldType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CustomFieldType = NewJSONSubsetValue(string(jsonBytes))
+                data.CustomFieldType = types.StringValue(string(jsonBytes))
             } else {
-                data.CustomFieldType = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.CustomFieldType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.CustomFieldType = NewJSONSubsetValue(string(jsonBytes))
+            data.CustomFieldType = types.StringValue(string(jsonBytes))
         } else {
-            data.CustomFieldType = NewJSONSubsetNull()
+            data.CustomFieldType = types.StringNull()
         }
     } else if val, ok := dataMap["customFieldType"].(string); ok {
-        data.CustomFieldType = NewJSONSubsetValue(val)
+        data.CustomFieldType = types.StringValue(val)
     } else {
-        data.CustomFieldType = NewJSONSubsetNull()
+        data.CustomFieldType = types.StringNull()
     }
     if obj, ok := dataMap["dropdownOptions"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -607,6 +622,7 @@ func (r *OnCallPolicyCustomFieldResource) Create(ctx context.Context, req resour
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -752,41 +768,41 @@ func (r *OnCallPolicyCustomFieldResource) Read(ctx context.Context, req resource
         data.Description = types.StringNull()
     }
     if obj, ok := dataMap["customFieldType"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomFieldType = NewJSONSubsetValue(val)
+            data.CustomFieldType = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CustomFieldType = NewJSONSubsetValue(val)
+            data.CustomFieldType = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.CustomFieldType = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.CustomFieldType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CustomFieldType = NewJSONSubsetValue(string(jsonBytes))
+                data.CustomFieldType = types.StringValue(string(jsonBytes))
             } else {
-                data.CustomFieldType = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.CustomFieldType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CustomFieldType = NewJSONSubsetValue(string(jsonBytes))
+                data.CustomFieldType = types.StringValue(string(jsonBytes))
             } else {
-                data.CustomFieldType = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.CustomFieldType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.CustomFieldType = NewJSONSubsetValue(string(jsonBytes))
+            data.CustomFieldType = types.StringValue(string(jsonBytes))
         } else {
-            data.CustomFieldType = NewJSONSubsetNull()
+            data.CustomFieldType = types.StringNull()
         }
     } else if val, ok := dataMap["customFieldType"].(string); ok {
-        data.CustomFieldType = NewJSONSubsetValue(val)
+        data.CustomFieldType = types.StringValue(val)
     } else {
-        data.CustomFieldType = NewJSONSubsetNull()
+        data.CustomFieldType = types.StringNull()
     }
     if obj, ok := dataMap["dropdownOptions"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1162,41 +1178,41 @@ func (r *OnCallPolicyCustomFieldResource) Update(ctx context.Context, req resour
         data.Description = types.StringNull()
     }
     if obj, ok := dataMap["customFieldType"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomFieldType = NewJSONSubsetValue(val)
+            data.CustomFieldType = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CustomFieldType = NewJSONSubsetValue(val)
+            data.CustomFieldType = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.CustomFieldType = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.CustomFieldType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CustomFieldType = NewJSONSubsetValue(string(jsonBytes))
+                data.CustomFieldType = types.StringValue(string(jsonBytes))
             } else {
-                data.CustomFieldType = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.CustomFieldType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CustomFieldType = NewJSONSubsetValue(string(jsonBytes))
+                data.CustomFieldType = types.StringValue(string(jsonBytes))
             } else {
-                data.CustomFieldType = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.CustomFieldType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.CustomFieldType = NewJSONSubsetValue(string(jsonBytes))
+            data.CustomFieldType = types.StringValue(string(jsonBytes))
         } else {
-            data.CustomFieldType = NewJSONSubsetNull()
+            data.CustomFieldType = types.StringNull()
         }
     } else if val, ok := dataMap["customFieldType"].(string); ok {
-        data.CustomFieldType = NewJSONSubsetValue(val)
+        data.CustomFieldType = types.StringValue(val)
     } else {
-        data.CustomFieldType = NewJSONSubsetNull()
+        data.CustomFieldType = types.StringNull()
     }
     if obj, ok := dataMap["dropdownOptions"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

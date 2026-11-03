@@ -13,19 +13,17 @@ Stores user profile data including custom fields for each user in a project.
 
 ```terraform
 resource "oneuptime_project_user_profile" "example" {
-  user_id = data.oneuptime_user.example.id
+  user_email = "alice@example.com"
 }
 ```
 
 ## Schema
 
-### Required
-
-- `user_id` (String) ID of User this profile belongs to. The ID of a `oneuptime_user` (see the data source).
-
 ### Optional
 
 - `custom_fields` (String) Custom Fields for this user in this project. A JSON value: write it with `jsonencode()`.
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of User this profile belongs to. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_serverless_function Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Serverless / FaaS functions auto-discovered from OpenTelemetry (faas.name / cloud.platform). Examples: AWS Lambda, Google Cloud Functions, Azure Functions.
 ---
@@ -51,8 +51,8 @@ data "oneuptime_serverless_function" "by_id" {
 
 - `archived_at` (String) When was this serverless function archived?
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When telemetry was last received for this function.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `telemetry_retention_config` (String) Per-pillar retention overrides for this function. Unset fields fall back to the function default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
+- `telemetry_retention_config` (String) Per-pillar retention overrides for this function. Unset fields fall back to the function default, then the project's retention settings. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

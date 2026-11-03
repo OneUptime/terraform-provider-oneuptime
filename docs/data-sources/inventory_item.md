@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_inventory_item Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Catalog of everything OneUptime knows about your estate (service, host, k8s.pod, container, network device, ...), discovered from telemetry resource attributes, mirrored from inventory tables, or registered by hand.
 ---
@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_inventory_item" "example" {
-  entity_type = "example-entity-type"
+  entity_type = "service"
 }
 
 # Or by id:
@@ -45,11 +45,11 @@ data "oneuptime_inventory_item" "by_id" {
 
 - `archived_at` (String) When this item was archived.
 - `created_at` (String) Date and Time when the object was created.
-- `custom_fields` (String) Custom fields on this item. A JSON value: write it with `jsonencode()`.
-- `descriptive_attributes` (String) Mutable descriptive metadata (image tag, version, IP, ...) merged last-writer-wins. Never part of the identity. A JSON value: write it with `jsonencode()`.
+- `custom_fields` (String) Custom fields on this item. A JSON value: read it with `jsondecode()`.
+- `descriptive_attributes` (String) Mutable descriptive metadata (image tag, version, IP, ...) merged last-writer-wins. Never part of the identity. A JSON value: read it with `jsondecode()`.
 - `first_seen_at` (String) When this entity was first observed in telemetry.
-- `identifying_attributes` (String) The immutable identifying attribute set (the entity's identity). Descriptive attributes are deliberately excluded so they can change without changing the entity key. A JSON value: write it with `jsonencode()`.
-- `labels` (String) Labels observed on this entity's telemetry (e.g. promoted from oneuptime.label.* resource attributes), merged as a set union. Simple string array in v1 — a relation to the Label table is a follow-up. A JSON value: write it with `jsonencode()`.
+- `identifying_attributes` (String) The immutable identifying attribute set (the entity's identity). Descriptive attributes are deliberately excluded so they can change without changing the entity key. A JSON value: read it with `jsondecode()`.
+- `labels` (String) Labels observed on this entity's telemetry (e.g. promoted from oneuptime.label.* resource attributes), merged as a set union. Simple string array in v1 — a relation to the Label table is a follow-up. A JSON value: read it with `jsondecode()`.
 - `last_seen_at` (String) Most recent time this entity was observed in telemetry (bumped, throttled). Drives staleness pruning.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

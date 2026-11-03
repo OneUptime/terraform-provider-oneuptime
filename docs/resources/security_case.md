@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_case Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   A possible threat to investigate: the detections that point at it, who is on it, its priority and status, and the verdict it closed with.
 ---
@@ -27,7 +27,8 @@ resource "oneuptime_security_case" "example" {
 ### Optional
 
 - `assigned_to_team_id` (String) ID of the team whose queue the case is in. The ID of a `oneuptime_team`.
-- `assigned_to_user_id` (String) ID of the person working the case. The ID of a `oneuptime_user` (see the data source).
+- `assigned_to_user_email` (String) The email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `assigned_to_user_id` (String) ID of the person working the case. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assigned_to_user_email`.
 - `closing_note` (String) Why the case was closed the way it was, in Markdown: what was found and what was done.
 - `description` (String) What is known about the threat, in Markdown. A case opened by a detection starts with the detection's description.
 - `entities` (String) The users, hosts, IP addresses, domains and files the case is about, each as { type, value }. Detections add theirs as they join the case. A JSON value: write it with `jsonencode()`.
@@ -36,7 +37,7 @@ resource "oneuptime_security_case" "example" {
 - `mitre_techniques` (String) ATT&CK technique ids (T1110) the case's detections are tagged with. A JSON value: write it with `jsonencode()`.
 - `security_case_priority_id` (String) ID of the case's priority. Optional on create: a case opened by hand starts at the project's medium priority. The ID of a `oneuptime_security_case_priority`.
 - `security_case_status_id` (String) ID of the case's status. Optional on create: a new case starts in the project's new status. The ID of a `oneuptime_security_case_status`.
-- `verdict` (String) What the case turned out to be, set when it is closed: True Positive, Benign Positive, False Positive or Undetermined.
+- `verdict` (String) What the case turned out to be, set when it is closed: True Positive, Benign Positive, False Positive or Undetermined. Allowed values: `True Positive`, `Benign Positive`, `False Positive`, `Undetermined`.
 
 ### Read-Only
 

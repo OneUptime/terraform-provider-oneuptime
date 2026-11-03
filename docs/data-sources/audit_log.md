@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_audit_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Teams & Access"
 description: |-
   API endpoints for Audit Log
 ---

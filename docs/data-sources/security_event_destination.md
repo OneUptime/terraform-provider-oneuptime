@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_event_destination Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   SIEMs such as Google SecOps that receive the project's detections, or all its security events, from OneUptime.
 ---
@@ -40,10 +40,10 @@ data "oneuptime_security_event_destination" "by_id" {
 
 ### Read-Only
 
-- `config` (String) Provider-specific settings that are not secret, such as the region and the instance. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.
+- `config` (String) Provider-specific settings that are not secret, such as the region and the instance. Keys are defined by the provider catalog. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `last_attempt_at` (String) When OneUptime last tried to send to this destination.
-- `last_send_result` (String) What the last attempt sent: events delivered, events the SIEM refused, and the window they came from. A JSON value: write it with `jsonencode()`.
+- `last_send_result` (String) What the last attempt sent: events delivered, events the SIEM refused, and the window they came from. A JSON value: read it with `jsondecode()`.
 - `last_sent_at` (String) When events were last delivered to this destination.
 - `project_id` (String) ID of the project whose events are sent. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

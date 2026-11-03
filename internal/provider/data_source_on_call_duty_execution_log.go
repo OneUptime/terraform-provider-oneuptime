@@ -87,26 +87,31 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "ID of the On-Call Policy this execution log is a run of. Required when you create one. Empty for a direct page: people, a team or an on-call schedule paged without an on-call policy. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "triggered_by_incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident which triggered this on-call escalation policy. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "triggered_by_alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident which triggered this on-call escalation policy. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "triggered_by_alert_episode_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the alert episode which triggered this on-call escalation policy. The ID of a `oneuptime_alert_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_episode"),
             },
             "triggered_by_incident_episode_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident episode which triggered this on-call escalation policy. The ID of a `oneuptime_incident_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_episode"),
             },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Status of this execution.",
@@ -127,11 +132,13 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "acknowledged_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who acknowledged this object (if this object was acknowledged by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "acknowledged_at": schema.StringAttribute{
                 MarkdownDescription: "When was this policy execution acknowledged?",
@@ -141,6 +148,7 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "Team ID who acknowledged this object (if this object was acknowledged by a Team). The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "last_executed_escalation_rule_order": schema.NumberAttribute{
                 MarkdownDescription: "Which escalation rule was executed?",
@@ -151,6 +159,7 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "ID of your On-Call Policy Last Executed Escalation Rule. The ID of a `oneuptime_escalation_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_escalation_rule"),
             },
             "on_call_policy_execution_repeat_count": schema.NumberAttribute{
                 MarkdownDescription: "How many times did we execute this on-call policy?",
@@ -189,6 +198,7 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "User ID who triggered this on-call policy. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "triggered_by_workflow_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the workflow whose step started this page, when a workflow did.",

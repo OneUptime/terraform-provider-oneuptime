@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_slo_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Configure rules for automatically attaching labels to SLOs when matching SLOs are created
 ---

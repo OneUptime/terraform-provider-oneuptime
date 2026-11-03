@@ -50,7 +50,7 @@ data "oneuptime_incident_video_call" "by_id" {
 
 ### Read-Only
 
-- `call_summary` (String) What OneUptime AI read in the transcript: the root cause the call points at (a suggestion, or that the call did not discuss it enough), what was found, tried, decided and left to do, and open questions - each with the transcript lines it rests on. A JSON value: write it with `jsonencode()`.
+- `call_summary` (String) What OneUptime AI read in the transcript: the root cause the call points at (a suggestion, or that the call did not discuss it enough), what was found, tried, decided and left to do, and open questions - each with the transcript lines it rests on. A JSON value: read it with `jsondecode()`.
 - `call_summary_updated_at` (String) When the Call Summary Status last changed: when OneUptime AI started reading the transcript, or finished.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
@@ -58,5 +58,5 @@ data "oneuptime_incident_video_call" "by_id" {
 - `transcript_added_at` (String) When the transcript was added to the call.
 - `transcript_fetch_checked_at` (String) When OneUptime last asked the provider for the call's transcript.
 - `transcript_fetch_next_attempt_at` (String) When OneUptime next asks the provider for the call's transcript, while the Transcript Fetch Status is Waiting.
-- `transcript_info` (String) How long the transcript is - remarks, speakers, characters and how many seconds it spans - and the name of the file it was added from, so the call can be described without reading the transcript. A JSON value: write it with `jsonencode()`.
+- `transcript_info` (String) How long the transcript is - remarks, speakers, characters and how many seconds it spans - and the name of the file it was added from, so the call can be described without reading the transcript. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

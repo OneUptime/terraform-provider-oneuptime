@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_device Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Network Devices (routers, switches, firewalls) that are being monitored in this project via SNMP polling and traps.
 ---
@@ -14,7 +14,7 @@ Network Devices (routers, switches, firewalls) that are being monitored in this 
 ```terraform
 resource "oneuptime_network_device" "example" {
   name        = "Example network device"
-  hostname    = "Example short text"
+  hostname    = "10.0.0.1"
   description = "Managed by Terraform"
 }
 ```
@@ -48,7 +48,7 @@ resource "oneuptime_network_device" "example" {
 - `is_polling_enabled` (Boolean) Whether the assigned probe polls this device on a schedule. Disable to pause SNMP polling without deleting the device. Defaults to `true`.
 - `is_reachable` (Boolean) Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe.
 - `is_snmp_reachable` (Boolean) Whether the most recent SNMP walk of this device succeeded. Separate from isReachable, which is the ping verdict: a device that answers ping but not SNMP is Up with a failing SNMP walk, which almost always means wrong credentials or SNMP disabled on the device. NULL means no walk was attempted — the device has no usable SNMP credentials (it is pinged only) or has never been polled. Managed by the probe.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_polled_at` (String) When the assigned probe last ATTEMPTED an SNMP walk of this device, whether or not the device answered. Paired with lastSeenAt (which only moves on a successful walk) this is what separates "the device did not answer" from "we have not asked recently". Managed by the probe.
 - `last_rebooted_at` (String) Device boot time computed from sysUpTime on each walk. Managed by the probe.
 - `last_seen_at` (String) When SNMP data was last received from this device.
@@ -65,16 +65,16 @@ resource "oneuptime_network_device" "example" {
 - `probe_id` (String) ID of the Probe that polls this network device. The ID of a `oneuptime_probe`.
 - `serial_number` (String) Chassis serial number from ENTITY-MIB (entPhysicalSerialNum). Managed by the probe.
 - `site_id` (String) ID of the Network Site this network device belongs to. The ID of a `oneuptime_network_site`.
-- `snmp_community_string` (String) Community string used for SNMP v1/v2c polling.
+- `snmp_community_string` (String, Sensitive) Community string used for SNMP v1/v2c polling.
 - `snmp_credential_profile_id` (String) ID of the SNMP Credential Profile this device is walked with. The ID of a `oneuptime_snmp_credential_profile`.
 - `snmp_oids` (String) SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead. A JSON value: write it with `jsonencode()`.
 - `snmp_port` (Number) UDP port used for SNMP polling.
 - `snmp_table_snapshot` (String) The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe. A JSON value: write it with `jsonencode()`.
 - `snmp_tables` (String) SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device. A JSON value: write it with `jsonencode()`.
-- `snmp_v3_auth` (String) Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. A JSON value: write it with `jsonencode()`.
-- `snmp_v3_auth_key` (String) SNMP v3 authentication passphrase.
+- `snmp_v3_auth` (String, Sensitive) Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. A JSON value: write it with `jsonencode()`.
+- `snmp_v3_auth_key` (String, Sensitive) SNMP v3 authentication passphrase.
 - `snmp_v3_auth_protocol` (String) SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512.
-- `snmp_v3_priv_key` (String) SNMP v3 privacy (encryption) passphrase.
+- `snmp_v3_priv_key` (String, Sensitive) SNMP v3 privacy (encryption) passphrase.
 - `snmp_v3_priv_protocol` (String) SNMP v3 privacy (encryption) protocol: DES, AES, or AES256.
 - `snmp_v3_security_level` (String) SNMP v3 security level: noAuthNoPriv, authNoPriv, or authPriv.
 - `snmp_v3_username` (String) Security name (username) used for SNMP v3 polling.
@@ -96,7 +96,7 @@ resource "oneuptime_network_device" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `last_walk_log` (String) The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server. A JSON value: write it with `jsonencode()`.
+- `last_walk_log` (String) The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `refresh_requested_at` (String) When someone last asked for this device to be read again now (Refresh). Its probe reads it within a minute. Managed by the server.
 - `slug` (String) Friendly globally unique name for your object.

@@ -28,6 +28,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncomingCallPolicyResource{}
 var _ resource.ResourceWithImportState = &IncomingCallPolicyResource{}
+var _ resource.ResourceWithModifyPlan = &IncomingCallPolicyResource{}
 
 func NewIncomingCallPolicyResource() resource.Resource {
     return &IncomingCallPolicyResource{}
@@ -150,17 +151,19 @@ func (r *IncomingCallPolicyResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "project_call_sms_config_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply.",
@@ -186,6 +189,9 @@ func (r *IncomingCallPolicyResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "routing_phone_number": schema.StringAttribute{
                 MarkdownDescription: "The phone number for incoming calls to this policy.",
@@ -218,6 +224,17 @@ func (r *IncomingCallPolicyResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncomingCallPolicyResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncomingCallPolicyResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -936,6 +953,7 @@ func (r *IncomingCallPolicyResource) Create(ctx context.Context, req resource.Cr
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

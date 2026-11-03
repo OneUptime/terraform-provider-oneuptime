@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_cloud_resource_feed Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Cloud"
 description: |-
   Log of everything that happened to this cloud resource - creation, updates, owner changes and the rules that made them.
 ---
@@ -15,7 +15,7 @@ Log of everything that happened to this cloud resource - creation, updates, owne
 resource "oneuptime_cloud_resource_feed" "example" {
   cloud_resource_id              = oneuptime_cloud_resource.example.id
   feed_info_in_markdown          = "# Heading\n\nThis is **markdown** content"
-  cloud_resource_feed_event_type = "Example short text"
+  cloud_resource_feed_event_type = "CloudResourceCreated"
   display_color                  = "#ff0000"
 }
 ```
@@ -24,7 +24,7 @@ resource "oneuptime_cloud_resource_feed" "example" {
 
 ### Required
 
-- `cloud_resource_feed_event_type` (String) Cloud Resource Feed Event.
+- `cloud_resource_feed_event_type` (String) Cloud Resource Feed Event. Allowed values: `CloudResourceCreated`, `CloudResourceUpdated`, `CloudResourceArchived`, `CloudResourceRestored`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `OwnerRuleExecuted`, `LabelRuleExecuted`, `AppDeployed`, `AppRolledBack`.
 - `cloud_resource_id` (String) Relation to Cloud Resource ID in which this resource belongs. The ID of a `oneuptime_cloud_resource`.
 - `display_color` (String) Display color for this feed item.
 - `feed_info_in_markdown` (String) Log of the cloud resource change in Markdown.
@@ -33,7 +33,8 @@ resource "oneuptime_cloud_resource_feed" "example" {
 
 - `more_information_in_markdown` (String) More information in Markdown.
 - `posted_at` (String) Date and time when the feed was posted.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

@@ -26,6 +26,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &DataSecuritySettingResource{}
 var _ resource.ResourceWithImportState = &DataSecuritySettingResource{}
+var _ resource.ResourceWithModifyPlan = &DataSecuritySettingResource{}
 
 func NewDataSecuritySettingResource() resource.Resource {
     return &DataSecuritySettingResource{}
@@ -152,6 +153,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "declare_incidents_for_critical_issues": schema.BoolAttribute{
                 MarkdownDescription: "Declare an incident, which runs your incident process, when a Critical issue opens.",
@@ -169,6 +171,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "notify_owners": schema.BoolAttribute{
                 MarkdownDescription: "Tell a store's owners when an issue opens on it.",
@@ -185,6 +188,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(2000)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -194,6 +198,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(65536)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -203,6 +208,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(52428800)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -212,6 +218,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1000)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -221,6 +228,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(200)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -230,6 +238,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(500)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -239,6 +248,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(24)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -248,6 +258,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -260,6 +271,7 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -288,6 +300,17 @@ func (r *DataSecuritySettingResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *DataSecuritySettingResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *DataSecuritySettingResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -759,6 +782,9 @@ func (r *DataSecuritySettingResource) Create(ctx context.Context, req resource.C
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1108,6 +1134,12 @@ func (r *DataSecuritySettingResource) Update(ctx context.Context, req resource.U
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "allowed_values": !data.AllowedValues.Equal(state.AllowedValues),
+        "disabled_data_type_ids": !data.DisabledDataTypeIds.Equal(state.DisabledDataTypeIds),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config DataSecuritySettingResourceModel
@@ -1522,6 +1554,9 @@ func (r *DataSecuritySettingResource) Update(ctx context.Context, req resource.U
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1558,6 +1593,9 @@ func (r *DataSecuritySettingResource) Delete(ctx context.Context, req resource.D
 
 func (r *DataSecuritySettingResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"allowed_values", "disabled_data_type_ids"})...)
 }
 
 

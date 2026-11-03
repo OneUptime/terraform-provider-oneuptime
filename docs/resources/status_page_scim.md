@@ -24,7 +24,7 @@ resource "oneuptime_status_page_scim" "example" {
 
 ### Required
 
-- `bearer_token` (String) Bearer token for SCIM authentication. Keep this secure.
+- `bearer_token` (String, Sensitive) Bearer token for SCIM authentication. Keep this secure.
 - `name` (String) Any friendly name for this SCIM configuration.
 - `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
 

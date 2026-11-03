@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_device_owner_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Configure rules for automatically assigning owner users and teams when matching network devices are created
 ---
@@ -34,7 +34,8 @@ resource "oneuptime_network_device_owner_rule" "example" {
 - `network_device_name_pattern` (String) Regex or * wildcard pattern (case-insensitive) matched against the network device name. Leave empty to match any name.
 - `notify_owners` (Boolean) Send notifications to owner users and teams when they are added by this rule. Defaults to `true`.
 - `owner_teams` (Set of String) Teams to add as owners on the network device when this rule matches. IDs of `oneuptime_team` resources.
-- `owner_users` (Set of String) Users to add as owners on the network device when this rule matches. IDs of `oneuptime_user` records.
+- `owner_user_emails` (Set of String) The email addresses of the people in `owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `owner_users` (Set of String) Users to add as owners on the network device when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.
 
 ### Read-Only
 

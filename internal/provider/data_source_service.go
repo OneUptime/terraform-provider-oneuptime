@@ -105,6 +105,7 @@ func (d *ServiceDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this service archived? Archived services are hidden from lists but keep collecting telemetry.",
@@ -119,9 +120,10 @@ func (d *ServiceDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -135,7 +137,7 @@ func (d *ServiceDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "tech_stack": schema.StringAttribute{
-                MarkdownDescription: "Tech stack used in the service. This will help other developers understand the service better. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Tech stack used in the service. This will help other developers understand the service better. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
@@ -149,11 +151,11 @@ func (d *ServiceDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "metric_downsampling_retention_days": schema.StringAttribute{
-                MarkdownDescription: "Per-tier retention override (raw, 1m, 5m, 1h, 1d) in days. Null fields inherit the project default. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-tier retention override (raw, 1m, 5m, 1h, 1d) in days. Null fields inherit the project default. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this service (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the service default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-pillar retention overrides for this service (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the service default, then the project's retention settings. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{

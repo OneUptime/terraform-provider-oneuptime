@@ -71,7 +71,7 @@ func (d *StatusPageMonitorRuleDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -82,6 +82,7 @@ func (d *StatusPageMonitorRuleDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "ID of the status page this rule adds matching monitors to. The ID of a `oneuptime_status_page`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Name of this status page monitor rule.",
@@ -117,6 +118,7 @@ func (d *StatusPageMonitorRuleDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "ID of the group that matched monitors are added to. Empty means ungrouped. The ID of a `oneuptime_status_page_group`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page_group"),
             },
             "show_current_status": schema.BoolAttribute{
                 MarkdownDescription: "Show current status like offline, operational or degraded on the resources this rule adds.",
@@ -142,6 +144,7 @@ func (d *StatusPageMonitorRuleDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_table_view Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Organization"
 description: |-
   Table View is view settings for a table in a project. It contains columns, filters, and other settings.
 ---
@@ -37,10 +37,10 @@ data "oneuptime_table_view" "by_id" {
 
 ### Read-Only
 
-- `columns` (String) Which columns are shown, and in what order, for this table view. A JSON value: write it with `jsonencode()`.
+- `columns` (String) Which columns are shown, and in what order, for this table view. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
-- `facets` (String) Facet selections (owner, labels, status, etc.) for this table view. A JSON value: write it with `jsonencode()`.
+- `facets` (String) Facet selections (owner, labels, status, etc.) for this table view. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `query` (String) Filters for this table view. A JSON value: write it with `jsonencode()`.
-- `sort` (String) Sort for this table view. A JSON value: write it with `jsonencode()`.
+- `query` (String) Filters for this table view. A JSON value: read it with `jsondecode()`.
+- `sort` (String) Sort for this table view. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

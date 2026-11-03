@@ -86,6 +86,7 @@ func (d *LlmLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 MarkdownDescription: "ID of LLM Provider used for this API call. The ID of a `oneuptime_llm_provider`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_llm_provider"),
             },
             "llm_provider_name": schema.StringAttribute{
                 MarkdownDescription: "Name of the LLM Provider at time of call.",
@@ -166,11 +167,13 @@ func (d *LlmLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 MarkdownDescription: "ID of Incident associated with this LLM call (if any). The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of Alert associated with this LLM call (if any). The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "ai_run_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the AI run this LLM call was part of (if any).",
@@ -181,11 +184,13 @@ func (d *LlmLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 MarkdownDescription: "ID of Scheduled Maintenance associated with this LLM call (if any). The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),
             },
             "user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of User who triggered this LLM call (if any). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "request_started_at": schema.StringAttribute{
                 MarkdownDescription: "When the LLM request started.",

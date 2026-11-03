@@ -98,15 +98,15 @@ func (d *FormDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "fields": schema.StringAttribute{
-                MarkdownDescription: "The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text, isRequired and isHidden (not shown on the public form unless the template a submission starts from asks it, and otherwise answered only from the template a submission started from; never required, and never a field the target cannot be created without). isRequired and isHidden are the form's default: each template can make a question Required, Optional or Hidden (its fieldSettings). A new form starts with a title, a description and the submitter's name and email. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text, isRequired and isHidden (not shown on the public form unless the template a submission starts from asks it, and otherwise answered only from the template a submission started from; never required, and never a field the target cannot be created without). isRequired and isHidden are the form's default: each template can make a question Required, Optional or Hidden (its fieldSettings). A new form starts with a title, a description and the submitter's name and email. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "templates": schema.StringAttribute{
-                MarkdownDescription: "Named sets of answers a submission can start from, in the order the form lists them. Each has an id, a name (unique within the form), isDefault (the form opens with it; at most one template), answers: an object keyed by question id, each answer as a submission sends it - text, a number, true or false, an option's value, or a list of values for a multi-select - and fieldSettings: an object keyed by question id that makes a question Required, Optional or Hidden when a submission starts from the template; a question it does not list is asked as the form asks it, and a question the form cannot create its record without is always asked and required. The public form lists the templates above its questions and fills in a template's answers when one is chosen, or when its link names one (?template=<id>). A question the submission was not asked - hidden by the form or by the template - is answered only from the template a submission started from. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Named sets of answers a submission can start from, in the order the form lists them. Each has an id, a name (unique within the form), isDefault (the form opens with it; at most one template), answers: an object keyed by question id, each answer as a submission sends it - text, a number, true or false, an option's value, or a list of values for a multi-select - and fieldSettings: an object keyed by question id that makes a question Required, Optional or Hidden when a submission starts from the template; a question it does not list is asked as the form asks it, and a question the form cannot create its record without is always asked and required. The public form lists the templates above its questions and fills in a template's answers when one is chosen, or when its link names one (?template=<id>). A question the submission was not asked - hidden by the form or by the template - is answered only from the template a submission started from. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "target_settings": schema.StringAttribute{
-                MarkdownDescription: "What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For scheduled maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For scheduled maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "success_message": schema.StringAttribute{
@@ -123,6 +123,7 @@ func (d *FormDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "ID of the file the form's public page shows as its logo: upload the image to /api/file first. Leave it empty to show the OneUptime logo. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "logo_alt_text": schema.StringAttribute{
                 MarkdownDescription: "What the logo says, read out by screen readers: usually your organization's name. Leave it empty and screen readers skip the logo.",
@@ -133,11 +134,13 @@ func (d *FormDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "ID of the file the form's public page shows as the browser tab's icon: upload the image to /api/file first. Leave it empty to show the OneUptime favicon. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

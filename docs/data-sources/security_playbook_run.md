@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_playbook_run Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   One run of a security playbook on a case: the steps it took, what each did, and who approved the steps that asked.
 ---
@@ -46,6 +46,6 @@ data "oneuptime_security_playbook_run" "by_id" {
 - `playbook_name` (String) The playbook's name when the run started, kept if the playbook is renamed or deleted.
 - `project_id` (String) ID of the project this run belongs to. The ID of a `oneuptime_project`.
 - `started_at` (String) When the run started its first step.
-- `step_results` (String) What each step did: its status, when it started and finished, what it reported, and who decided on its approval. A JSON value: write it with `jsonencode()`.
-- `steps` (String) The playbook's steps as they were when the run started. A JSON value: write it with `jsonencode()`.
+- `step_results` (String) What each step did: its status, when it started and finished, what it reported, and who decided on its approval. A JSON value: read it with `jsondecode()`.
+- `steps` (String) The playbook's steps as they were when the run started. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageHistoryChartBarColorResource{}
 var _ resource.ResourceWithImportState = &StatusPageHistoryChartBarColorResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageHistoryChartBarColorResource{}
 
 func NewStatusPageHistoryChartBarColorResource() resource.Resource {
     return &StatusPageHistoryChartBarColorResource{}
@@ -79,10 +80,14 @@ func (r *StatusPageHistoryChartBarColorResource) schemaDefinition() schema.Schem
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "uptime_percent_greater_than_or_equal_to": schema.NumberAttribute{
                 MarkdownDescription: "Uptime percent, from 0 to 100, that a day must reach for this rule to color its bar (99.65 for example).",
                 Required: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "bar_color": schema.StringAttribute{
                 MarkdownDescription: "Color of the bar chart when this rule matches (#32a852 for example).",
@@ -97,6 +102,7 @@ func (r *StatusPageHistoryChartBarColorResource) schemaDefinition() schema.Schem
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -122,6 +128,17 @@ func (r *StatusPageHistoryChartBarColorResource) schemaDefinition() schema.Schem
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageHistoryChartBarColorResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageHistoryChartBarColorResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -429,6 +446,7 @@ func (r *StatusPageHistoryChartBarColorResource) Create(ctx context.Context, req
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

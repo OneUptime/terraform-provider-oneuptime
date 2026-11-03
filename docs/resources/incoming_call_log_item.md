@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_incoming_call_log_item Resource - oneuptime"
-subcategory: "Other"
+subcategory: "On-Call & Escalation"
 description: |-
   Child log for each escalation attempt / user ring within a call.
 ---
@@ -15,7 +15,7 @@ Child log for each escalation attempt / user ring within a call.
 resource "oneuptime_incoming_call_log_item" "example" {
   incoming_call_log_id    = data.oneuptime_incoming_call_log.example.id
   incoming_call_policy_id = oneuptime_incoming_call_policy.example.id
-  status                  = "Example short text"
+  status                  = "Initiated"
 }
 ```
 
@@ -25,7 +25,7 @@ resource "oneuptime_incoming_call_log_item" "example" {
 
 - `incoming_call_log_id` (String) ID of the parent Incoming Call Log. The ID of a `oneuptime_incoming_call_log` (see the data source).
 - `incoming_call_policy_id` (String) ID of the incoming call policy whose number took the call this attempt is part of. The ID of a `oneuptime_incoming_call_policy`.
-- `status` (String) Status of this dial attempt.
+- `status` (String) Status of this dial attempt. Allowed values: `Initiated`, `Ringing`, `Connected`, `Escalated`, `NoAnswer`, `Failed`, `Completed`, `CallerHungUp`, `Busy`.
 
 ### Optional
 
@@ -36,7 +36,8 @@ resource "oneuptime_incoming_call_log_item" "example" {
 - `is_answered` (Boolean) Whether this user answered the call. Defaults to `false`.
 - `started_at` (String) When dial started.
 - `status_message` (String) Additional status information.
-- `user_id` (String) User ID who was called. The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User ID who was called. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 - `user_phone_number` (String) Phone number that was dialed.
 
 ### Read-Only

@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &QueueTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &QueueTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &QueueTeamOwnerResource{}
 
 func NewQueueTeamOwnerResource() resource.Resource {
     return &QueueTeamOwnerResource{}
@@ -71,18 +72,20 @@ func (r *QueueTeamOwnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the queue. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "message_queue_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Queue in which this object belongs. The ID of a `oneuptime_queue`.",
+                MarkdownDescription: "ID of the queue the team owns. The ID of a `oneuptime_queue`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_queue"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -110,6 +113,17 @@ func (r *QueueTeamOwnerResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *QueueTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *QueueTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -400,6 +414,7 @@ func (r *QueueTeamOwnerResource) Create(ctx context.Context, req resource.Create
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -884,7 +899,22 @@ func (r *QueueTeamOwnerResource) Delete(ctx context.Context, req resource.Delete
 
 
 func (r *QueueTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <message_queue_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/message-queue-owner-team/get-list",
+        parentField:     "messageQueueId",
+        parentAttribute: "message_queue_id",
+        parentNoun:      "queue",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 

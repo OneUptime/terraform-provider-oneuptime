@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &DataStoreTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &DataStoreTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &DataStoreTeamOwnerResource{}
 
 func NewDataStoreTeamOwnerResource() resource.Resource {
     return &DataStoreTeamOwnerResource{}
@@ -71,18 +72,20 @@ func (r *DataStoreTeamOwnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the data store. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "data_store_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Data Store in which this object belongs. The ID of a `oneuptime_data_store`.",
+                MarkdownDescription: "ID of the data store the team owns. The ID of a `oneuptime_data_store`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_data_store"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -110,6 +113,17 @@ func (r *DataStoreTeamOwnerResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *DataStoreTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *DataStoreTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -400,6 +414,7 @@ func (r *DataStoreTeamOwnerResource) Create(ctx context.Context, req resource.Cr
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -884,7 +899,22 @@ func (r *DataStoreTeamOwnerResource) Delete(ctx context.Context, req resource.De
 
 
 func (r *DataStoreTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <data_store_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/data-store-owner-team/get-list",
+        parentField:     "dataStoreId",
+        parentAttribute: "data_store_id",
+        parentNoun:      "data store",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_log_pipeline Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Configure server-side log processing pipelines that transform logs at ingest time.
 ---

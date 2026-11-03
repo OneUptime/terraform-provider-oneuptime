@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ai_agent Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   Manages custom AI agents. Deploy AI agents anywhere and connect them to your project for automated incident management.
 ---
@@ -30,19 +30,19 @@ data "oneuptime_ai_agent" "by_id" {
 
 - `connection_status` (String) Connection Status of the AI Agent.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
-- `description` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]
+- `description` (String) Friendly description that will help you remember.
 - `icon_file_id` (String) AI Agent Icon File ID. The ID of a `oneuptime_file`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_default` (Boolean) Is this the default AI Agent for the project? When set, this agent will be used for automated tasks.
-- `key` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]
-- `name` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]
+- `name` (String) Any friendly name of this object.
 - `slug` (String) Friendly globally unique name for your object.
 
 ### Read-Only
 
-- `ai_agent_version` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]
+- `ai_agent_version` (String) A version label for the AI agent. Leave it out and it is 1.0.0.
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
-- `last_alive` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [No access - you don't have permission for this operation]
-- `project_id` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [No access - you don't have permission for this operation]
+- `key` (String, Sensitive) The secret the AI agent connects with, its AI_AGENT_KEY. Leave it out and OneUptime generates one.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_alive` (String) When the AI agent last checked in. Set by OneUptime.
+- `project_id` (String) ID of the project the AI agent belongs to. A global AI agent belongs to none.
 - `updated_at` (String) Date and Time when the object was updated.

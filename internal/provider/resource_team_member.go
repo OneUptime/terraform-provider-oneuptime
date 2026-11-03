@@ -14,15 +14,14 @@ import (
     "encoding/json"
     "net/url"
     "strings"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &TeamMemberResource{}
 var _ resource.ResourceWithImportState = &TeamMemberResource{}
+var _ resource.ResourceWithModifyPlan = &TeamMemberResource{}
 
 func NewTeamMemberResource() resource.Resource {
     return &TeamMemberResource{}
@@ -39,10 +38,11 @@ type TeamMemberResourceModel struct {
     TeamId types.String `tfsdk:"team_id"`
     ProjectId types.String `tfsdk:"project_id"`
     UserId types.String `tfsdk:"user_id"`
-    HasAcceptedInvitation types.Bool `tfsdk:"has_accepted_invitation"`
-    InvitationAcceptedAt RFC3339Value `tfsdk:"invitation_accepted_at"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    HasAcceptedInvitation types.Bool `tfsdk:"has_accepted_invitation"`
+    InvitationAcceptedAt RFC3339Value `tfsdk:"invitation_accepted_at"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *TeamMemberResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -55,7 +55,7 @@ func (r *TeamMemberResource) Schema(ctx context.Context, req resource.SchemaRequ
 
 func (r *TeamMemberResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "This model connects users and teams",
+        MarkdownDescription: "Add users to your teams.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -66,13 +66,12 @@ func (r *TeamMemberResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of Team this user belongs to. The ID of a `oneuptime_team`.",
-                Optional: true,
-                Computed: true,
+                MarkdownDescription: "ID of the team the person is in. The ID of a `oneuptime_team`.",
+                Required: true,
                 PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
@@ -82,29 +81,10 @@ func (r *TeamMemberResource) schemaDefinition() schema.Schema {
                 },
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of User who belongs to this team. The ID of a `oneuptime_user` (see the data source).",
-                Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
-            },
-            "has_accepted_invitation": schema.BoolAttribute{
-                MarkdownDescription: "Has this team member accepted invitation.",
+                MarkdownDescription: "ID of the person in the team. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "invitation_accepted_at": schema.StringAttribute{
-                MarkdownDescription: "When did this team member accept invitation.",
-                CustomType: RFC3339Type{},
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDValidators("user_email", true),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -119,8 +99,43 @@ func (r *TeamMemberResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "has_accepted_invitation": schema.BoolAttribute{
+                MarkdownDescription: "Whether the person has joined: false while their invitation waits, true once they accept it. Someone in the project already joins at once.",
+                Computed: true,
+            },
+            "invitation_accepted_at": schema.StringAttribute{
+                MarkdownDescription: "When the person accepted their invitation.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID. Someone who is not in the project yet is invited to it, as the dashboard's Invite does: OneUptime emails them, and they join when they accept. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this team member names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *TeamMemberResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  true,
+        replaces: true,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *TeamMemberResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -178,11 +193,12 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
     if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
         requestDataMap["userId"] = data.UserId.ValueString()
     }
-    if !data.HasAcceptedInvitation.IsNull() && !data.HasAcceptedInvitation.IsUnknown() {
-        requestDataMap["hasAcceptedInvitation"] = data.HasAcceptedInvitation.ValueBool()
-    }
-    if !data.InvitationAcceptedAt.IsNull() && !data.InvitationAcceptedAt.IsUnknown() {
-        requestDataMap["invitationAcceptedAt"] = data.InvitationAcceptedAt.ValueString()
+    // Named by email address: invited by it (see people.go).
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        delete(teamMemberRequest["data"].(map[string]interface{}), "userId")
+        teamMemberRequest["miscDataProps"] = map[string]interface{}{
+            "email": data.UserEmail.ValueString(),
+        }
     }
 
     // Make API call
@@ -195,7 +211,7 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
     var teamMemberResponse map[string]interface{}
     err = r.client.ParseResponse(httpResp, &teamMemberResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create team_member: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create team_member: %s%s", err, alreadyInvitedHint(err, "oneuptime_team_member", "team_id")))
         return
     }
 
@@ -213,6 +229,19 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := teamMemberResponse
+        if wrapper, ok := teamMemberResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -232,10 +261,10 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
         "teamId": true,
         "projectId": true,
         "userId": true,
-        "hasAcceptedInvitation": true,
-        "invitationAcceptedAt": true,
         "createdAt": true,
         "updatedAt": true,
+        "hasAcceptedInvitation": true,
+        "invitationAcceptedAt": true,
         "_id": true,
     }
 
@@ -353,20 +382,6 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.UserId = types.StringNull()
     }
-    if val, ok := dataMap["hasAcceptedInvitation"].(bool); ok {
-        data.HasAcceptedInvitation = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["invitationAcceptedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.InvitationAcceptedAt = NewRFC3339Value(val)
-        } else {
-            data.InvitationAcceptedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["invitationAcceptedAt"].(string); ok && val != "" {
-        data.InvitationAcceptedAt = NewRFC3339Value(val)
-    } else {
-        data.InvitationAcceptedAt = NewRFC3339Null()
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -389,6 +404,20 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["hasAcceptedInvitation"].(bool); ok {
+        data.HasAcceptedInvitation = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["invitationAcceptedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.InvitationAcceptedAt = NewRFC3339Value(val)
+        } else {
+            data.InvitationAcceptedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["invitationAcceptedAt"].(string); ok && val != "" {
+        data.InvitationAcceptedAt = NewRFC3339Value(val)
+    } else {
+        data.InvitationAcceptedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -399,9 +428,12 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -422,12 +454,16 @@ func (r *TeamMemberResource) Read(ctx context.Context, req resource.ReadRequest,
         "teamId": true,
         "projectId": true,
         "userId": true,
-        "hasAcceptedInvitation": true,
-        "invitationAcceptedAt": true,
         "createdAt": true,
         "updatedAt": true,
+        "hasAcceptedInvitation": true,
+        "invitationAcceptedAt": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/team-member/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -544,20 +580,6 @@ func (r *TeamMemberResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.UserId = types.StringNull()
     }
-    if val, ok := dataMap["hasAcceptedInvitation"].(bool); ok {
-        data.HasAcceptedInvitation = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["invitationAcceptedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.InvitationAcceptedAt = NewRFC3339Value(val)
-        } else {
-            data.InvitationAcceptedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["invitationAcceptedAt"].(string); ok && val != "" {
-        data.InvitationAcceptedAt = NewRFC3339Value(val)
-    } else {
-        data.InvitationAcceptedAt = NewRFC3339Null()
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -580,11 +602,27 @@ func (r *TeamMemberResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["hasAcceptedInvitation"].(bool); ok {
+        data.HasAcceptedInvitation = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["invitationAcceptedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.InvitationAcceptedAt = NewRFC3339Value(val)
+        } else {
+            data.InvitationAcceptedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["invitationAcceptedAt"].(string); ok && val != "" {
+        data.InvitationAcceptedAt = NewRFC3339Value(val)
+    } else {
+        data.InvitationAcceptedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -617,18 +655,16 @@ func (r *TeamMemberResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     plan := data
 
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
+
     // Create API request body
     teamMemberRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := teamMemberRequest["data"].(map[string]interface{})
 
-    if !data.HasAcceptedInvitation.IsUnknown() && !state.HasAcceptedInvitation.IsUnknown() && !data.HasAcceptedInvitation.Equal(state.HasAcceptedInvitation) {
-        requestDataMap["hasAcceptedInvitation"] = data.HasAcceptedInvitation.ValueBool()
-    }
-    if !data.InvitationAcceptedAt.IsUnknown() && !state.InvitationAcceptedAt.IsUnknown() && !data.InvitationAcceptedAt.Equal(state.InvitationAcceptedAt) {
-        requestDataMap["invitationAcceptedAt"] = data.InvitationAcceptedAt.ValueString()
-    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -655,10 +691,10 @@ func (r *TeamMemberResource) Update(ctx context.Context, req resource.UpdateRequ
         "teamId": true,
         "projectId": true,
         "userId": true,
-        "hasAcceptedInvitation": true,
-        "invitationAcceptedAt": true,
         "createdAt": true,
         "updatedAt": true,
+        "hasAcceptedInvitation": true,
+        "invitationAcceptedAt": true,
         "_id": true,
     }
 
@@ -771,20 +807,6 @@ func (r *TeamMemberResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.UserId = types.StringNull()
     }
-    if val, ok := dataMap["hasAcceptedInvitation"].(bool); ok {
-        data.HasAcceptedInvitation = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["invitationAcceptedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.InvitationAcceptedAt = NewRFC3339Value(val)
-        } else {
-            data.InvitationAcceptedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["invitationAcceptedAt"].(string); ok && val != "" {
-        data.InvitationAcceptedAt = NewRFC3339Value(val)
-    } else {
-        data.InvitationAcceptedAt = NewRFC3339Null()
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -807,6 +829,20 @@ func (r *TeamMemberResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["hasAcceptedInvitation"].(bool); ok {
+        data.HasAcceptedInvitation = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["invitationAcceptedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.InvitationAcceptedAt = NewRFC3339Value(val)
+        } else {
+            data.InvitationAcceptedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["invitationAcceptedAt"].(string); ok && val != "" {
+        data.InvitationAcceptedAt = NewRFC3339Value(val)
+    } else {
+        data.InvitationAcceptedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -816,6 +852,8 @@ func (r *TeamMemberResource) Update(ctx context.Context, req resource.UpdateRequ
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -852,7 +890,25 @@ func (r *TeamMemberResource) Delete(ctx context.Context, req resource.DeleteRequ
 
 
 func (r *TeamMemberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <team_id>/<email address or user id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/team-member/get-list",
+        parentField:     "teamId",
+        parentAttribute: "team_id",
+        parentNoun:      "team",
+        personField:     "userId",
+        personAttribute: "user_id",
+        byEmail:         true,
+        kind:            "member",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    // The address it was imported by, as written: the refresh keeps it.
+    if email != "" {
+        resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("user_email"), email)...)
+    }
 }
 
 
@@ -864,14 +920,11 @@ func (r *TeamMemberResource) ImportState(ctx context.Context, req resource.Impor
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
 func (r *TeamMemberResource) keepPlannedValues(data *TeamMemberResourceModel, plan *TeamMemberResourceModel, config *TeamMemberResourceModel) {
-    if config.TeamId.IsNull() && !plan.TeamId.IsUnknown() {
-        data.TeamId = plan.TeamId
+    if config.UserId.IsNull() && !plan.UserId.IsUnknown() {
+        data.UserId = plan.UserId
     }
-    if config.HasAcceptedInvitation.IsNull() && !plan.HasAcceptedInvitation.IsUnknown() {
-        data.HasAcceptedInvitation = plan.HasAcceptedInvitation
-    }
-    if config.InvitationAcceptedAt.IsNull() && !plan.InvitationAcceptedAt.IsUnknown() {
-        data.InvitationAcceptedAt = plan.InvitationAcceptedAt
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 

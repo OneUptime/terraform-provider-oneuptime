@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_iot_fleet Resource - oneuptime"
-subcategory: "Other"
+subcategory: "IoT"
 description: |-
   IoT device fleets that are being monitored in this project. Each fleet is auto-discovered when an IoT device or gateway sends metrics with the iot.fleet.name OTel resource attribute, or can be manually registered.
 ---
@@ -39,7 +39,7 @@ resource "oneuptime_iot_fleet" "example" {
 - `description` (String) Friendly description for this IoT fleet.
 - `device_count` (Number) Cached count of devices in this fleet.
 - `is_archived` (Boolean) Is this IoT fleet archived? Archived IoT fleets are hidden from lists but keep collecting telemetry. Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When metrics were last received from this fleet.
 - `online_device_count` (Number) Cached count of devices currently online (iot_device_up == 1) in this fleet. Rendered as 'Devices X/Y online' next to deviceCount.
 - `otel_collector_status` (String) Connection status of the OTel Collector agent (connected or disconnected).

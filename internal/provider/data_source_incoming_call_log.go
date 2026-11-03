@@ -77,6 +77,7 @@ func (d *IncomingCallLogDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the Incoming Call Policy. The ID of a `oneuptime_incoming_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incoming_call_policy"),
             },
             "caller_phone_number": schema.StringAttribute{
                 MarkdownDescription: "Incoming caller's phone number.",
@@ -133,6 +134,7 @@ func (d *IncomingCallLogDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "User ID who answered the call. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "current_escalation_rule_order": schema.NumberAttribute{
                 MarkdownDescription: "The current escalation rule order being processed.",

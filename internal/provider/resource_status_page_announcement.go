@@ -26,6 +26,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageAnnouncementResource{}
 var _ resource.ResourceWithImportState = &StatusPageAnnouncementResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageAnnouncementResource{}
 
 func NewStatusPageAnnouncementResource() resource.Resource {
     return &StatusPageAnnouncementResource{}
@@ -93,6 +94,7 @@ func (r *StatusPageAnnouncementResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_status_page"),
             },
             "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors affected by this announcement. If none are selected, all subscribers will be notified. IDs of `oneuptime_monitor` resources.",
@@ -102,6 +104,7 @@ func (r *StatusPageAnnouncementResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "Title of this resource.",
@@ -111,6 +114,9 @@ func (r *StatusPageAnnouncementResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "When should this announcement be shown?",
                 CustomType: RFC3339Type{},
                 Required: true,
+                PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
+                },
             },
             "end_announcement_at": schema.StringAttribute{
                 MarkdownDescription: "When should this announcement hidden?",
@@ -118,6 +124,7 @@ func (r *StatusPageAnnouncementResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -133,6 +140,7 @@ func (r *StatusPageAnnouncementResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_file"),
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
                 MarkdownDescription: "Should subscribers be notified about this announcement?",
@@ -165,6 +173,7 @@ func (r *StatusPageAnnouncementResource) schemaDefinition() schema.Schema {
                 },
             },
             "subscriber_notification_status": schema.StringAttribute{
+                MarkdownDescription: "Whether the status page's subscribers were told about the announcement: Pending until they are, then Success or Failed. Set by OneUptime.",
                 Computed: true,
             },
             "subscriber_notification_status_message": schema.StringAttribute{
@@ -185,6 +194,17 @@ func (r *StatusPageAnnouncementResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageAnnouncementResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageAnnouncementResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -783,6 +803,7 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_rum_application_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Add teams as owners to your RUM applications.
 ---
@@ -22,8 +22,8 @@ resource "oneuptime_rum_application_team_owner" "example" {
 
 ### Required
 
-- `rum_application_id` (String) ID of your OneUptime RUM Application in which this object belongs. The ID of a `oneuptime_rum_application`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `rum_application_id` (String) ID of the RUM application the team owns. The ID of a `oneuptime_rum_application`.
+- `team_id` (String) ID of the team that owns the RUM application. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_rum_application_team_owner" "example" {
 
 ## Import
 
-Import an existing rum application team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing rum application team owner by its rum application and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_rum_application_team_owner.example
-  id = "<id>"
+  id = "<rum_application_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_rum_application_team_owner.example <id>
+terraform import oneuptime_rum_application_team_owner.example <rum_application_id>/<team_id>
 ```
+
+Its own ID works too.

@@ -25,6 +25,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkAlertPolicyResource{}
 var _ resource.ResourceWithImportState = &NetworkAlertPolicyResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkAlertPolicyResource{}
 
 func NewNetworkAlertPolicyResource() resource.Resource {
     return &NetworkAlertPolicyResource{}
@@ -104,6 +105,7 @@ func (r *NetworkAlertPolicyResource) schemaDefinition() schema.Schema {
             "monitor_template_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Device monitor template every matching device gets a monitor cloned from. Null only after the template was deleted, which disables the policy. The ID of a `oneuptime_monitor_template`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_monitor_template"),
             },
             "scope": schema.StringAttribute{
                 MarkdownDescription: "Which devices this policy covers: site ids, device role ids and label ids. A device must match every kind that is listed (AND) and any id within a kind (OR); a kind left empty matches every device. Empty altogether means every device in the project. A JSON value: write it with `jsonencode()`.",
@@ -112,6 +114,7 @@ func (r *NetworkAlertPolicyResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: stringdefault.StaticString("[object Object]"),
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -158,6 +161,17 @@ func (r *NetworkAlertPolicyResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkAlertPolicyResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkAlertPolicyResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -609,6 +623,9 @@ func (r *NetworkAlertPolicyResource) Create(ctx context.Context, req resource.Cr
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -980,6 +997,11 @@ func (r *NetworkAlertPolicyResource) Update(ctx context.Context, req resource.Up
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "scope": !data.Scope.Equal(state.Scope),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config NetworkAlertPolicyResourceModel
@@ -1369,6 +1391,9 @@ func (r *NetworkAlertPolicyResource) Update(ctx context.Context, req resource.Up
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1405,6 +1430,9 @@ func (r *NetworkAlertPolicyResource) Delete(ctx context.Context, req resource.De
 
 func (r *NetworkAlertPolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"scope"})...)
 }
 
 

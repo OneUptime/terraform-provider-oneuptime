@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_store_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Rules for automatically attaching labels to data stores when matching resources are created.
 ---

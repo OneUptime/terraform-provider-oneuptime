@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ceph_cluster Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Ceph clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime Ceph Agent sends metrics, or can be manually registered.
 ---
@@ -28,7 +28,7 @@ resource "oneuptime_ceph_cluster" "example" {
 
 - `agent_version` (String) Version of the OneUptime Ceph agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute.
 - `ai_command_allowlist` (String) Optional JSON array of command patterns that Automatic mode may run on this Ceph cluster without approval even though they are riskier changes. Each pattern is one command line for this Ceph cluster's agent (ceph) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this Ceph cluster is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the Ceph cluster can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.
-- `ai_remediation_mode` (String) Disabled: AI never proposes or runs a change on this Ceph cluster. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the Ceph cluster's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the Ceph cluster can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule. Defaults to `Disabled`.
+- `ai_remediation_mode` (String) Disabled: AI never proposes or runs a change on this Ceph cluster. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the Ceph cluster's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the Ceph cluster can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule. Allowed values: `Disabled`, `RequireApproval`, `Automatic`, `BypassApproval`. Defaults to `Disabled`.
 - `capacity_used_percent` (Number) Cached cluster capacity usage percent (ceph_cluster_total_used_bytes / ceph_cluster_total_bytes * 100). Stored as decimal so sub-percent precision survives the round trip. Null until both series appear in one metric batch.
 - `ceph_version` (String) Ceph version reported by this cluster.
 - `description` (String) Friendly description for this Ceph cluster.
@@ -36,7 +36,7 @@ resource "oneuptime_ceph_cluster" "example" {
 - `health_status` (Number) Cached latest ceph_health_status value: 0 = HEALTH_OK, 1 = HEALTH_WARN, 2 = HEALTH_ERR. Rendered as the OK/WARN/ERR health pill. Null until the first metric batch arrives.
 - `is_ai_investigation_enabled` (Boolean) When on, OneUptime AI runs read-only commands (ceph health, status, osd tree, df) on this Ceph cluster, through its Ceph AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the Ceph cluster can turn it on or off. Defaults to `true`.
 - `is_archived` (Boolean) Is this Ceph cluster archived? Archived Ceph clusters are hidden from lists but keep collecting telemetry. Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When metrics were last received from this cluster.
 - `mon_count` (Number) Cached count of Ceph monitors (mons) in this cluster.
 - `osd_count` (Number) Cached count of OSDs in this cluster.

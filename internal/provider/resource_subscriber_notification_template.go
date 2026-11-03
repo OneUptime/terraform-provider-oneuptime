@@ -16,11 +16,14 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SubscriberNotificationTemplateResource{}
 var _ resource.ResourceWithImportState = &SubscriberNotificationTemplateResource{}
+var _ resource.ResourceWithModifyPlan = &SubscriberNotificationTemplateResource{}
 
 func NewSubscriberNotificationTemplateResource() resource.Resource {
     return &SubscriberNotificationTemplateResource{}
@@ -35,8 +38,12 @@ type SubscriberNotificationTemplateResource struct {
 type SubscriberNotificationTemplateResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
-    StatusPageId types.String `tfsdk:"status_page_id"`
-    StatusPageSubscriberNotificationTemplateId types.String `tfsdk:"status_page_subscriber_notification_template_id"`
+    TemplateName types.String `tfsdk:"template_name"`
+    TemplateDescription types.String `tfsdk:"template_description"`
+    EventType types.String `tfsdk:"event_type"`
+    NotificationMethod types.String `tfsdk:"notification_method"`
+    EmailSubject types.String `tfsdk:"email_subject"`
+    TemplateBody types.String `tfsdk:"template_body"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -52,7 +59,7 @@ func (r *SubscriberNotificationTemplateResource) Schema(ctx context.Context, req
 
 func (r *SubscriberNotificationTemplateResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Links subscriber notification templates to specific status pages. This allows you to use different notification templates for different status pages.",
+        MarkdownDescription: "Manage custom notification templates for status page subscribers. These templates can be used to customize the notifications sent to subscribers via Email, SMS, Slack, Microsoft Teams, and Webhooks.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -69,15 +76,42 @@ func (r *SubscriberNotificationTemplateResource) schemaDefinition() schema.Schem
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the Status Page this template is linked to. The ID of a `oneuptime_status_page`.",
+            "template_name": schema.StringAttribute{
+                MarkdownDescription: "A friendly name for this notification template.",
                 Required: true,
+            },
+            "template_description": schema.StringAttribute{
+                MarkdownDescription: "A description for this notification template.",
+                Optional: true,
+                Computed: true,
                 PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "status_page_subscriber_notification_template_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the notification template linked to this status page. The ID of a `oneuptime_subscriber_notification_template`.",
+            "event_type": schema.StringAttribute{
+                MarkdownDescription: "The type of event this template is for (e.g., Incident Created, Announcement Created).",
+                Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Subscriber Subscription Confirmation", "Subscriber Subscribed", "Subscriber Manage Subscription", "Subscriber Incident Created", "Subscriber Incident State Changed", "Subscriber Incident Note Created", "Subscriber Incident Note Updated", "Subscriber Incident Postmortem Published", "Subscriber Episode Created", "Subscriber Episode State Changed", "Subscriber Episode Note Created", "Subscriber Episode Note Updated", "Subscriber Announcement Created", "Subscriber Announcement Updated", "Subscriber Scheduled Maintenance Created", "Subscriber Scheduled Maintenance State Changed", "Subscriber Scheduled Maintenance Note Created", "Subscriber Scheduled Maintenance Note Updated", "Subscriber Report"),
+                },
+            },
+            "notification_method": schema.StringAttribute{
+                MarkdownDescription: "The notification method this template is for (Email, SMS, Slack, Microsoft Teams, Webhook).",
+                Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Email", "SMS", "Slack", "Microsoft Teams", "Webhook"),
+                },
+            },
+            "email_subject": schema.StringAttribute{
+                MarkdownDescription: "The subject line for email notifications. Only used for Email notification method.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "template_body": schema.StringAttribute{
+                MarkdownDescription: "The template body content. For Email: HTML template. For SMS: Plain text. For Slack/Teams: Markdown.",
                 Required: true,
             },
             "created_at": schema.StringAttribute{
@@ -102,6 +136,17 @@ func (r *SubscriberNotificationTemplateResource) schemaDefinition() schema.Schem
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SubscriberNotificationTemplateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SubscriberNotificationTemplateResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -135,6 +180,14 @@ func (r *SubscriberNotificationTemplateResource) Create(ctx context.Context, req
         return
     }
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config SubscriberNotificationTemplateResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -145,15 +198,27 @@ func (r *SubscriberNotificationTemplateResource) Create(ctx context.Context, req
     }
     requestDataMap := subscriberNotificationTemplateRequest["data"].(map[string]interface{})
 
-    if !data.StatusPageId.IsNull() && !data.StatusPageId.IsUnknown() {
-        requestDataMap["statusPageId"] = data.StatusPageId.ValueString()
+    if !data.TemplateName.IsNull() && !data.TemplateName.IsUnknown() {
+        requestDataMap["templateName"] = data.TemplateName.ValueString()
     }
-    if !data.StatusPageSubscriberNotificationTemplateId.IsNull() && !data.StatusPageSubscriberNotificationTemplateId.IsUnknown() {
-        requestDataMap["statusPageSubscriberNotificationTemplateId"] = data.StatusPageSubscriberNotificationTemplateId.ValueString()
+    if !data.TemplateDescription.IsNull() && !data.TemplateDescription.IsUnknown() {
+        requestDataMap["templateDescription"] = data.TemplateDescription.ValueString()
+    }
+    if !data.EventType.IsNull() && !data.EventType.IsUnknown() {
+        requestDataMap["eventType"] = data.EventType.ValueString()
+    }
+    if !data.NotificationMethod.IsNull() && !data.NotificationMethod.IsUnknown() {
+        requestDataMap["notificationMethod"] = data.NotificationMethod.ValueString()
+    }
+    if !data.EmailSubject.IsNull() && !data.EmailSubject.IsUnknown() {
+        requestDataMap["emailSubject"] = data.EmailSubject.ValueString()
+    }
+    if !data.TemplateBody.IsNull() && !data.TemplateBody.IsUnknown() {
+        requestDataMap["templateBody"] = data.TemplateBody.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/status-page-subscriber-notification-template-status-page", subscriberNotificationTemplateRequest)
+    httpResp, err := r.client.Post(ctx, "/status-page-subscriber-notification-template", subscriberNotificationTemplateRequest)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create subscriber_notification_template, got error: %s", err))
         return
@@ -197,15 +262,19 @@ func (r *SubscriberNotificationTemplateResource) Create(ctx context.Context, req
     // Re-read the resource so state reflects server-normalized values.
     selectParam := map[string]interface{}{
         "projectId": true,
-        "statusPageId": true,
-        "statusPageSubscriberNotificationTemplateId": true,
+        "templateName": true,
+        "templateDescription": true,
+        "eventType": true,
+        "notificationMethod": true,
+        "emailSubject": true,
+        "templateBody": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/status-page-subscriber-notification-template/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
@@ -245,79 +314,227 @@ func (r *SubscriberNotificationTemplateResource) Create(ctx context.Context, req
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["statusPageId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["templateName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StatusPageId = types.StringValue(val)
+            data.TemplateName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StatusPageId = types.StringValue(val)
+            data.TemplateName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.StatusPageId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TemplateName = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StatusPageId = types.StringValue(string(jsonBytes))
+                data.TemplateName = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TemplateName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StatusPageId = types.StringValue(string(jsonBytes))
+                data.TemplateName = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TemplateName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.StatusPageId = types.StringValue(string(jsonBytes))
+            data.TemplateName = types.StringValue(string(jsonBytes))
         } else {
-            data.StatusPageId = types.StringNull()
+            data.TemplateName = types.StringNull()
         }
-    } else if val, ok := dataMap["statusPageId"].(string); ok {
-        data.StatusPageId = types.StringValue(val)
+    } else if val, ok := dataMap["templateName"].(string); ok {
+        data.TemplateName = types.StringValue(val)
     } else {
-        data.StatusPageId = types.StringNull()
+        data.TemplateName = types.StringNull()
     }
-    if obj, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["templateDescription"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+            data.TemplateDescription = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+            data.TemplateDescription = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+                data.TemplateDescription = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+                data.TemplateDescription = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+            data.TemplateDescription = types.StringValue(string(jsonBytes))
         } else {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+            data.TemplateDescription = types.StringNull()
         }
-    } else if val, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(string); ok {
-        data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+    } else if val, ok := dataMap["templateDescription"].(string); ok {
+        data.TemplateDescription = types.StringValue(val)
     } else {
-        data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+        data.TemplateDescription = types.StringNull()
+    }
+    if obj, ok := dataMap["eventType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EventType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EventType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EventType = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EventType = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EventType = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventType = types.StringNull()
+        }
+    } else if val, ok := dataMap["eventType"].(string); ok {
+        data.EventType = types.StringValue(val)
+    } else {
+        data.EventType = types.StringNull()
+    }
+    if obj, ok := dataMap["notificationMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NotificationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NotificationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NotificationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NotificationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NotificationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotificationMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["notificationMethod"].(string); ok {
+        data.NotificationMethod = types.StringValue(val)
+    } else {
+        data.NotificationMethod = types.StringNull()
+    }
+    if obj, ok := dataMap["emailSubject"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EmailSubject = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EmailSubject = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EmailSubject = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EmailSubject = types.StringValue(string(jsonBytes))
+            } else {
+                data.EmailSubject = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EmailSubject = types.StringValue(string(jsonBytes))
+            } else {
+                data.EmailSubject = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EmailSubject = types.StringValue(string(jsonBytes))
+        } else {
+            data.EmailSubject = types.StringNull()
+        }
+    } else if val, ok := dataMap["emailSubject"].(string); ok {
+        data.EmailSubject = types.StringValue(val)
+    } else {
+        data.EmailSubject = types.StringNull()
+    }
+    if obj, ok := dataMap["templateBody"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TemplateBody = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TemplateBody = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TemplateBody = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TemplateBody = types.StringValue(string(jsonBytes))
+            } else {
+                data.TemplateBody = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TemplateBody = types.StringValue(string(jsonBytes))
+            } else {
+                data.TemplateBody = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TemplateBody = types.StringValue(string(jsonBytes))
+        } else {
+            data.TemplateBody = types.StringNull()
+        }
+    } else if val, ok := dataMap["templateBody"].(string); ok {
+        data.TemplateBody = types.StringValue(val)
+    } else {
+        data.TemplateBody = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -386,8 +603,12 @@ func (r *SubscriberNotificationTemplateResource) Create(ctx context.Context, req
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -406,8 +627,12 @@ func (r *SubscriberNotificationTemplateResource) Read(ctx context.Context, req r
     // Create select parameter to get full object
     selectParam := map[string]interface{}{
         "projectId": true,
-        "statusPageId": true,
-        "statusPageSubscriberNotificationTemplateId": true,
+        "templateName": true,
+        "templateDescription": true,
+        "eventType": true,
+        "notificationMethod": true,
+        "emailSubject": true,
+        "templateBody": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -415,7 +640,7 @@ func (r *SubscriberNotificationTemplateResource) Read(ctx context.Context, req r
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/status-page-subscriber-notification-template/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read subscriber_notification_template, got error: %s", err))
         return
@@ -455,79 +680,227 @@ func (r *SubscriberNotificationTemplateResource) Read(ctx context.Context, req r
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["statusPageId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["templateName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StatusPageId = types.StringValue(val)
+            data.TemplateName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StatusPageId = types.StringValue(val)
+            data.TemplateName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.StatusPageId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TemplateName = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StatusPageId = types.StringValue(string(jsonBytes))
+                data.TemplateName = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TemplateName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StatusPageId = types.StringValue(string(jsonBytes))
+                data.TemplateName = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TemplateName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.StatusPageId = types.StringValue(string(jsonBytes))
+            data.TemplateName = types.StringValue(string(jsonBytes))
         } else {
-            data.StatusPageId = types.StringNull()
+            data.TemplateName = types.StringNull()
         }
-    } else if val, ok := dataMap["statusPageId"].(string); ok {
-        data.StatusPageId = types.StringValue(val)
+    } else if val, ok := dataMap["templateName"].(string); ok {
+        data.TemplateName = types.StringValue(val)
     } else {
-        data.StatusPageId = types.StringNull()
+        data.TemplateName = types.StringNull()
     }
-    if obj, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["templateDescription"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+            data.TemplateDescription = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+            data.TemplateDescription = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+                data.TemplateDescription = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+                data.TemplateDescription = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+            data.TemplateDescription = types.StringValue(string(jsonBytes))
         } else {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+            data.TemplateDescription = types.StringNull()
         }
-    } else if val, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(string); ok {
-        data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+    } else if val, ok := dataMap["templateDescription"].(string); ok {
+        data.TemplateDescription = types.StringValue(val)
     } else {
-        data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+        data.TemplateDescription = types.StringNull()
+    }
+    if obj, ok := dataMap["eventType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EventType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EventType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EventType = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EventType = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EventType = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventType = types.StringNull()
+        }
+    } else if val, ok := dataMap["eventType"].(string); ok {
+        data.EventType = types.StringValue(val)
+    } else {
+        data.EventType = types.StringNull()
+    }
+    if obj, ok := dataMap["notificationMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NotificationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NotificationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NotificationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NotificationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NotificationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotificationMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["notificationMethod"].(string); ok {
+        data.NotificationMethod = types.StringValue(val)
+    } else {
+        data.NotificationMethod = types.StringNull()
+    }
+    if obj, ok := dataMap["emailSubject"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EmailSubject = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EmailSubject = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EmailSubject = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EmailSubject = types.StringValue(string(jsonBytes))
+            } else {
+                data.EmailSubject = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EmailSubject = types.StringValue(string(jsonBytes))
+            } else {
+                data.EmailSubject = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EmailSubject = types.StringValue(string(jsonBytes))
+        } else {
+            data.EmailSubject = types.StringNull()
+        }
+    } else if val, ok := dataMap["emailSubject"].(string); ok {
+        data.EmailSubject = types.StringValue(val)
+    } else {
+        data.EmailSubject = types.StringNull()
+    }
+    if obj, ok := dataMap["templateBody"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TemplateBody = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TemplateBody = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TemplateBody = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TemplateBody = types.StringValue(string(jsonBytes))
+            } else {
+                data.TemplateBody = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TemplateBody = types.StringValue(string(jsonBytes))
+            } else {
+                data.TemplateBody = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TemplateBody = types.StringValue(string(jsonBytes))
+        } else {
+            data.TemplateBody = types.StringNull()
+        }
+    } else if val, ok := dataMap["templateBody"].(string); ok {
+        data.TemplateBody = types.StringValue(val)
+    } else {
+        data.TemplateBody = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -617,21 +990,44 @@ func (r *SubscriberNotificationTemplateResource) Update(ctx context.Context, req
     // Use the ID from the current state
     data.Id = state.Id
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config SubscriberNotificationTemplateResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
     // Create API request body
     subscriberNotificationTemplateRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
     requestDataMap := subscriberNotificationTemplateRequest["data"].(map[string]interface{})
 
-    if !data.StatusPageSubscriberNotificationTemplateId.IsUnknown() && !state.StatusPageSubscriberNotificationTemplateId.IsUnknown() && !data.StatusPageSubscriberNotificationTemplateId.Equal(state.StatusPageSubscriberNotificationTemplateId) {
-        requestDataMap["statusPageSubscriberNotificationTemplateId"] = data.StatusPageSubscriberNotificationTemplateId.ValueString()
+    if !data.TemplateName.IsUnknown() && !state.TemplateName.IsUnknown() && !data.TemplateName.Equal(state.TemplateName) {
+        requestDataMap["templateName"] = data.TemplateName.ValueString()
+    }
+    if !data.TemplateDescription.IsUnknown() && !state.TemplateDescription.IsUnknown() && !data.TemplateDescription.Equal(state.TemplateDescription) {
+        requestDataMap["templateDescription"] = data.TemplateDescription.ValueString()
+    }
+    if !data.EventType.IsUnknown() && !state.EventType.IsUnknown() && !data.EventType.Equal(state.EventType) {
+        requestDataMap["eventType"] = data.EventType.ValueString()
+    }
+    if !data.NotificationMethod.IsUnknown() && !state.NotificationMethod.IsUnknown() && !data.NotificationMethod.Equal(state.NotificationMethod) {
+        requestDataMap["notificationMethod"] = data.NotificationMethod.ValueString()
+    }
+    if !data.EmailSubject.IsUnknown() && !state.EmailSubject.IsUnknown() && !data.EmailSubject.Equal(state.EmailSubject) {
+        requestDataMap["emailSubject"] = data.EmailSubject.ValueString()
+    }
+    if !data.TemplateBody.IsUnknown() && !state.TemplateBody.IsUnknown() && !data.TemplateBody.Equal(state.TemplateBody) {
+        requestDataMap["templateBody"] = data.TemplateBody.ValueString()
     }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
     if len(subscriberNotificationTemplateRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "", subscriberNotificationTemplateRequest)
+        httpResp, err := r.client.Put(ctx, "/status-page-subscriber-notification-template/" + data.Id.ValueString() + "", subscriberNotificationTemplateRequest)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update subscriber_notification_template, got error: %s", err))
             return
@@ -650,15 +1046,19 @@ func (r *SubscriberNotificationTemplateResource) Update(ctx context.Context, req
     // After successful update, fetch the current state by calling Read with select parameter
     selectParam := map[string]interface{}{
         "projectId": true,
-        "statusPageId": true,
-        "statusPageSubscriberNotificationTemplateId": true,
+        "templateName": true,
+        "templateDescription": true,
+        "eventType": true,
+        "notificationMethod": true,
+        "emailSubject": true,
+        "templateBody": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/status-page-subscriber-notification-template/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read subscriber_notification_template after update, got error: %s", err))
         return
@@ -693,79 +1093,227 @@ func (r *SubscriberNotificationTemplateResource) Update(ctx context.Context, req
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["statusPageId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["templateName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StatusPageId = types.StringValue(val)
+            data.TemplateName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StatusPageId = types.StringValue(val)
+            data.TemplateName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.StatusPageId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TemplateName = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StatusPageId = types.StringValue(string(jsonBytes))
+                data.TemplateName = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TemplateName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StatusPageId = types.StringValue(string(jsonBytes))
+                data.TemplateName = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TemplateName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.StatusPageId = types.StringValue(string(jsonBytes))
+            data.TemplateName = types.StringValue(string(jsonBytes))
         } else {
-            data.StatusPageId = types.StringNull()
+            data.TemplateName = types.StringNull()
         }
-    } else if val, ok := dataMap["statusPageId"].(string); ok {
-        data.StatusPageId = types.StringValue(val)
+    } else if val, ok := dataMap["templateName"].(string); ok {
+        data.TemplateName = types.StringValue(val)
     } else {
-        data.StatusPageId = types.StringNull()
+        data.TemplateName = types.StringNull()
     }
-    if obj, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["templateDescription"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+            data.TemplateDescription = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+            data.TemplateDescription = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+                data.TemplateDescription = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+                data.TemplateDescription = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+            data.TemplateDescription = types.StringValue(string(jsonBytes))
         } else {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+            data.TemplateDescription = types.StringNull()
         }
-    } else if val, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(string); ok {
-        data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+    } else if val, ok := dataMap["templateDescription"].(string); ok {
+        data.TemplateDescription = types.StringValue(val)
     } else {
-        data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+        data.TemplateDescription = types.StringNull()
+    }
+    if obj, ok := dataMap["eventType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EventType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EventType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EventType = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EventType = types.StringValue(string(jsonBytes))
+            } else {
+                data.EventType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EventType = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventType = types.StringNull()
+        }
+    } else if val, ok := dataMap["eventType"].(string); ok {
+        data.EventType = types.StringValue(val)
+    } else {
+        data.EventType = types.StringNull()
+    }
+    if obj, ok := dataMap["notificationMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NotificationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NotificationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NotificationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NotificationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NotificationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotificationMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["notificationMethod"].(string); ok {
+        data.NotificationMethod = types.StringValue(val)
+    } else {
+        data.NotificationMethod = types.StringNull()
+    }
+    if obj, ok := dataMap["emailSubject"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EmailSubject = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EmailSubject = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EmailSubject = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EmailSubject = types.StringValue(string(jsonBytes))
+            } else {
+                data.EmailSubject = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EmailSubject = types.StringValue(string(jsonBytes))
+            } else {
+                data.EmailSubject = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EmailSubject = types.StringValue(string(jsonBytes))
+        } else {
+            data.EmailSubject = types.StringNull()
+        }
+    } else if val, ok := dataMap["emailSubject"].(string); ok {
+        data.EmailSubject = types.StringValue(val)
+    } else {
+        data.EmailSubject = types.StringNull()
+    }
+    if obj, ok := dataMap["templateBody"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TemplateBody = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TemplateBody = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TemplateBody = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TemplateBody = types.StringValue(string(jsonBytes))
+            } else {
+                data.TemplateBody = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TemplateBody = types.StringValue(string(jsonBytes))
+            } else {
+                data.TemplateBody = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TemplateBody = types.StringValue(string(jsonBytes))
+        } else {
+            data.TemplateBody = types.StringNull()
+        }
+    } else if val, ok := dataMap["templateBody"].(string); ok {
+        data.TemplateBody = types.StringValue(val)
+    } else {
+        data.TemplateBody = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -833,6 +1381,9 @@ func (r *SubscriberNotificationTemplateResource) Update(ctx context.Context, req
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -848,7 +1399,7 @@ func (r *SubscriberNotificationTemplateResource) Delete(ctx context.Context, req
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/status-page-subscriber-notification-template/" + data.Id.ValueString() + "")
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete subscriber_notification_template, got error: %s", err))
         return
@@ -871,6 +1422,22 @@ func (r *SubscriberNotificationTemplateResource) ImportState(ctx context.Context
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *SubscriberNotificationTemplateResource) keepPlannedValues(data *SubscriberNotificationTemplateResourceModel, plan *SubscriberNotificationTemplateResourceModel, config *SubscriberNotificationTemplateResourceModel) {
+    if config.TemplateDescription.IsNull() && !plan.TemplateDescription.IsUnknown() {
+        data.TemplateDescription = plan.TemplateDescription
+    }
+    if config.EmailSubject.IsNull() && !plan.EmailSubject.IsUnknown() {
+        data.EmailSubject = plan.EmailSubject
+    }
+}
 
 // Helper method to convert Terraform map to Go interface{}
 func (r *SubscriberNotificationTemplateResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {

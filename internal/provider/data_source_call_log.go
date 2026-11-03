@@ -84,7 +84,7 @@ func (d *CallLogDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "call_data": schema.StringAttribute{
-                MarkdownDescription: "Content of the data that was sent in the call. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Content of the data that was sent in the call. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
@@ -106,56 +106,67 @@ func (d *CallLogDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "ID of Incident associated with this Call (if any). The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of User who initiated this Call (if any). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of Alert associated with this Call (if any). The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "ID of Monitor associated with this Call (if any). The ID of a `oneuptime_monitor`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "scheduled_maintenance_id": schema.StringAttribute{
                 MarkdownDescription: "ID of Scheduled Maintenance associated with this Call (if any). The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),
             },
             "status_page_id": schema.StringAttribute{
                 MarkdownDescription: "ID of Status Page associated with this Call (if any). The ID of a `oneuptime_status_page`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "status_page_announcement_id": schema.StringAttribute{
                 MarkdownDescription: "ID of Status Page Announcement associated with this Call (if any). The ID of a `oneuptime_status_page_announcement`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page_announcement"),
             },
             "on_call_duty_policy_id": schema.StringAttribute{
                 MarkdownDescription: "ID of On-Call Duty Policy associated with this Call (if any). The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of On-Call Duty Policy Escalation Rule associated with this Call (if any). The ID of a `oneuptime_escalation_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_escalation_rule"),
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of On-Call Duty Policy Schedule associated with this Call (if any). The ID of a `oneuptime_on_call_policy_schedule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
             "team_id": schema.StringAttribute{
                 MarkdownDescription: "ID of Team associated with this Call (if any). The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
         },
     }

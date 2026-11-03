@@ -22,8 +22,8 @@ resource "oneuptime_incident_team_owner" "example" {
 
 ### Required
 
-- `incident_id` (String) ID of your OneUptime Incident in which this object belongs. The ID of a `oneuptime_incident`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `incident_id` (String) ID of the incident the team owns. The ID of a `oneuptime_incident`.
+- `team_id` (String) ID of the team that owns the incident. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_incident_team_owner" "example" {
 
 ## Import
 
-Import an existing incident team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing incident team owner by its incident and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_incident_team_owner.example
-  id = "<id>"
+  id = "<incident_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_incident_team_owner.example <id>
+terraform import oneuptime_incident_team_owner.example <incident_id>/<team_id>
 ```
+
+Its own ID works too.

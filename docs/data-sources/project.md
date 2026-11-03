@@ -106,13 +106,13 @@ data "oneuptime_project" "by_id" {
 - `payment_provider_metered_subscription_id` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]
 - `payment_provider_metered_subscription_status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]
 - `payment_provider_plan_id` (String) Permissions - Create: [Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [Project Owner, Manage Billing]
-- `payment_provider_promo_code` (String) Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]
+- `payment_provider_promo_code` (String) The promotion code the project's subscription was started with.
 - `payment_provider_subscription_id` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]
 - `payment_provider_subscription_seats` (Number) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]
 - `payment_provider_subscription_status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]
 - `plan_name` (String) Name of the plan this project is subscribed to.
 - `record_and_transcribe_incident_calls` (Boolean) When enabled, OneUptime asks Zoom, Google Meet and Microsoft Teams to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default.
-- `require_sso_for_login` (Boolean) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]
+- `require_sso_for_login` (Boolean) When on, the project's members sign in to it with the project's SSO only.
 - `require_sso_with_sso_provider_id` (String) If set, SSO-enforced login for this project is only satisfied by an SSO token issued by this specific provider id (a Project SSO/OIDC or a Global SSO/OIDC). When null, any trusted SSO provider satisfies enforcement.
 - `reseller_id` (String) ID of your OneUptime Reseller in which this object belongs.
 - `reseller_plan_id` (String) ID of your OneUptime Reseller Plan in which this object belongs.
@@ -130,7 +130,7 @@ data "oneuptime_project" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `default_metric_downsampling_retention_days` (String) Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days. A JSON value: write it with `jsonencode()`.
-- `telemetry_retention_config` (String) Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set. A JSON value: write it with `jsonencode()`.
+- `default_metric_downsampling_retention_days` (String) Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days. A JSON value: read it with `jsondecode()`.
+- `telemetry_retention_config` (String) Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set. A JSON value: read it with `jsondecode()`.
 - `trial_ends_at` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]
 - `updated_at` (String) Date and Time when the object was updated.

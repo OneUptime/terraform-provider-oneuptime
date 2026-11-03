@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_runbook_execution Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Runbooks & Runners"
 description: |-
   A single run of a Runbook.
 ---
@@ -43,9 +43,9 @@ data "oneuptime_runbook_execution" "by_id" {
 
 - `completed_at` (String) Time at which this runbook execution completed.
 - `created_at` (String) Date and Time when the object was created.
-- `inputs` (String) The values this run was started with: the JSON body of the webhook call that started it. Steps read them as data - Bash as ONEUPTIME_INPUT_<NAME> environment variables, JavaScript as args.inputs - never as script text. A JSON value: write it with `jsonencode()`.
+- `inputs` (String) The values this run was started with: the JSON body of the webhook call that started it. Steps read them as data - Bash as ONEUPTIME_INPUT_<NAME> environment variables, JavaScript as args.inputs - never as script text. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `started_at` (String) Time at which this runbook execution started.
-- `step_executions` (String) Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps. A JSON value: write it with `jsonencode()`.
-- `trigger_details` (String) More about what started this run: for a scheduled run, the time it was due (scheduledFor) and whether it made up for times OneUptime missed (isCatchUp) or waited for the run before it (waitedForPreviousRun); for a webhook call, the address it came from (callerIp). A JSON value: write it with `jsonencode()`.
+- `step_executions` (String) Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps. A JSON value: read it with `jsondecode()`.
+- `trigger_details` (String) More about what started this run: for a scheduled run, the time it was due (scheduledFor) and whether it made up for times OneUptime missed (isCatchUp) or waited for the run before it (waitedForPreviousRun); for a webhook call, the address it came from (callerIp). A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

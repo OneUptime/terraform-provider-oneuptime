@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_device_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Configure rules for automatically attaching labels to network devices when matching network devices are created
 ---

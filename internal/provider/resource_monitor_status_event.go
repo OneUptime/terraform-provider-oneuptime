@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &MonitorStatusEventResource{}
 var _ resource.ResourceWithImportState = &MonitorStatusEventResource{}
+var _ resource.ResourceWithModifyPlan = &MonitorStatusEventResource{}
 
 func NewMonitorStatusEventResource() resource.Resource {
     return &MonitorStatusEventResource{}
@@ -80,10 +81,12 @@ func (r *MonitorStatusEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "monitor_status_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor Status ID Resource in which this object belongs. The ID of a `oneuptime_monitor_status`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "root_cause": schema.StringAttribute{
                 MarkdownDescription: "What is the root cause of this status change?",
@@ -100,6 +103,7 @@ func (r *MonitorStatusEventResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -110,6 +114,7 @@ func (r *MonitorStatusEventResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -139,12 +144,23 @@ func (r *MonitorStatusEventResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "status_change_log": schema.StringAttribute{
-                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *MonitorStatusEventResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *MonitorStatusEventResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -555,6 +571,7 @@ func (r *MonitorStatusEventResource) Create(ctx context.Context, req resource.Cr
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

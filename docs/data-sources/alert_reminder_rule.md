@@ -41,7 +41,7 @@ data "oneuptime_alert_reminder_rule" "by_id" {
 
 - `alert_severities` (Set of String) Only apply this reminder rule to alerts with these severities. Leave empty to match alerts of any severity. IDs of `oneuptime_alert_severity` resources.
 - `created_at` (String) Date and Time when the object was created.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
 - `labels` (Set of String) Only apply this reminder rule to alerts with these labels. Leave empty to match alerts with any labels. IDs of `oneuptime_label` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

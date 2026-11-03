@@ -18,11 +18,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkSiteResource{}
 var _ resource.ResourceWithImportState = &NetworkSiteResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkSiteResource{}
 
 func NewNetworkSiteResource() resource.Resource {
     return &NetworkSiteResource{}
@@ -116,6 +119,7 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_network_site_type"),
             },
             "probe_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the probe that polls devices in this site by default. The ID of a `oneuptime_probe`.",
@@ -124,6 +128,7 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "snmp_credential_profile_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the SNMP Credential Profile devices in this site inherit. The ID of a `oneuptime_snmp_credential_profile`.",
@@ -132,6 +137,7 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_snmp_credential_profile"),
             },
             "parent_site_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the parent Network Site this site is nested under (empty for root sites). The ID of a `oneuptime_network_site`.",
@@ -140,6 +146,7 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "address": schema.StringAttribute{
                 MarkdownDescription: "Street address of this site, shown on map views.",
@@ -154,6 +161,7 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -162,6 +170,7 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -172,12 +181,16 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("WorstStatus", "PercentThreshold"),
+                },
             },
             "offline_threshold_percent": schema.NumberAttribute{
                 MarkdownDescription: "With the PercentThreshold rollup policy: the share of reporting devices beneath this site that must be non-operational before the site itself is marked offline. Below it (but above zero) the site is degraded.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -196,6 +209,7 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "materialized_path": schema.StringAttribute{
                 MarkdownDescription: "Slash-separated ancestor IDs of this site (e.g. '/rootId/childId/'). Managed by the server on parent changes; used for subtree queries and rollups.",
@@ -210,6 +224,7 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -220,6 +235,7 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "last_rollup_at": schema.StringAttribute{
                 MarkdownDescription: "When the health rollup for this site was last computed.",
@@ -227,6 +243,7 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -246,6 +263,9 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "current_active_alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the currently open site-unhealthy alert, if any. Managed by the rollup engine.",
@@ -260,6 +280,17 @@ func (r *NetworkSiteResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkSiteResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkSiteResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1075,6 +1106,7 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

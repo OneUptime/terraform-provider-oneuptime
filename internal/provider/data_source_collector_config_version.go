@@ -68,6 +68,7 @@ func (d *CollectorConfigVersionDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "ID of the Collector Config this is a version of. The ID of a `oneuptime_collector_config`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_collector_config"),
             },
             "version_number": schema.NumberAttribute{
                 MarkdownDescription: "The version's number: 1 for the config as created, then one more for every saved change.",
@@ -93,6 +94,7 @@ func (d *CollectorConfigVersionDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "ID of the user who saved this version. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

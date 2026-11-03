@@ -65,16 +65,19 @@ func (d *TeamCustomRoleDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the team given the role. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "custom_role_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the custom role given to the team. The ID of a `oneuptime_custom_role`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_custom_role"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

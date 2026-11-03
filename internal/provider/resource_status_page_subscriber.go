@@ -27,6 +27,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageSubscriberResource{}
 var _ resource.ResourceWithImportState = &StatusPageSubscriberResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageSubscriberResource{}
 
 func NewStatusPageSubscriberResource() resource.Resource {
     return &StatusPageSubscriberResource{}
@@ -99,6 +100,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "subscriber_email": schema.StringAttribute{
                 MarkdownDescription: "Email address of the subscriber.",
@@ -128,6 +130,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Webhook to ping when events happen on Status Page.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -135,6 +138,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
             "slack_incoming_webhook_url": schema.StringAttribute{
                 MarkdownDescription: "Slack incoming webhook URL to send notifications to Slack channel.",
                 Optional: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -150,6 +154,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
             "microsoft_teams_incoming_webhook_url": schema.StringAttribute{
                 MarkdownDescription: "Microsoft Teams incoming webhook URL to send notifications to Teams channel.",
                 Optional: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -182,6 +187,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
             "subscription_confirmation_token": schema.StringAttribute{
                 MarkdownDescription: "Token used to confirm subscription. This is a random token that is sent to the subscriber's email address to confirm their subscription.",
                 Optional: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -231,6 +237,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_status_page_resource"),
             },
             "status_page_event_types": schema.StringAttribute{
                 MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: write it with `jsonencode()`.",
@@ -238,6 +245,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -283,6 +291,17 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageSubscriberResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageSubscriberResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -964,6 +983,9 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1526,6 +1548,11 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "status_page_event_types": !data.StatusPageEventTypes.Equal(state.StatusPageEventTypes),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config StatusPageSubscriberResourceModel
@@ -2140,6 +2167,9 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2176,6 +2206,9 @@ func (r *StatusPageSubscriberResource) Delete(ctx context.Context, req resource.
 
 func (r *StatusPageSubscriberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"status_page_event_types"})...)
 }
 
 

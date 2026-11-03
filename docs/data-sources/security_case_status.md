@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_case_status Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   The statuses a security case moves through (New, Investigating, Contained, Closed and your own). Add, rename, reorder or archive them.
 ---

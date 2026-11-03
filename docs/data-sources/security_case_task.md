@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_case_task Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   What has to be done on a security case, who is doing it, and whether it is done.
 ---
@@ -15,7 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_security_case_task" "example" {
-  security_case_id = oneuptime_security_case.example.id
+  security_case_id       = oneuptime_security_case.example.id
+  assigned_to_user_email = "alice@example.com"
 }
 
 # Or by id:
@@ -28,7 +29,8 @@ data "oneuptime_security_case_task" "by_id" {
 
 ### Optional
 
-- `assigned_to_user_id` (String) ID of the person doing the task. Empty while nobody is. The ID of a `oneuptime_user` (see the data source).
+- `assigned_to_user_email` (String) Look it up by the email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `assigned_to_user_id` (String) ID of the person doing the task. Empty while nobody is. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assigned_to_user_email`.
 - `created_by_user_id` (String) ID of the person who added the task. The ID of a `oneuptime_user` (see the data source).
 - `done_by_user_id` (String) ID of the person who marked the task done. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.

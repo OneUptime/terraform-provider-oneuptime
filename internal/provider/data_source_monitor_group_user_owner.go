@@ -34,6 +34,7 @@ type MonitorGroupUserOwnerDataSourceModel struct {
     MonitorGroupId types.String `tfsdk:"monitor_group_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (d *MonitorGroupUserOwnerDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -42,7 +43,7 @@ func (d *MonitorGroupUserOwnerDataSource) Metadata(ctx context.Context, req data
 
 func (d *MonitorGroupUserOwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add users as owners to your monitor group. Look up an existing monitor group user owner by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `monitor_group_id`, ...): each one set must match, and exactly one monitor group user owner may match them all.",
+        MarkdownDescription: "Add users as owners to your monitor groups. Look up an existing monitor group user owner by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `monitor_group_id`, ...): each one set must match, and exactly one monitor group user owner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -63,24 +64,33 @@ func (d *MonitorGroupUserOwnerDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the user who owns the monitor group. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("user_email", false),
             },
             "monitor_group_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime MonitorGroup in which this object belongs. The ID of a `oneuptime_monitor_group`.",
+                MarkdownDescription: "ID of the monitor group the user owns. The ID of a `oneuptime_monitor_group`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_group"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",
                 Optional: true,
                 Computed: true,
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -136,6 +146,14 @@ func (d *MonitorGroupUserOwnerDataSource) Read(ctx context.Context, req datasour
     if !data.IsOwnerNotified.IsNull() && !data.IsOwnerNotified.IsUnknown() {
         filters["isOwnerNotified"] = data.IsOwnerNotified.ValueBool()
         filterNames = append(filterNames, "is_owner_notified = "+fmt.Sprintf("%t", data.IsOwnerNotified.ValueBool()))
+    }
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["userId"] = personID
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -346,6 +364,7 @@ func (d *MonitorGroupUserOwnerDataSource) Read(ctx context.Context, req datasour
     } else {
         data.IsOwnerNotified = types.BoolNull()
     }
+    data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

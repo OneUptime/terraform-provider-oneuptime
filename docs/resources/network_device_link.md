@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_device_link Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Operator-declared links between two Network Devices, for cables LLDP and CDP cannot see: a device with discovery disabled, a device that does not speak either protocol, or one monitored by ping alone. Drawn on the topology map alongside discovered links, and merged with a discovered link between the same pair rather than duplicating it.
 ---

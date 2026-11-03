@@ -34,7 +34,8 @@ resource "oneuptime_on_call_policy_owner_rule" "example" {
 - `on_call_duty_policy_labels` (Set of String) Only trigger for on-call policies that have at least one of these labels. Leave empty to match regardless of labels. IDs of `oneuptime_label` resources.
 - `on_call_duty_policy_name_pattern` (String) Regex (case-insensitive) matched against the on-call policy name. Leave empty to match any name.
 - `owner_teams` (Set of String) Teams to add as owners on the on-call policy when this rule matches. IDs of `oneuptime_team` resources.
-- `owner_users` (Set of String) Users to add as owners on the on-call policy when this rule matches. IDs of `oneuptime_user` records.
+- `owner_user_emails` (Set of String) The email addresses of the people in `owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `owner_users` (Set of String) Users to add as owners on the on-call policy when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.
 
 ### Read-Only
 

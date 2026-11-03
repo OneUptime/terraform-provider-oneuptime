@@ -17,11 +17,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AiAgentTaskPullRequestResource{}
 var _ resource.ResourceWithImportState = &AiAgentTaskPullRequestResource{}
+var _ resource.ResourceWithModifyPlan = &AiAgentTaskPullRequestResource{}
 
 func NewAiAgentTaskPullRequestResource() resource.Resource {
     return &AiAgentTaskPullRequestResource{}
@@ -111,6 +114,7 @@ func (r *AiAgentTaskPullRequestResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_ai_agent"),
             },
             "code_repository_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Code Repository this pull request was created in. The ID of a `oneuptime_code_repository`.",
@@ -120,6 +124,7 @@ func (r *AiAgentTaskPullRequestResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_code_repository"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "Title of the pull request.",
@@ -146,6 +151,7 @@ func (r *AiAgentTaskPullRequestResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                     numberplanmodifier.RequiresReplace(),
                 },
@@ -155,6 +161,7 @@ func (r *AiAgentTaskPullRequestResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                     numberplanmodifier.RequiresReplace(),
                 },
@@ -162,6 +169,9 @@ func (r *AiAgentTaskPullRequestResource) schemaDefinition() schema.Schema {
             "pull_request_state": schema.StringAttribute{
                 MarkdownDescription: "Current state of the pull request (open, closed, merged).",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("open", "closed", "merged"),
+                },
             },
             "head_ref_name": schema.StringAttribute{
                 MarkdownDescription: "The branch name of the pull request (source branch).",
@@ -277,6 +287,17 @@ func (r *AiAgentTaskPullRequestResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AiAgentTaskPullRequestResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AiAgentTaskPullRequestResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1343,6 +1364,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

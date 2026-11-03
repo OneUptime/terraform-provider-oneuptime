@@ -32,7 +32,7 @@ data "oneuptime_scheduled_maintenance_state_timeline" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of state change?
 - `scheduled_maintenance_id` (String) ID of Scheduled Maintenance this resource belongs to. The ID of a `oneuptime_scheduled_maintenance_event`.
-- `scheduled_maintenance_state_id` (String) Scheduled Maintenance State ID. Which state does this event belongs to? The ID of a `oneuptime_scheduled_maintenance_state`.
+- `scheduled_maintenance_state_id` (String) ID of the state the scheduled maintenance event changes to. The ID of a `oneuptime_scheduled_maintenance_state`.
 - `should_status_page_subscribers_be_notified` (Boolean) Should subscribers be notified about this state change?
 - `subscriber_notification_status` (String) Status of notification sent to subscribers about this scheduled maintenance state change.
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.

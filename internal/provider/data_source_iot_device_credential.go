@@ -82,6 +82,7 @@ func (d *IotDeviceCredentialDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "ID of the IoT Fleet this device belongs to. The ID of a `oneuptime_iot_fleet`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_iot_fleet"),
             },
             "external_id": schema.StringAttribute{
                 MarkdownDescription: "The device id — must match the device.id label the device stamps on its datapoints. It is also the <device> segment of the device's MQTT topics, so a device that reports directly over MQTT cannot use an id containing '/', '+', or '#' (such devices can still report through a gateway).",
@@ -106,11 +107,12 @@ func (d *IotDeviceCredentialDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "secret_key": schema.StringAttribute{
                 MarkdownDescription: "Secret this device presents as the MQTT password (with this credential's ID as the username).",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
         },
     }
@@ -173,10 +175,6 @@ func (d *IotDeviceCredentialDataSource) Read(ctx context.Context, req datasource
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
-    }
-    if !data.SecretKey.IsNull() && !data.SecretKey.IsUnknown() {
-        filters["secretKey"] = data.SecretKey.ValueString()
-        filterNames = append(filterNames, "secret_key = "+fmt.Sprintf("%q", data.SecretKey.ValueString()))
     }
 
     if hasId && len(filters) > 0 {

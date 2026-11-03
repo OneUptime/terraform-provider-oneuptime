@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_slo_feed Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Log of everything that happened to this Service Level Objective - configuration changes, status transitions, burn rate alerts and incidents, monitor rule changes and owner changes.
 ---
@@ -15,7 +15,7 @@ Log of everything that happened to this Service Level Objective - configuration 
 resource "oneuptime_slo_feed" "example" {
   service_level_objective_id              = oneuptime_service_level_objective.example.id
   feed_info_in_markdown                   = "# Heading\n\nThis is **markdown** content"
-  service_level_objective_feed_event_type = "Example short text"
+  service_level_objective_feed_event_type = "ServiceLevelObjectiveCreated"
   display_color                           = "#ff0000"
 }
 ```
@@ -26,14 +26,15 @@ resource "oneuptime_slo_feed" "example" {
 
 - `display_color` (String) Display color for this feed item.
 - `feed_info_in_markdown` (String) Log of the Service Level Objective change in Markdown.
-- `service_level_objective_feed_event_type` (String) Service Level Objective Feed Event.
+- `service_level_objective_feed_event_type` (String) Service Level Objective Feed Event. Allowed values: `ServiceLevelObjectiveCreated`, `ServiceLevelObjectiveUpdated`, `ServiceLevelObjectiveEnabled`, `ServiceLevelObjectiveDisabled`, `ServiceLevelObjectiveArchived`, `ServiceLevelObjectiveRestored`, `StatusChanged`, `BurnRateAlertRaised`, `BurnRateAlertResolved`, `BurnRateIncidentDeclared`, `BurnRateIncidentResolved`, `BurnRateRuleAdded`, `BurnRateRuleChanged`, `BurnRateRuleRemoved`, `MonitorRuleAdded`, `MonitorRuleChanged`, `MonitorRuleRemoved`, `MonitorsAttached`, `MonitorsDetached`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `LabelRuleExecuted`, `OwnerRuleExecuted`.
 - `service_level_objective_id` (String) Relation to Service Level Objective ID in which this resource belongs. The ID of a `oneuptime_service_level_objective`.
 
 ### Optional
 
 - `more_information_in_markdown` (String) More information in Markdown.
 - `posted_at` (String) Date and time when the feed was posted.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

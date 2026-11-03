@@ -18,11 +18,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AlertEpisodeMemberResource{}
 var _ resource.ResourceWithImportState = &AlertEpisodeMemberResource{}
+var _ resource.ResourceWithModifyPlan = &AlertEpisodeMemberResource{}
 
 func NewAlertEpisodeMemberResource() resource.Resource {
     return &AlertEpisodeMemberResource{}
@@ -82,6 +85,7 @@ func (r *AlertEpisodeMemberResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_episode"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Alert that is a member of this episode. The ID of a `oneuptime_alert`.",
@@ -89,6 +93,7 @@ func (r *AlertEpisodeMemberResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "added_at": schema.StringAttribute{
                 MarkdownDescription: "When this alert was added to the episode.",
@@ -96,6 +101,7 @@ func (r *AlertEpisodeMemberResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -109,6 +115,9 @@ func (r *AlertEpisodeMemberResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("rule", "manual", "api"),
+                },
             },
             "matched_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the grouping rule that matched this alert. The ID of a `oneuptime_alert_grouping_rule`.",
@@ -118,6 +127,7 @@ func (r *AlertEpisodeMemberResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_grouping_rule"),
             },
             "is_owner_notified_of_alert_added": schema.BoolAttribute{
                 MarkdownDescription: "Has the owner been notified that this alert was added to the episode?",
@@ -154,6 +164,17 @@ func (r *AlertEpisodeMemberResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AlertEpisodeMemberResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AlertEpisodeMemberResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -595,6 +616,7 @@ func (r *AlertEpisodeMemberResource) Create(ctx context.Context, req resource.Cr
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

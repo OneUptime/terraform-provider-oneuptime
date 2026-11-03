@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_postmortem_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Incidents"
 description: |-
   Choose which resolved incidents OneUptime AI drafts a postmortem for, and the templates a draft may follow. With no rule, every resolved incident gets a draft; with rules, the first rule that matches decides.
 ---
@@ -41,7 +41,7 @@ data "oneuptime_postmortem_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
 - `incident_severities` (Set of String) Match only incidents with these severities. Leave empty to match any severity. IDs of `oneuptime_incident_severity` resources.
 - `labels` (Set of String) Match only incidents that carry at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.
 - `monitor_labels` (Set of String) Match only when one of the incident's monitors carries at least one of these labels - the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label. IDs of `oneuptime_label` resources.

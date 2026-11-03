@@ -59,6 +59,7 @@ type AlertEpisodeDataSourceModel struct {
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     PostUpdatesToWorkspaceChannels types.String `tfsdk:"post_updates_to_workspace_channels"`
     IsPrivate types.Bool `tfsdk:"is_private"`
+    AssignedToUserEmail types.String `tfsdk:"assigned_to_user_email"`
 }
 
 func (d *AlertEpisodeDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -111,11 +112,13 @@ func (d *AlertEpisodeDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "Current Alert State ID. The ID of a `oneuptime_alert_state`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_state"),
             },
             "alert_severity_id": schema.StringAttribute{
                 MarkdownDescription: "Alert Severity ID. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "root_cause": schema.StringAttribute{
                 MarkdownDescription: "User-documented root cause of this episode.",
@@ -139,19 +142,22 @@ func (d *AlertEpisodeDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "assigned_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assigned_to_user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("assigned_to_user_email", false),
             },
             "assigned_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "Team ID that is assigned to this episode. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "alert_grouping_rule_id": schema.StringAttribute{
                 MarkdownDescription: "Alert Grouping Rule ID that created this episode. The ID of a `oneuptime_alert_grouping_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_grouping_rule"),
             },
             "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.",
@@ -184,7 +190,7 @@ func (d *AlertEpisodeDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -192,6 +198,7 @@ func (d *AlertEpisodeDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified_of_episode_creation": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified when this episode is created?",
@@ -209,13 +216,19 @@ func (d *AlertEpisodeDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "post_updates_to_workspace_channels": schema.StringAttribute{
-                MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_private": schema.BoolAttribute{
                 MarkdownDescription: "If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.",
                 Optional: true,
                 Computed: true,
+            },
+            "assigned_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -335,6 +348,14 @@ func (d *AlertEpisodeDataSource) Read(ctx context.Context, req datasource.ReadRe
     if !data.IsPrivate.IsNull() && !data.IsPrivate.IsUnknown() {
         filters["isPrivate"] = data.IsPrivate.ValueBool()
         filterNames = append(filterNames, "is_private = "+fmt.Sprintf("%t", data.IsPrivate.ValueBool()))
+    }
+    if !data.AssignedToUserEmail.IsNull() && !data.AssignedToUserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.AssignedToUserEmail.ValueString(), "assigned_to_user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["assignedToUserId"] = personID
+        filterNames = append(filterNames, "assigned_to_user_email = "+fmt.Sprintf("%q", data.AssignedToUserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -905,6 +926,7 @@ func (d *AlertEpisodeDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.IsPrivate = types.BoolNull()
     }
+    data.AssignedToUserEmail = personEmailAfterLookup(ctx, d.client, data.AssignedToUserId, data.AssignedToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

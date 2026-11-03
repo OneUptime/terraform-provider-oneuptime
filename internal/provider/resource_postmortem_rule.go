@@ -28,6 +28,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &PostmortemRuleResource{}
 var _ resource.ResourceWithImportState = &PostmortemRuleResource{}
+var _ resource.ResourceWithModifyPlan = &PostmortemRuleResource{}
 
 func NewPostmortemRuleResource() resource.Resource {
     return &PostmortemRuleResource{}
@@ -86,6 +87,7 @@ func (r *PostmortemRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -125,6 +127,7 @@ func (r *PostmortemRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -136,6 +139,7 @@ func (r *PostmortemRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "incident_severities": schema.SetAttribute{
                 MarkdownDescription: "Match only incidents with these severities. Leave empty to match any severity. IDs of `oneuptime_incident_severity` resources.",
@@ -145,6 +149,7 @@ func (r *PostmortemRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_incident_severity"),
             },
             "labels": schema.SetAttribute{
                 MarkdownDescription: "Match only incidents that carry at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.",
@@ -154,6 +159,7 @@ func (r *PostmortemRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "monitor_labels": schema.SetAttribute{
                 MarkdownDescription: "Match only when one of the incident's monitors carries at least one of these labels - the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label. IDs of `oneuptime_label` resources.",
@@ -163,6 +169,7 @@ func (r *PostmortemRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "title_pattern": schema.StringAttribute{
                 MarkdownDescription: "Case-insensitive regex matched against the incident's title. Leave empty to match any title.",
@@ -188,6 +195,7 @@ func (r *PostmortemRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_incident_postmortem_template"),
             },
             "llm_provider_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the LLM provider OneUptime AI uses for everything this rule drafts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
@@ -196,6 +204,7 @@ func (r *PostmortemRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_llm_provider"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -219,6 +228,17 @@ func (r *PostmortemRuleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *PostmortemRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *PostmortemRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -873,6 +893,9 @@ func (r *PostmortemRuleResource) Create(ctx context.Context, req resource.Create
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1423,6 +1446,11 @@ func (r *PostmortemRuleResource) Update(ctx context.Context, req resource.Update
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "criteria": !data.Criteria.Equal(state.Criteria),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config PostmortemRuleResourceModel
@@ -2015,6 +2043,9 @@ func (r *PostmortemRuleResource) Update(ctx context.Context, req resource.Update
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2051,6 +2082,9 @@ func (r *PostmortemRuleResource) Delete(ctx context.Context, req resource.Delete
 
 func (r *PostmortemRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"criteria"})...)
 }
 
 

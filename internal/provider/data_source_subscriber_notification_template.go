@@ -30,8 +30,12 @@ type SubscriberNotificationTemplateDataSourceModel struct {
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     ProjectId types.String `tfsdk:"project_id"`
-    StatusPageId types.String `tfsdk:"status_page_id"`
-    StatusPageSubscriberNotificationTemplateId types.String `tfsdk:"status_page_subscriber_notification_template_id"`
+    TemplateName types.String `tfsdk:"template_name"`
+    TemplateDescription types.String `tfsdk:"template_description"`
+    EventType types.String `tfsdk:"event_type"`
+    NotificationMethod types.String `tfsdk:"notification_method"`
+    EmailSubject types.String `tfsdk:"email_subject"`
+    TemplateBody types.String `tfsdk:"template_body"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -41,7 +45,7 @@ func (d *SubscriberNotificationTemplateDataSource) Metadata(ctx context.Context,
 
 func (d *SubscriberNotificationTemplateDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Links subscriber notification templates to specific status pages. This allows you to use different notification templates for different status pages. Look up an existing subscriber notification template by `id`, or by any of its other arguments (`created_by_user_id`, `status_page_id`, `status_page_subscriber_notification_template_id`): each one set must match, and exactly one subscriber notification template may match them all.",
+        MarkdownDescription: "Manage custom notification templates for status page subscribers. These templates can be used to customize the notifications sent to subscribers via Email, SMS, Slack, Microsoft Teams, and Webhooks. Look up an existing subscriber notification template by `id`, or by any of its other arguments (`created_by_user_id`, `email_subject`, `event_type`, ...): each one set must match, and exactly one subscriber notification template may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -61,13 +65,33 @@ func (d *SubscriberNotificationTemplateDataSource) Schema(ctx context.Context, r
                 MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
-            "status_page_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the Status Page this template is linked to. The ID of a `oneuptime_status_page`.",
+            "template_name": schema.StringAttribute{
+                MarkdownDescription: "A friendly name for this notification template.",
                 Optional: true,
                 Computed: true,
             },
-            "status_page_subscriber_notification_template_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the notification template linked to this status page. The ID of a `oneuptime_subscriber_notification_template`.",
+            "template_description": schema.StringAttribute{
+                MarkdownDescription: "A description for this notification template.",
+                Optional: true,
+                Computed: true,
+            },
+            "event_type": schema.StringAttribute{
+                MarkdownDescription: "The type of event this template is for (e.g., Incident Created, Announcement Created).",
+                Optional: true,
+                Computed: true,
+            },
+            "notification_method": schema.StringAttribute{
+                MarkdownDescription: "The notification method this template is for (Email, SMS, Slack, Microsoft Teams, Webhook).",
+                Optional: true,
+                Computed: true,
+            },
+            "email_subject": schema.StringAttribute{
+                MarkdownDescription: "The subject line for email notifications. Only used for Email notification method.",
+                Optional: true,
+                Computed: true,
+            },
+            "template_body": schema.StringAttribute{
+                MarkdownDescription: "The template body content. For Email: HTML template. For SMS: Plain text. For Slack/Teams: Markdown.",
                 Optional: true,
                 Computed: true,
             },
@@ -75,6 +99,7 @@ func (d *SubscriberNotificationTemplateDataSource) Schema(ctx context.Context, r
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }
@@ -115,13 +140,29 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
-    if !data.StatusPageId.IsNull() && !data.StatusPageId.IsUnknown() {
-        filters["statusPageId"] = data.StatusPageId.ValueString()
-        filterNames = append(filterNames, "status_page_id = "+fmt.Sprintf("%q", data.StatusPageId.ValueString()))
+    if !data.TemplateName.IsNull() && !data.TemplateName.IsUnknown() {
+        filters["templateName"] = data.TemplateName.ValueString()
+        filterNames = append(filterNames, "template_name = "+fmt.Sprintf("%q", data.TemplateName.ValueString()))
     }
-    if !data.StatusPageSubscriberNotificationTemplateId.IsNull() && !data.StatusPageSubscriberNotificationTemplateId.IsUnknown() {
-        filters["statusPageSubscriberNotificationTemplateId"] = data.StatusPageSubscriberNotificationTemplateId.ValueString()
-        filterNames = append(filterNames, "status_page_subscriber_notification_template_id = "+fmt.Sprintf("%q", data.StatusPageSubscriberNotificationTemplateId.ValueString()))
+    if !data.TemplateDescription.IsNull() && !data.TemplateDescription.IsUnknown() {
+        filters["templateDescription"] = data.TemplateDescription.ValueString()
+        filterNames = append(filterNames, "template_description = "+fmt.Sprintf("%q", data.TemplateDescription.ValueString()))
+    }
+    if !data.EventType.IsNull() && !data.EventType.IsUnknown() {
+        filters["eventType"] = data.EventType.ValueString()
+        filterNames = append(filterNames, "event_type = "+fmt.Sprintf("%q", data.EventType.ValueString()))
+    }
+    if !data.NotificationMethod.IsNull() && !data.NotificationMethod.IsUnknown() {
+        filters["notificationMethod"] = data.NotificationMethod.ValueString()
+        filterNames = append(filterNames, "notification_method = "+fmt.Sprintf("%q", data.NotificationMethod.ValueString()))
+    }
+    if !data.EmailSubject.IsNull() && !data.EmailSubject.IsUnknown() {
+        filters["emailSubject"] = data.EmailSubject.ValueString()
+        filterNames = append(filterNames, "email_subject = "+fmt.Sprintf("%q", data.EmailSubject.ValueString()))
+    }
+    if !data.TemplateBody.IsNull() && !data.TemplateBody.IsUnknown() {
+        filters["templateBody"] = data.TemplateBody.ValueString()
+        filterNames = append(filterNames, "template_body = "+fmt.Sprintf("%q", data.TemplateBody.ValueString()))
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
@@ -147,15 +188,19 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         "createdAt": true,
         "updatedAt": true,
         "projectId": true,
-        "statusPageId": true,
-        "statusPageSubscriberNotificationTemplateId": true,
+        "templateName": true,
+        "templateDescription": true,
+        "eventType": true,
+        "notificationMethod": true,
+        "emailSubject": true,
+        "templateBody": true,
         "createdByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "/get-item"
+        readPath := "/status-page-subscriber-notification-template/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read subscriber_notification_template, got error: %s", err))
@@ -183,7 +228,7 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/status-page-subscriber-notification-template-status-page/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/status-page-subscriber-notification-template/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list subscriber_notification_template, got error: %s", err))
             return
@@ -279,39 +324,107 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["statusPageId"].(map[string]interface{}); ok {
+    if obj, ok := item["templateName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StatusPageId = types.StringValue(val)
+            data.TemplateName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.StatusPageId = types.StringValue(val)
+            data.TemplateName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.StatusPageId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TemplateName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.StatusPageId = types.StringValue(string(jsonBytes))
+            data.TemplateName = types.StringValue(string(jsonBytes))
         } else {
-            data.StatusPageId = types.StringNull()
+            data.TemplateName = types.StringNull()
         }
-    } else if val, ok := item["statusPageId"].(string); ok {
-        data.StatusPageId = types.StringValue(val)
+    } else if val, ok := item["templateName"].(string); ok {
+        data.TemplateName = types.StringValue(val)
     } else {
-        data.StatusPageId = types.StringNull()
+        data.TemplateName = types.StringNull()
     }
-    if obj, ok := item["statusPageSubscriberNotificationTemplateId"].(map[string]interface{}); ok {
+    if obj, ok := item["templateDescription"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+            data.TemplateDescription = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+            data.TemplateDescription = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+            data.TemplateDescription = types.StringValue(string(jsonBytes))
         } else {
-            data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+            data.TemplateDescription = types.StringNull()
         }
-    } else if val, ok := item["statusPageSubscriberNotificationTemplateId"].(string); ok {
-        data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
+    } else if val, ok := item["templateDescription"].(string); ok {
+        data.TemplateDescription = types.StringValue(val)
     } else {
-        data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+        data.TemplateDescription = types.StringNull()
+    }
+    if obj, ok := item["eventType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EventType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EventType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EventType = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventType = types.StringNull()
+        }
+    } else if val, ok := item["eventType"].(string); ok {
+        data.EventType = types.StringValue(val)
+    } else {
+        data.EventType = types.StringNull()
+    }
+    if obj, ok := item["notificationMethod"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NotificationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NotificationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NotificationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotificationMethod = types.StringNull()
+        }
+    } else if val, ok := item["notificationMethod"].(string); ok {
+        data.NotificationMethod = types.StringValue(val)
+    } else {
+        data.NotificationMethod = types.StringNull()
+    }
+    if obj, ok := item["emailSubject"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EmailSubject = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EmailSubject = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EmailSubject = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EmailSubject = types.StringValue(string(jsonBytes))
+        } else {
+            data.EmailSubject = types.StringNull()
+        }
+    } else if val, ok := item["emailSubject"].(string); ok {
+        data.EmailSubject = types.StringValue(val)
+    } else {
+        data.EmailSubject = types.StringNull()
+    }
+    if obj, ok := item["templateBody"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TemplateBody = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TemplateBody = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TemplateBody = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TemplateBody = types.StringValue(string(jsonBytes))
+        } else {
+            data.TemplateBody = types.StringNull()
+        }
+    } else if val, ok := item["templateBody"].(string); ok {
+        data.TemplateBody = types.StringValue(val)
+    } else {
+        data.TemplateBody = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

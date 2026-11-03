@@ -25,6 +25,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentTemplateResource{}
 var _ resource.ResourceWithImportState = &IncidentTemplateResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentTemplateResource{}
 
 func NewIncidentTemplateResource() resource.Resource {
     return &IncidentTemplateResource{}
@@ -119,6 +120,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "hosts": schema.SetAttribute{
                 MarkdownDescription: "List of hosts to pre-populate on incidents created from this template. IDs of `oneuptime_host` resources.",
@@ -128,6 +130,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_host"),
             },
             "kubernetes_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Kubernetes clusters to pre-populate on incidents created from this template. IDs of `oneuptime_kubernetes_cluster` resources.",
@@ -137,6 +140,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_kubernetes_cluster"),
             },
             "docker_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Docker hosts to pre-populate on incidents created from this template. IDs of `oneuptime_docker_host` resources.",
@@ -146,6 +150,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_docker_host"),
             },
             "podman_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Podman hosts to pre-populate on incidents created from this template. IDs of `oneuptime_podman_host` resources.",
@@ -155,6 +160,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_podman_host"),
             },
             "services": schema.SetAttribute{
                 MarkdownDescription: "List of services to pre-populate on incidents created from this template. IDs of `oneuptime_service` resources.",
@@ -164,6 +170,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_service"),
             },
             "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policies affected by this incident template. IDs of `oneuptime_on_call_policy` resources.",
@@ -173,6 +180,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_on_call_policy"),
             },
             "status_pages": schema.SetAttribute{
                 MarkdownDescription: "Limit incidents declared from this template to these status pages. Leave empty to reach every status page that lists the incident's monitors. IDs of `oneuptime_status_page` resources.",
@@ -182,15 +190,17 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_status_page"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "Incident Severity ID. The ID of a `oneuptime_incident_severity`.",
@@ -199,6 +209,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "change_monitor_status_to_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the incident is created. The ID of a `oneuptime_monitor_status`.",
@@ -207,6 +218,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "initial_incident_state_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Incident State Object ID. Incidents created from this template will start in this state. The ID of a `oneuptime_incident_state`.",
@@ -215,6 +227,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_state"),
             },
             "custom_fields": schema.StringAttribute{
                 MarkdownDescription: "The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies. A JSON value: write it with `jsonencode()`.",
@@ -222,6 +235,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -234,6 +248,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -256,6 +271,9 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -270,6 +288,17 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentTemplateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentTemplateResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1221,6 +1250,9 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2053,6 +2085,12 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "custom_field_settings": !data.CustomFieldSettings.Equal(state.CustomFieldSettings),
+        "custom_fields": !data.CustomFields.Equal(state.CustomFields),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config IncidentTemplateResourceModel
@@ -2947,6 +2985,9 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2983,6 +3024,9 @@ func (r *IncidentTemplateResource) Delete(ctx context.Context, req resource.Dele
 
 func (r *IncidentTemplateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_field_settings", "custom_fields"})...)
 }
 
 

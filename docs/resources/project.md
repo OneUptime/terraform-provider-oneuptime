@@ -26,7 +26,7 @@ resource "oneuptime_project" "example" {
 ### Optional
 
 - `acknowledge_linked_alerts_when_incident_acknowledged` (Boolean) When enabled, acknowledging an incident also acknowledges every alert linked to it. This stops those alerts' on-call escalations, and their reminders only when the alert reminder rule is set to stop on Acknowledged. Alerts linked to an incident that is already acknowledged are acknowledged as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting. Defaults to `true`.
-- `active_monitors_limit` (Number)
+- `active_monitors_limit` (Number) The most monitors the project may have active, from a plan bought from a reseller. Empty means the plan's own limit.
 - `ai_context` (String) Notes for OneUptime AI about your systems: what depends on what, who owns which symptom, where the logs are. Markdown, at most 20,000 characters.
 - `ai_daily_autonomous_token_limit` (Number) Legacy setting, no longer enforced: autonomous AI work that is not associated with an incident or alert has no daily token limit. Use the Daily Incident AI Token Limit and Daily Alert AI Token Limit instead.
 - `ai_daily_fix_task_limit` (Number) Legacy setting, no longer enforced: AI fix tasks that are not associated with an incident or alert have no daily limit. Use the Daily Incident AI Fix Task Limit and Daily Alert AI Fix Task Limit instead.
@@ -94,20 +94,20 @@ resource "oneuptime_project" "example" {
 - `limit_alerts_to_one_episode` (Boolean) When enabled, an alert can be in only one alert episode: adding an alert that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Alerts that are already in several episodes stay in them. Off by default. Defaults to `false`.
 - `limit_incidents_to_one_episode` (Boolean) When enabled, an incident can be in only one incident episode: adding an incident that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Incidents that are already in several episodes stay in them. Off by default. Defaults to `false`.
 - `payment_provider_plan_id` (String)
-- `payment_provider_promo_code` (String)
+- `payment_provider_promo_code` (String) The promotion code the project's subscription was started with.
 - `record_and_transcribe_incident_calls` (Boolean) When enabled, OneUptime asks Zoom, Google Meet and Microsoft Teams to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default. Defaults to `false`.
-- `require_sso_for_login` (Boolean) Defaults to `false`.
+- `require_sso_for_login` (Boolean) When on, the project's members sign in to it with the project's SSO only. Defaults to `false`.
 - `require_sso_with_sso_provider_id` (String) If set, SSO-enforced login for this project is only satisfied by an SSO token issued by this specific provider id (a Project SSO/OIDC or a Global SSO/OIDC). When null, any trusted SSO provider satisfies enforcement.
 - `resolve_linked_alerts_when_incident_resolved` (Boolean) When enabled, resolving an incident also resolves every alert linked to it, except alerts that are still linked to another incident that is not resolved yet. Alerts linked to an incident that is already resolved are resolved as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting. Defaults to `true`.
 - `scheduled_maintenance_number_prefix` (String) Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber scheduled maintenance events that already exist.
 - `scheduled_maintenance_numbers_start_at` (Number) Where scheduled maintenance event numbers start: the next scheduled maintenance event gets this number if no scheduled maintenance event has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every scheduled maintenance event number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing scheduled maintenance events keep their numbers.
-- `seat_limit` (Number)
+- `seat_limit` (Number) The most members the project may have, from a plan bought from a reseller. Empty or 0 means no limit.
 - `security_risk_case_threshold` (Number) The risk score at which a case opens about a user, host or IP address: a whole number from 10 to 10000, 100 unless changed. Defaults to `100`.
 - `send_invoices_by_email` (Boolean) When enabled, invoices will be automatically sent to the finance/accounting email when they are generated. Defaults to `false`.
 - `store_system_events_in_audit_logs` (Boolean) When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded. Defaults to `false`.
 - `telemetry_retention_config` (String) Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set. A JSON value: write it with `jsonencode()`.
 - `use_global_runners` (Boolean) When enabled, runbook steps that do not pick a Runner of their own run on OneUptime's global Runners, in a sandbox that can reach the internet but not your network. Turn it off to keep every step on the Runners you install. On by default. Defaults to `true`.
-- `utm_content` (String)
+- `utm_content` (String) The utm_content of the link the project was signed up from.
 
 ### Read-Only
 

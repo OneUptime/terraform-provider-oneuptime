@@ -14,7 +14,7 @@ Manage footer links on your status page
 ```terraform
 resource "oneuptime_status_page_footer_link" "example" {
   status_page_id = oneuptime_status_page.example.id
-  title          = "Example short text"
+  title          = "Privacy Policy"
   link           = "https://short.url/abc123"
 }
 ```

@@ -19,11 +19,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &CloudConnectionResource{}
 var _ resource.ResourceWithImportState = &CloudConnectionResource{}
+var _ resource.ResourceWithModifyPlan = &CloudConnectionResource{}
 
 func NewCloudConnectionResource() resource.Resource {
     return &CloudConnectionResource{}
@@ -95,6 +97,9 @@ func (r *CloudConnectionResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("aws", "gcp", "azure"),
+                },
             },
             "config": schema.StringAttribute{
                 MarkdownDescription: "The cloud's settings that are not secret, such as a role ARN, a tenant or the regions to read. Keys are defined by the cloud. A JSON value: write it with `jsonencode()`.",
@@ -102,6 +107,7 @@ func (r *CloudConnectionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -155,7 +161,7 @@ func (r *CloudConnectionResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "last_pull_result": schema.StringAttribute{
-                MarkdownDescription: "What the last read found: the accounts, the resources by type and region, and the metrics it wrote. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the last read found: the accounts, the resources by type and region, and the metrics it wrote. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -172,6 +178,17 @@ func (r *CloudConnectionResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *CloudConnectionResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *CloudConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -671,6 +688,9 @@ func (r *CloudConnectionResource) Create(ctx context.Context, req resource.Creat
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1090,6 +1110,11 @@ func (r *CloudConnectionResource) Update(ctx context.Context, req resource.Updat
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "config": !data.Config.Equal(state.Config),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config CloudConnectionResourceModel
@@ -1529,6 +1554,9 @@ func (r *CloudConnectionResource) Update(ctx context.Context, req resource.Updat
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1565,6 +1593,9 @@ func (r *CloudConnectionResource) Delete(ctx context.Context, req resource.Delet
 
 func (r *CloudConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"config"})...)
 }
 
 

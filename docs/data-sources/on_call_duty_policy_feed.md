@@ -16,6 +16,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 ```terraform
 data "oneuptime_on_call_duty_policy_feed" "example" {
   on_call_duty_policy_id = oneuptime_on_call_policy.example.id
+  user_email             = "alice@example.com"
 }
 
 # Or by id:
@@ -34,7 +35,8 @@ data "oneuptime_on_call_duty_policy_feed" "by_id" {
 - `more_information_in_markdown` (String) More information in Markdown.
 - `on_call_duty_policy_feed_event_type` (String) On Call Duty Policy Feed Event.
 - `on_call_duty_policy_id` (String) Relation to OnCallDutyPolicy ID in which this resource belongs. The ID of a `oneuptime_on_call_policy`.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

@@ -23,11 +23,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &CloudAccountResource{}
 var _ resource.ResourceWithImportState = &CloudAccountResource{}
+var _ resource.ResourceWithModifyPlan = &CloudAccountResource{}
 
 func NewCloudAccountResource() resource.Resource {
     return &CloudAccountResource{}
@@ -111,6 +113,9 @@ func (r *CloudAccountResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("aws", "gcp", "azure"),
+                },
             },
             "account_id": schema.StringAttribute{
                 MarkdownDescription: "The cloud's own id for the account: an AWS account id, an Azure subscription id or a Google Cloud project id.",
@@ -120,13 +125,14 @@ func (r *CloudAccountResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
                 MarkdownDescription: "When on, OneUptime AI reads this account live while investigating incidents and alerts linked to its resources — a resource's settings and status, its recent events, load balancer target health and quota usage — through the account's read-only cloud connection, and uses what it read as evidence; it needs no Cloud AI agent for that. Nothing is ever changed by an investigation. On by default. Anyone who may edit the account can turn it on or off.",
@@ -154,6 +160,9 @@ func (r *CloudAccountResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Disabled", "RequireApproval", "Automatic", "BypassApproval"),
+                },
             },
             "ai_command_allowlist": schema.StringAttribute{
                 MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run in this account without approval even though they are riskier changes. Each pattern is one cloud catalog command (cloud <operation> RESOURCE [--flag value]) and is compared with the command word by word: * stands for exactly one word (a resource id, a count), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid change for this account's cloud is refused. Destructive operations (Denied tier) never run regardless, and an operation that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the account can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
@@ -161,6 +170,7 @@ func (r *CloudAccountResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -197,7 +207,7 @@ func (r *CloudAccountResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "resource_summary": schema.StringAttribute{
-                MarkdownDescription: "The account's live resources counted by type and by region (CloudAccountSummary). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The account's live resources counted by type and by region (CloudAccountSummary). A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -234,6 +244,17 @@ func (r *CloudAccountResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *CloudAccountResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *CloudAccountResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -938,6 +959,9 @@ func (r *CloudAccountResource) Create(ctx context.Context, req resource.CreateRe
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1562,6 +1586,11 @@ func (r *CloudAccountResource) Update(ctx context.Context, req resource.UpdateRe
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "ai_command_allowlist": !data.AiCommandAllowlist.Equal(state.AiCommandAllowlist),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config CloudAccountResourceModel
@@ -2210,6 +2239,9 @@ func (r *CloudAccountResource) Update(ctx context.Context, req resource.UpdateRe
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2246,6 +2278,9 @@ func (r *CloudAccountResource) Delete(ctx context.Context, req resource.DeleteRe
 
 func (r *CloudAccountResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"ai_command_allowlist"})...)
 }
 
 

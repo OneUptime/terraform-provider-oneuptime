@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_security_issue Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Everything wrong with a store that a check found, ranked by risk: what is wrong, why it matters, how to fix it, and who owns it.
 ---
@@ -15,7 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_data_security_issue" "example" {
-  data_store_id = oneuptime_data_store.example.id
+  data_store_id          = oneuptime_data_store.example.id
+  assigned_to_user_email = "alice@example.com"
 }
 
 # Or by id:
@@ -32,7 +33,8 @@ data "oneuptime_data_security_issue" "by_id" {
 - `accepted_reason` (String) Why the risk was accepted.
 - `alert_id` (String) The alert raised for the issue, if any. The ID of a `oneuptime_alert`.
 - `assigned_to_team_id` (String) The team working on the issue. The ID of a `oneuptime_team`.
-- `assigned_to_user_id` (String) The person working on the issue. The ID of a `oneuptime_user` (see the data source).
+- `assigned_to_user_email` (String) Look it up by the email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `assigned_to_user_id` (String) The person working on the issue. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assigned_to_user_email`.
 - `check_group` (String) The check's group: Exposure, Encryption, Recovery, Visibility, Access, Data hygiene, Telemetry, Residency or AI.
 - `check_id` (String) The check that failed.
 - `data_store_id` (String) The store the issue is on. The ID of a `oneuptime_data_store`.
@@ -52,12 +54,12 @@ data "oneuptime_data_security_issue" "by_id" {
 
 - `accepted_until` (String) When an accepted issue opens again if its check still fails.
 - `created_at` (String) Date and Time when the object was created.
-- `data_type_ids` (String) The sensitive data types the store holds, which make the issue as severe as it is. A JSON value: write it with `jsonencode()`.
+- `data_type_ids` (String) The sensitive data types the store holds, which make the issue as severe as it is. A JSON value: read it with `jsondecode()`.
 - `first_detected_at` (String) When the check first failed.
-- `frameworks` (String) The framework requirements the check is evidence for. A JSON value: write it with `jsonencode()`.
+- `frameworks` (String) The framework requirements the check is evidence for. A JSON value: read it with `jsondecode()`.
 - `last_detected_at` (String) When the check last failed.
 - `project_id` (String) ID of the project this issue belongs to. The ID of a `oneuptime_project`.
 - `recheck_requested_at` (String) When a person last asked for the store to be checked again.
 - `resolved_at` (String) When the check last passed after failing.
-- `risk_factors` (String) Each part of the risk score, with its points. A JSON value: write it with `jsonencode()`.
+- `risk_factors` (String) Each part of the risk score, with its points. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

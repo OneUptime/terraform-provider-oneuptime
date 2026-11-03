@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_rum_application_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Rules for automatically attaching labels to RUM applications when matching applications are created.
 ---

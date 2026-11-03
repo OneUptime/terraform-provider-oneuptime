@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_database Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Database servers this project runs or talks to. Each database is discovered from OpenTelemetry Collector database receivers, from database calls in application traces, from database workloads on monitored Kubernetes clusters and Docker / Podman hosts, or added manually.
 ---
@@ -61,17 +61,17 @@ data "oneuptime_database" "by_id" {
 
 - `ai_access_configured_at` (String) When OneUptime AI access to this database server was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Database AI agent that registers later never overwrites a setting an operator chose.
 - `ai_access_last_verified_at` (String) When a command from OneUptime AI last succeeded on this database server through its Database AI agent. Set by the server.
-- `ai_command_allowlist` (String) Optional JSON array of command patterns that Automatic mode may run on this database server without approval even though they are riskier changes. Each pattern is one command line for this database server's agent (db, a fixed catalog of diagnostics, never free-form SQL) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this database server is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the database server can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.
+- `ai_command_allowlist` (String) Optional JSON array of command patterns that Automatic mode may run on this database server without approval even though they are riskier changes. Each pattern is one command line for this database server's agent (db, a fixed catalog of diagnostics, never free-form SQL) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this database server is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the database server can remove patterns or clear the list. A JSON value: read it with `jsondecode()`.
 - `archived_at` (String) When was this database archived?
 - `auto_archived_at` (String) When this database was archived automatically because no discovery source had seen it for a while. Empty when it was archived by a person or is not archived.
-- `automatic_assignments` (String) Label and owner ids that label rules, owner rules or telemetry attached automatically. Maintained by OneUptime. A JSON value: write it with `jsonencode()`.
+- `automatic_assignments` (String) Label and owner ids that label rules, owner rules or telemetry attached automatically. Maintained by OneUptime. A JSON value: read it with `jsondecode()`.
 - `collector_last_seen_at` (String) When engine telemetry from a collector / agent was last received for this database.
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When this database was last seen by any discovery source - engine telemetry, application database calls or the workload inventory.
 - `manually_restored_at` (String) When a person last restored this database from the archive. Automatic archiving leaves it alone until it is seen again or a grace period passes.
-- `member_entity_keys` (String) Telemetry entity keys of the pods / containers this database runs as, each with the time it was last seen. Maintained by discovery. A JSON value: write it with `jsonencode()`.
+- `member_entity_keys` (String) Telemetry entity keys of the pods / containers this database runs as, each with the time it was last seen. Maintained by discovery. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `telemetry_retention_config` (String) Per-pillar retention overrides for telemetry collected from this database by a collector / agent (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the database default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
+- `telemetry_retention_config` (String) Per-pillar retention overrides for telemetry collected from this database by a collector / agent (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the database default, then the project's retention settings. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.
 - `workload_last_seen_at` (String) When Kubernetes, Docker or Podman discovery last saw the workload this database runs as. Empty for a database that is not a discovered workload.

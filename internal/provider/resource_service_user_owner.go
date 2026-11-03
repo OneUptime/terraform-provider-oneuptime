@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ServiceUserOwnerResource{}
 var _ resource.ResourceWithImportState = &ServiceUserOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &ServiceUserOwnerResource{}
 
 func NewServiceUserOwnerResource() resource.Resource {
     return &ServiceUserOwnerResource{}
@@ -40,6 +41,7 @@ type ServiceUserOwnerResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *ServiceUserOwnerResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -70,18 +72,18 @@ func (r *ServiceUserOwnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).",
-                Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
+                MarkdownDescription: "ID of the user who owns the service. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
+                Optional: true,
+                Computed: true,
+                Validators: personIDValidators("user_email", true),
             },
             "service_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Service in which this object belongs. The ID of a `oneuptime_service`.",
+                MarkdownDescription: "ID of the service the user owns. The ID of a `oneuptime_service`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -103,8 +105,34 @@ func (r *ServiceUserOwnerResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this service user owner names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ServiceUserOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: true,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ServiceUserOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -138,6 +166,19 @@ func (r *ServiceUserOwnerResource) Create(ctx context.Context, req resource.Crea
         return
     }
 
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ServiceUserOwnerResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -183,6 +224,19 @@ func (r *ServiceUserOwnerResource) Create(ctx context.Context, req resource.Crea
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := serviceUserOwnerResponse
+        if wrapper, ok := serviceUserOwnerResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -389,8 +443,14 @@ func (r *ServiceUserOwnerResource) Create(ctx context.Context, req resource.Crea
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
+
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -416,6 +476,10 @@ func (r *ServiceUserOwnerResource) Read(ctx context.Context, req resource.ReadRe
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/service-owner-user/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -596,6 +660,8 @@ func (r *ServiceUserOwnerResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -619,6 +685,19 @@ func (r *ServiceUserOwnerResource) Update(ctx context.Context, req resource.Upda
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config ServiceUserOwnerResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     serviceUserOwnerRequest := map[string]interface{}{
@@ -832,6 +911,11 @@ func (r *ServiceUserOwnerResource) Update(ctx context.Context, req resource.Upda
     }
     data.Id = state.Id
 
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -867,9 +951,43 @@ func (r *ServiceUserOwnerResource) Delete(ctx context.Context, req resource.Dele
 
 
 func (r *ServiceUserOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <service_id>/<email address or user id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/service-owner-user/get-list",
+        parentField:     "serviceId",
+        parentAttribute: "service_id",
+        parentNoun:      "service",
+        personField:     "userId",
+        personAttribute: "user_id",
+        byEmail:         true,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    // The address it was imported by, as written: the refresh keeps it.
+    if email != "" {
+        resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("user_email"), email)...)
+    }
 }
 
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *ServiceUserOwnerResource) keepPlannedValues(data *ServiceUserOwnerResourceModel, plan *ServiceUserOwnerResourceModel, config *ServiceUserOwnerResourceModel) {
+    if config.UserId.IsNull() && !plan.UserId.IsUnknown() {
+        data.UserId = plan.UserId
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
+    }
+}
 
 // Helper method to convert Terraform map to Go interface{}
 func (r *ServiceUserOwnerResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {

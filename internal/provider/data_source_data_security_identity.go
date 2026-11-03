@@ -155,7 +155,7 @@ func (d *DataSecurityIdentityDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "data_type_ids": schema.StringAttribute{
-                MarkdownDescription: "The data types found in the sensitive stores it reaches, by their ids. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The data types found in the sensitive stores it reaches, by their ids. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "estimated_records": schema.NumberAttribute{

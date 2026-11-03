@@ -35,6 +35,7 @@ type OnCallScheduleLayerUserDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Order types.Number `tfsdk:"order"`
     UserId types.String `tfsdk:"user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (d *OnCallScheduleLayerUserDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -43,7 +44,7 @@ func (d *OnCallScheduleLayerUserDataSource) Metadata(ctx context.Context, req da
 
 func (d *OnCallScheduleLayerUserDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "On-Call Schedule Layer Users Look up an existing on call schedule layer user by `id`, or by any of its other arguments (`created_by_user_id`, `on_call_duty_policy_schedule_id`, `on_call_duty_policy_schedule_layer_id`, ...): each one set must match, and exactly one on call schedule layer user may match them all.",
+        MarkdownDescription: "Add users to the layers of your on-call schedules. Look up an existing on call schedule layer user by `id`, or by any of its other arguments (`created_by_user_id`, `on_call_duty_policy_schedule_id`, `on_call_duty_policy_schedule_layer_id`, ...): each one set must match, and exactly one on call schedule layer user may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -64,19 +65,22 @@ func (d *OnCallScheduleLayerUserDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Schedule where this escalation rule belongs. The ID of a `oneuptime_on_call_policy_schedule`.",
+                MarkdownDescription: "ID of the on-call schedule the layer is in. The ID of a `oneuptime_on_call_policy_schedule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
             "on_call_duty_policy_schedule_layer_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Schedule Layer where this escalation rule belongs. The ID of a `oneuptime_on_call_schedule_layer`.",
+                MarkdownDescription: "ID of the layer the person takes turns on call in. The ID of a `oneuptime_on_call_schedule_layer`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_schedule_layer"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Order / Priority of this layer. Lower the number, higher the priority.",
@@ -84,9 +88,16 @@ func (d *OnCallScheduleLayerUserDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of User who belongs to this team. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the person who takes turns on call in this layer. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("user_email", false),
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -146,6 +157,14 @@ func (d *OnCallScheduleLayerUserDataSource) Read(ctx context.Context, req dataso
     if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
         filters["userId"] = data.UserId.ValueString()
         filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["userId"] = personID
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -370,6 +389,7 @@ func (d *OnCallScheduleLayerUserDataSource) Read(ctx context.Context, req dataso
     } else {
         data.UserId = types.StringNull()
     }
+    data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

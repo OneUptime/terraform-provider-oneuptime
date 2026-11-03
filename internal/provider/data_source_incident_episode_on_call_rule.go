@@ -71,7 +71,7 @@ func (d *IncidentEpisodeOnCallRuleDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "when_to_page": schema.StringAttribute{
@@ -80,7 +80,7 @@ func (d *IncidentEpisodeOnCallRuleDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "working_hours": schema.StringAttribute{
-                MarkdownDescription: "When this rule may page, when When to Page is Working Hours: the same daily or weekly windows as an on-call schedule layer's restriction times, read in the time zone of this rule. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "When this rule may page, when When to Page is Working Hours: the same daily or weekly windows as an on-call schedule layer's restriction times, read in the time zone of this rule. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "working_hours_timezone": schema.StringAttribute{
@@ -141,6 +141,7 @@ func (d *IncidentEpisodeOnCallRuleDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

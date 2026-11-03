@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_case_note Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Notes analysts write on a security case: what they checked, what they found and what comes next.
 ---

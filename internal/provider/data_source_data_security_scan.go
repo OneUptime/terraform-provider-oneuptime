@@ -78,16 +78,19 @@ func (d *DataSecurityScanDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "The store scanned, for a content or telemetry scan. The ID of a `oneuptime_data_store`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_data_store"),
             },
             "cloud_connection_id": schema.StringAttribute{
                 MarkdownDescription: "The connection read, for a configuration read. The ID of a `oneuptime_cloud_connection`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_cloud_connection"),
             },
             "probe_id": schema.StringAttribute{
                 MarkdownDescription: "The probe that ran the scan, when one did. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "kind": schema.StringAttribute{
                 MarkdownDescription: "What the scan read: Configuration, Content or Telemetry.",
@@ -138,11 +141,11 @@ func (d *DataSecurityScanDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "read_log": schema.StringAttribute{
-                MarkdownDescription: "The objects, tables or services read, by name. Never their contents. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The objects, tables or services read, by name. Never their contents. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "warnings": schema.StringAttribute{
-                MarkdownDescription: "What the scan could not read, and why. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the scan could not read, and why. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "error_message": schema.StringAttribute{

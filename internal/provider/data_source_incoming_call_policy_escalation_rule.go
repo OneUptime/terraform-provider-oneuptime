@@ -38,6 +38,7 @@ type IncomingCallPolicyEscalationRuleDataSourceModel struct {
     OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
     UserId types.String `tfsdk:"user_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (d *IncomingCallPolicyEscalationRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -70,6 +71,7 @@ func (d *IncomingCallPolicyEscalationRuleDataSource) Schema(ctx context.Context,
                 MarkdownDescription: "ID of the parent Incoming Call Policy. The ID of a `oneuptime_incoming_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incoming_call_policy"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Rule name (e.g., 'Primary On-Call', 'Backup Engineer').",
@@ -95,16 +97,25 @@ func (d *IncomingCallPolicyEscalationRuleDataSource) Schema(ctx context.Context,
                 MarkdownDescription: "ID of the on-call schedule to route to (mutually exclusive with userId). The ID of a `oneuptime_on_call_policy_schedule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user to route to directly (mutually exclusive with onCallDutyPolicyScheduleId). The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the user to route to directly (mutually exclusive with onCallDutyPolicyScheduleId). The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("user_email", false),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -176,6 +187,14 @@ func (d *IncomingCallPolicyEscalationRuleDataSource) Read(ctx context.Context, r
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["userId"] = personID
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -438,6 +457,7 @@ func (d *IncomingCallPolicyEscalationRuleDataSource) Read(ctx context.Context, r
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

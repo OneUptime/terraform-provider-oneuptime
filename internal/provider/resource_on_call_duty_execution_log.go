@@ -18,11 +18,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &OnCallDutyExecutionLogResource{}
 var _ resource.ResourceWithImportState = &OnCallDutyExecutionLogResource{}
+var _ resource.ResourceWithModifyPlan = &OnCallDutyExecutionLogResource{}
 
 func NewOnCallDutyExecutionLogResource() resource.Resource {
     return &OnCallDutyExecutionLogResource{}
@@ -102,6 +105,7 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "triggered_by_incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident which triggered this on-call escalation policy. The ID of a `oneuptime_incident`.",
@@ -110,6 +114,7 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "triggered_by_alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident which triggered this on-call escalation policy. The ID of a `oneuptime_alert`.",
@@ -118,6 +123,7 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "triggered_by_alert_episode_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the alert episode which triggered this on-call escalation policy. The ID of a `oneuptime_alert_episode`.",
@@ -126,6 +132,7 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_episode"),
             },
             "triggered_by_incident_episode_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident episode which triggered this on-call escalation policy. The ID of a `oneuptime_incident_episode`.",
@@ -134,10 +141,14 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_episode"),
             },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Status of this execution.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Waiting", "Scheduled", "Started", "Executing", "Execution Completed", "Execution Completed - No One Notified", "Error"),
+                },
             },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Status message of this execution.",
@@ -146,6 +157,9 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
             "user_notification_event_type": schema.StringAttribute{
                 MarkdownDescription: "Type of event that triggered this on-call duty policy.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Incident Created", "Alert Created", "Alert Episode Created", "Incident Episode Created"),
+                },
             },
             "acknowledged_at": schema.StringAttribute{
                 MarkdownDescription: "When was this policy execution acknowledged?",
@@ -153,6 +167,7 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -163,12 +178,14 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "last_executed_escalation_rule_order": schema.NumberAttribute{
                 MarkdownDescription: "Which escalation rule was executed?",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -176,6 +193,9 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "When was the escalation rule executed?",
                 CustomType: RFC3339Type{},
                 Optional: true,
+                PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
+                },
             },
             "last_executed_escalation_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your On-Call Policy Last Executed Escalation Rule. The ID of a `oneuptime_escalation_rule`.",
@@ -184,10 +204,14 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_escalation_rule"),
             },
             "execute_next_escalation_rule_in_minutes": schema.NumberAttribute{
                 MarkdownDescription: "How many minutes should we wait before executing the next escalation rule?",
                 Optional: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "on_call_policy_execution_repeat_count": schema.NumberAttribute{
                 MarkdownDescription: "How many times did we execute this on-call policy?",
@@ -195,6 +219,7 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -266,6 +291,17 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *OnCallDutyExecutionLogResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *OnCallDutyExecutionLogResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1216,6 +1252,7 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

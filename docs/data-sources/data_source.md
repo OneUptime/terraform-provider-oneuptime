@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_source Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Connect external systems — Prometheus, SQL databases, ClickHouse, Loki, Elasticsearch, or REST APIs — and build dashboards on their data.
 ---
@@ -42,7 +42,7 @@ data "oneuptime_data_source" "by_id" {
 
 ### Read-Only
 
-- `additional_options` (String) Per-type options that are not secrets — e.g. { "sslEnabled": true, "elasticsearchIndex": "logs-*" }. A JSON value: write it with `jsonencode()`.
+- `additional_options` (String) Per-type options that are not secrets — e.g. { "sslEnabled": true, "elasticsearchIndex": "logs-*" }. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

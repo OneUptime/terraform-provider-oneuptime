@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_proxmox_cluster_feed Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Log of everything that happened to this Proxmox cluster - creation, updates, owner changes and the rules that made them.
 ---
@@ -16,6 +16,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 ```terraform
 data "oneuptime_proxmox_cluster_feed" "example" {
   proxmox_cluster_id = oneuptime_proxmox_cluster.example.id
+  user_email         = "alice@example.com"
 }
 
 # Or by id:
@@ -34,7 +35,8 @@ data "oneuptime_proxmox_cluster_feed" "by_id" {
 - `more_information_in_markdown` (String) More information in Markdown.
 - `proxmox_cluster_feed_event_type` (String) Proxmox Cluster Feed Event.
 - `proxmox_cluster_id` (String) Relation to Proxmox Cluster ID in which this resource belongs. The ID of a `oneuptime_proxmox_cluster`.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

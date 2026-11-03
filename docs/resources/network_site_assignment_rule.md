@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_site_assignment_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Rules that automatically assign discovered Network Devices and Endpoints to a Network Site by subnet CIDR or hostname pattern. At least one of the two matchers must be set.
 ---

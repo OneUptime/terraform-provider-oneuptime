@@ -87,6 +87,7 @@ func (d *EntityCriticalityDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the person who added the entry. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

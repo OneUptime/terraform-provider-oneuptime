@@ -95,6 +95,7 @@ func (d *WorkflowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were.",
@@ -109,6 +110,7 @@ func (d *WorkflowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Is this workflow enabled?",
@@ -116,23 +118,23 @@ func (d *WorkflowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "graph": schema.StringAttribute{
-                MarkdownDescription: "Workflow Graph in JSON. Ideally, create this via UI and not via API. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Workflow Graph in JSON. Ideally, create this via UI and not via API. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "webhook_secret_key": schema.StringAttribute{
                 MarkdownDescription: "The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "incoming_email_secret_key": schema.StringAttribute{
                 MarkdownDescription: "The secret part of the Incoming Email trigger's address (workflow-<key>@<inbound email domain>). Anyone who has the address can start the workflow, so only people who can edit the workflow can read the key. Given to the workflow when its graph first has an Incoming Email trigger; set a new UUID to reset the address. Unique across all workflows.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "is_webhook_signing_secret_set": schema.BoolAttribute{
                 MarkdownDescription: "Whether a webhook signing secret is saved. A trigger that checks signatures refuses every request until it is. Set by the server from the signing secret itself.",
@@ -218,14 +220,6 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
     if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
         filters["isEnabled"] = data.IsEnabled.ValueBool()
         filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
-    }
-    if !data.WebhookSecretKey.IsNull() && !data.WebhookSecretKey.IsUnknown() {
-        filters["webhookSecretKey"] = data.WebhookSecretKey.ValueString()
-        filterNames = append(filterNames, "webhook_secret_key = "+fmt.Sprintf("%q", data.WebhookSecretKey.ValueString()))
-    }
-    if !data.IncomingEmailSecretKey.IsNull() && !data.IncomingEmailSecretKey.IsUnknown() {
-        filters["incomingEmailSecretKey"] = data.IncomingEmailSecretKey.ValueString()
-        filterNames = append(filterNames, "incoming_email_secret_key = "+fmt.Sprintf("%q", data.IncomingEmailSecretKey.ValueString()))
     }
     if !data.IsWebhookSigningSecretSet.IsNull() && !data.IsWebhookSigningSecretSet.IsUnknown() {
         filters["isWebhookSigningSecretSet"] = data.IsWebhookSigningSecretSet.ValueBool()

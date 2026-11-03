@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_store Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Every bucket, database, warehouse and telemetry stream Data Security knows: what sensitive data it holds, who can reach it and how it is configured.
 ---
@@ -68,19 +68,19 @@ data "oneuptime_data_store" "by_id" {
 
 ### Read-Only
 
-- `cloud_tags` (String) The store's tags or labels in its cloud. A JSON value: write it with `jsonencode()`.
+- `cloud_tags` (String) The store's tags or labels in its cloud. A JSON value: read it with `jsondecode()`.
 - `configuration_read_at` (String) When the store's configuration and access were last read.
 - `content_scanned_at` (String) When the store's content was last sampled.
 - `created_at` (String) Date and Time when the object was created.
-- `data_categories` (String) The categories of those data types. A JSON value: write it with `jsonencode()`.
-- `data_type_ids` (String) The data types found in the store with at least Medium confidence. A JSON value: write it with `jsonencode()`.
+- `data_categories` (String) The categories of those data types. A JSON value: read it with `jsondecode()`.
+- `data_type_ids` (String) The data types found in the store with at least Medium confidence. A JSON value: read it with `jsondecode()`.
 - `first_seen_at` (String) When OneUptime first found the store.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_activity_at` (String) When the store was last read or written, when its metrics or traces say.
 - `last_seen_at` (String) When OneUptime last found the store.
 - `next_content_scan_at` (String) When the store's content is next sampled.
-- `posture` (String) What the store's configuration says about its safety: public access, encryption, backups, logging and the rest. A JSON value: write it with `jsonencode()`.
+- `posture` (String) What the store's configuration says about its safety: public access, encryption, backups, logging and the rest. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this data store belongs to. The ID of a `oneuptime_project`.
-- `scan_exclusions` (String) Path prefixes, tables or attribute keys the content scan skips. A JSON value: write it with `jsonencode()`.
-- `subject_countries` (String) Countries whose people's data the store holds, from country-bound data types (ISO 3166-1 alpha-2). A JSON value: write it with `jsonencode()`.
+- `scan_exclusions` (String) Path prefixes, tables or attribute keys the content scan skips. A JSON value: read it with `jsondecode()`.
+- `subject_countries` (String) Countries whose people's data the store holds, from country-bound data types (ISO 3166-1 alpha-2). A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

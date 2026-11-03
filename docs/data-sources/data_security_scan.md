@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_security_scan Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Every scan Data Security ran: what it read, how much, what it found, how long it took and what went wrong.
 ---
@@ -47,7 +47,7 @@ data "oneuptime_data_security_scan" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `finished_at` (String) When the scan finished.
 - `project_id` (String) ID of the project this scan belongs to. The ID of a `oneuptime_project`.
-- `read_log` (String) The objects, tables or services read, by name. Never their contents. A JSON value: write it with `jsonencode()`.
+- `read_log` (String) The objects, tables or services read, by name. Never their contents. A JSON value: read it with `jsondecode()`.
 - `started_at` (String) When the scan started.
 - `updated_at` (String) Date and Time when the object was updated.
-- `warnings` (String) What the scan could not read, and why. A JSON value: write it with `jsonencode()`.
+- `warnings` (String) What the scan could not read, and why. A JSON value: read it with `jsondecode()`.

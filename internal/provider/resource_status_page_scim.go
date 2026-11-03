@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageScimResource{}
 var _ resource.ResourceWithImportState = &StatusPageScimResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageScimResource{}
 
 func NewStatusPageScimResource() resource.Resource {
     return &StatusPageScimResource{}
@@ -83,6 +84,7 @@ func (r *StatusPageScimResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Any friendly name for this SCIM configuration.",
@@ -99,6 +101,7 @@ func (r *StatusPageScimResource) schemaDefinition() schema.Schema {
             "bearer_token": schema.StringAttribute{
                 MarkdownDescription: "Bearer token for SCIM authentication. Keep this secure.",
                 Required: true,
+                Sensitive: true,
             },
             "oauth_client_secret_expires_at": schema.StringAttribute{
                 MarkdownDescription: "When the connection's OAuth 2.0 client secret stops working. No access token is issued with an expired secret.",
@@ -106,6 +109,7 @@ func (r *StatusPageScimResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -115,6 +119,7 @@ func (r *StatusPageScimResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -158,6 +163,17 @@ func (r *StatusPageScimResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageScimResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageScimResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -581,6 +597,7 @@ func (r *StatusPageScimResource) Create(ctx context.Context, req resource.Create
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

@@ -82,7 +82,7 @@ func (d *AiConnectionDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "config": schema.StringAttribute{
-                MarkdownDescription: "The provider's settings that are not secret, such as a tenant, a subscription or a Region. Keys are defined by the provider. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The provider's settings that are not secret, such as a tenant, a subscription or a Region. Keys are defined by the provider. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
@@ -104,6 +104,7 @@ func (d *AiConnectionDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "ID of the telemetry service everything this connection brings in belongs to. The ID of a `oneuptime_service`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "next_pull_at": schema.StringAttribute{
                 MarkdownDescription: "When the connection is read next. Empty means as soon as possible.",
@@ -118,7 +119,7 @@ func (d *AiConnectionDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "last_pull_result": schema.StringAttribute{
-                MarkdownDescription: "What the last read found: how many days, records and conversations, and how long it took. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the last read found: how many days, records and conversations, and how long it took. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_error": schema.StringAttribute{
@@ -130,6 +131,7 @@ func (d *AiConnectionDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "ID of the user who created this connection. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

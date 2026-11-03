@@ -44,7 +44,7 @@ func (d *ApiKeyDataSource) Metadata(ctx context.Context, req datasource.Metadata
 
 func (d *ApiKeyDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage API Keys for your project Look up an existing api key by `id`, or by any of its other arguments (`name`, `api_key`, `created_by_user_id`, ...): each one set must match, and exactly one api key may match them all.",
+        MarkdownDescription: "Manage API Keys for your project Look up an existing api key by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one api key may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -83,6 +83,7 @@ func (d *ApiKeyDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "expires_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when this API Key expires.",
@@ -90,8 +91,8 @@ func (d *ApiKeyDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
             },
             "api_key": schema.StringAttribute{
                 MarkdownDescription: "Secret API Key.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
         },
     }
@@ -147,10 +148,6 @@ func (d *ApiKeyDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
-    }
-    if !data.ApiKey.IsNull() && !data.ApiKey.IsUnknown() {
-        filters["apiKey"] = data.ApiKey.ValueString()
-        filterNames = append(filterNames, "api_key = "+fmt.Sprintf("%q", data.ApiKey.ValueString()))
     }
 
     if hasId && len(filters) > 0 {

@@ -15,7 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_incident_template_user_owner" "example" {
-  user_id = data.oneuptime_user.example.id
+  incident_template_id = oneuptime_incident_template.example.id
+  user_email           = "alice@example.com"
 }
 
 # Or by id:
@@ -30,9 +31,10 @@ data "oneuptime_incident_template_user_owner" "by_id" {
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `incident_template_id` (String) ID of your OneUptime IncidentTemplate in which this object belongs. The ID of a `oneuptime_incident_template`.
+- `incident_template_id` (String) ID of the incident template the user owns. The ID of a `oneuptime_incident_template`.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `user_id` (String) ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of the user who owns the incident template. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

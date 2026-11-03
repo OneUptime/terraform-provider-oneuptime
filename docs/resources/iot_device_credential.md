@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_iot_device_credential Resource - oneuptime"
-subcategory: "Other"
+subcategory: "IoT"
 description: |-
   Registered IoT devices and their per-device MQTT credentials. Registered devices get individual authentication, topic isolation, revocation, and silent-death offline detection.
 ---
@@ -23,7 +23,7 @@ moved {
 ```terraform
 resource "oneuptime_iot_device_credential" "example" {
   iot_fleet_id = oneuptime_iot_fleet.example.id
-  external_id  = "Example short text"
+  external_id  = "sensor-001"
   name         = "Example iot device credential"
 }
 ```
@@ -47,7 +47,7 @@ resource "oneuptime_iot_device_credential" "example" {
 - `id` (String) Unique identifier for the resource.
 - `last_connected_at` (String) When this credential last authenticated an MQTT connection.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `secret_key` (String) Secret this device presents as the MQTT password (with this credential's ID as the username).
+- `secret_key` (String, Sensitive) Secret this device presents as the MQTT password (with this credential's ID as the username).
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

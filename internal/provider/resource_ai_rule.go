@@ -24,11 +24,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AiRuleResource{}
 var _ resource.ResourceWithImportState = &AiRuleResource{}
+var _ resource.ResourceWithModifyPlan = &AiRuleResource{}
 var _ resource.ResourceWithMoveState = &AiRuleResource{}
 
 func NewAiRuleResource() resource.Resource {
@@ -126,6 +128,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -166,6 +169,9 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Incident", "Alert", "Profile", "Trace", "Exception", "Log", "Metric"),
+                },
             },
             "investigates": schema.BoolAttribute{
                 MarkdownDescription: "Whether OneUptime AI investigates the incidents or alerts this rule matches. With enabled rules that investigate, only their matches are investigated. Off, the rule only fixes, and does not change which incidents are investigated. The dashboard turns it on for every rule; left out of an API write, it is off.",
@@ -181,6 +187,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -201,6 +208,9 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Suggest", "FullAuto"),
+                },
             },
             "remediation_action": schema.StringAttribute{
                 MarkdownDescription: "OneUptimeAI (the default): OneUptime AI fixes the matched incident or alert - on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, with the project's runbooks (only the rule's Runbooks when it names some) and with commands on the rule's Runner when it picks one. Runbooks: the rule starts every one of its Runbooks for every match, without OneUptime AI deciding. Whether a person approves first is the rule's Execution Mode.",
@@ -209,6 +219,9 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("OneUptimeAI"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("OneUptimeAI", "Runbooks"),
                 },
             },
             "ai_selects_runbook": schema.BoolAttribute{
@@ -235,6 +248,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -249,6 +263,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_runner"),
             },
             "monitors": schema.SetAttribute{
                 MarkdownDescription: "Only trigger for incidents/alerts from these monitors. Leave empty to match any monitor. IDs of `oneuptime_monitor` resources.",
@@ -258,6 +273,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "incident_severities": schema.SetAttribute{
                 MarkdownDescription: "Only trigger for incidents with these severities (incident rules only). Leave empty to match any severity. IDs of `oneuptime_incident_severity` resources.",
@@ -267,6 +283,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_incident_severity"),
             },
             "alert_severities": schema.SetAttribute{
                 MarkdownDescription: "Only trigger for alerts with these severities (alert rules only). Leave empty to match any severity. IDs of `oneuptime_alert_severity` resources.",
@@ -276,6 +293,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_alert_severity"),
             },
             "labels": schema.SetAttribute{
                 MarkdownDescription: "Only trigger for incidents/alerts that carry at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.",
@@ -285,6 +303,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "monitor_labels": schema.SetAttribute{
                 MarkdownDescription: "Only trigger when the incident/alert's monitor carries at least one of these labels — the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label. IDs of `oneuptime_label` resources.",
@@ -294,6 +313,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "title_pattern": schema.StringAttribute{
                 MarkdownDescription: "Case-insensitive regex matched against the entity's title. Leave empty to match any title.",
@@ -319,6 +339,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_service"),
             },
             "service_labels": schema.SetAttribute{
                 MarkdownDescription: "Profile, Trace, Exception, Log and Metric AI rules only: match what OneUptime found in a service that carries at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.",
@@ -328,6 +349,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "service_name_pattern": schema.StringAttribute{
                 MarkdownDescription: "Profile, Trace, Exception, Log and Metric AI rules only: case-insensitive regex matched against the name of the service OneUptime found the problem in. Leave empty to match any name.",
@@ -345,6 +367,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_runbook"),
             },
             "external_mcp_servers": schema.SetAttribute{
                 MarkdownDescription: "The external MCP servers OneUptime AI may use while it investigates and fixes what this rule matches (an investigation uses only their tools that read). Leave empty to let it use all of the project's MCP servers; changes through them are then always proposed for approval first. IDs of `oneuptime_external_mcp_server` resources.",
@@ -354,6 +377,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_external_mcp_server"),
             },
             "runner_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Runner OneUptime AI runs this rule's Bash commands on: one of the project's own Runners. Empty means none: OneUptime AI runs no commands of its own for the rule. Commands on the affected Kubernetes cluster or host always go through its AI agent. The ID of a `oneuptime_runner`.",
@@ -362,6 +386,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_runner"),
             },
             "code_repositories": schema.SetAttribute{
                 MarkdownDescription: "The code repositories OneUptime AI may read while it investigates and fixes what this rule matches, and open the rule's pull requests in. Leave empty to let it use every repository the project has connected. IDs of `oneuptime_code_repository` resources.",
@@ -371,6 +396,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_code_repository"),
             },
             "llm_provider_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the LLM provider OneUptime AI uses for everything this rule starts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
@@ -379,6 +405,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_llm_provider"),
             },
             "ai_context": schema.StringAttribute{
                 MarkdownDescription: "Notes OneUptime AI reads after the project's AI context when it investigates or fixes what this rule matches. Markdown, at most 5,000 characters.",
@@ -411,6 +438,7 @@ func (r *AiRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -461,6 +489,17 @@ func (r *AiRuleResource) MoveState(ctx context.Context) []resource.StateMover {
     return []resource.StateMover{
         legacyNameStateMover("oneuptime_auto_remediation_rule", r.schemaDefinition()),
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AiRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AiRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1672,6 +1711,9 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2716,6 +2758,12 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "command_allowlist": !data.CommandAllowlist.Equal(state.CommandAllowlist),
+        "criteria": !data.Criteria.Equal(state.Criteria),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config AiRuleResourceModel
@@ -3867,6 +3915,9 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3903,6 +3954,9 @@ func (r *AiRuleResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 func (r *AiRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"command_allowlist", "criteria"})...)
 }
 
 

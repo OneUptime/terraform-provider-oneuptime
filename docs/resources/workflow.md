@@ -28,11 +28,11 @@ resource "oneuptime_workflow" "example" {
 
 - `description` (String) Friendly description that will help you remember.
 - `graph` (String) Workflow Graph in JSON. Ideally, create this via UI and not via API. A JSON value: write it with `jsonencode()`.
-- `incoming_email_secret_key` (String) The secret part of the Incoming Email trigger's address (workflow-<key>@<inbound email domain>). Anyone who has the address can start the workflow, so only people who can edit the workflow can read the key. Given to the workflow when its graph first has an Incoming Email trigger; set a new UUID to reset the address. Unique across all workflows.
+- `incoming_email_secret_key` (String, Sensitive) The secret part of the Incoming Email trigger's address (workflow-<key>@<inbound email domain>). Anyone who has the address can start the workflow, so only people who can edit the workflow can read the key. Given to the workflow when its graph first has an Incoming Email trigger; set a new UUID to reset the address. Unique across all workflows.
 - `is_archived` (Boolean) Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were. Defaults to `false`.
 - `is_enabled` (Boolean) Is this workflow enabled? Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
-- `webhook_secret_key` (String) The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `webhook_secret_key` (String, Sensitive) The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL.
 - `webhook_signing_secret` (String, Sensitive) The signing secret of a trigger that checks the signature of each request, such as the Huntress trigger's endpoint secret (whsec_...). A request that is not signed with it starts nothing. Encrypted at rest and never returned by the API.
 
 ### Read-Only

@@ -50,7 +50,7 @@ func (d *IncidentCustomFieldDataSource) Metadata(ctx context.Context, req dataso
 
 func (d *IncidentCustomFieldDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage custom fields for your incident. Look up an existing incident custom field by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one incident custom field may match them all.",
+        MarkdownDescription: "Manage custom fields for your incident. Look up an existing incident custom field by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `custom_field_type`, ...): each one set must match, and exactly one incident custom field may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -81,7 +81,8 @@ func (d *IncidentCustomFieldDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "custom_field_type": schema.StringAttribute{
-                MarkdownDescription: "Is this field Text, Number or Boolean? A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What kind of value the field holds, such as Text, Number or Dropdown.",
+                Optional: true,
                 Computed: true,
             },
             "dropdown_options": schema.StringAttribute{
@@ -128,6 +129,7 @@ func (d *IncidentCustomFieldDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }
@@ -175,6 +177,10 @@ func (d *IncidentCustomFieldDataSource) Read(ctx context.Context, req datasource
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         filters["description"] = data.Description.ValueString()
         filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.CustomFieldType.IsNull() && !data.CustomFieldType.IsUnknown() {
+        filters["customFieldType"] = data.CustomFieldType.ValueString()
+        filterNames = append(filterNames, "custom_field_type = "+fmt.Sprintf("%q", data.CustomFieldType.ValueString()))
     }
     if !data.DropdownOptions.IsNull() && !data.DropdownOptions.IsUnknown() {
         filters["dropdownOptions"] = data.DropdownOptions.ValueString()

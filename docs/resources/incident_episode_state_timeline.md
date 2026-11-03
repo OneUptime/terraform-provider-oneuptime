@@ -39,7 +39,7 @@ resource "oneuptime_incident_episode_state_timeline" "example" {
 - `id` (String) Unique identifier for the resource.
 - `is_owner_notified` (Boolean) Are owners notified of state change?
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `state_change_log` (String) A JSON value: write it with `jsonencode()`.
+- `state_change_log` (String) A JSON value: read it with `jsondecode()`.
 - `subscriber_notification_status` (String) Status of notification sent to subscribers about this state change.
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.
 - `updated_at` (String) Date and Time when the object was updated.

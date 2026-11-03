@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_rule_exception Data Source - oneuptime"
-subcategory: "Telemetry & Dashboards"
+subcategory: "Security"
 description: |-
   What a detection rule skips: an entity, a value or a time window, with who added it, why, and when it expires.
 ---

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_cloud_resource_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Cloud"
 description: |-
   Rules for automatically attaching labels to cloud resources (Cloud) or cloud environments (App Platforms) when matching ones are created.
 ---
@@ -26,7 +26,7 @@ resource "oneuptime_cloud_resource_label_rule" "example" {
 
 ### Optional
 
-- `cloud_resource_kind` (String) environment: App Platforms' environments. resource: the resources of Cloud's accounts. Empty: both, as rules made before the two products split.
+- `cloud_resource_kind` (String) environment: App Platforms' environments. resource: the resources of Cloud's accounts. Empty: both, as rules made before the two products split. Allowed values: `environment`, `resource`.
 - `cloud_tag_pattern` (String) Regex (case-insensitive) matched against each of the resource's cloud tags, written key=value: ^team=payments$ matches every resource tagged team=payments, ^env= every resource with an env tag. Leave empty to match any tags.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of this rule.

@@ -25,6 +25,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SecurityCaseStatusResource{}
 var _ resource.ResourceWithImportState = &SecurityCaseStatusResource{}
+var _ resource.ResourceWithModifyPlan = &SecurityCaseStatusResource{}
 
 func NewSecurityCaseStatusResource() resource.Resource {
     return &SecurityCaseStatusResource{}
@@ -140,6 +141,7 @@ func (r *SecurityCaseStatusResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -168,6 +170,9 @@ func (r *SecurityCaseStatusResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for the status.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "archived_at": schema.StringAttribute{
                 MarkdownDescription: "When this status was archived. Empty while it is not archived.",
@@ -187,6 +192,17 @@ func (r *SecurityCaseStatusResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SecurityCaseStatusResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SecurityCaseStatusResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -661,6 +677,7 @@ func (r *SecurityCaseStatusResource) Create(ctx context.Context, req resource.Cr
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

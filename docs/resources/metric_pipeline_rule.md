@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_metric_pipeline_rule Resource - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Rules applied at metric ingest time to filter, drop, rename, enrich, redact, or sample metric data points.
 ---
@@ -14,7 +14,7 @@ Rules applied at metric ingest time to filter, drop, rename, enrich, redact, or 
 ```terraform
 resource "oneuptime_metric_pipeline_rule" "example" {
   name        = "Example metric pipeline rule"
-  rule_type   = "Example short text"
+  rule_type   = "Filter"
   description = "Managed by Terraform"
 }
 ```
@@ -24,14 +24,14 @@ resource "oneuptime_metric_pipeline_rule" "example" {
 ### Required
 
 - `name` (String) Friendly name for this rule.
-- `rule_type` (String) One of: Filter, Drop, RenameMetric, RenameAttribute, AddAttribute, RemoveAttribute, RedactAttribute, Sample.
+- `rule_type` (String) One of: Filter, Drop, RenameMetric, RenameAttribute, AddAttribute, RemoveAttribute, RedactAttribute, Sample. Allowed values: `Filter`, `Drop`, `RenameMetric`, `RenameAttribute`, `AddAttribute`, `RemoveAttribute`, `RedactAttribute`, `Sample`.
 
 ### Optional
 
 - `add_attribute_key` (String) For AddAttribute / RemoveAttribute / RedactAttribute: the attribute key to act on.
 - `add_attribute_value` (String) For AddAttribute: the attribute value to set.
 - `description` (String) Description of what this rule does.
-- `filter_condition` (String) How to combine filters: 'All' requires every filter to match (AND), 'Any' requires at least one to match (OR). Defaults to `All`.
+- `filter_condition` (String) How to combine filters: 'All' requires every filter to match (AND), 'Any' requires at least one to match (OR). Allowed values: `All`, `Any`. Defaults to `All`.
 - `filters` (String) List of filters evaluated against each metric data point. An empty list matches every data point. A JSON value: write it with `jsonencode()`.
 - `is_enabled` (Boolean) Whether this rule is active. Defaults to `true`.
 - `redact_replacement` (String) For RedactAttribute: the literal string to replace the value with. Defaults to [REDACTED].

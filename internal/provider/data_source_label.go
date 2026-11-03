@@ -85,6 +85,7 @@ func (d *LabelDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "color": schema.StringAttribute{
                 MarkdownDescription: "Color of this resource in Hex (#32a852 for example).",
@@ -103,6 +104,7 @@ func (d *LabelDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

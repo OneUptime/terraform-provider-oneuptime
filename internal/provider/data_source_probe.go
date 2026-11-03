@@ -69,17 +69,17 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
-                Optional: true,
+                MarkdownDescription: "The secret the probe connects with, its PROBE_KEY. Leave it out and OneUptime generates one.",
                 Computed: true,
+                Sensitive: true,
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe, Create Monitor, Edit Monitor, Read Monitor, Create All Operational Resources, Edit All Operational Resources, Read All Operational Resources, Create Monitor Probe, Edit Monitor Probe, Read Monitor Probe, Create Network Device, Edit Network Device, Read Network Device, Create Network Device Discovery Scan, Edit Network Device Discovery Scan, Read Network Device Discovery Scan, Create Network Site, Edit Network Site, Read Network Site, Create vCenter, Edit vCenter, Read vCenter], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
+                MarkdownDescription: "Any friendly name of this object.",
                 Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe, Create Monitor, Edit Monitor, Read Monitor, Create All Operational Resources, Edit All Operational Resources, Read All Operational Resources, Create Monitor Probe, Edit Monitor Probe, Read Monitor Probe, Create Network Device, Edit Network Device, Read Network Device, Create Network Device Discovery Scan, Edit Network Device Discovery Scan, Read Network Device Discovery Scan, Create Network Site, Edit Network Site, Read Network Site, Create vCenter, Edit vCenter, Read vCenter], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
+                MarkdownDescription: "Friendly description that will help you remember.",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -88,20 +88,21 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "probe_version": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
+                MarkdownDescription: "A version label for the probe. Leave it out and it is 1.0.0.",
                 Computed: true,
             },
             "last_alive": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe, Create Monitor, Edit Monitor, Read Monitor, Create All Operational Resources, Edit All Operational Resources, Read All Operational Resources, Create Monitor Probe, Edit Monitor Probe, Read Monitor Probe, Create Network Device, Edit Network Device, Read Network Device, Create Network Device Discovery Scan, Edit Network Device Discovery Scan, Read Network Device Discovery Scan, Create Network Site, Edit Network Site, Read Network Site, Create vCenter, Edit vCenter, Read vCenter], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "When the probe last checked in. Set by OneUptime.",
                 Computed: true,
             },
             "icon_file_id": schema.StringAttribute{
                 MarkdownDescription: "Probe Page Icon File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe, Create Monitor, Edit Monitor, Read Monitor, Create All Operational Resources, Edit All Operational Resources, Read All Operational Resources, Create Monitor Probe, Edit Monitor Probe, Read Monitor Probe, Create Network Device, Edit Network Device, Read Network Device, Create Network Device Discovery Scan, Edit Network Device Discovery Scan, Read Network Device Discovery Scan, Create Network Site, Edit Network Site, Read Network Site, Create vCenter, Edit vCenter, Read vCenter], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "ID of the project the probe belongs to. A global probe belongs to none.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -120,11 +121,11 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "packet_capture_capability": schema.StringAttribute{
-                MarkdownDescription: "What the probe last reported about packet capture: whether it is turned on (PROBE_PACKET_CAPTURE_ENABLED on the probe), whether tcpdump is installed, the network interfaces it can capture on, and the limits its operator set. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the probe last reported about packet capture: whether it is turned on (PROBE_PACKET_CAPTURE_ENABLED on the probe), whether tcpdump is installed, the network interfaces it can capture on, and the limits its operator set. Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -167,10 +168,6 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
-    if !data.Key.IsNull() && !data.Key.IsUnknown() {
-        filters["key"] = data.Key.ValueString()
-        filterNames = append(filterNames, "key = "+fmt.Sprintf("%q", data.Key.ValueString()))
-    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))

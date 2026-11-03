@@ -63,6 +63,7 @@ type ExceptionDataSourceModel struct {
     MergedIntoTelemetryExceptionId types.String `tfsdk:"merged_into_telemetry_exception_id"`
     MergedAt types.String `tfsdk:"merged_at"`
     MergedByUserId types.String `tfsdk:"merged_by_user_id"`
+    AssignToUserEmail types.String `tfsdk:"assign_to_user_email"`
 }
 
 func (d *ExceptionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -71,7 +72,7 @@ func (d *ExceptionDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "List of all Telemetry Exceptions created for the telemetry service for this OneUptime project and it's status. Look up an existing exception by `id`, or by any of its other arguments (`ai_classification`, `assign_to_team_id`, `assign_to_user_id`, ...): each one set must match, and exactly one exception may match them all.",
+        MarkdownDescription: "List of all Telemetry Exceptions created for the telemetry service for this OneUptime project and it's status. Look up an existing exception by `id`, or by any of its other arguments (`ai_classification`, `assign_to_team_id`, `assign_to_user_email`, ...): each one set must match, and exactly one exception may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -125,6 +126,7 @@ func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "marked_as_resolved_at": schema.StringAttribute{
                 MarkdownDescription: "When this exception was last resolved. Empty while it is unresolved.",
@@ -143,24 +145,28 @@ func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "assign_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assign_to_user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("assign_to_user_email", false),
             },
             "assign_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "Team ID who this exception is assigned to. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "marked_as_resolved_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who marked this exception as resolved. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "marked_as_archived_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who marked this exception as archived. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_resolved": schema.BoolAttribute{
                 MarkdownDescription: "Is this exception resolved?",
@@ -226,7 +232,7 @@ func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "ai_explanation": schema.StringAttribute{
-                MarkdownDescription: "OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "ai_explanation_generated_at": schema.StringAttribute{
@@ -237,6 +243,7 @@ func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "ID of the exception this one was merged into as the same bug. Empty for an exception that was not merged. The ID of a `oneuptime_exception`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_exception"),
             },
             "merged_at": schema.StringAttribute{
                 MarkdownDescription: "When this exception was merged into another.",
@@ -246,6 +253,13 @@ func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "ID of the user who merged this exception into another. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
+            },
+            "assign_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `assign_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -381,6 +395,14 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
     if !data.MergedByUserId.IsNull() && !data.MergedByUserId.IsUnknown() {
         filters["mergedByUserId"] = data.MergedByUserId.ValueString()
         filterNames = append(filterNames, "merged_by_user_id = "+fmt.Sprintf("%q", data.MergedByUserId.ValueString()))
+    }
+    if !data.AssignToUserEmail.IsNull() && !data.AssignToUserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.AssignToUserEmail.ValueString(), "assign_to_user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["assignToUserId"] = personID
+        filterNames = append(filterNames, "assign_to_user_email = "+fmt.Sprintf("%q", data.AssignToUserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -1073,6 +1095,7 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
     } else {
         data.MergedByUserId = types.StringNull()
     }
+    data.AssignToUserEmail = personEmailAfterLookup(ctx, d.client, data.AssignToUserId, data.AssignToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

@@ -42,6 +42,6 @@ data "oneuptime_on_call_user_group" "by_id" {
 - `next_sync_at` (String) When OneUptime looks at the group again, besides every hand-off: to undo changes made to it by hand, and to try again after the workspace refused a change.
 - `on_call_duty_policy_schedules` (Set of String) The on-call schedules the group follows: it holds whoever is on call in any of them right now. IDs of `oneuptime_on_call_policy_schedule` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `sync_state` (String) What the last sync came to: who OneUptime put in the group, who is on call but could not be added and why, whether the group is turned off while nobody is on call, and what stopped the sync, if anything. A JSON value: write it with `jsonencode()`.
+- `sync_state` (String) What the last sync came to: who OneUptime put in the group, who is on call but could not be added and why, whether the group is turned off while nobody is on call, and what stopped the sync, if anything. A JSON value: read it with `jsondecode()`.
 - `synced_at` (String) When the group last matched who was on call.
 - `updated_at` (String) Date and Time when the object was updated.

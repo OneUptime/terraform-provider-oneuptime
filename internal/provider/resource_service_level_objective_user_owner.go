@@ -14,15 +14,14 @@ import (
     "encoding/json"
     "net/url"
     "strings"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ServiceLevelObjectiveUserOwnerResource{}
 var _ resource.ResourceWithImportState = &ServiceLevelObjectiveUserOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &ServiceLevelObjectiveUserOwnerResource{}
 
 func NewServiceLevelObjectiveUserOwnerResource() resource.Resource {
     return &ServiceLevelObjectiveUserOwnerResource{}
@@ -39,10 +38,11 @@ type ServiceLevelObjectiveUserOwnerResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     UserId types.String `tfsdk:"user_id"`
     ServiceLevelObjectiveId types.String `tfsdk:"service_level_objective_id"`
-    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *ServiceLevelObjectiveUserOwnerResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -73,28 +73,18 @@ func (r *ServiceLevelObjectiveUserOwnerResource) schemaDefinition() schema.Schem
                 },
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).",
-                Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
-            },
-            "service_level_objective_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Service Level Objective in which this object belongs. The ID of a `oneuptime_service_level_objective`.",
-                Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
-            },
-            "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?",
+                MarkdownDescription: "ID of the user who owns the service level objective. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                    boolplanmodifier.RequiresReplace(),
+                Validators: personIDValidators("user_email", true),
+            },
+            "service_level_objective_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the service level objective the user owns. The ID of a `oneuptime_service_level_objective`.",
+                Required: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_service_level_objective"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -116,8 +106,38 @@ func (r *ServiceLevelObjectiveUserOwnerResource) schemaDefinition() schema.Schem
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_owner_notified": schema.BoolAttribute{
+                MarkdownDescription: "Are owners notified of this resource ownership?",
+                Computed: true,
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this service level objective user owner names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ServiceLevelObjectiveUserOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: true,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ServiceLevelObjectiveUserOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -160,6 +180,11 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Create(ctx context.Context, req
     plan := data
 
 
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
+
 
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
@@ -174,9 +199,6 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Create(ctx context.Context, req
     }
     if !data.ServiceLevelObjectiveId.IsNull() && !data.ServiceLevelObjectiveId.IsUnknown() {
         requestDataMap["serviceLevelObjectiveId"] = data.ServiceLevelObjectiveId.ValueString()
-    }
-    if !data.IsOwnerNotified.IsNull() && !data.IsOwnerNotified.IsUnknown() {
-        requestDataMap["isOwnerNotified"] = data.IsOwnerNotified.ValueBool()
     }
 
     // Make API call
@@ -208,6 +230,19 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Create(ctx context.Context, req
     }
     data.Id = types.StringValue(createdId)
 
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := serviceLevelObjectiveUserOwnerResponse
+        if wrapper, ok := serviceLevelObjectiveUserOwnerResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
+
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
@@ -226,10 +261,10 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Create(ctx context.Context, req
         "projectId": true,
         "userId": true,
         "serviceLevelObjectiveId": true,
-        "isOwnerNotified": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -347,9 +382,6 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Create(ctx context.Context, req
     } else {
         data.ServiceLevelObjectiveId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -409,6 +441,9 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Create(ctx context.Context, req
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -419,9 +454,12 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Create(ctx context.Context, req
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -442,12 +480,16 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Read(ctx context.Context, req r
         "projectId": true,
         "userId": true,
         "serviceLevelObjectiveId": true,
-        "isOwnerNotified": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/service-level-objective-owner-user/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -564,9 +606,6 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Read(ctx context.Context, req r
     } else {
         data.ServiceLevelObjectiveId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -626,11 +665,16 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Read(ctx context.Context, req r
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -663,6 +707,11 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Update(ctx context.Context, req
     }
     plan := data
 
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
+
     // Create API request body
     serviceLevelObjectiveUserOwnerRequest := map[string]interface{}{
         "data": map[string]interface{}{},
@@ -694,10 +743,10 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Update(ctx context.Context, req
         "projectId": true,
         "userId": true,
         "serviceLevelObjectiveId": true,
-        "isOwnerNotified": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -810,9 +859,6 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Update(ctx context.Context, req
     } else {
         data.ServiceLevelObjectiveId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -872,6 +918,9 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Update(ctx context.Context, req
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -881,6 +930,8 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Update(ctx context.Context, req
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -917,7 +968,25 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Delete(ctx context.Context, req
 
 
 func (r *ServiceLevelObjectiveUserOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <service_level_objective_id>/<email address or user id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/service-level-objective-owner-user/get-list",
+        parentField:     "serviceLevelObjectiveId",
+        parentAttribute: "service_level_objective_id",
+        parentNoun:      "service level objective",
+        personField:     "userId",
+        personAttribute: "user_id",
+        byEmail:         true,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    // The address it was imported by, as written: the refresh keeps it.
+    if email != "" {
+        resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("user_email"), email)...)
+    }
 }
 
 
@@ -929,8 +998,11 @@ func (r *ServiceLevelObjectiveUserOwnerResource) ImportState(ctx context.Context
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
 func (r *ServiceLevelObjectiveUserOwnerResource) keepPlannedValues(data *ServiceLevelObjectiveUserOwnerResourceModel, plan *ServiceLevelObjectiveUserOwnerResourceModel, config *ServiceLevelObjectiveUserOwnerResourceModel) {
-    if config.IsOwnerNotified.IsNull() && !plan.IsOwnerNotified.IsUnknown() {
-        data.IsOwnerNotified = plan.IsOwnerNotified
+    if config.UserId.IsNull() && !plan.UserId.IsUnknown() {
+        data.UserId = plan.UserId
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 

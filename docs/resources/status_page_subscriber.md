@@ -31,17 +31,17 @@ resource "oneuptime_status_page_subscriber" "example" {
 - `is_subscription_confirmed` (Boolean) Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email). Defaults to `false`.
 - `is_unsubscribed` (Boolean) Is Subscriber Unsubscribed? Defaults to `false`.
 - `language` (String) The language this subscriber is notified in. Empty means the status page's default language.
-- `microsoft_teams_incoming_webhook_url` (String) Microsoft Teams incoming webhook URL to send notifications to Teams channel.
+- `microsoft_teams_incoming_webhook_url` (String, Sensitive) Microsoft Teams incoming webhook URL to send notifications to Teams channel.
 - `microsoft_teams_workspace_name` (String) Name of the Microsoft Teams workspace for validation and identification.
 - `send_you_have_subscribed_message` (Boolean) Send You Have Subscribed Message when subscriber is created? Defaults to `true`.
-- `slack_incoming_webhook_url` (String) Slack incoming webhook URL to send notifications to Slack channel.
+- `slack_incoming_webhook_url` (String, Sensitive) Slack incoming webhook URL to send notifications to Slack channel.
 - `slack_workspace_name` (String) Name of the Slack workspace for validation and identification.
 - `status_page_event_types` (String) Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: write it with `jsonencode()`.
 - `status_page_resources` (Set of String) Relation to Status Page Resources where this subscriber is subscribed to. IDs of `oneuptime_status_page_resource` resources.
 - `subscriber_email` (String) Email address of the subscriber.
 - `subscriber_phone` (String) Phone number of subscriber.
-- `subscriber_webhook` (String) Webhook to ping when events happen on Status Page.
-- `subscription_confirmation_token` (String) Token used to confirm subscription. This is a random token that is sent to the subscriber's email address to confirm their subscription.
+- `subscriber_webhook` (String, Sensitive) Webhook to ping when events happen on Status Page.
+- `subscription_confirmation_token` (String, Sensitive) Token used to confirm subscription. This is a random token that is sent to the subscriber's email address to confirm their subscription.
 
 ### Read-Only
 

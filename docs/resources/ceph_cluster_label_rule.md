@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ceph_cluster_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically attaching labels to Ceph clusters when matching Ceph clusters are created
 ---

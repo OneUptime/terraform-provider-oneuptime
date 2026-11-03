@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_hunt Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Searches over security events saved with a name, to open again or to run on a schedule that tells people when it finds something.
 ---
@@ -29,10 +29,11 @@ resource "oneuptime_hunt" "example" {
 - `description` (String) Why the hunt matters and what to do when it finds something, for whoever opens it later.
 - `filters` (String) The Events sidebar's filters kept beside the search: each field's values, or with ! before the field the values it leaves out. At most 50 values. A JSON value: write it with `jsonencode()`.
 - `notify_teams` (Set of String) The teams whose members are told when a scheduled run finds events, each as their notification settings say. Only members who can read security events are told. IDs of `oneuptime_team` resources.
-- `notify_users` (Set of String) The people told when a scheduled run finds events, each as their notification settings say. Only people who can read security events are told. IDs of `oneuptime_user` records.
-- `schedule` (String) How often the hunt runs on its own and tells people what it found: Not Scheduled, Every Hour, Every 6 Hours, Every Day or Every Week. Each run searches the events that arrived since the run before. Defaults to `Not Scheduled`.
+- `notify_user_emails` (Set of String) The email addresses of the people in `notify_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `notify_users` (Set of String) The people told when a scheduled run finds events, each as their notification settings say. Only people who can read security events are told. IDs of `oneuptime_user` records. Or name them by email address, in `notify_user_emails`.
+- `schedule` (String) How often the hunt runs on its own and tells people what it found: Not Scheduled, Every Hour, Every 6 Hours, Every Day or Every Week. Each run searches the events that arrived since the run before. Allowed values: `Not Scheduled`, `Every Hour`, `Every 6 Hours`, `Every Day`, `Every Week`. Defaults to `Not Scheduled`.
 - `search_query` (String) What the hunt searches for, in the Events search bar's language: words a message contains, fields such as severity:High or user:alice, and source attributes such as @threat.matched:true. At most 2,000 characters.
-- `time_range` (String) How far back the hunt searches when it is opened, as the Events time picker names it: Past 1 Hour, Past 1 Day, Past 1 Week, Past 1 Month and the rest. Defaults to `Past 1 Week`.
+- `time_range` (String) How far back the hunt searches when it is opened, as the Events time picker names it: Past 1 Hour, Past 1 Day, Past 1 Week, Past 1 Month and the rest. Allowed values: `Past 5 Mins`, `Past 15 Mins`, `Past 30 Mins`, `Past 1 Hour`, `Past 2 Hours`, `Past 3 Hours`, `Past 1 Day`, `Past 2 Days`, `Past 1 Week`, `Past 2 Weeks`, `Past 1 Month`, `Past 3 Months`, `Custom`. Defaults to `Past 1 Week`.
 
 ### Read-Only
 

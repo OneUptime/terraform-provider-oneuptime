@@ -14,7 +14,7 @@ Calendars from outside the project - public holidays, change freezes, another pr
 ```terraform
 resource "oneuptime_scheduled_maintenance_external_calendar" "example" {
   name         = "Example scheduled maintenance external calendar"
-  calendar_url = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
+  calendar_url = "https://calendar.example.com/holidays.ics"
 }
 ```
 

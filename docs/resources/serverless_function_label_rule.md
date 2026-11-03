@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_serverless_function_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Rules for automatically attaching labels to serverless functions when matching functions are created.
 ---

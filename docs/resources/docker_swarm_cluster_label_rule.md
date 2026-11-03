@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_docker_swarm_cluster_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically attaching labels to DockerSwarm clusters when matching DockerSwarm clusters are created
 ---

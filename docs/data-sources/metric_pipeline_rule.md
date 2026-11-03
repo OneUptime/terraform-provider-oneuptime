@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_metric_pipeline_rule Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Rules applied at metric ingest time to filter, drop, rename, enrich, redact, or sample metric data points.
 ---
@@ -47,6 +47,6 @@ data "oneuptime_metric_pipeline_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `filters` (String) List of filters evaluated against each metric data point. An empty list matches every data point. A JSON value: write it with `jsonencode()`.
+- `filters` (String) List of filters evaluated against each metric data point. An empty list matches every data point. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this metric pipeline rule belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

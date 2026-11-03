@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_iot_fleet_user_owner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "IoT"
 description: |-
   Add users as owners to your IoT fleets.
 ---
@@ -17,7 +17,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_iot_fleet_user_owner" "example" {
-  user_id = data.oneuptime_user.example.id
+  iot_fleet_id = oneuptime_iot_fleet.example.id
+  user_email   = "alice@example.com"
 }
 
 # Or by id:
@@ -32,9 +33,10 @@ data "oneuptime_iot_fleet_user_owner" "by_id" {
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `iot_fleet_id` (String) ID of your OneUptime IoT Fleet in which this object belongs. The ID of a `oneuptime_iot_fleet`.
+- `iot_fleet_id` (String) ID of the IoT fleet the user owns. The ID of a `oneuptime_iot_fleet`.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `user_id` (String) ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of the user who owns the IoT fleet. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

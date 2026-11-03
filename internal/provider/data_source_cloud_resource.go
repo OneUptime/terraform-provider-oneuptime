@@ -153,23 +153,23 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "telemetry_attributes": schema.StringAttribute{
-                MarkdownDescription: "For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "cloud_tags": schema.StringAttribute{
-                MarkdownDescription: "For a resource a cloud connection's inventory lists: its tags in the cloud (AWS tags, Azure tags, Google Cloud labels), at most 50. Label and owner rules can match them. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: its tags in the cloud (AWS tags, Azure tags, Google Cloud labels), at most 50. Label and owner rules can match them. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "cloud_properties": schema.StringAttribute{
-                MarkdownDescription: "For a resource a cloud connection's inventory lists: the properties a person reads first, such as an instance's type or a database's engine and version, keyed by their path in the cloud's description. Never anything that can hold a secret. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: the properties a person reads first, such as an instance's type or a database's engine and version, keyed by their path in the cloud's description. Never anything that can hold a secret. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "cloud_relationships": schema.StringAttribute{
-                MarkdownDescription: "For a resource a cloud connection's inventory lists: what it runs in, is part of, sends traffic to or is protected by, each as the other resource's id in the cloud. The edges of the account's topology. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: what it runs in, is part of, sends traffic to or is protected by, each as the other resource's id in the cloud. The edges of the account's topology. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "cloud_endpoints": schema.StringAttribute{
-                MarkdownDescription: "For a resource a cloud connection's inventory lists: the host names and addresses it answers on, such as a load balancer's DNS name. Monitors of those hosts are linked to it. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For a resource a cloud connection's inventory lists: the host names and addresses it answers on, such as a load balancer's DNS name. Monitors of those hosts are linked to it. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "inventoried_at": schema.StringAttribute{
@@ -180,6 +180,7 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "For a resource: ID of the cloud connection that reads it, when one does. The ID of a `oneuptime_cloud_connection`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_cloud_connection"),
             },
             "runtime_name": schema.StringAttribute{
                 MarkdownDescription: "Last-seen process.runtime.name OpenTelemetry resource attribute.",
@@ -206,7 +207,7 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -216,13 +217,14 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this resource. Unset fields fall back to the resource default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-pillar retention overrides for this resource. Unset fields fall back to the resource default, then the project's retention settings. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this cloud resource archived? Archived cloud resources are hidden from lists but keep collecting telemetry.",
@@ -237,6 +239,7 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "auto_archived_at": schema.StringAttribute{
                 MarkdownDescription: "For a resource: when it was archived automatically for sending no metrics for the auto-archive period. Cleared when it reports again.",

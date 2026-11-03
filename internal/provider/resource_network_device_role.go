@@ -24,6 +24,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkDeviceRoleResource{}
 var _ resource.ResourceWithImportState = &NetworkDeviceRoleResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkDeviceRoleResource{}
 
 func NewNetworkDeviceRoleResource() resource.Resource {
     return &NetworkDeviceRoleResource{}
@@ -121,6 +122,7 @@ func (r *NetworkDeviceRoleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -140,6 +142,9 @@ func (r *NetworkDeviceRoleResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "key": schema.StringAttribute{
                 MarkdownDescription: "Stable identifier for this role, derived from its name when it is created. SNMP classification and the topology map match on this, so it never changes when the role is renamed.",
@@ -154,6 +159,17 @@ func (r *NetworkDeviceRoleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkDeviceRoleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkDeviceRoleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -587,6 +603,7 @@ func (r *NetworkDeviceRoleResource) Create(ctx context.Context, req resource.Cre
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

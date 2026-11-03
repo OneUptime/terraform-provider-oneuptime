@@ -24,11 +24,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &DatabaseResource{}
 var _ resource.ResourceWithImportState = &DatabaseResource{}
+var _ resource.ResourceWithModifyPlan = &DatabaseResource{}
 
 func NewDatabaseResource() resource.Resource {
     return &DatabaseResource{}
@@ -154,6 +156,7 @@ func (r *DatabaseResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                     numberplanmodifier.RequiresReplace(),
                 },
@@ -177,19 +180,21 @@ func (r *DatabaseResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
                 MarkdownDescription: "Number of days to retain telemetry collected from this database by a collector / agent. Leave blank to use the project-wide default.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -199,6 +204,7 @@ func (r *DatabaseResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -222,6 +228,9 @@ func (r *DatabaseResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Disabled", "RequireApproval", "Automatic", "BypassApproval"),
+                },
             },
             "ai_command_allowlist": schema.StringAttribute{
                 MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this database server without approval even though they are riskier changes. Each pattern is one command line for this database server's agent (db, a fixed catalog of diagnostics, never free-form SQL) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this database server is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the database server can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
@@ -229,6 +238,7 @@ func (r *DatabaseResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -251,6 +261,9 @@ func (r *DatabaseResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "workload_identifier": schema.StringAttribute{
                 MarkdownDescription: "Identity of the Kubernetes / Docker / Podman workload this database runs as, e.g. postgresql|kubernetes:prod-cluster/data/statefulset/orders-db. The prefix is the engine family, not the engine (a MariaDB workload is mysql|..., a Valkey one redis|...). Empty for databases that are only known by their endpoint.",
@@ -285,7 +298,7 @@ func (r *DatabaseResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "member_entity_keys": schema.StringAttribute{
-                MarkdownDescription: "Telemetry entity keys of the pods / containers this database runs as, each with the time it was last seen. Maintained by discovery. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Telemetry entity keys of the pods / containers this database runs as, each with the time it was last seen. Maintained by discovery. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -331,7 +344,7 @@ func (r *DatabaseResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "automatic_assignments": schema.StringAttribute{
-                MarkdownDescription: "Label and owner ids that label rules, owner rules or telemetry attached automatically. Maintained by OneUptime. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Label and owner ids that label rules, owner rules or telemetry attached automatically. Maintained by OneUptime. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -367,6 +380,17 @@ func (r *DatabaseResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *DatabaseResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *DatabaseResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1709,6 +1733,9 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2953,6 +2980,12 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "ai_command_allowlist": !data.AiCommandAllowlist.Equal(state.AiCommandAllowlist),
+        "telemetry_retention_config": !data.TelemetryRetentionConfig.Equal(state.TelemetryRetentionConfig),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config DatabaseResourceModel
@@ -4232,6 +4265,9 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -4268,6 +4304,9 @@ func (r *DatabaseResource) Delete(ctx context.Context, req resource.DeleteReques
 
 func (r *DatabaseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"ai_command_allowlist", "telemetry_retention_config"})...)
 }
 
 

@@ -18,11 +18,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageSsoResource{}
 var _ resource.ResourceWithImportState = &StatusPageSsoResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageSsoResource{}
 
 func NewStatusPageSsoResource() resource.Resource {
     return &StatusPageSsoResource{}
@@ -85,30 +88,44 @@ func (r *StatusPageSsoResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Any friendly name of this object.",
                 Required: true,
             },
             "description": schema.StringAttribute{
+                MarkdownDescription: "What this sign-in is for, such as which identity provider it uses.",
                 Required: true,
             },
             "signature_method": schema.StringAttribute{
+                MarkdownDescription: "The algorithm your identity provider signs SAML responses with.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("RSA-SHA1", "RSA-SHA256", "RSA-SHA384", "RSA-SHA512"),
+                },
             },
             "digest_method": schema.StringAttribute{
+                MarkdownDescription: "The digest algorithm your identity provider's SAML signatures use.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("SHA1", "SHA256", "SHA384", "SHA512"),
+                },
             },
             "sign_on_url": schema.StringAttribute{
+                MarkdownDescription: "Your identity provider's single sign-on URL, where visitors are sent to sign in.",
                 Required: true,
             },
             "issuer_url": schema.StringAttribute{
+                MarkdownDescription: "Your identity provider's issuer (entity ID), as its SAML responses name it.",
                 Required: true,
             },
             "public_certificate": schema.StringAttribute{
+                MarkdownDescription: "Your identity provider's signing certificate, in PEM, to check its SAML responses with.",
                 Required: true,
             },
             "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When on, visitors of a private status page can sign in with this provider.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -117,6 +134,7 @@ func (r *StatusPageSsoResource) schemaDefinition() schema.Schema {
                 },
             },
             "is_tested": schema.BoolAttribute{
+                MarkdownDescription: "Whether a sign-in with this provider has been tested. It does not turn the provider on.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -147,6 +165,17 @@ func (r *StatusPageSsoResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageSsoResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageSsoResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -704,6 +733,7 @@ func (r *StatusPageSsoResource) Create(ctx context.Context, req resource.CreateR
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

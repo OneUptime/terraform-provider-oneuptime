@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ai_connection Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   Connections of AI / LLM observability to AI provider accounts (usage and cost) and to company AI tools (conversations), read on a schedule without any code.
 ---
@@ -40,9 +40,9 @@ data "oneuptime_ai_connection" "by_id" {
 
 ### Read-Only
 
-- `config` (String) The provider's settings that are not secret, such as a tenant, a subscription or a Region. Keys are defined by the provider. A JSON value: write it with `jsonencode()`.
+- `config` (String) The provider's settings that are not secret, such as a tenant, a subscription or a Region. Keys are defined by the provider. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
-- `last_pull_result` (String) What the last read found: how many days, records and conversations, and how long it took. A JSON value: write it with `jsonencode()`.
+- `last_pull_result` (String) What the last read found: how many days, records and conversations, and how long it took. A JSON value: read it with `jsondecode()`.
 - `last_pulled_at` (String) When the connection was last read. Empty means never.
 - `last_successful_pull_at` (String) When a read last finished without an error.
 - `next_pull_at` (String) When the connection is read next. Empty means as soon as possible.

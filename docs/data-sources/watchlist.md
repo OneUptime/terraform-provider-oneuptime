@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_watchlist Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Lists a team keeps that detection rules match against, such as VIP users, critical hosts, known-bad file hashes and allowed admin addresses.
 ---

@@ -30,7 +30,6 @@ data "oneuptime_status_page_scim" "by_id" {
 
 - `auto_deprovision_users` (Boolean) Automatically remove status page users when they are removed via SCIM.
 - `auto_provision_users` (Boolean) Automatically create status page users when they are added via SCIM.
-- `bearer_token` (String) Bearer token for SCIM authentication. Keep this secure.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description to help you remember.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
@@ -39,6 +38,7 @@ data "oneuptime_status_page_scim" "by_id" {
 
 ### Read-Only
 
+- `bearer_token` (String, Sensitive) Bearer token for SCIM authentication. Keep this secure.
 - `created_at` (String) Date and Time when the object was created.
 - `oauth_client_secret_expires_at` (String) When the connection's OAuth 2.0 client secret stops working. No access token is issued with an expired secret.
 - `oauth_previous_client_secret_expires_at` (String) When the previous OAuth 2.0 client secret stops working, unless it is deleted before.

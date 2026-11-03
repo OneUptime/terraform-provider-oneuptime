@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_kubernetes_cluster Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Kubernetes Clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime kubernetes-agent sends metrics, or can be manually registered.
 ---
@@ -53,11 +53,11 @@ data "oneuptime_kubernetes_cluster" "by_id" {
 - `ai_access_configured_at` (String) When OneUptime AI access to this cluster was first configured: by the in-cluster Runner's first registration, or by anyone saving an AI access setting. Set by the server; never cleared, so an in-cluster Runner that registers later never overwrites a setting an operator chose.
 - `ai_access_last_verified_at` (String) When a kubectl command from OneUptime AI last succeeded on this cluster. Set by the server.
 - `ai_access_runner_bound_at` (String) When a Runner was first bound to this cluster for OneUptime AI access. Set by the server; never cleared, so a cluster whose Runner was cleared or deleted is not silently re-bound when the in-cluster Runner registers again.
-- `ai_kubectl_command_allowlist` (String) Optional JSON array of kubectl command patterns that Automatic mode may run without approval even though they are riskier changes, for example: ["kubectl set image deployment/web * -n web"]. A pattern is compared with the command word by word: * stands for exactly one word (an image, a name), never for extra objects, flags or a second -n, every flag the command uses must be written out in the pattern, and the leading "kubectl" is optional. At most 100 patterns of at most 500 characters each; a pattern that is not one kubectl command line is refused. Destructive commands (Denied tier) never run regardless, and a write in a protected namespace (kube-system, kube-public, kube-node-lease) or a node drain still needs a human. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the cluster can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.
+- `ai_kubectl_command_allowlist` (String) Optional JSON array of kubectl command patterns that Automatic mode may run without approval even though they are riskier changes, for example: ["kubectl set image deployment/web * -n web"]. A pattern is compared with the command word by word: * stands for exactly one word (an image, a name), never for extra objects, flags or a second -n, every flag the command uses must be written out in the pattern, and the leading "kubectl" is optional. At most 100 patterns of at most 500 characters each; a pattern that is not one kubectl command line is refused. Destructive commands (Denied tier) never run regardless, and a write in a protected namespace (kube-system, kube-public, kube-node-lease) or a node drain still needs a human. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the cluster can remove patterns or clear the list. A JSON value: read it with `jsondecode()`.
 - `archived_at` (String) When was this Kubernetes cluster archived?
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When metrics were last received from this cluster.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `telemetry_retention_config` (String) Per-pillar retention overrides for this Kubernetes cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the cluster default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
+- `telemetry_retention_config` (String) Per-pillar retention overrides for this Kubernetes cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the cluster default, then the project's retention settings. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

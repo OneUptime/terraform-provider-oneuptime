@@ -13,8 +13,8 @@ Add users as owners to your incident templates.
 
 ```terraform
 resource "oneuptime_incident_template_user_owner" "example" {
-  user_id              = data.oneuptime_user.example.id
   incident_template_id = oneuptime_incident_template.example.id
+  user_email           = "alice@example.com"
 }
 ```
 
@@ -22,8 +22,12 @@ resource "oneuptime_incident_template_user_owner" "example" {
 
 ### Required
 
-- `incident_template_id` (String) ID of your OneUptime IncidentTemplate in which this object belongs. The ID of a `oneuptime_incident_template`.
-- `user_id` (String) ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).
+- `incident_template_id` (String) ID of the incident template the user owns. The ID of a `oneuptime_incident_template`.
+
+### Optional
+
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of the user who owns the incident template. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 
@@ -36,17 +40,19 @@ resource "oneuptime_incident_template_user_owner" "example" {
 
 ## Import
 
-Import an existing incident template user owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing incident template user owner by its incident template and the person's email address (or user ID), with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_incident_template_user_owner.example
-  id = "<id>"
+  id = "<incident_template_id>/alice@example.com"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_incident_template_user_owner.example <id>
+terraform import oneuptime_incident_template_user_owner.example <incident_template_id>/alice@example.com
 ```
+
+Imported by an address, the person's `user_email` stays as you wrote it. Its own ID works too.

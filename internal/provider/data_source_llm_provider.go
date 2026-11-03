@@ -102,7 +102,7 @@ func (d *LlmProviderDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "additional_params": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. Read only by project owners and admins, like the API key. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. Read only by project owners and admins, like the API key. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "has_additional_params": schema.BoolAttribute{

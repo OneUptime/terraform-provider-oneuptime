@@ -70,11 +70,13 @@ func (d *AlertEpisodeMemberDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "ID of the Alert Episode that this alert belongs to. The ID of a `oneuptime_alert_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_episode"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Alert that is a member of this episode. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "added_at": schema.StringAttribute{
                 MarkdownDescription: "When this alert was added to the episode.",
@@ -89,16 +91,19 @@ func (d *AlertEpisodeMemberDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "User ID who manually added this alert to the episode. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "matched_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the grouping rule that matched this alert. The ID of a `oneuptime_alert_grouping_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_grouping_rule"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified_of_alert_added": schema.BoolAttribute{
                 MarkdownDescription: "Has the owner been notified that this alert was added to the episode?",

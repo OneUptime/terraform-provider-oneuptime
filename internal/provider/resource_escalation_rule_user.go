@@ -19,20 +19,32 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &UsersOnCallDutyEscalationRuleResource{}
-var _ resource.ResourceWithImportState = &UsersOnCallDutyEscalationRuleResource{}
+var _ resource.Resource = &EscalationRuleUserResource{}
+var _ resource.ResourceWithImportState = &EscalationRuleUserResource{}
+var _ resource.ResourceWithModifyPlan = &EscalationRuleUserResource{}
+var _ resource.ResourceWithMoveState = &EscalationRuleUserResource{}
 
-func NewUsersOnCallDutyEscalationRuleResource() resource.Resource {
-    return &UsersOnCallDutyEscalationRuleResource{}
+func NewEscalationRuleUserResource() resource.Resource {
+    return &EscalationRuleUserResource{}
 }
 
-// UsersOnCallDutyEscalationRuleResource defines the resource implementation.
-type UsersOnCallDutyEscalationRuleResource struct {
+// NewEscalationRuleUserLegacyResource registers this resource under the name it
+// had before resource type names kept mixed-case words whole,
+// oneuptime_users_on_call_duty_escalation_rule, so configurations that use it keep
+// working. Deprecated: plans that use it say so.
+func NewEscalationRuleUserLegacyResource() resource.Resource {
+    return &EscalationRuleUserResource{isLegacyAlias: true}
+}
+
+// EscalationRuleUserResource defines the resource implementation.
+type EscalationRuleUserResource struct {
     client *Client
+    // Registered under the name this resource had before (see NewEscalationRuleUserLegacyResource).
+    isLegacyAlias bool
 }
 
-// UsersOnCallDutyEscalationRuleResourceModel describes the resource data model.
-type UsersOnCallDutyEscalationRuleResourceModel struct {
+// EscalationRuleUserResourceModel describes the resource data model.
+type EscalationRuleUserResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
@@ -41,19 +53,27 @@ type UsersOnCallDutyEscalationRuleResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
-func (r *UsersOnCallDutyEscalationRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_users_on_call_duty_escalation_rule"
+func (r *EscalationRuleUserResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    if r.isLegacyAlias {
+        resp.TypeName = req.ProviderTypeName + "_users_on_call_duty_escalation_rule"
+        return
+    }
+    resp.TypeName = req.ProviderTypeName + "_escalation_rule_user"
 }
 
-func (r *UsersOnCallDutyEscalationRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *EscalationRuleUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = r.schemaDefinition()
+    if r.isLegacyAlias {
+        resp.Schema.DeprecationMessage = "oneuptime_users_on_call_duty_escalation_rule has been renamed to oneuptime_escalation_rule_user. Rename the resource in your configuration and add a moved block (from = oneuptime_users_on_call_duty_escalation_rule.<name>, to = oneuptime_escalation_rule_user.<name>) to keep the existing escalation rule user; the old name keeps working until then."
+    }
 }
 
-func (r *UsersOnCallDutyEscalationRuleResource) schemaDefinition() schema.Schema {
+func (r *EscalationRuleUserResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage on-call duty escalation rule for the on-call policy.",
+        MarkdownDescription: "Add users to your escalation rules.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -71,27 +91,26 @@ func (r *UsersOnCallDutyEscalationRuleResource) schemaDefinition() schema.Schema
                 },
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy where this escalation rule belongs. The ID of a `oneuptime_on_call_policy`.",
+                MarkdownDescription: "ID of the on-call policy the escalation rule is in. The ID of a `oneuptime_on_call_policy`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Escalation Rule where this user belongs. The ID of a `oneuptime_escalation_rule`.",
+                MarkdownDescription: "ID of the escalation rule that pages the person. The ID of a `oneuptime_escalation_rule`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_escalation_rule"),
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user who is in this escalation rule. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the person this escalation rule pages. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
-                },
+                Validators: personIDValidators("user_email", true),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -113,11 +132,53 @@ func (r *UsersOnCallDutyEscalationRuleResource) schemaDefinition() schema.Schema
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
 }
 
-func (r *UsersOnCallDutyEscalationRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+// MoveState lets a moved block bring state over from the old name:
+//
+//     moved {
+//       from = oneuptime_users_on_call_duty_escalation_rule.example
+//       to   = oneuptime_escalation_rule_user.example
+//     }
+func (r *EscalationRuleUserResource) MoveState(ctx context.Context) []resource.StateMover {
+    if r.isLegacyAlias {
+        return nil
+    }
+
+    return []resource.StateMover{
+        legacyNameStateMover("oneuptime_users_on_call_duty_escalation_rule", r.schemaDefinition()),
+    }
+}
+
+// ModifyPlan finds, by email address, the people this escalation rule user names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *EscalationRuleUserResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: true,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
+}
+
+func (r *EscalationRuleUserResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -138,8 +199,8 @@ func (r *UsersOnCallDutyEscalationRuleResource) Configure(ctx context.Context, r
 }
 
 
-func (r *UsersOnCallDutyEscalationRuleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data UsersOnCallDutyEscalationRuleResourceModel
+func (r *EscalationRuleUserResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data EscalationRuleUserResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -149,7 +210,7 @@ func (r *UsersOnCallDutyEscalationRuleResource) Create(ctx context.Context, req 
     }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
-    var config UsersOnCallDutyEscalationRuleResourceModel
+    var config EscalationRuleUserResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
     if resp.Diagnostics.HasError() {
         return
@@ -157,14 +218,19 @@ func (r *UsersOnCallDutyEscalationRuleResource) Create(ctx context.Context, req 
     plan := data
 
 
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
+
 
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    usersOnCallDutyEscalationRuleRequest := map[string]interface{}{
+    escalationRuleUserRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := usersOnCallDutyEscalationRuleRequest["data"].(map[string]interface{})
+    requestDataMap := escalationRuleUserRequest["data"].(map[string]interface{})
 
     if !data.OnCallDutyPolicyId.IsNull() && !data.OnCallDutyPolicyId.IsUnknown() {
         requestDataMap["onCallDutyPolicyId"] = data.OnCallDutyPolicyId.ValueString()
@@ -177,39 +243,52 @@ func (r *UsersOnCallDutyEscalationRuleResource) Create(ctx context.Context, req 
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/on-call-duty-policy-escalation-rule-user", usersOnCallDutyEscalationRuleRequest)
+    httpResp, err := r.client.Post(ctx, "/on-call-duty-policy-escalation-rule-user", escalationRuleUserRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create users_on_call_duty_escalation_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create escalation_rule_user, got error: %s", err))
         return
     }
 
-    var usersOnCallDutyEscalationRuleResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &usersOnCallDutyEscalationRuleResponse)
+    var escalationRuleUserResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &escalationRuleUserResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create users_on_call_duty_escalation_rule: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create escalation_rule_user: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := usersOnCallDutyEscalationRuleResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := escalationRuleUserResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := usersOnCallDutyEscalationRuleResponse["_id"].(string); ok {
+    } else if val, ok := escalationRuleUserResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for users_on_call_duty_escalation_rule did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for escalation_rule_user did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := escalationRuleUserResponse
+        if wrapper, ok := escalationRuleUserResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * users_on_call_duty_escalation_rule is orphaned server-side — never refreshed, never
+     * escalation_rule_user is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -237,14 +316,14 @@ func (r *UsersOnCallDutyEscalationRuleResource) Create(ctx context.Context, req 
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created users_on_call_duty_escalation_rule but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created escalation_rule_user but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created users_on_call_duty_escalation_rule but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created escalation_rule_user but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -450,16 +529,19 @@ func (r *UsersOnCallDutyEscalationRuleResource) Create(ctx context.Context, req 
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *UsersOnCallDutyEscalationRuleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data UsersOnCallDutyEscalationRuleResourceModel
+func (r *EscalationRuleUserResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data EscalationRuleUserResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -480,10 +562,14 @@ func (r *UsersOnCallDutyEscalationRuleResource) Read(ctx context.Context, req re
         "_id": true,
     }
 
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
+
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-policy-escalation-rule-user/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read users_on_call_duty_escalation_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read escalation_rule_user, got error: %s", err))
         return
     }
 
@@ -492,22 +578,22 @@ func (r *UsersOnCallDutyEscalationRuleResource) Read(ctx context.Context, req re
         return
     }
 
-    var usersOnCallDutyEscalationRuleResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &usersOnCallDutyEscalationRuleResponse)
+    var escalationRuleUserResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &escalationRuleUserResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse users_on_call_duty_escalation_rule response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse escalation_rule_user response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := usersOnCallDutyEscalationRuleResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := escalationRuleUserResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = usersOnCallDutyEscalationRuleResponse
+        dataMap = escalationRuleUserResponse
     }
 
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
@@ -696,14 +782,16 @@ func (r *UsersOnCallDutyEscalationRuleResource) Read(ctx context.Context, req re
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *UsersOnCallDutyEscalationRuleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data UsersOnCallDutyEscalationRuleResourceModel
-    var state UsersOnCallDutyEscalationRuleResourceModel
+func (r *EscalationRuleUserResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data EscalationRuleUserResourceModel
+    var state EscalationRuleUserResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -721,15 +809,20 @@ func (r *UsersOnCallDutyEscalationRuleResource) Update(ctx context.Context, req 
     data.Id = state.Id
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
-    var config UsersOnCallDutyEscalationRuleResourceModel
+    var config EscalationRuleUserResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
     if resp.Diagnostics.HasError() {
         return
     }
     plan := data
 
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
+
     // Create API request body
-    usersOnCallDutyEscalationRuleRequest := map[string]interface{}{
+    escalationRuleUserRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
 
@@ -737,21 +830,21 @@ func (r *UsersOnCallDutyEscalationRuleResource) Update(ctx context.Context, req 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(usersOnCallDutyEscalationRuleRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/on-call-duty-policy-escalation-rule-user/" + data.Id.ValueString() + "", usersOnCallDutyEscalationRuleRequest)
+    if len(escalationRuleUserRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/on-call-duty-policy-escalation-rule-user/" + data.Id.ValueString() + "", escalationRuleUserRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update users_on_call_duty_escalation_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update escalation_rule_user, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var usersOnCallDutyEscalationRuleResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &usersOnCallDutyEscalationRuleResponse)
+        var escalationRuleUserResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &escalationRuleUserResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update users_on_call_duty_escalation_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update escalation_rule_user: %s", err))
             return
         }
-        _ = usersOnCallDutyEscalationRuleResponse
+        _ = escalationRuleUserResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -768,14 +861,14 @@ func (r *UsersOnCallDutyEscalationRuleResource) Update(ctx context.Context, req 
 
     readResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-policy-escalation-rule-user/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read users_on_call_duty_escalation_rule after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read escalation_rule_user after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read users_on_call_duty_escalation_rule after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read escalation_rule_user after update: %s", err))
         return
     }
 
@@ -980,13 +1073,15 @@ func (r *UsersOnCallDutyEscalationRuleResource) Update(ctx context.Context, req 
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *UsersOnCallDutyEscalationRuleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data UsersOnCallDutyEscalationRuleResourceModel
+func (r *EscalationRuleUserResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data EscalationRuleUserResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -998,7 +1093,7 @@ func (r *UsersOnCallDutyEscalationRuleResource) Delete(ctx context.Context, req 
     // Make API call
     httpResp, err := r.client.Delete(ctx, "/on-call-duty-policy-escalation-rule-user/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete users_on_call_duty_escalation_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete escalation_rule_user, got error: %s", err))
         return
     }
 
@@ -1006,7 +1101,7 @@ func (r *UsersOnCallDutyEscalationRuleResource) Delete(ctx context.Context, req 
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete users_on_call_duty_escalation_rule: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete escalation_rule_user: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -1015,8 +1110,26 @@ func (r *UsersOnCallDutyEscalationRuleResource) Delete(ctx context.Context, req 
 }
 
 
-func (r *UsersOnCallDutyEscalationRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+func (r *EscalationRuleUserResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+    // By its own ID, or by what it joins and who or what joins it: <on_call_duty_policy_escalation_rule_id>/<email address or user id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/on-call-duty-policy-escalation-rule-user/get-list",
+        parentField:     "onCallDutyPolicyEscalationRuleId",
+        parentAttribute: "on_call_duty_policy_escalation_rule_id",
+        parentNoun:      "escalation rule",
+        personField:     "userId",
+        personAttribute: "user_id",
+        byEmail:         true,
+        kind:            "on-call",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    // The address it was imported by, as written: the refresh keeps it.
+    if email != "" {
+        resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("user_email"), email)...)
+    }
 }
 
 
@@ -1027,14 +1140,17 @@ func (r *UsersOnCallDutyEscalationRuleResource) ImportState(ctx context.Context,
 // already differ from the plan, and Terraform would fail the apply with
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
-func (r *UsersOnCallDutyEscalationRuleResource) keepPlannedValues(data *UsersOnCallDutyEscalationRuleResourceModel, plan *UsersOnCallDutyEscalationRuleResourceModel, config *UsersOnCallDutyEscalationRuleResourceModel) {
+func (r *EscalationRuleUserResource) keepPlannedValues(data *EscalationRuleUserResourceModel, plan *EscalationRuleUserResourceModel, config *EscalationRuleUserResourceModel) {
     if config.UserId.IsNull() && !plan.UserId.IsUnknown() {
         data.UserId = plan.UserId
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *UsersOnCallDutyEscalationRuleResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *EscalationRuleUserResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -1052,7 +1168,7 @@ func (r *UsersOnCallDutyEscalationRuleResource) convertTerraformMapToInterface(t
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *UsersOnCallDutyEscalationRuleResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *EscalationRuleUserResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -1073,7 +1189,7 @@ func (r *UsersOnCallDutyEscalationRuleResource) convertTerraformListToInterface(
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *UsersOnCallDutyEscalationRuleResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *EscalationRuleUserResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -1095,7 +1211,7 @@ func (r *UsersOnCallDutyEscalationRuleResource) convertTerraformSetToInterface(t
 
 
 // Helper method to parse JSON field for complex objects
-func (r *UsersOnCallDutyEscalationRuleResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *EscalationRuleUserResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -1111,7 +1227,7 @@ func (r *UsersOnCallDutyEscalationRuleResource) parseJSONField(terraformString b
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *UsersOnCallDutyEscalationRuleResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *EscalationRuleUserResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -1133,7 +1249,7 @@ func (r *UsersOnCallDutyEscalationRuleResource) normalizeURLWrappers(value inter
     }
 }
 
-func (r *UsersOnCallDutyEscalationRuleResource) normalizeURLString(value string) string {
+func (r *EscalationRuleUserResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -1145,7 +1261,7 @@ func (r *UsersOnCallDutyEscalationRuleResource) normalizeURLString(value string)
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *UsersOnCallDutyEscalationRuleResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *EscalationRuleUserResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -1155,6 +1271,6 @@ func (r *UsersOnCallDutyEscalationRuleResource) bigFloatToFloat64(bf *big.Float)
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *UsersOnCallDutyEscalationRuleResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *EscalationRuleUserResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

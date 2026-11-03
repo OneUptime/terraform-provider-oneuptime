@@ -28,7 +28,7 @@ resource "oneuptime_incident_episode_member" "example" {
 ### Optional
 
 - `added_at` (String) When this incident was added to the episode.
-- `added_by` (String) How this incident was added to the episode (rule, manual, or api). Defaults to `rule`.
+- `added_by` (String) How this incident was added to the episode (rule, manual, or api). Allowed values: `rule`, `manual`, `api`. Defaults to `rule`.
 - `is_owner_notified_of_incident_added` (Boolean) Has the owner been notified that this incident was added to the episode?
 - `matched_rule_id` (String) ID of the grouping rule that matched this incident. The ID of a `oneuptime_incident_grouping_rule`.
 

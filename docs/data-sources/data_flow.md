@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_flow Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Where sensitive data goes: the services that read each store, where those services send data, and copies of a store's data found in another store.
 ---
@@ -43,7 +43,7 @@ data "oneuptime_data_flow" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `data_type_ids` (String) The sensitive data types that can travel along the flow. A JSON value: write it with `jsonencode()`.
+- `data_type_ids` (String) The sensitive data types that can travel along the flow. A JSON value: read it with `jsondecode()`.
 - `first_seen_at` (String) When the flow was first seen.
 - `last_seen_at` (String) When the flow was last seen.
 - `project_id` (String) ID of the project this data flow belongs to. The ID of a `oneuptime_project`.

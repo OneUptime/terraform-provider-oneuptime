@@ -24,11 +24,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &HostResource{}
 var _ resource.ResourceWithImportState = &HostResource{}
+var _ resource.ResourceWithModifyPlan = &HostResource{}
 
 func NewHostResource() resource.Resource {
     return &HostResource{}
@@ -98,6 +100,18 @@ type HostResourceModel struct {
     IsCollectorHealthy types.Bool `tfsdk:"is_collector_healthy"`
     CollectorHealthError types.String `tfsdk:"collector_health_error"`
     CollectorHostFeatures types.String `tfsdk:"collector_host_features"`
+    LatestCpuPercent types.Number `tfsdk:"latest_cpu_percent"`
+    LatestMemoryPercent types.Number `tfsdk:"latest_memory_percent"`
+    LatestSwapPercent types.Number `tfsdk:"latest_swap_percent"`
+    LatestDiskPercent types.Number `tfsdk:"latest_disk_percent"`
+    LatestDiskMountpoint types.String `tfsdk:"latest_disk_mountpoint"`
+    LatestInodesPercent types.Number `tfsdk:"latest_inodes_percent"`
+    LatestInodesMountpoint types.String `tfsdk:"latest_inodes_mountpoint"`
+    LatestLoadAverage15m types.Number `tfsdk:"latest_load_average15m"`
+    BootedAt RFC3339Value `tfsdk:"booted_at"`
+    FailedSystemdUnitCount types.Number `tfsdk:"failed_systemd_unit_count"`
+    FailedSystemdUnits JSONSubsetValue `tfsdk:"failed_systemd_units"`
+    ReadingsUpdatedAt RFC3339Value `tfsdk:"readings_updated_at"`
 }
 
 func (r *HostResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -153,19 +167,21 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
                 MarkdownDescription: "Number of days to retain telemetry data for this host. Leave blank to use the project-wide default.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -175,6 +191,7 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -203,6 +220,7 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -259,6 +277,7 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -267,6 +286,7 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -275,6 +295,7 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -303,6 +324,9 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Disabled", "RequireApproval", "Automatic", "BypassApproval"),
+                },
             },
             "ai_command_allowlist": schema.StringAttribute{
                 MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this host without approval even though they are riskier changes. Each pattern is one command line for this host's agent (systemctl, journalctl and the other host programs it may run) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this host is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the host can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
@@ -310,6 +334,7 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -323,6 +348,7 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_collector_config"),
             },
             "is_collector_config_pinned": schema.BoolAttribute{
                 MarkdownDescription: "Whether the Collector Config was picked for this host on its page. When it is not, the host runs the first config in the list that applies to it.",
@@ -356,6 +382,9 @@ func (r *HostResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "docker_host_id": schema.StringAttribute{
                 MarkdownDescription: "Optional FK to the DockerHost record for this same host when it is also running the Docker runtime. The ID of a `oneuptime_docker_host`.",
@@ -469,8 +498,70 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "What the OneUptime installer found on this host for its default config to read: journald, systemd. Set by the server.",
                 Computed: true,
             },
+            "latest_cpu_percent": schema.NumberAttribute{
+                MarkdownDescription: "CPU busy time (user and system) across all of the host's cores in its last report, as a percent. Set by the server.",
+                Computed: true,
+            },
+            "latest_memory_percent": schema.NumberAttribute{
+                MarkdownDescription: "Memory in use in the host's last report, buffers and page cache not counted, as a percent. Set by the server.",
+                Computed: true,
+            },
+            "latest_swap_percent": schema.NumberAttribute{
+                MarkdownDescription: "Swap space in use in the host's last report, as a percent. Empty on a host without swap. Set by the server.",
+                Computed: true,
+            },
+            "latest_disk_percent": schema.NumberAttribute{
+                MarkdownDescription: "How full the host's fullest filesystem was in its last report, as a percent. Set by the server.",
+                Computed: true,
+            },
+            "latest_disk_mountpoint": schema.StringAttribute{
+                MarkdownDescription: "The mount point of the host's fullest filesystem in its last report. Set by the server.",
+                Computed: true,
+            },
+            "latest_inodes_percent": schema.NumberAttribute{
+                MarkdownDescription: "The share of inodes in use on the filesystem that used the most of them in the host's last report. Set by the server.",
+                Computed: true,
+            },
+            "latest_inodes_mountpoint": schema.StringAttribute{
+                MarkdownDescription: "The mount point of the filesystem that used the most of its inodes in the host's last report. Set by the server.",
+                Computed: true,
+            },
+            "latest_load_average15m": schema.NumberAttribute{
+                MarkdownDescription: "The host's 15-minute load average in its last report. Set by the server.",
+                Computed: true,
+            },
+            "booted_at": schema.StringAttribute{
+                MarkdownDescription: "When the host last started, from the system.uptime metric its collector reports. Set by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "failed_systemd_unit_count": schema.NumberAttribute{
+                MarkdownDescription: "How many systemd units were in the failed state in the host's last report. Linux only. Set by the server.",
+                Computed: true,
+            },
+            "failed_systemd_units": schema.StringAttribute{
+                MarkdownDescription: "The names of the first systemd units that were in the failed state in the host's last report. Set by the server. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "readings_updated_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime last stored the readings the host reported. Set by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *HostResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *HostResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -644,6 +735,18 @@ func (r *HostResource) Create(ctx context.Context, req resource.CreateRequest, r
         "isCollectorHealthy": true,
         "collectorHealthError": true,
         "collectorHostFeatures": true,
+        "latestCpuPercent": true,
+        "latestMemoryPercent": true,
+        "latestSwapPercent": true,
+        "latestDiskPercent": true,
+        "latestDiskMountpoint": true,
+        "latestInodesPercent": true,
+        "latestInodesMountpoint": true,
+        "latestLoadAverage15m": true,
+        "bootedAt": true,
+        "failedSystemdUnitCount": true,
+        "failedSystemdUnits": true,
+        "readingsUpdatedAt": true,
         "_id": true,
     }
 
@@ -2233,6 +2336,146 @@ func (r *HostResource) Create(ctx context.Context, req resource.CreateRequest, r
     } else {
         data.CollectorHostFeatures = types.StringNull()
     }
+    data.LatestCpuPercent = numberFromAPI(data.LatestCpuPercent, dataMap["latestCpuPercent"])
+    data.LatestMemoryPercent = numberFromAPI(data.LatestMemoryPercent, dataMap["latestMemoryPercent"])
+    data.LatestSwapPercent = numberFromAPI(data.LatestSwapPercent, dataMap["latestSwapPercent"])
+    data.LatestDiskPercent = numberFromAPI(data.LatestDiskPercent, dataMap["latestDiskPercent"])
+    if obj, ok := dataMap["latestDiskMountpoint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LatestDiskMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LatestDiskMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LatestDiskMountpoint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LatestDiskMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestDiskMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LatestDiskMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestDiskMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LatestDiskMountpoint = types.StringValue(string(jsonBytes))
+        } else {
+            data.LatestDiskMountpoint = types.StringNull()
+        }
+    } else if val, ok := dataMap["latestDiskMountpoint"].(string); ok {
+        data.LatestDiskMountpoint = types.StringValue(val)
+    } else {
+        data.LatestDiskMountpoint = types.StringNull()
+    }
+    data.LatestInodesPercent = numberFromAPI(data.LatestInodesPercent, dataMap["latestInodesPercent"])
+    if obj, ok := dataMap["latestInodesMountpoint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LatestInodesMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LatestInodesMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LatestInodesMountpoint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LatestInodesMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestInodesMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LatestInodesMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestInodesMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LatestInodesMountpoint = types.StringValue(string(jsonBytes))
+        } else {
+            data.LatestInodesMountpoint = types.StringNull()
+        }
+    } else if val, ok := dataMap["latestInodesMountpoint"].(string); ok {
+        data.LatestInodesMountpoint = types.StringValue(val)
+    } else {
+        data.LatestInodesMountpoint = types.StringNull()
+    }
+    data.LatestLoadAverage15m = numberFromAPI(data.LatestLoadAverage15m, dataMap["latestLoadAverage15m"])
+    if obj, ok := dataMap["bootedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.BootedAt = NewRFC3339Value(val)
+        } else {
+            data.BootedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["bootedAt"].(string); ok && val != "" {
+        data.BootedAt = NewRFC3339Value(val)
+    } else {
+        data.BootedAt = NewRFC3339Null()
+    }
+    data.FailedSystemdUnitCount = numberFromAPI(data.FailedSystemdUnitCount, dataMap["failedSystemdUnitCount"])
+    if obj, ok := dataMap["failedSystemdUnits"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FailedSystemdUnits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FailedSystemdUnits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FailedSystemdUnits = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FailedSystemdUnits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedSystemdUnits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FailedSystemdUnits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedSystemdUnits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FailedSystemdUnits = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.FailedSystemdUnits = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["failedSystemdUnits"].(string); ok {
+        data.FailedSystemdUnits = NewJSONSubsetValue(val)
+    } else {
+        data.FailedSystemdUnits = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["readingsUpdatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ReadingsUpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.ReadingsUpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["readingsUpdatedAt"].(string); ok && val != "" {
+        data.ReadingsUpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.ReadingsUpdatedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2247,6 +2490,9 @@ func (r *HostResource) Create(ctx context.Context, req resource.CreateRequest, r
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2319,6 +2565,18 @@ func (r *HostResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "isCollectorHealthy": true,
         "collectorHealthError": true,
         "collectorHostFeatures": true,
+        "latestCpuPercent": true,
+        "latestMemoryPercent": true,
+        "latestSwapPercent": true,
+        "latestDiskPercent": true,
+        "latestDiskMountpoint": true,
+        "latestInodesPercent": true,
+        "latestInodesMountpoint": true,
+        "latestLoadAverage15m": true,
+        "bootedAt": true,
+        "failedSystemdUnitCount": true,
+        "failedSystemdUnits": true,
+        "readingsUpdatedAt": true,
         "_id": true,
     }
 
@@ -3909,6 +4167,146 @@ func (r *HostResource) Read(ctx context.Context, req resource.ReadRequest, resp 
     } else {
         data.CollectorHostFeatures = types.StringNull()
     }
+    data.LatestCpuPercent = numberFromAPI(data.LatestCpuPercent, dataMap["latestCpuPercent"])
+    data.LatestMemoryPercent = numberFromAPI(data.LatestMemoryPercent, dataMap["latestMemoryPercent"])
+    data.LatestSwapPercent = numberFromAPI(data.LatestSwapPercent, dataMap["latestSwapPercent"])
+    data.LatestDiskPercent = numberFromAPI(data.LatestDiskPercent, dataMap["latestDiskPercent"])
+    if obj, ok := dataMap["latestDiskMountpoint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LatestDiskMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LatestDiskMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LatestDiskMountpoint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LatestDiskMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestDiskMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LatestDiskMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestDiskMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LatestDiskMountpoint = types.StringValue(string(jsonBytes))
+        } else {
+            data.LatestDiskMountpoint = types.StringNull()
+        }
+    } else if val, ok := dataMap["latestDiskMountpoint"].(string); ok {
+        data.LatestDiskMountpoint = types.StringValue(val)
+    } else {
+        data.LatestDiskMountpoint = types.StringNull()
+    }
+    data.LatestInodesPercent = numberFromAPI(data.LatestInodesPercent, dataMap["latestInodesPercent"])
+    if obj, ok := dataMap["latestInodesMountpoint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LatestInodesMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LatestInodesMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LatestInodesMountpoint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LatestInodesMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestInodesMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LatestInodesMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestInodesMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LatestInodesMountpoint = types.StringValue(string(jsonBytes))
+        } else {
+            data.LatestInodesMountpoint = types.StringNull()
+        }
+    } else if val, ok := dataMap["latestInodesMountpoint"].(string); ok {
+        data.LatestInodesMountpoint = types.StringValue(val)
+    } else {
+        data.LatestInodesMountpoint = types.StringNull()
+    }
+    data.LatestLoadAverage15m = numberFromAPI(data.LatestLoadAverage15m, dataMap["latestLoadAverage15m"])
+    if obj, ok := dataMap["bootedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.BootedAt = NewRFC3339Value(val)
+        } else {
+            data.BootedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["bootedAt"].(string); ok && val != "" {
+        data.BootedAt = NewRFC3339Value(val)
+    } else {
+        data.BootedAt = NewRFC3339Null()
+    }
+    data.FailedSystemdUnitCount = numberFromAPI(data.FailedSystemdUnitCount, dataMap["failedSystemdUnitCount"])
+    if obj, ok := dataMap["failedSystemdUnits"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FailedSystemdUnits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FailedSystemdUnits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FailedSystemdUnits = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FailedSystemdUnits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedSystemdUnits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FailedSystemdUnits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedSystemdUnits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FailedSystemdUnits = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.FailedSystemdUnits = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["failedSystemdUnits"].(string); ok {
+        data.FailedSystemdUnits = NewJSONSubsetValue(val)
+    } else {
+        data.FailedSystemdUnits = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["readingsUpdatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ReadingsUpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.ReadingsUpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["readingsUpdatedAt"].(string); ok && val != "" {
+        data.ReadingsUpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.ReadingsUpdatedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -3937,6 +4335,12 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "ai_command_allowlist": !data.AiCommandAllowlist.Equal(state.AiCommandAllowlist),
+        "telemetry_retention_config": !data.TelemetryRetentionConfig.Equal(state.TelemetryRetentionConfig),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config HostResourceModel
@@ -4119,6 +4523,18 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
         "isCollectorHealthy": true,
         "collectorHealthError": true,
         "collectorHostFeatures": true,
+        "latestCpuPercent": true,
+        "latestMemoryPercent": true,
+        "latestSwapPercent": true,
+        "latestDiskPercent": true,
+        "latestDiskMountpoint": true,
+        "latestInodesPercent": true,
+        "latestInodesMountpoint": true,
+        "latestLoadAverage15m": true,
+        "bootedAt": true,
+        "failedSystemdUnitCount": true,
+        "failedSystemdUnits": true,
+        "readingsUpdatedAt": true,
         "_id": true,
     }
 
@@ -5703,6 +6119,146 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
     } else {
         data.CollectorHostFeatures = types.StringNull()
     }
+    data.LatestCpuPercent = numberFromAPI(data.LatestCpuPercent, dataMap["latestCpuPercent"])
+    data.LatestMemoryPercent = numberFromAPI(data.LatestMemoryPercent, dataMap["latestMemoryPercent"])
+    data.LatestSwapPercent = numberFromAPI(data.LatestSwapPercent, dataMap["latestSwapPercent"])
+    data.LatestDiskPercent = numberFromAPI(data.LatestDiskPercent, dataMap["latestDiskPercent"])
+    if obj, ok := dataMap["latestDiskMountpoint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LatestDiskMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LatestDiskMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LatestDiskMountpoint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LatestDiskMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestDiskMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LatestDiskMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestDiskMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LatestDiskMountpoint = types.StringValue(string(jsonBytes))
+        } else {
+            data.LatestDiskMountpoint = types.StringNull()
+        }
+    } else if val, ok := dataMap["latestDiskMountpoint"].(string); ok {
+        data.LatestDiskMountpoint = types.StringValue(val)
+    } else {
+        data.LatestDiskMountpoint = types.StringNull()
+    }
+    data.LatestInodesPercent = numberFromAPI(data.LatestInodesPercent, dataMap["latestInodesPercent"])
+    if obj, ok := dataMap["latestInodesMountpoint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LatestInodesMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LatestInodesMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LatestInodesMountpoint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LatestInodesMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestInodesMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LatestInodesMountpoint = types.StringValue(string(jsonBytes))
+            } else {
+                data.LatestInodesMountpoint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LatestInodesMountpoint = types.StringValue(string(jsonBytes))
+        } else {
+            data.LatestInodesMountpoint = types.StringNull()
+        }
+    } else if val, ok := dataMap["latestInodesMountpoint"].(string); ok {
+        data.LatestInodesMountpoint = types.StringValue(val)
+    } else {
+        data.LatestInodesMountpoint = types.StringNull()
+    }
+    data.LatestLoadAverage15m = numberFromAPI(data.LatestLoadAverage15m, dataMap["latestLoadAverage15m"])
+    if obj, ok := dataMap["bootedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.BootedAt = NewRFC3339Value(val)
+        } else {
+            data.BootedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["bootedAt"].(string); ok && val != "" {
+        data.BootedAt = NewRFC3339Value(val)
+    } else {
+        data.BootedAt = NewRFC3339Null()
+    }
+    data.FailedSystemdUnitCount = numberFromAPI(data.FailedSystemdUnitCount, dataMap["failedSystemdUnitCount"])
+    if obj, ok := dataMap["failedSystemdUnits"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FailedSystemdUnits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FailedSystemdUnits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FailedSystemdUnits = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FailedSystemdUnits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedSystemdUnits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FailedSystemdUnits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedSystemdUnits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FailedSystemdUnits = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.FailedSystemdUnits = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["failedSystemdUnits"].(string); ok {
+        data.FailedSystemdUnits = NewJSONSubsetValue(val)
+    } else {
+        data.FailedSystemdUnits = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["readingsUpdatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ReadingsUpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.ReadingsUpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["readingsUpdatedAt"].(string); ok && val != "" {
+        data.ReadingsUpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.ReadingsUpdatedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -5712,6 +6268,9 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -5749,6 +6308,9 @@ func (r *HostResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 
 func (r *HostResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"ai_command_allowlist", "telemetry_retention_config"})...)
 }
 
 

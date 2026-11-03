@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_proxmox_cluster_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your Proxmox clusters.
 ---
@@ -22,8 +22,8 @@ resource "oneuptime_proxmox_cluster_team_owner" "example" {
 
 ### Required
 
-- `proxmox_cluster_id` (String) ID of your OneUptime Proxmox Cluster in which this object belongs. The ID of a `oneuptime_proxmox_cluster`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `proxmox_cluster_id` (String) ID of the Proxmox cluster the team owns. The ID of a `oneuptime_proxmox_cluster`.
+- `team_id` (String) ID of the team that owns the Proxmox cluster. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_proxmox_cluster_team_owner" "example" {
 
 ## Import
 
-Import an existing proxmox cluster team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing proxmox cluster team owner by its proxmox cluster and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_proxmox_cluster_team_owner.example
-  id = "<id>"
+  id = "<proxmox_cluster_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_proxmox_cluster_team_owner.example <id>
+terraform import oneuptime_proxmox_cluster_team_owner.example <proxmox_cluster_id>/<team_id>
 ```
+
+Its own ID works too.

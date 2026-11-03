@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_metric_saved_view Resource - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Save and reuse metrics explorer views, including the current search, filters, time range, and page size.
 ---
@@ -27,7 +27,7 @@ resource "oneuptime_metric_saved_view" "example" {
 
 - `is_default` (Boolean) Whether this saved metric view should be applied by default. Defaults to `false`.
 - `query` (String) Serialized metrics explorer view state (search, filters, time range, page size) for this saved view. A JSON value: write it with `jsonencode()`.
-- `view_type` (String) Which surface this saved view belongs to ('list' or 'explorer'). Null means 'list' — rows created before this column existed all came from the metric list page.
+- `view_type` (String) Which surface this saved view belongs to ('list' or 'explorer'). Null means 'list' — rows created before this column existed all came from the metric list page. Allowed values: `list`, `explorer`.
 
 ### Read-Only
 

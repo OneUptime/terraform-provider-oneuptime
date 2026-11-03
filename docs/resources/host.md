@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_host Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Hosts that are being monitored in this project. Each host is auto-discovered when an OTel Collector reports the host.name resource attribute, or can be manually registered.
 ---
@@ -14,7 +14,7 @@ Hosts that are being monitored in this project. Each host is auto-discovered whe
 ```terraform
 resource "oneuptime_host" "example" {
   name            = "Example host"
-  host_identifier = "Example short text"
+  host_identifier = "host-prod-1"
   description     = "Managed by Terraform"
 }
 ```
@@ -30,7 +30,7 @@ resource "oneuptime_host" "example" {
 
 - `agent_version` (String) Version of the OneUptime agent reporting telemetry on this host, as self-reported via the oneuptime.agent.version resource attribute.
 - `ai_command_allowlist` (String) Optional JSON array of command patterns that Automatic mode may run on this host without approval even though they are riskier changes. Each pattern is one command line for this host's agent (systemctl, journalctl and the other host programs it may run) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this host is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the host can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.
-- `ai_remediation_mode` (String) Disabled: AI never proposes or runs a change on this host. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the host's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the host can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule. Defaults to `Disabled`.
+- `ai_remediation_mode` (String) Disabled: AI never proposes or runs a change on this host. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the host's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the host can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule. Allowed values: `Disabled`, `RequireApproval`, `Automatic`, `BypassApproval`. Defaults to `Disabled`.
 - `collector_config_id` (String) ID of the Collector Config OneUptime sends to this host. Empty when the host runs OneUptime's default for its system. The ID of a `oneuptime_collector_config`.
 - `collector_failed_config_hash` (String) The SHA-256 of a config that did not start on this host, which OneUptime does not send it again until the config changes. Clear it to try that config again.
 - `container_runtime` (String) Container runtime detected on this host, if any (e.g. docker, containerd).
@@ -43,7 +43,7 @@ resource "oneuptime_host" "example" {
 - `is_ai_investigation_enabled` (Boolean) When on, OneUptime AI runs read-only commands (systemctl status, journalctl, df, free, uptime, ps, ss) on this host, through its Host AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the host can turn it on or off. Defaults to `true`.
 - `is_archived` (Boolean) Is this host archived? Archived hosts are hidden from lists but keep collecting telemetry. Defaults to `false`.
 - `is_collector_config_pinned` (Boolean) Whether the Collector Config was picked for this host on its page. When it is not, the host runs the first config in the list that applies to it.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When telemetry was last received from this host.
 - `os_type` (String) Operating system type of the host.
 - `os_version` (String) Operating system version of the host.
@@ -60,6 +60,7 @@ resource "oneuptime_host" "example" {
 - `ai_access_last_verified_at` (String) When a command from OneUptime AI last succeeded on this host through its Host AI agent. Set by the server.
 - `archived_at` (String) When was this host archived?
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
+- `booted_at` (String) When the host last started, from the system.uptime metric its collector reports. Set by the server.
 - `cloud_account_id` (String) Last-seen value of the cloud.account.id OpenTelemetry resource attribute.
 - `cloud_platform` (String) Last-seen value of the cloud.platform OpenTelemetry resource attribute, e.g. aws_ec2, gcp_compute_engine.
 - `cloud_provider` (String) Last-seen value of the cloud.provider OpenTelemetry resource attribute, e.g. aws, gcp, azure.
@@ -77,11 +78,22 @@ resource "oneuptime_host" "example" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `deployment_environment` (String) Last-seen value of the deployment.environment.name (or deployment.environment) OpenTelemetry resource attribute, e.g. production, staging.
 - `docker_host_id` (String) Optional FK to the DockerHost record for this same host when it is also running the Docker runtime. The ID of a `oneuptime_docker_host`.
+- `failed_systemd_unit_count` (Number) How many systemd units were in the failed state in the host's last report. Linux only. Set by the server.
+- `failed_systemd_units` (String) The names of the first systemd units that were in the failed state in the host's last report. Set by the server. A JSON value: read it with `jsondecode()`.
 - `id` (String) Unique identifier for the resource.
 - `is_collector_healthy` (Boolean) Whether the collector OneUptime manages on this host last reported itself healthy. Set by the server.
 - `kubernetes_cluster_id` (String) Optional FK to the KubernetesCluster this host belongs to when k8s.cluster.name is reported. The ID of a `oneuptime_kubernetes_cluster`.
+- `latest_cpu_percent` (Number) CPU busy time (user and system) across all of the host's cores in its last report, as a percent. Set by the server.
+- `latest_disk_mountpoint` (String) The mount point of the host's fullest filesystem in its last report. Set by the server.
+- `latest_disk_percent` (Number) How full the host's fullest filesystem was in its last report, as a percent. Set by the server.
+- `latest_inodes_mountpoint` (String) The mount point of the filesystem that used the most of its inodes in the host's last report. Set by the server.
+- `latest_inodes_percent` (Number) The share of inodes in use on the filesystem that used the most of them in the host's last report. Set by the server.
+- `latest_load_average15m` (Number) The host's 15-minute load average in its last report. Set by the server.
+- `latest_memory_percent` (Number) Memory in use in the host's last report, buffers and page cache not counted, as a percent. Set by the server.
+- `latest_swap_percent` (Number) Swap space in use in the host's last report, as a percent. Empty on a host without swap. Set by the server.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `proxmox_cluster_id` (String) Optional FK to the ProxmoxCluster this host runs inside (as a guest VM). The ID of a `oneuptime_proxmox_cluster`.
+- `readings_updated_at` (String) When OneUptime last stored the readings the host reported. Set by the server.
 - `runtime_name` (String) Last-seen value of the process.runtime.name OpenTelemetry resource attribute.
 - `runtime_version` (String) Last-seen value of the process.runtime.version OpenTelemetry resource attribute.
 - `slug` (String) Friendly globally unique name for your object.

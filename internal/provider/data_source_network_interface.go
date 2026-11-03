@@ -77,6 +77,7 @@ func (d *NetworkInterfaceDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the Network Device this interface was discovered on. The ID of a `oneuptime_network_device`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_device"),
             },
             "interface_index": schema.NumberAttribute{
                 MarkdownDescription: "SNMP ifIndex of this interface on the device.",

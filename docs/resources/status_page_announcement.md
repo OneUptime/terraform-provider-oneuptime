@@ -13,7 +13,7 @@ Manage announcements on your status page
 
 ```terraform
 resource "oneuptime_status_page_announcement" "example" {
-  title                = "Example short text"
+  title                = "Scheduled Maintenance - Database Upgrade"
   show_announcement_at = "2030-01-01T00:00:00Z"
   description          = "Managed by Terraform"
 }
@@ -42,7 +42,7 @@ resource "oneuptime_status_page_announcement" "example" {
 - `id` (String) Unique identifier for the resource.
 - `is_owner_notified` (Boolean) Are owners notified of this announcement?
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `subscriber_notification_status` (String)
+- `subscriber_notification_status` (String) Whether the status page's subscribers were told about the announcement: Pending until they are, then Success or Failed. Set by OneUptime.
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.
 - `subscriber_notification_status_message_on_announcement_updated` (String) Status message for the notification sent to subscribers when this announcement was last updated - includes success messages, failure reasons, or skip reasons.
 - `subscriber_notification_status_on_announcement_updated` (String) Status of the notification sent to subscribers when this announcement was last updated. Empty until an update notification is requested.

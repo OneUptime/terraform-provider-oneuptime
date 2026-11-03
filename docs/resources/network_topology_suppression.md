@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_topology_suppression Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Nodes hidden from the Network Topology map for the whole project. Display only â€” the device and its monitoring are untouched.
 ---
@@ -13,7 +13,7 @@ Nodes hidden from the Network Topology map for the whole project. Display only â
 
 ```terraform
 resource "oneuptime_network_topology_suppression" "example" {
-  node_key = "Example short text"
+  node_key = "unmanaged:ap-lobby"
 }
 ```
 

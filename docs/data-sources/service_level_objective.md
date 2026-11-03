@@ -56,10 +56,10 @@ data "oneuptime_service_level_objective" "by_id" {
 - `auto_added_monitors` (Set of String) Monitors that were attached to this SLO by its monitor rules rather than by hand. Maintained by the server. IDs of `oneuptime_monitor` resources.
 - `created_at` (String) Date and Time when the object was created.
 - `downtime_monitor_statuses` (Set of String) List of monitor statuses that are considered as "down" for this Service Level Objective. IDs of `oneuptime_monitor_status` resources.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_accumulated_bucket_end_at` (String) Accumulation cursor for Metric SLIs: end of the last bucket whose good/total counts were persisted. Computed by the worker.
 - `last_evaluated_at` (String) The last time this Service Level Objective was evaluated. Computed by the worker.
-- `metric_query_config` (String) Query configuration for Metric SLIs: metric name, good-event predicate and optional attribute filters. A JSON value: write it with `jsonencode()`.
+- `metric_query_config` (String) Query configuration for Metric SLIs: metric name, good-event predicate and optional attribute filters. A JSON value: read it with `jsondecode()`.
 - `monitor_labels` (Set of String) Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named "Auto-add monitors with labels". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) Monitors whose uptime is measured by this Service Level Objective (for Monitor Uptime SLIs). IDs of `oneuptime_monitor` resources.
 - `next_evaluation_at` (String) When this Service Level Objective is next due for evaluation. Computed by the worker.

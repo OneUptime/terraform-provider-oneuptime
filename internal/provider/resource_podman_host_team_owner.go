@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &PodmanHostTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &PodmanHostTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &PodmanHostTeamOwnerResource{}
 
 func NewPodmanHostTeamOwnerResource() resource.Resource {
     return &PodmanHostTeamOwnerResource{}
@@ -71,18 +72,20 @@ func (r *PodmanHostTeamOwnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the Podman host. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "podman_host_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Podman Host in which this object belongs. The ID of a `oneuptime_podman_host`.",
+                MarkdownDescription: "ID of the Podman host the team owns. The ID of a `oneuptime_podman_host`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_podman_host"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -110,6 +113,17 @@ func (r *PodmanHostTeamOwnerResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *PodmanHostTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *PodmanHostTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -400,6 +414,7 @@ func (r *PodmanHostTeamOwnerResource) Create(ctx context.Context, req resource.C
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -884,7 +899,22 @@ func (r *PodmanHostTeamOwnerResource) Delete(ctx context.Context, req resource.D
 
 
 func (r *PodmanHostTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <podman_host_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/podman-host-owner-team/get-list",
+        parentField:     "podmanHostId",
+        parentAttribute: "podman_host_id",
+        parentNoun:      "podman host",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 

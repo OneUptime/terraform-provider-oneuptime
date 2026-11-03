@@ -50,7 +50,7 @@ func (d *FormDomainDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *FormDomainDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Your own domains a form answers on, such as report.acmeinc.com, verified and served over HTTPS. Look up an existing form domain by `id`, or by any of its other arguments (`created_by_user_id`, `custom_certificate`, `custom_certificate_key`, ...): each one set must match, and exactly one form domain may match them all.",
+        MarkdownDescription: "Your own domains a form answers on, such as report.acmeinc.com, verified and served over HTTPS. Look up an existing form domain by `id`, or by any of its other arguments (`created_by_user_id`, `custom_certificate`, `domain_id`, ...): each one set must match, and exactly one form domain may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -74,11 +74,13 @@ func (d *FormDomainDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "ID of the verified domain this one is a subdomain of. The domain must be verified in Project Settings > Advanced > Domains. The ID of a `oneuptime_domain`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_domain"),
             },
             "form_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the form this domain answers with. Fixed once the domain is added: to put the domain on another form, delete it and add it there. The ID of a `oneuptime_form`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_form"),
             },
             "subdomain": schema.StringAttribute{
                 MarkdownDescription: "Subdomain label for your form such as 'report'. Leave blank or enter @ to use the root domain.",
@@ -94,6 +96,7 @@ func (d *FormDomainDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_cname_verified": schema.BoolAttribute{
                 MarkdownDescription: "Whether the domain's CNAME record has been found pointing to this installation. Checked every 15 minutes, or on Check now.",
@@ -117,8 +120,8 @@ func (d *FormDomainDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "custom_certificate_key": schema.StringAttribute{
                 MarkdownDescription: "The custom certificate's private key, in PEM format. Used while isCustomCertificate is on.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "is_custom_certificate": schema.BoolAttribute{
                 MarkdownDescription: "Serve the domain with the certificate you upload rather than the free SSL certificate OneUptime issues and renews.",
@@ -203,10 +206,6 @@ func (d *FormDomainDataSource) Read(ctx context.Context, req datasource.ReadRequ
     if !data.CustomCertificate.IsNull() && !data.CustomCertificate.IsUnknown() {
         filters["customCertificate"] = data.CustomCertificate.ValueString()
         filterNames = append(filterNames, "custom_certificate = "+fmt.Sprintf("%q", data.CustomCertificate.ValueString()))
-    }
-    if !data.CustomCertificateKey.IsNull() && !data.CustomCertificateKey.IsUnknown() {
-        filters["customCertificateKey"] = data.CustomCertificateKey.ValueString()
-        filterNames = append(filterNames, "custom_certificate_key = "+fmt.Sprintf("%q", data.CustomCertificateKey.ValueString()))
     }
     if !data.IsCustomCertificate.IsNull() && !data.IsCustomCertificate.IsUnknown() {
         filters["isCustomCertificate"] = data.IsCustomCertificate.ValueBool()

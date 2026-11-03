@@ -67,6 +67,7 @@ func (d *StatusPagePrivateUserDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "email": schema.StringAttribute{
                 MarkdownDescription: "Email.",
@@ -81,6 +82,7 @@ func (d *StatusPagePrivateUserDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_sso_user": schema.BoolAttribute{
                 MarkdownDescription: "Did this user sign up via SSO?",

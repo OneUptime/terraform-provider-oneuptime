@@ -73,11 +73,13 @@ func (d *AiConversationMessageDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "ID of the conversation this message belongs to. The ID of a `oneuptime_ai_conversation`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_ai_conversation"),
             },
             "user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the user who owns the conversation. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "role": schema.StringAttribute{
                 MarkdownDescription: "Who authored this message: User or Assistant.",
@@ -100,15 +102,15 @@ func (d *AiConversationMessageDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "citations": schema.StringAttribute{
-                MarkdownDescription: "Server-minted citations for this assistant message. Each citation records the tool, the exact validated query arguments and the row count. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Server-minted citations for this assistant message. Each citation records the tool, the exact validated query arguments and the row count. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "widgets": schema.StringAttribute{
-                MarkdownDescription: "Inline widgets (charts, tables, trace waterfalls, resource cards) built from this assistant message's tool results and rendered inline in the chat. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Inline widgets (charts, tables, trace waterfalls, resource cards) built from this assistant message's tool results and rendered inline in the chat. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "tool_actions": schema.StringAttribute{
-                MarkdownDescription: "Mutating actions the agent proposed or performed in this turn, with their approval status (pending, approved, denied, executed). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Mutating actions the agent proposed or performed in this turn, with their approval status (pending, approved, denied, executed). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "error_message": schema.StringAttribute{

@@ -85,6 +85,18 @@ type HostDataSourceModel struct {
     IsCollectorHealthy types.Bool `tfsdk:"is_collector_healthy"`
     CollectorHealthError types.String `tfsdk:"collector_health_error"`
     CollectorHostFeatures types.String `tfsdk:"collector_host_features"`
+    LatestCpuPercent types.Number `tfsdk:"latest_cpu_percent"`
+    LatestMemoryPercent types.Number `tfsdk:"latest_memory_percent"`
+    LatestSwapPercent types.Number `tfsdk:"latest_swap_percent"`
+    LatestDiskPercent types.Number `tfsdk:"latest_disk_percent"`
+    LatestDiskMountpoint types.String `tfsdk:"latest_disk_mountpoint"`
+    LatestInodesPercent types.Number `tfsdk:"latest_inodes_percent"`
+    LatestInodesMountpoint types.String `tfsdk:"latest_inodes_mountpoint"`
+    LatestLoadAverage15m types.Number `tfsdk:"latest_load_average15m"`
+    BootedAt types.String `tfsdk:"booted_at"`
+    FailedSystemdUnitCount types.Number `tfsdk:"failed_systemd_unit_count"`
+    FailedSystemdUnits types.String `tfsdk:"failed_systemd_units"`
+    ReadingsUpdatedAt types.String `tfsdk:"readings_updated_at"`
 }
 
 func (d *HostDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -201,21 +213,25 @@ func (d *HostDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "Optional FK to the DockerHost record for this same host when it is also running the Docker runtime. The ID of a `oneuptime_docker_host`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_docker_host"),
             },
             "kubernetes_cluster_id": schema.StringAttribute{
                 MarkdownDescription: "Optional FK to the KubernetesCluster this host belongs to when k8s.cluster.name is reported. The ID of a `oneuptime_kubernetes_cluster`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_kubernetes_cluster"),
             },
             "proxmox_cluster_id": schema.StringAttribute{
                 MarkdownDescription: "Optional FK to the ProxmoxCluster this host runs inside (as a guest VM). The ID of a `oneuptime_proxmox_cluster`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_proxmox_cluster"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this host archived? Archived hosts are hidden from lists but keep collecting telemetry.",
@@ -230,9 +246,10 @@ func (d *HostDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -242,7 +259,7 @@ func (d *HostDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this host (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the host default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-pillar retention overrides for this host (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the host default, then the project's retention settings. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "deployment_environment": schema.StringAttribute{
@@ -291,7 +308,7 @@ func (d *HostDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "ai_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this host without approval even though they are riskier changes. Each pattern is one command line for this host's agent (systemctl, journalctl and the other host programs it may run) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this host is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the host can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this host without approval even though they are riskier changes. Each pattern is one command line for this host's agent (systemctl, journalctl and the other host programs it may run) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this host is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the host can remove patterns or clear the list. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{
@@ -324,6 +341,7 @@ func (d *HostDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "ID of the Collector Config OneUptime sends to this host. Empty when the host runs OneUptime's default for its system. The ID of a `oneuptime_collector_config`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_collector_config"),
             },
             "is_collector_config_pinned": schema.BoolAttribute{
                 MarkdownDescription: "Whether the Collector Config was picked for this host on its page. When it is not, the host runs the first config in the list that applies to it.",
@@ -334,6 +352,7 @@ func (d *HostDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "ID of the Collector Config version this host reports it runs. Set by the server. The ID of a `oneuptime_collector_config_version` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_collector_config_version"),
             },
             "collector_config_hash": schema.StringAttribute{
                 MarkdownDescription: "The SHA-256 of the config this host reports it runs. Set by the server.",
@@ -368,6 +387,63 @@ func (d *HostDataSource) Schema(ctx context.Context, req datasource.SchemaReques
             "collector_host_features": schema.StringAttribute{
                 MarkdownDescription: "What the OneUptime installer found on this host for its default config to read: journald, systemd. Set by the server.",
                 Optional: true,
+                Computed: true,
+            },
+            "latest_cpu_percent": schema.NumberAttribute{
+                MarkdownDescription: "CPU busy time (user and system) across all of the host's cores in its last report, as a percent. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "latest_memory_percent": schema.NumberAttribute{
+                MarkdownDescription: "Memory in use in the host's last report, buffers and page cache not counted, as a percent. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "latest_swap_percent": schema.NumberAttribute{
+                MarkdownDescription: "Swap space in use in the host's last report, as a percent. Empty on a host without swap. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "latest_disk_percent": schema.NumberAttribute{
+                MarkdownDescription: "How full the host's fullest filesystem was in its last report, as a percent. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "latest_disk_mountpoint": schema.StringAttribute{
+                MarkdownDescription: "The mount point of the host's fullest filesystem in its last report. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "latest_inodes_percent": schema.NumberAttribute{
+                MarkdownDescription: "The share of inodes in use on the filesystem that used the most of them in the host's last report. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "latest_inodes_mountpoint": schema.StringAttribute{
+                MarkdownDescription: "The mount point of the filesystem that used the most of its inodes in the host's last report. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "latest_load_average15m": schema.NumberAttribute{
+                MarkdownDescription: "The host's 15-minute load average in its last report. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "booted_at": schema.StringAttribute{
+                MarkdownDescription: "When the host last started, from the system.uptime metric its collector reports. Set by the server.",
+                Computed: true,
+            },
+            "failed_systemd_unit_count": schema.NumberAttribute{
+                MarkdownDescription: "How many systemd units were in the failed state in the host's last report. Linux only. Set by the server.",
+                Optional: true,
+                Computed: true,
+            },
+            "failed_systemd_units": schema.StringAttribute{
+                MarkdownDescription: "The names of the first systemd units that were in the failed state in the host's last report. Set by the server. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "readings_updated_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime last stored the readings the host reported. Set by the server.",
                 Computed: true,
             },
         },
@@ -585,6 +661,42 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         filters["collectorHostFeatures"] = data.CollectorHostFeatures.ValueString()
         filterNames = append(filterNames, "collector_host_features = "+fmt.Sprintf("%q", data.CollectorHostFeatures.ValueString()))
     }
+    if !data.LatestCpuPercent.IsNull() && !data.LatestCpuPercent.IsUnknown() {
+        filters["latestCpuPercent"] = lookupNumber(data.LatestCpuPercent)
+        filterNames = append(filterNames, "latest_cpu_percent = "+data.LatestCpuPercent.ValueBigFloat().String())
+    }
+    if !data.LatestMemoryPercent.IsNull() && !data.LatestMemoryPercent.IsUnknown() {
+        filters["latestMemoryPercent"] = lookupNumber(data.LatestMemoryPercent)
+        filterNames = append(filterNames, "latest_memory_percent = "+data.LatestMemoryPercent.ValueBigFloat().String())
+    }
+    if !data.LatestSwapPercent.IsNull() && !data.LatestSwapPercent.IsUnknown() {
+        filters["latestSwapPercent"] = lookupNumber(data.LatestSwapPercent)
+        filterNames = append(filterNames, "latest_swap_percent = "+data.LatestSwapPercent.ValueBigFloat().String())
+    }
+    if !data.LatestDiskPercent.IsNull() && !data.LatestDiskPercent.IsUnknown() {
+        filters["latestDiskPercent"] = lookupNumber(data.LatestDiskPercent)
+        filterNames = append(filterNames, "latest_disk_percent = "+data.LatestDiskPercent.ValueBigFloat().String())
+    }
+    if !data.LatestDiskMountpoint.IsNull() && !data.LatestDiskMountpoint.IsUnknown() {
+        filters["latestDiskMountpoint"] = data.LatestDiskMountpoint.ValueString()
+        filterNames = append(filterNames, "latest_disk_mountpoint = "+fmt.Sprintf("%q", data.LatestDiskMountpoint.ValueString()))
+    }
+    if !data.LatestInodesPercent.IsNull() && !data.LatestInodesPercent.IsUnknown() {
+        filters["latestInodesPercent"] = lookupNumber(data.LatestInodesPercent)
+        filterNames = append(filterNames, "latest_inodes_percent = "+data.LatestInodesPercent.ValueBigFloat().String())
+    }
+    if !data.LatestInodesMountpoint.IsNull() && !data.LatestInodesMountpoint.IsUnknown() {
+        filters["latestInodesMountpoint"] = data.LatestInodesMountpoint.ValueString()
+        filterNames = append(filterNames, "latest_inodes_mountpoint = "+fmt.Sprintf("%q", data.LatestInodesMountpoint.ValueString()))
+    }
+    if !data.LatestLoadAverage15m.IsNull() && !data.LatestLoadAverage15m.IsUnknown() {
+        filters["latestLoadAverage15m"] = lookupNumber(data.LatestLoadAverage15m)
+        filterNames = append(filterNames, "latest_load_average15m = "+data.LatestLoadAverage15m.ValueBigFloat().String())
+    }
+    if !data.FailedSystemdUnitCount.IsNull() && !data.FailedSystemdUnitCount.IsUnknown() {
+        filters["failedSystemdUnitCount"] = lookupNumber(data.FailedSystemdUnitCount)
+        filterNames = append(filterNames, "failed_systemd_unit_count = "+data.FailedSystemdUnitCount.ValueBigFloat().String())
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -658,6 +770,18 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "isCollectorHealthy": true,
         "collectorHealthError": true,
         "collectorHostFeatures": true,
+        "latestCpuPercent": true,
+        "latestMemoryPercent": true,
+        "latestSwapPercent": true,
+        "latestDiskPercent": true,
+        "latestDiskMountpoint": true,
+        "latestInodesPercent": true,
+        "latestInodesMountpoint": true,
+        "latestLoadAverage15m": true,
+        "bootedAt": true,
+        "failedSystemdUnitCount": true,
+        "failedSystemdUnits": true,
+        "readingsUpdatedAt": true,
         "_id": true,
     }
 
@@ -1582,6 +1706,98 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.CollectorHostFeatures = types.StringValue(val)
     } else {
         data.CollectorHostFeatures = types.StringNull()
+    }
+    data.LatestCpuPercent = numberFromAPI(data.LatestCpuPercent, item["latestCpuPercent"])
+    data.LatestMemoryPercent = numberFromAPI(data.LatestMemoryPercent, item["latestMemoryPercent"])
+    data.LatestSwapPercent = numberFromAPI(data.LatestSwapPercent, item["latestSwapPercent"])
+    data.LatestDiskPercent = numberFromAPI(data.LatestDiskPercent, item["latestDiskPercent"])
+    if obj, ok := item["latestDiskMountpoint"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LatestDiskMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LatestDiskMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LatestDiskMountpoint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LatestDiskMountpoint = types.StringValue(string(jsonBytes))
+        } else {
+            data.LatestDiskMountpoint = types.StringNull()
+        }
+    } else if val, ok := item["latestDiskMountpoint"].(string); ok {
+        data.LatestDiskMountpoint = types.StringValue(val)
+    } else {
+        data.LatestDiskMountpoint = types.StringNull()
+    }
+    data.LatestInodesPercent = numberFromAPI(data.LatestInodesPercent, item["latestInodesPercent"])
+    if obj, ok := item["latestInodesMountpoint"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LatestInodesMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LatestInodesMountpoint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LatestInodesMountpoint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LatestInodesMountpoint = types.StringValue(string(jsonBytes))
+        } else {
+            data.LatestInodesMountpoint = types.StringNull()
+        }
+    } else if val, ok := item["latestInodesMountpoint"].(string); ok {
+        data.LatestInodesMountpoint = types.StringValue(val)
+    } else {
+        data.LatestInodesMountpoint = types.StringNull()
+    }
+    data.LatestLoadAverage15m = numberFromAPI(data.LatestLoadAverage15m, item["latestLoadAverage15m"])
+    if obj, ok := item["bootedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BootedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.BootedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.BootedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.BootedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.BootedAt = types.StringNull()
+        }
+    } else if val, ok := item["bootedAt"].(string); ok {
+        data.BootedAt = types.StringValue(val)
+    } else {
+        data.BootedAt = types.StringNull()
+    }
+    data.FailedSystemdUnitCount = numberFromAPI(data.FailedSystemdUnitCount, item["failedSystemdUnitCount"])
+    if obj, ok := item["failedSystemdUnits"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FailedSystemdUnits = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FailedSystemdUnits = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FailedSystemdUnits = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FailedSystemdUnits = types.StringValue(string(jsonBytes))
+        } else {
+            data.FailedSystemdUnits = types.StringNull()
+        }
+    } else if val, ok := item["failedSystemdUnits"].(string); ok {
+        data.FailedSystemdUnits = types.StringValue(val)
+    } else {
+        data.FailedSystemdUnits = types.StringNull()
+    }
+    if obj, ok := item["readingsUpdatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ReadingsUpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ReadingsUpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ReadingsUpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ReadingsUpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ReadingsUpdatedAt = types.StringNull()
+        }
+    } else if val, ok := item["readingsUpdatedAt"].(string); ok {
+        data.ReadingsUpdatedAt = types.StringValue(val)
+    } else {
+        data.ReadingsUpdatedAt = types.StringNull()
     }
 
     // Write logs using the tflog package

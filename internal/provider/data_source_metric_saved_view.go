@@ -72,9 +72,10 @@ func (d *MetricSavedViewDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the user who created this saved metric view. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "query": schema.StringAttribute{
-                MarkdownDescription: "Serialized metrics explorer view state (search, filters, time range, page size) for this saved view. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Serialized metrics explorer view state (search, filters, time range, page size) for this saved view. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_default": schema.BoolAttribute{

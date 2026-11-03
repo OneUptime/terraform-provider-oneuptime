@@ -27,6 +27,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &DatabaseLabelRuleResource{}
 var _ resource.ResourceWithImportState = &DatabaseLabelRuleResource{}
+var _ resource.ResourceWithModifyPlan = &DatabaseLabelRuleResource{}
 
 func NewDatabaseLabelRuleResource() resource.Resource {
     return &DatabaseLabelRuleResource{}
@@ -80,6 +81,7 @@ func (r *DatabaseLabelRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -122,6 +124,7 @@ func (r *DatabaseLabelRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "database_server_name_pattern": schema.StringAttribute{
                 MarkdownDescription: "Regex (case-insensitive) matched against the database name. Discovered databases are named after their engine (e.g. PostgreSQL orders-db:5432), so ^PostgreSQL matches every PostgreSQL database. Leave empty to match any name.",
@@ -147,6 +150,7 @@ func (r *DatabaseLabelRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -170,6 +174,17 @@ func (r *DatabaseLabelRuleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *DatabaseLabelRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *DatabaseLabelRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -670,6 +685,9 @@ func (r *DatabaseLabelRuleResource) Create(ctx context.Context, req resource.Cre
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1081,6 +1099,11 @@ func (r *DatabaseLabelRuleResource) Update(ctx context.Context, req resource.Upd
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "criteria": !data.Criteria.Equal(state.Criteria),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config DatabaseLabelRuleResourceModel
@@ -1519,6 +1542,9 @@ func (r *DatabaseLabelRuleResource) Update(ctx context.Context, req resource.Upd
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1555,6 +1581,9 @@ func (r *DatabaseLabelRuleResource) Delete(ctx context.Context, req resource.Del
 
 func (r *DatabaseLabelRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"criteria"})...)
 }
 
 

@@ -43,12 +43,12 @@ data "oneuptime_incident_template" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `custom_field_settings` (String) How the Declare Incident form treats each incident custom field when an incident is declared from this template, keyed by the field's template variable key (variableKey). Each value is Required (asked, must be filled in), Optional (asked, may be left empty), Hidden (not asked; the field keeps this template's value) or Default. A field that is not listed, or is Default, follows its own Show on Create and Required on Create settings. Only the dashboard's Declare Incident form applies these settings: incidents created through the API are not checked against them. A JSON value: write it with `jsonencode()`.
-- `custom_fields` (String) The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies. A JSON value: write it with `jsonencode()`.
+- `custom_field_settings` (String) How the Declare Incident form treats each incident custom field when an incident is declared from this template, keyed by the field's template variable key (variableKey). Each value is Required (asked, must be filled in), Optional (asked, may be left empty), Hidden (not asked; the field keeps this template's value) or Default. A field that is not listed, or is Default, follows its own Show on Create and Required on Create settings. Only the dashboard's Declare Incident form applies these settings: incidents created through the API are not checked against them. A JSON value: read it with `jsondecode()`.
+- `custom_fields` (String) The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies. A JSON value: read it with `jsondecode()`.
 - `docker_hosts` (Set of String) List of Docker hosts to pre-populate on incidents created from this template. IDs of `oneuptime_docker_host` resources.
 - `hosts` (Set of String) List of hosts to pre-populate on incidents created from this template. IDs of `oneuptime_host` resources.
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters to pre-populate on incidents created from this template. IDs of `oneuptime_kubernetes_cluster` resources.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.
 - `on_call_duty_policies` (Set of String) List of on-call duty policies affected by this incident template. IDs of `oneuptime_on_call_policy` resources.
 - `podman_hosts` (Set of String) List of Podman hosts to pre-populate on incidents created from this template. IDs of `oneuptime_podman_host` resources.

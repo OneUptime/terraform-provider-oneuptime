@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkSiteLinkResource{}
 var _ resource.ResourceWithImportState = &NetworkSiteLinkResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkSiteLinkResource{}
 
 func NewNetworkSiteLinkResource() resource.Resource {
     return &NetworkSiteLinkResource{}
@@ -82,10 +83,12 @@ func (r *NetworkSiteLinkResource) schemaDefinition() schema.Schema {
             "from_site_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Site this link starts from. The ID of a `oneuptime_network_site`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "to_site_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Site this link ends at. The ID of a `oneuptime_network_site`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Monitor whose status colors this link on map views. The ID of a `oneuptime_monitor`.",
@@ -94,6 +97,7 @@ func (r *NetworkSiteLinkResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -117,6 +121,17 @@ func (r *NetworkSiteLinkResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkSiteLinkResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkSiteLinkResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -496,6 +511,7 @@ func (r *NetworkSiteLinkResource) Create(ctx context.Context, req resource.Creat
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

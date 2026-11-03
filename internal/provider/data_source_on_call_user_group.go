@@ -101,7 +101,7 @@ func (d *OnCallUserGroupDataSource) Schema(ctx context.Context, req datasource.S
                 ElementType: types.StringType,
             },
             "sync_state": schema.StringAttribute{
-                MarkdownDescription: "What the last sync came to: who OneUptime put in the group, who is on call but could not be added and why, whether the group is turned off while nobody is on call, and what stopped the sync, if anything. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the last sync came to: who OneUptime put in the group, who is on call but could not be added and why, whether the group is turned off while nobody is on call, and what stopped the sync, if anything. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "synced_at": schema.StringAttribute{
@@ -116,6 +116,7 @@ func (d *OnCallUserGroupDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_collector_config Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   The OpenTelemetry Collector config OneUptime sends to the hosts it manages, by system and label.
 ---

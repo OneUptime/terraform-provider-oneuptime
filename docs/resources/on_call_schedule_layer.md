@@ -154,7 +154,7 @@ A time is `{ _type = "DateTime", value = "<RFC 3339 timestamp>" }`, with or with
 
 - `hand_off_time` (String) Hand off time. When would you like to hand off the duty to the next user in this layer?
 - `name` (String) Friendly name for this layer.
-- `on_call_duty_policy_schedule_id` (String) ID of your On-Call Policy Schedule where this escalation rule belongs. The ID of a `oneuptime_on_call_policy_schedule`.
+- `on_call_duty_policy_schedule_id` (String) ID of the on-call schedule the layer is in. The ID of a `oneuptime_on_call_policy_schedule`.
 - `starts_at` (String) Start date and time of this layer.
 
 ### Optional

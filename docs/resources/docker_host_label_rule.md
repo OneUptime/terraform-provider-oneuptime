@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_docker_host_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically attaching labels to Docker hosts when matching Docker hosts are created
 ---

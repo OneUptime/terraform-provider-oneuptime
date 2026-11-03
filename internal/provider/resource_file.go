@@ -14,11 +14,14 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &FileResource{}
 var _ resource.ResourceWithImportState = &FileResource{}
+var _ resource.ResourceWithModifyPlan = &FileResource{}
 
 func NewFileResource() resource.Resource {
     return &FileResource{}
@@ -61,6 +64,7 @@ func (r *FileResource) schemaDefinition() schema.Schema {
                 },
             },
             "file": schema.StringAttribute{
+                MarkdownDescription: "The file's content.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -72,9 +76,14 @@ func (r *FileResource) schemaDefinition() schema.Schema {
                 Required: true,
             },
             "file_type": schema.StringAttribute{
+                MarkdownDescription: "The file's media type, such as image/png.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("audio/aac", "image/png", "image/jpeg", "image/svg+xml", "image/gif", "image/webp", "image/x-icon", "image/bmp", "image/tiff", "image/avif", "image/heic", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain", "text/markdown", "text/csv", "application/rtf", "application/vnd.oasis.opendocument.text", "application/json", "application/zip", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.oasis.opendocument.spreadsheet", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/vnd.oasis.opendocument.presentation", "application/vnd.tcpdump.pcap"),
+                },
             },
             "slug": schema.StringAttribute{
+                MarkdownDescription: "Friendly globally unique name for your object.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -86,10 +95,22 @@ func (r *FileResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "image_access_token": schema.StringAttribute{
+                MarkdownDescription: "Addresses the file in a link (/file/image/access-token/<token>) without its ID. Opening it still takes the right to see the file. Set by OneUptime.",
                 Computed: true,
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *FileResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *FileResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -350,6 +371,7 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

@@ -13,7 +13,7 @@ Manage scheduled maintenance event for your project
 
 ```terraform
 resource "oneuptime_scheduled_maintenance_event" "example" {
-  title       = "Example short text"
+  title       = "Database Migration and Server Upgrade"
   starts_at   = "2030-01-01T00:00:00Z"
   ends_at     = "2030-01-01T00:00:00Z"
   description = "Managed by Terraform"
@@ -43,7 +43,7 @@ resource "oneuptime_scheduled_maintenance_event" "example" {
 - `iot_fleets` (Set of String) List of IoT fleets affected by this event. IDs of `oneuptime_iot_fleet` resources.
 - `is_visible_on_status_page` (Boolean) Should this incident be visible on the status page? Defaults to `true`.
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters affected by this event. IDs of `oneuptime_kubernetes_cluster` resources.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) List of monitors attached to this event. IDs of `oneuptime_monitor` resources.
 - `network_sites` (Set of String) List of network sites affected by this event. Their descendants are covered too. IDs of `oneuptime_network_site` resources.
 - `next_subscriber_notification_before_the_event_at` (String) When will the next notification to subscribers be sent out?

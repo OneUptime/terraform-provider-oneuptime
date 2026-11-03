@@ -27,7 +27,8 @@ resource "oneuptime_incident_episode" "example" {
 ### Optional
 
 - `assigned_to_team_id` (String) Team ID that is assigned to this episode. The ID of a `oneuptime_team`.
-- `assigned_to_user_id` (String) User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source).
+- `assigned_to_user_email` (String) The email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `assigned_to_user_id` (String) User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assigned_to_user_email`.
 - `current_incident_state_id` (String) Current Incident State ID. The ID of a `oneuptime_incident_state`.
 - `declared_at` (String) When this episode was declared.
 - `description` (String) Description of this incident episode. This is in markdown format.
@@ -39,7 +40,7 @@ resource "oneuptime_incident_episode" "example" {
 - `is_manually_created` (Boolean) Whether this episode was manually created vs auto-created by a rule. Defaults to `false`.
 - `is_private` (Boolean) If true, this incident episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Defaults to `false`.
 - `is_visible_on_status_page` (Boolean) Should this episode be visible on the status page? Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_incident_added_at` (String) When the last incident was added to this episode.
 - `on_call_duty_policies` (Set of String) List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.
 - `post_updates_to_workspace_channels` (String) Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: write it with `jsonencode()`.

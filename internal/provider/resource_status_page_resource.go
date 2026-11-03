@@ -19,11 +19,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageResourceResource{}
 var _ resource.ResourceWithImportState = &StatusPageResourceResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageResourceResource{}
 
 func NewStatusPageResourceResource() resource.Resource {
     return &StatusPageResourceResource{}
@@ -91,6 +94,7 @@ func (r *StatusPageResourceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor ID Resource in which this object belongs. The ID of a `oneuptime_monitor`.",
@@ -99,6 +103,7 @@ func (r *StatusPageResourceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "monitor_group_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor Group ID Resource in which this object belongs. The ID of a `oneuptime_monitor_group`.",
@@ -107,6 +112,7 @@ func (r *StatusPageResourceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor_group"),
             },
             "status_page_group_id": schema.StringAttribute{
                 MarkdownDescription: "Does this monitor belong to a status page group? The ID of a `oneuptime_status_page_group`.",
@@ -115,6 +121,7 @@ func (r *StatusPageResourceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page_group"),
             },
             "display_name": schema.StringAttribute{
                 MarkdownDescription: "Display name of the monitor on the Status Page.",
@@ -161,6 +168,9 @@ func (r *StatusPageResourceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("99% (No Decimal)", "99.9% (One Decimal)", "99.99% (Two Decimal)", "99.999% (Three Decimal)"),
+                },
             },
             "show_status_history_chart": schema.BoolAttribute{
                 MarkdownDescription: "Show a 90 day uptime history of this monitor.",
@@ -176,6 +186,7 @@ func (r *StatusPageResourceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -221,6 +232,17 @@ func (r *StatusPageResourceResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageResourceResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageResourceResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -910,6 +932,7 @@ func (r *StatusPageResourceResource) Create(ctx context.Context, req resource.Cr
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

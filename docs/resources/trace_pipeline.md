@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_trace_pipeline Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Configure server-side trace processing pipelines that transform spans at ingest time.
 ---

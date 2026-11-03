@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_endpoint Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   LAN endpoints (POS terminals, kiosks, cameras, printers) discovered via ARP and FDB walks of Network Devices, and from a network controller's client list. Rows are upserted by the server; users can classify them.
 ---

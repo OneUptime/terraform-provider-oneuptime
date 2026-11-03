@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &LlmModelPriceResource{}
 var _ resource.ResourceWithImportState = &LlmModelPriceResource{}
+var _ resource.ResourceWithModifyPlan = &LlmModelPriceResource{}
 
 func NewLlmModelPriceResource() resource.Resource {
     return &LlmModelPriceResource{}
@@ -98,10 +99,16 @@ func (r *LlmModelPriceResource) schemaDefinition() schema.Schema {
             "input_price_per_million_tokens_in_usd": schema.NumberAttribute{
                 MarkdownDescription: "Price of one million input (prompt) tokens in USD. Use 0 for free input tokens.",
                 Required: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "output_price_per_million_tokens_in_usd": schema.NumberAttribute{
                 MarkdownDescription: "Price of one million output (completion) tokens in USD. Use 0 for free output tokens (e.g. embeddings).",
                 Required: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -125,6 +132,17 @@ func (r *LlmModelPriceResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *LlmModelPriceResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *LlmModelPriceResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -439,6 +457,7 @@ func (r *LlmModelPriceResource) Create(ctx context.Context, req resource.CreateR
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

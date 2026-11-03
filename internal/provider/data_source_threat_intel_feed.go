@@ -119,6 +119,7 @@ func (d *ThreatIntelFeedDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "For a Google SecOps feed: the ID of the connection whose key reads Google SecOps's indicator matches. The ID of a `oneuptime_security_event_connection`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_event_connection"),
             },
             "collection_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the TAXII collection to poll for indicator objects.",
@@ -169,11 +170,13 @@ func (d *ThreatIntelFeedDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the alert severity for alerts opened by this feed. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident severity for incidents opened by this feed. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "last_polled_at": schema.StringAttribute{
                 MarkdownDescription: "When this feed was last polled. Null means it has never run.",
@@ -216,6 +219,7 @@ func (d *ThreatIntelFeedDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the user who created this feed. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

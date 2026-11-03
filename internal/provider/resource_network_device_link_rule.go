@@ -25,6 +25,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkDeviceLinkRuleResource{}
 var _ resource.ResourceWithImportState = &NetworkDeviceLinkRuleResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkDeviceLinkRuleResource{}
 
 func NewNetworkDeviceLinkRuleResource() resource.Resource {
     return &NetworkDeviceLinkRuleResource{}
@@ -102,11 +103,13 @@ func (r *NetworkDeviceLinkRuleResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Devices carrying ALL of these labels each get one uplink drawn to the parent device. Empty matches nothing — a rule that linked every device in the project is never what anyone meant. IDs of `oneuptime_label` resources.",
                 Required: true,
                 ElementType: types.StringType,
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "parent_device_labels": schema.SetAttribute{
                 MarkdownDescription: "The device carrying ALL of these labels is what the children uplink to. It has to identify exactly one device: match none and the rule draws nothing, match several and the rule is ambiguous and also draws nothing. IDs of `oneuptime_label` resources.",
                 Required: true,
                 ElementType: types.StringType,
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "scope": schema.StringAttribute{
                 MarkdownDescription: "How wide the 'exactly one parent device' question is asked. Project (the default) looks for one parent across the whole project. Site asks once per site, so the same rule can draw an uplink in every building. Rules created before this existed are Project.",
@@ -138,6 +141,17 @@ func (r *NetworkDeviceLinkRuleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkDeviceLinkRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkDeviceLinkRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -555,6 +569,7 @@ func (r *NetworkDeviceLinkRuleResource) Create(ctx context.Context, req resource
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

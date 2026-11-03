@@ -17,11 +17,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &MonitorFeedResource{}
 var _ resource.ResourceWithImportState = &MonitorFeedResource{}
+var _ resource.ResourceWithModifyPlan = &MonitorFeedResource{}
 
 func NewMonitorFeedResource() resource.Resource {
     return &MonitorFeedResource{}
@@ -46,6 +48,7 @@ type MonitorFeedResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *MonitorFeedResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -78,6 +81,7 @@ func (r *MonitorFeedResource) schemaDefinition() schema.Schema {
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor ID in which this resource belongs. The ID of a `oneuptime_monitor`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "feed_info_in_markdown": schema.StringAttribute{
                 MarkdownDescription: "Log of the entire monitor state change in Markdown.",
@@ -94,6 +98,9 @@ func (r *MonitorFeedResource) schemaDefinition() schema.Schema {
             "monitor_feed_event_type": schema.StringAttribute{
                 MarkdownDescription: "Monitor Feed Event.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("OwnerNotificationSent", "OwnerUserAdded", "OwnerTeamAdded", "MonitorCreated", "MonitorStatusChanged", "MonitorUpdated", "OwnerTeamRemoved", "OwnerUserRemoved", "SubscriberNotificationSent", "OwnerRuleExecuted", "LabelRuleExecuted"),
+                },
             },
             "display_color": schema.StringAttribute{
                 MarkdownDescription: "Display color for the monitor log.",
@@ -104,12 +111,10 @@ func (r *MonitorFeedResource) schemaDefinition() schema.Schema {
                 },
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDValidators("user_email", false),
             },
             "posted_at": schema.StringAttribute{
                 MarkdownDescription: "Date and time when the feed was posted.",
@@ -117,6 +122,7 @@ func (r *MonitorFeedResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -140,8 +146,34 @@ func (r *MonitorFeedResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this monitor feed names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *MonitorFeedResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *MonitorFeedResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -183,6 +215,11 @@ func (r *MonitorFeedResource) Create(ctx context.Context, req resource.CreateReq
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -243,6 +280,19 @@ func (r *MonitorFeedResource) Create(ctx context.Context, req resource.CreateReq
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := monitorFeedResponse
+        if wrapper, ok := monitorFeedResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -615,9 +665,12 @@ func (r *MonitorFeedResource) Create(ctx context.Context, req resource.CreateReq
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -648,6 +701,10 @@ func (r *MonitorFeedResource) Read(ctx context.Context, req resource.ReadRequest
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/monitor-feed/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -987,6 +1044,8 @@ func (r *MonitorFeedResource) Read(ctx context.Context, req resource.ReadRequest
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1038,6 +1097,9 @@ func (r *MonitorFeedResource) keepPlannedValues(data *MonitorFeedResourceModel, 
     }
     if config.PostedAt.IsNull() && !plan.PostedAt.IsUnknown() {
         data.PostedAt = plan.PostedAt
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 

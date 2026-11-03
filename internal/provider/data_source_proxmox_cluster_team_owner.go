@@ -63,19 +63,22 @@ func (d *ProxmoxClusterTeamOwnerDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the Proxmox cluster. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "proxmox_cluster_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Proxmox Cluster in which this object belongs. The ID of a `oneuptime_proxmox_cluster`.",
+                MarkdownDescription: "ID of the Proxmox cluster the team owns. The ID of a `oneuptime_proxmox_cluster`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_proxmox_cluster"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",

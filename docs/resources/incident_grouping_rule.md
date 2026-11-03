@@ -28,7 +28,8 @@ resource "oneuptime_incident_grouping_rule" "example" {
 
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `default_assign_to_team_id` (String) ID of defaultAssignToTeam. Kept for API compatibility: OneUptime does not show it anywhere. To make a team responsible for the episodes this rule opens, use episodeOwnerTeams. The ID of a `oneuptime_team`.
-- `default_assign_to_user_id` (String) ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source).
+- `default_assign_to_user_email` (String) The email address of the person in `default_assign_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `default_assign_to_user_id` (String) ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `default_assign_to_user_email`.
 - `description` (String) Description of this incident grouping rule.
 - `enable_inactivity_timeout` (Boolean) Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new incidents arrive. Defaults to `false`.
 - `enable_reopen_window` (Boolean) Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution. Defaults to `false`.
@@ -39,7 +40,8 @@ resource "oneuptime_incident_grouping_rule" "example" {
 - `episode_member_role_assignments` (String) Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID. A JSON value: write it with `jsonencode()`.
 - `episode_member_roles` (Set of String) Incident roles to display in the episode members form. Select the roles that can be assigned to episode members. IDs of `oneuptime_incident_role` resources.
 - `episode_owner_teams` (Set of String) Teams added as owners of every episode this rule opens, and notified like any owner. Each must be a team of the project. IDs of `oneuptime_team` resources.
-- `episode_owner_users` (Set of String) Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project. IDs of `oneuptime_user` records.
+- `episode_owner_user_emails` (Set of String) The email addresses of the people in `episode_owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `episode_owner_users` (Set of String) Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project. IDs of `oneuptime_user` records. Or name them by email address, in `episode_owner_user_emails`.
 - `episode_title_template` (String) Template for generating episode titles. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}.
 - `group_by_fields` (String) JSON object defining the fields to group incidents by (e.g., monitorId, severity). A JSON value: write it with `jsonencode()`.
 - `group_by_incident_labels` (Boolean) When enabled, incidents with different sets of labels will be grouped into separate episodes (exact set match). When disabled, incident labels are ignored for grouping. Defaults to `false`.

@@ -38,8 +38,8 @@ resource "oneuptime_status_page_group" "example" {
 - `row_axis_values` (String) Comma-separated list of row labels for the grid (e.g. 'Auth, API, Database'). Determines row order in the grid layout.
 - `show_current_status` (Boolean) Show current status like offline, operational or degraded. Defaults to `true`.
 - `show_uptime_percent` (Boolean) Show uptime percent of this group for the last 90 days. Defaults to `false`.
-- `uptime_percent_precision` (String) Precision of uptime percent of this group for the last 90 days.
-- `view_mode` (String) Layout of this group on the status page. 'List' renders resources stacked vertically (default). 'Grid' renders resources as a matrix using row and column axes. Defaults to `List`.
+- `uptime_percent_precision` (String) Precision of uptime percent of this group for the last 90 days. Allowed values: `99% (No Decimal)`, `99.9% (One Decimal)`, `99.99% (Two Decimal)`, `99.999% (Three Decimal)`.
+- `view_mode` (String) Layout of this group on the status page. 'List' renders resources stacked vertically (default). 'Grid' renders resources as a matrix using row and column axes. Allowed values: `List`, `Grid`. Defaults to `List`.
 
 ### Read-Only
 

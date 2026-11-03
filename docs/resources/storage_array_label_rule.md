@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_storage_array_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically attaching labels to storage arrays when matching storage arrays are created
 ---

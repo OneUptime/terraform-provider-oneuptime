@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_queue Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Message queues, topics and subscriptions this project's applications publish to and consume from. Each queue is discovered from the OpenTelemetry messaging spans of instrumented applications and from broker metrics sent by an OpenTelemetry Collector, or added manually.
 ---
@@ -46,10 +46,10 @@ data "oneuptime_queue" "by_id" {
 
 - `archived_at` (String) When was this queue archived?
 - `auto_archived_at` (String) When this queue was archived automatically because no discovery source had seen it for a while. Empty when it was archived by a person or is not archived.
-- `automatic_assignments` (String) Label and owner ids that label rules or owner rules attached automatically. Maintained by OneUptime. A JSON value: write it with `jsonencode()`.
+- `automatic_assignments` (String) Label and owner ids that label rules or owner rules attached automatically. Maintained by OneUptime. A JSON value: read it with `jsondecode()`.
 - `broker_metrics_last_seen_at` (String) When the broker's own metrics for this queue (backlog, lag, dead letters, ...) were last received. Empty when they never were.
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When this queue was last seen by any discovery source - application messaging spans or broker metrics.
 - `manually_restored_at` (String) When a person last restored this queue from the archive. Automatic archiving leaves it alone until it is seen again or a grace period passes.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

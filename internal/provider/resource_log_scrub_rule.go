@@ -21,11 +21,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &LogScrubRuleResource{}
 var _ resource.ResourceWithImportState = &LogScrubRuleResource{}
+var _ resource.ResourceWithModifyPlan = &LogScrubRuleResource{}
 
 func NewLogScrubRuleResource() resource.Resource {
     return &LogScrubRuleResource{}
@@ -99,6 +101,9 @@ func (r *LogScrubRuleResource) schemaDefinition() schema.Schema {
             "pattern_type": schema.StringAttribute{
                 MarkdownDescription: "The type of sensitive data to detect: email, creditCard, ssn, phoneNumber, ipAddress, sensitiveKeys (the whole value of every attribute whose key looks sensitive, such as password or token), or custom (the regular expression in customRegex). Any other value is refused: it would scrub nothing.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("email", "creditCard", "ssn", "phoneNumber", "ipAddress", "sensitiveKeys", "custom"),
+                },
             },
             "custom_regex": schema.StringAttribute{
                 MarkdownDescription: "The regular expression a 'custom' rule scrubs, written without slashes or flags and matched case-sensitively. Required when patternType is 'custom': a pattern that is empty, does not compile, or matches empty text is refused. Ignored for the other pattern types.",
@@ -115,6 +120,9 @@ func (r *LogScrubRuleResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("redact"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("mask", "hash", "redact"),
                 },
             },
             "fields_to_scrub": schema.StringAttribute{
@@ -140,6 +148,7 @@ func (r *LogScrubRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -165,6 +174,17 @@ func (r *LogScrubRuleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *LogScrubRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *LogScrubRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -638,6 +658,7 @@ func (r *LogScrubRuleResource) Create(ctx context.Context, req resource.CreateRe
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

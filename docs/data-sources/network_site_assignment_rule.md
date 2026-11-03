@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_site_assignment_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Rules that automatically assign discovered Network Devices and Endpoints to a Network Site by subnet CIDR or hostname pattern. At least one of the two matchers must be set.
 ---
@@ -38,6 +38,6 @@ data "oneuptime_network_site_assignment_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

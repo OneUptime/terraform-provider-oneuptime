@@ -20,11 +20,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentMeasurementResource{}
 var _ resource.ResourceWithImportState = &IncidentMeasurementResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentMeasurementResource{}
 
 func NewIncidentMeasurementResource() resource.Resource {
     return &IncidentMeasurementResource{}
@@ -116,10 +119,16 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
             "start_anchor_type": schema.StringAttribute{
                 MarkdownDescription: "Where this measurement starts. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At, First Paged At.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Impact Started At", "Declared At", "Created At", "Timeline Start", "State Entered", "State Role Entered", "Postmortem Posted At", "First Paged At"),
+                },
             },
             "end_anchor_type": schema.StringAttribute{
                 MarkdownDescription: "Where this measurement ends. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At, First Paged At.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Impact Started At", "Declared At", "Created At", "Timeline Start", "State Entered", "State Role Entered", "Postmortem Posted At", "First Paged At"),
+                },
             },
             "start_incident_state_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident state this measurement starts at. Required only when the Start Anchor Type is State Entered. Cleared if that state is deleted, at which point the measurement reports Not Applicable rather than a wrong number. The ID of a `oneuptime_incident_state`.",
@@ -128,6 +137,7 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_state"),
             },
             "end_incident_state_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident state this measurement ends at. Required only when the End Anchor Type is State Entered. Cleared if that state is deleted, at which point the measurement reports Not Applicable rather than a wrong number. The ID of a `oneuptime_incident_state`.",
@@ -136,6 +146,7 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_state"),
             },
             "start_incident_state_role": schema.StringAttribute{
                 MarkdownDescription: "The role of the state this measurement starts at - Created, Acknowledged or Resolved. Used when the Start Anchor Type is State Role Entered. Resolving by role keeps the measurement working when a project renames or replaces the state that plays that part.",
@@ -144,6 +155,9 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Created", "Acknowledged", "Resolved"),
+                },
             },
             "end_incident_state_role": schema.StringAttribute{
                 MarkdownDescription: "The role of the state this measurement ends at - Created, Acknowledged or Resolved. Used when the End Anchor Type is State Role Entered.",
@@ -151,6 +165,9 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Created", "Acknowledged", "Resolved"),
                 },
             },
             "start_state_occurrence": schema.StringAttribute{
@@ -161,6 +178,9 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("First", "Last"),
+                },
             },
             "end_state_occurrence": schema.StringAttribute{
                 MarkdownDescription: "Which entry to use when the end state is entered more than once - First or Last. First matches the built-in incident metrics; Last follows a reopened incident to its final pass through that state.",
@@ -169,6 +189,9 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("First"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("First", "Last"),
                 },
             },
             "unit": schema.StringAttribute{
@@ -187,6 +210,9 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("Avg"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Avg", "Max", "Min", "P50", "P90", "P95", "P99"),
                 },
             },
             "is_enabled": schema.BoolAttribute{
@@ -212,6 +238,7 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -260,6 +287,17 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentMeasurementResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentMeasurementResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1105,6 +1143,7 @@ func (r *IncidentMeasurementResource) Create(ctx context.Context, req resource.C
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

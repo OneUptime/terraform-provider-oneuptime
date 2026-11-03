@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ai_conversation Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   A conversation with the OneUptime AI about observability data (logs, traces, metrics, exceptions, incidents, monitors and alerts).
 ---
@@ -40,6 +40,6 @@ data "oneuptime_ai_conversation" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `last_message_at` (String) When the last message in this conversation was sent.
-- `page_context` (String) The dashboard page (entity) this conversation is about. Set from the first message that carried a page context. A JSON value: write it with `jsonencode()`.
+- `page_context` (String) The dashboard page (entity) this conversation is about. Set from the first message that carried a page context. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this conversation belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

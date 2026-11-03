@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_change_event Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   API endpoints for Change Event
 ---

@@ -94,7 +94,7 @@ func (d *HuntDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "filters": schema.StringAttribute{
-                MarkdownDescription: "The Events sidebar's filters kept beside the search: each field's values, or with ! before the field the values it leaves out. At most 50 values. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The Events sidebar's filters kept beside the search: each field's values, or with ! before the field the values it leaves out. At most 50 values. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "time_range": schema.StringAttribute{
@@ -121,6 +121,7 @@ func (d *HuntDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "ID of the person the hunt's scheduled runs run as. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "searched_up_to_at": schema.StringAttribute{
                 MarkdownDescription: "How far the scheduled runs have searched: the next run reads the events from here on. Set to the moment the schedule is set or the search changes.",
@@ -161,6 +162,7 @@ func (d *HuntDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "ID of the person who saved the hunt. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

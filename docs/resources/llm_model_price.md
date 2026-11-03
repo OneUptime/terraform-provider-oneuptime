@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_llm_model_price Resource - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   Custom per-project LLM pricing. When a span carries token counts but no reported cost, ingest prices it against these entries and the built-in list-price catalog — the longest matching model prefix wins, and a project entry beats a built-in one on ties.
 ---

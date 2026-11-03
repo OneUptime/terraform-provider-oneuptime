@@ -13,36 +13,50 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &AiAgentOwnerTeamDataSource{}
+var _ datasource.DataSource = &EscalationRuleUserDataSource{}
 
-func NewAiAgentOwnerTeamDataSource() datasource.DataSource {
-    return &AiAgentOwnerTeamDataSource{}
+func NewEscalationRuleUserDataSource() datasource.DataSource {
+    return &EscalationRuleUserDataSource{}
 }
 
-// AiAgentOwnerTeamDataSource defines the data source implementation.
-type AiAgentOwnerTeamDataSource struct {
+// NewEscalationRuleUserLegacyDataSource registers this data source under the
+// name it had before type names kept mixed-case words whole,
+// oneuptime_users_on_call_duty_escalation_rule. Deprecated.
+func NewEscalationRuleUserLegacyDataSource() datasource.DataSource {
+    return &EscalationRuleUserDataSource{isLegacyAlias: true}
+}
+
+// EscalationRuleUserDataSource defines the data source implementation.
+type EscalationRuleUserDataSource struct {
     client *Client
+    // Registered under the name this data source had before.
+    isLegacyAlias bool
 }
 
-// AiAgentOwnerTeamDataSourceModel describes the data source data model.
-type AiAgentOwnerTeamDataSourceModel struct {
+// EscalationRuleUserDataSourceModel describes the data source data model.
+type EscalationRuleUserDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     ProjectId types.String `tfsdk:"project_id"`
-    TeamId types.String `tfsdk:"team_id"`
-    AiAgentId types.String `tfsdk:"ai_agent_id"`
+    OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
+    OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
+    UserId types.String `tfsdk:"user_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
-func (d *AiAgentOwnerTeamDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_ai_agent_owner_team"
+func (d *EscalationRuleUserDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    if d.isLegacyAlias {
+        resp.TypeName = req.ProviderTypeName + "_users_on_call_duty_escalation_rule"
+        return
+    }
+    resp.TypeName = req.ProviderTypeName + "_escalation_rule_user"
 }
 
-func (d *AiAgentOwnerTeamDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *EscalationRuleUserDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add teams as owners to your AI agents. Look up an existing ai agent owner team by `id`, or by any of its other arguments (`ai_agent_id`, `created_by_user_id`, `is_owner_notified`, ...): each one set must match, and exactly one ai agent owner team may match them all.",
+        MarkdownDescription: "Add users to your escalation rules. Look up an existing escalation rule user by `id`, or by any of its other arguments (`created_by_user_id`, `on_call_duty_policy_escalation_rule_id`, `on_call_duty_policy_id`, ...): each one set must match, and exactly one escalation rule user may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -62,31 +76,44 @@ func (d *AiAgentOwnerTeamDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
                 Computed: true,
             },
-            "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+            "on_call_duty_policy_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the on-call policy the escalation rule is in. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
-            "ai_agent_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime AI Agent in which this object belongs. The ID of a `oneuptime_ai_agent`.",
+            "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the escalation rule that pages the person. The ID of a `oneuptime_escalation_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_escalation_rule"),
+            },
+            "user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person this escalation rule pages. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
+                Optional: true,
+                Computed: true,
+                Validators: personIDValidators("user_email", false),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
-            "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?",
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
                 Optional: true,
                 Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
+    if d.isLegacyAlias {
+        resp.Schema.DeprecationMessage = "oneuptime_users_on_call_duty_escalation_rule has been renamed to oneuptime_escalation_rule_user. Use the new name; the old one keeps working until then."
+    }
 }
 
-func (d *AiAgentOwnerTeamDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *EscalationRuleUserDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -106,8 +133,8 @@ func (d *AiAgentOwnerTeamDataSource) Configure(ctx context.Context, req datasour
     d.client = client
 }
 
-func (d *AiAgentOwnerTeamDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data AiAgentOwnerTeamDataSourceModel
+func (d *EscalationRuleUserDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data EscalationRuleUserDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -121,34 +148,42 @@ func (d *AiAgentOwnerTeamDataSource) Read(ctx context.Context, req datasource.Re
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
-    if !data.TeamId.IsNull() && !data.TeamId.IsUnknown() {
-        filters["teamId"] = data.TeamId.ValueString()
-        filterNames = append(filterNames, "team_id = "+fmt.Sprintf("%q", data.TeamId.ValueString()))
+    if !data.OnCallDutyPolicyId.IsNull() && !data.OnCallDutyPolicyId.IsUnknown() {
+        filters["onCallDutyPolicyId"] = data.OnCallDutyPolicyId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyId.ValueString()))
     }
-    if !data.AiAgentId.IsNull() && !data.AiAgentId.IsUnknown() {
-        filters["aiAgentId"] = data.AiAgentId.ValueString()
-        filterNames = append(filterNames, "ai_agent_id = "+fmt.Sprintf("%q", data.AiAgentId.ValueString()))
+    if !data.OnCallDutyPolicyEscalationRuleId.IsNull() && !data.OnCallDutyPolicyEscalationRuleId.IsUnknown() {
+        filters["onCallDutyPolicyEscalationRuleId"] = data.OnCallDutyPolicyEscalationRuleId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_escalation_rule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyEscalationRuleId.ValueString()))
+    }
+    if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
+        filters["userId"] = data.UserId.ValueString()
+        filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
     }
-    if !data.IsOwnerNotified.IsNull() && !data.IsOwnerNotified.IsUnknown() {
-        filters["isOwnerNotified"] = data.IsOwnerNotified.ValueBool()
-        filterNames = append(filterNames, "is_owner_notified = "+fmt.Sprintf("%t", data.IsOwnerNotified.ValueBool()))
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["userId"] = personID
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Look the ai agent owner team up either by `id` or by its other arguments, not both.",
+            "Look the escalation rule user up either by `id` or by its other arguments, not both.",
         )
         return
     }
     if !hasId && len(filters) == 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Set `id`, or at least one other argument to look the ai agent owner team up by.",
+            "Set `id`, or at least one other argument to look the escalation rule user up by.",
         )
         return
     }
@@ -157,28 +192,28 @@ func (d *AiAgentOwnerTeamDataSource) Read(ctx context.Context, req datasource.Re
         "createdAt": true,
         "updatedAt": true,
         "projectId": true,
-        "teamId": true,
-        "aiAgentId": true,
+        "onCallDutyPolicyId": true,
+        "onCallDutyPolicyEscalationRuleId": true,
+        "userId": true,
         "createdByUserId": true,
-        "isOwnerNotified": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/ai-agent-owner-team/" + data.Id.ValueString() + "/get-item"
+        readPath := "/on-call-duty-policy-escalation-rule-user/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_agent_owner_team, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read escalation_rule_user, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai agent owner team found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No escalation rule user found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read ai_agent_owner_team: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read escalation_rule_user: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -194,28 +229,28 @@ func (d *AiAgentOwnerTeamDataSource) Read(ctx context.Context, req datasource.Re
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/ai-agent-owner-team/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/on-call-duty-policy-escalation-rule-user/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list ai_agent_owner_team, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list escalation_rule_user, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list ai_agent_owner_team: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list escalation_rule_user: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai agent owner team matches %s.", describeLookup(filterNames)))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No escalation rule user matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai agent owner team matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one escalation rule user matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for ai_agent_owner_team.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for escalation_rule_user.")
             return
         }
         item = first
@@ -290,39 +325,56 @@ func (d *AiAgentOwnerTeamDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["teamId"].(map[string]interface{}); ok {
+    if obj, ok := item["onCallDutyPolicyId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.TeamId = types.StringValue(val)
+            data.OnCallDutyPolicyId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.TeamId = types.StringValue(val)
+            data.OnCallDutyPolicyId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.TeamId = types.StringValue(fmt.Sprintf("%v", val))
+            data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.TeamId = types.StringValue(string(jsonBytes))
+            data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
         } else {
-            data.TeamId = types.StringNull()
+            data.OnCallDutyPolicyId = types.StringNull()
         }
-    } else if val, ok := item["teamId"].(string); ok {
-        data.TeamId = types.StringValue(val)
+    } else if val, ok := item["onCallDutyPolicyId"].(string); ok {
+        data.OnCallDutyPolicyId = types.StringValue(val)
     } else {
-        data.TeamId = types.StringNull()
+        data.OnCallDutyPolicyId = types.StringNull()
     }
-    if obj, ok := item["aiAgentId"].(map[string]interface{}); ok {
+    if obj, ok := item["onCallDutyPolicyEscalationRuleId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiAgentId = types.StringValue(val)
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.AiAgentId = types.StringValue(val)
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.AiAgentId = types.StringValue(fmt.Sprintf("%v", val))
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.AiAgentId = types.StringValue(string(jsonBytes))
+            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
         } else {
-            data.AiAgentId = types.StringNull()
+            data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
         }
-    } else if val, ok := item["aiAgentId"].(string); ok {
-        data.AiAgentId = types.StringValue(val)
+    } else if val, ok := item["onCallDutyPolicyEscalationRuleId"].(string); ok {
+        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
     } else {
-        data.AiAgentId = types.StringNull()
+        data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
+    }
+    if obj, ok := item["userId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if val, ok := item["userId"].(string); ok {
+        data.UserId = types.StringValue(val)
+    } else {
+        data.UserId = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -341,11 +393,7 @@ func (d *AiAgentOwnerTeamDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := item["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    } else {
-        data.IsOwnerNotified = types.BoolNull()
-    }
+    data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

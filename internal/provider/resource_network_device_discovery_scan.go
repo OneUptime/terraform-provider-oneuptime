@@ -25,6 +25,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkDeviceDiscoveryScanResource{}
 var _ resource.ResourceWithImportState = &NetworkDeviceDiscoveryScanResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkDeviceDiscoveryScanResource{}
 
 func NewNetworkDeviceDiscoveryScanResource() resource.Resource {
     return &NetworkDeviceDiscoveryScanResource{}
@@ -101,6 +102,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
             "probe_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Probe that runs this discovery scan. The ID of a `oneuptime_probe`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Optional name for this scan, so it can be told apart from other scans at a glance. Falls back to the scan target when empty.",
@@ -119,7 +121,9 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -156,6 +160,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c). Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -165,6 +170,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -196,6 +202,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -212,6 +219,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Ignored on an ICMP scan.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -239,6 +247,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -264,7 +273,7 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "discovered_devices": schema.StringAttribute{
-                MarkdownDescription: "Devices found by this scan: array of {ipAddress, sysName, sysDescr, isAlreadyRegistered}. Managed by the scanning probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Devices found by this scan: array of {ipAddress, sysName, sysDescr, isAlreadyRegistered}. Managed by the scanning probe. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -305,6 +314,17 @@ func (r *NetworkDeviceDiscoveryScanResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkDeviceDiscoveryScanResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkDeviceDiscoveryScanResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1217,6 +1237,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2010,6 +2033,11 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "snmp_configs": !data.SnmpConfigs.Equal(state.SnmpConfigs),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config NetworkDeviceDiscoveryScanResourceModel
@@ -2860,6 +2888,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2896,6 +2927,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Delete(ctx context.Context, req res
 
 func (r *NetworkDeviceDiscoveryScanResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"snmp_configs"})...)
 }
 
 

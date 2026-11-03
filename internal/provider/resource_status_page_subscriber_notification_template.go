@@ -14,49 +14,47 @@ import (
     "encoding/json"
     "net/url"
     "strings"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &SchedulesOnCallDutyEscalationRuleResource{}
-var _ resource.ResourceWithImportState = &SchedulesOnCallDutyEscalationRuleResource{}
+var _ resource.Resource = &StatusPageSubscriberNotificationTemplateResource{}
+var _ resource.ResourceWithImportState = &StatusPageSubscriberNotificationTemplateResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageSubscriberNotificationTemplateResource{}
+var _ resource.ResourceWithMoveState = &StatusPageSubscriberNotificationTemplateResource{}
 
-func NewSchedulesOnCallDutyEscalationRuleResource() resource.Resource {
-    return &SchedulesOnCallDutyEscalationRuleResource{}
+func NewStatusPageSubscriberNotificationTemplateResource() resource.Resource {
+    return &StatusPageSubscriberNotificationTemplateResource{}
 }
 
-// SchedulesOnCallDutyEscalationRuleResource defines the resource implementation.
-type SchedulesOnCallDutyEscalationRuleResource struct {
+// StatusPageSubscriberNotificationTemplateResource defines the resource implementation.
+type StatusPageSubscriberNotificationTemplateResource struct {
     client *Client
 }
 
-// SchedulesOnCallDutyEscalationRuleResourceModel describes the resource data model.
-type SchedulesOnCallDutyEscalationRuleResourceModel struct {
+// StatusPageSubscriberNotificationTemplateResourceModel describes the resource data model.
+type StatusPageSubscriberNotificationTemplateResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
-    OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
-    OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
-    OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
-    PageNextInRotation types.Bool `tfsdk:"page_next_in_rotation"`
+    StatusPageId types.String `tfsdk:"status_page_id"`
+    StatusPageSubscriberNotificationTemplateId types.String `tfsdk:"status_page_subscriber_notification_template_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
-func (r *SchedulesOnCallDutyEscalationRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_schedules_on_call_duty_escalation_rule"
+func (r *StatusPageSubscriberNotificationTemplateResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_status_page_subscriber_notification_template"
 }
 
-func (r *SchedulesOnCallDutyEscalationRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *StatusPageSubscriberNotificationTemplateResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = r.schemaDefinition()
 }
 
-func (r *SchedulesOnCallDutyEscalationRuleResource) schemaDefinition() schema.Schema {
+func (r *StatusPageSubscriberNotificationTemplateResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage schedules for on-call duty policy escalation rules.",
+        MarkdownDescription: "Links subscriber notification templates to specific status pages. This allows you to use different notification templates for different status pages.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -73,38 +71,18 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) schemaDefinition() schema.Sc
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy where this escalation rule belongs. The ID of a `oneuptime_on_call_policy`.",
+            "status_page_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Status Page this template is linked to. The ID of a `oneuptime_status_page`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
-            "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the on call schedule which is in this escalation rule. The ID of a `oneuptime_on_call_policy_schedule`.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
-                },
-            },
-            "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Escalation Rule where this user belongs. The ID of a `oneuptime_escalation_rule`.",
+            "status_page_subscriber_notification_template_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the notification template linked to this status page. The ID of a `oneuptime_subscriber_notification_template`.",
                 Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
-            },
-            "page_next_in_rotation": schema.BoolAttribute{
-                MarkdownDescription: "When true, the escalation rule pages the next person in this schedule's rotation - the person after whoever is on call, passing over anyone who is away - instead of whoever is on call. Use it on the level after the one that pages the schedule, so a page nobody acknowledges goes to the backup from the same rotation.",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                    boolplanmodifier.RequiresReplace(),
-                },
+                Validators: recordIDValidators("oneuptime_subscriber_notification_template"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -130,7 +108,30 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) schemaDefinition() schema.Sc
     }
 }
 
-func (r *SchedulesOnCallDutyEscalationRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+// MoveState lets a moved block bring state over from the old name:
+//
+//     moved {
+//       from = oneuptime_subscriber_notification_template.example
+//       to   = oneuptime_status_page_subscriber_notification_template.example
+//     }
+func (r *StatusPageSubscriberNotificationTemplateResource) MoveState(ctx context.Context) []resource.StateMover {
+    return []resource.StateMover{
+        legacyNameStateMover("oneuptime_subscriber_notification_template", r.schemaDefinition()),
+    }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageSubscriberNotificationTemplateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
+}
+
+func (r *StatusPageSubscriberNotificationTemplateResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -151,8 +152,8 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Configure(ctx context.Contex
 }
 
 
-func (r *SchedulesOnCallDutyEscalationRuleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data SchedulesOnCallDutyEscalationRuleResourceModel
+func (r *StatusPageSubscriberNotificationTemplateResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data StatusPageSubscriberNotificationTemplateResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -161,62 +162,48 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Create(ctx context.Context, 
         return
     }
 
-    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
-    var config SchedulesOnCallDutyEscalationRuleResourceModel
-    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-    if resp.Diagnostics.HasError() {
-        return
-    }
-    plan := data
-
 
 
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    schedulesOnCallDutyEscalationRuleRequest := map[string]interface{}{
+    statusPageSubscriberNotificationTemplateRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := schedulesOnCallDutyEscalationRuleRequest["data"].(map[string]interface{})
+    requestDataMap := statusPageSubscriberNotificationTemplateRequest["data"].(map[string]interface{})
 
-    if !data.OnCallDutyPolicyId.IsNull() && !data.OnCallDutyPolicyId.IsUnknown() {
-        requestDataMap["onCallDutyPolicyId"] = data.OnCallDutyPolicyId.ValueString()
+    if !data.StatusPageId.IsNull() && !data.StatusPageId.IsUnknown() {
+        requestDataMap["statusPageId"] = data.StatusPageId.ValueString()
     }
-    if !data.OnCallDutyPolicyScheduleId.IsNull() && !data.OnCallDutyPolicyScheduleId.IsUnknown() {
-        requestDataMap["onCallDutyPolicyScheduleId"] = data.OnCallDutyPolicyScheduleId.ValueString()
-    }
-    if !data.OnCallDutyPolicyEscalationRuleId.IsNull() && !data.OnCallDutyPolicyEscalationRuleId.IsUnknown() {
-        requestDataMap["onCallDutyPolicyEscalationRuleId"] = data.OnCallDutyPolicyEscalationRuleId.ValueString()
-    }
-    if !data.PageNextInRotation.IsNull() && !data.PageNextInRotation.IsUnknown() {
-        requestDataMap["pageNextInRotation"] = data.PageNextInRotation.ValueBool()
+    if !data.StatusPageSubscriberNotificationTemplateId.IsNull() && !data.StatusPageSubscriberNotificationTemplateId.IsUnknown() {
+        requestDataMap["statusPageSubscriberNotificationTemplateId"] = data.StatusPageSubscriberNotificationTemplateId.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/on-call-duty-policy-escalation-rule-schedule", schedulesOnCallDutyEscalationRuleRequest)
+    httpResp, err := r.client.Post(ctx, "/status-page-subscriber-notification-template-status-page", statusPageSubscriberNotificationTemplateRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create schedules_on_call_duty_escalation_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create status_page_subscriber_notification_template, got error: %s", err))
         return
     }
 
-    var schedulesOnCallDutyEscalationRuleResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &schedulesOnCallDutyEscalationRuleResponse)
+    var statusPageSubscriberNotificationTemplateResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &statusPageSubscriberNotificationTemplateResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create schedules_on_call_duty_escalation_rule: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create status_page_subscriber_notification_template: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := schedulesOnCallDutyEscalationRuleResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := statusPageSubscriberNotificationTemplateResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := schedulesOnCallDutyEscalationRuleResponse["_id"].(string); ok {
+    } else if val, ok := statusPageSubscriberNotificationTemplateResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for schedules_on_call_duty_escalation_rule did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for status_page_subscriber_notification_template did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -225,7 +212,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Create(ctx context.Context, 
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * schedules_on_call_duty_escalation_rule is orphaned server-side — never refreshed, never
+     * status_page_subscriber_notification_template is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -237,31 +224,29 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Create(ctx context.Context, 
     // Re-read the resource so state reflects server-normalized values.
     selectParam := map[string]interface{}{
         "projectId": true,
-        "onCallDutyPolicyId": true,
-        "onCallDutyPolicyScheduleId": true,
-        "onCallDutyPolicyEscalationRuleId": true,
-        "pageNextInRotation": true,
+        "statusPageId": true,
+        "statusPageSubscriberNotificationTemplateId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-policy-escalation-rule-schedule/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created schedules_on_call_duty_escalation_rule but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created status_page_subscriber_notification_template but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created schedules_on_call_duty_escalation_rule but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created status_page_subscriber_notification_template but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -287,119 +272,79 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Create(ctx context.Context, 
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["onCallDutyPolicyId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["statusPageId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.OnCallDutyPolicyId = types.StringValue(val)
+            data.StatusPageId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.OnCallDutyPolicyId = types.StringValue(val)
+            data.StatusPageId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+            data.StatusPageId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+                data.StatusPageId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+                data.StatusPageId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+            data.StatusPageId = types.StringValue(string(jsonBytes))
         } else {
-            data.OnCallDutyPolicyId = types.StringNull()
+            data.StatusPageId = types.StringNull()
         }
-    } else if val, ok := dataMap["onCallDutyPolicyId"].(string); ok {
-        data.OnCallDutyPolicyId = types.StringValue(val)
+    } else if val, ok := dataMap["statusPageId"].(string); ok {
+        data.StatusPageId = types.StringValue(val)
     } else {
-        data.OnCallDutyPolicyId = types.StringNull()
+        data.StatusPageId = types.StringNull()
     }
-    if obj, ok := dataMap["onCallDutyPolicyScheduleId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.OnCallDutyPolicyScheduleId = types.StringValue(fmt.Sprintf("%v", val))
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
         } else {
-            data.OnCallDutyPolicyScheduleId = types.StringNull()
+            data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
         }
-    } else if val, ok := dataMap["onCallDutyPolicyScheduleId"].(string); ok {
-        data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+    } else if val, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(string); ok {
+        data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
     } else {
-        data.OnCallDutyPolicyScheduleId = types.StringNull()
-    }
-    if obj, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
-            } else {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
-            } else {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
-        } else {
-            data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
-        }
-    } else if val, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(string); ok {
-        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
-    } else {
-        data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
-    }
-    if val, ok := dataMap["pageNextInRotation"].(bool); ok {
-        data.PageNextInRotation = types.BoolValue(val)
+        data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -468,18 +413,16 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Create(ctx context.Context, 
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
-    // Unconfigured attributes keep their planned value; see keepPlannedValues.
-    r.keepPlannedValues(&data, &plan, &config)
-
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *SchedulesOnCallDutyEscalationRuleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data SchedulesOnCallDutyEscalationRuleResourceModel
+func (r *StatusPageSubscriberNotificationTemplateResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data StatusPageSubscriberNotificationTemplateResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -491,10 +434,8 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Read(ctx context.Context, re
     // Create select parameter to get full object
     selectParam := map[string]interface{}{
         "projectId": true,
-        "onCallDutyPolicyId": true,
-        "onCallDutyPolicyScheduleId": true,
-        "onCallDutyPolicyEscalationRuleId": true,
-        "pageNextInRotation": true,
+        "statusPageId": true,
+        "statusPageSubscriberNotificationTemplateId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -502,9 +443,9 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Read(ctx context.Context, re
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-policy-escalation-rule-schedule/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read schedules_on_call_duty_escalation_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read status_page_subscriber_notification_template, got error: %s", err))
         return
     }
 
@@ -513,22 +454,22 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Read(ctx context.Context, re
         return
     }
 
-    var schedulesOnCallDutyEscalationRuleResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &schedulesOnCallDutyEscalationRuleResponse)
+    var statusPageSubscriberNotificationTemplateResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &statusPageSubscriberNotificationTemplateResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse schedules_on_call_duty_escalation_rule response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse status_page_subscriber_notification_template response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := schedulesOnCallDutyEscalationRuleResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := statusPageSubscriberNotificationTemplateResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = schedulesOnCallDutyEscalationRuleResponse
+        dataMap = statusPageSubscriberNotificationTemplateResponse
     }
 
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
@@ -542,119 +483,79 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Read(ctx context.Context, re
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["onCallDutyPolicyId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["statusPageId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.OnCallDutyPolicyId = types.StringValue(val)
+            data.StatusPageId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.OnCallDutyPolicyId = types.StringValue(val)
+            data.StatusPageId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+            data.StatusPageId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+                data.StatusPageId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+                data.StatusPageId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+            data.StatusPageId = types.StringValue(string(jsonBytes))
         } else {
-            data.OnCallDutyPolicyId = types.StringNull()
+            data.StatusPageId = types.StringNull()
         }
-    } else if val, ok := dataMap["onCallDutyPolicyId"].(string); ok {
-        data.OnCallDutyPolicyId = types.StringValue(val)
+    } else if val, ok := dataMap["statusPageId"].(string); ok {
+        data.StatusPageId = types.StringValue(val)
     } else {
-        data.OnCallDutyPolicyId = types.StringNull()
+        data.StatusPageId = types.StringNull()
     }
-    if obj, ok := dataMap["onCallDutyPolicyScheduleId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.OnCallDutyPolicyScheduleId = types.StringValue(fmt.Sprintf("%v", val))
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
         } else {
-            data.OnCallDutyPolicyScheduleId = types.StringNull()
+            data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
         }
-    } else if val, ok := dataMap["onCallDutyPolicyScheduleId"].(string); ok {
-        data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+    } else if val, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(string); ok {
+        data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
     } else {
-        data.OnCallDutyPolicyScheduleId = types.StringNull()
-    }
-    if obj, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
-            } else {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
-            } else {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
-        } else {
-            data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
-        }
-    } else if val, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(string); ok {
-        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
-    } else {
-        data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
-    }
-    if val, ok := dataMap["pageNextInRotation"].(bool); ok {
-        data.PageNextInRotation = types.BoolValue(val)
+        data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -725,9 +626,9 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Read(ctx context.Context, re
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *SchedulesOnCallDutyEscalationRuleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data SchedulesOnCallDutyEscalationRuleResourceModel
-    var state SchedulesOnCallDutyEscalationRuleResourceModel
+func (r *StatusPageSubscriberNotificationTemplateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data StatusPageSubscriberNotificationTemplateResourceModel
+    var state StatusPageSubscriberNotificationTemplateResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -744,63 +645,57 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Update(ctx context.Context, 
     // Use the ID from the current state
     data.Id = state.Id
 
-    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
-    var config SchedulesOnCallDutyEscalationRuleResourceModel
-    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-    if resp.Diagnostics.HasError() {
-        return
-    }
-    plan := data
-
     // Create API request body
-    schedulesOnCallDutyEscalationRuleRequest := map[string]interface{}{
+    statusPageSubscriberNotificationTemplateRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
+    requestDataMap := statusPageSubscriberNotificationTemplateRequest["data"].(map[string]interface{})
 
+    if !data.StatusPageSubscriberNotificationTemplateId.IsUnknown() && !state.StatusPageSubscriberNotificationTemplateId.IsUnknown() && !data.StatusPageSubscriberNotificationTemplateId.Equal(state.StatusPageSubscriberNotificationTemplateId) {
+        requestDataMap["statusPageSubscriberNotificationTemplateId"] = data.StatusPageSubscriberNotificationTemplateId.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(schedulesOnCallDutyEscalationRuleRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/on-call-duty-policy-escalation-rule-schedule/" + data.Id.ValueString() + "", schedulesOnCallDutyEscalationRuleRequest)
+    if len(statusPageSubscriberNotificationTemplateRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "", statusPageSubscriberNotificationTemplateRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update schedules_on_call_duty_escalation_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update status_page_subscriber_notification_template, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var schedulesOnCallDutyEscalationRuleResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &schedulesOnCallDutyEscalationRuleResponse)
+        var statusPageSubscriberNotificationTemplateResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &statusPageSubscriberNotificationTemplateResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update schedules_on_call_duty_escalation_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update status_page_subscriber_notification_template: %s", err))
             return
         }
-        _ = schedulesOnCallDutyEscalationRuleResponse
+        _ = statusPageSubscriberNotificationTemplateResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
     selectParam := map[string]interface{}{
         "projectId": true,
-        "onCallDutyPolicyId": true,
-        "onCallDutyPolicyScheduleId": true,
-        "onCallDutyPolicyEscalationRuleId": true,
-        "pageNextInRotation": true,
+        "statusPageId": true,
+        "statusPageSubscriberNotificationTemplateId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-policy-escalation-rule-schedule/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read schedules_on_call_duty_escalation_rule after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read status_page_subscriber_notification_template after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read schedules_on_call_duty_escalation_rule after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read status_page_subscriber_notification_template after update: %s", err))
         return
     }
 
@@ -826,119 +721,79 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Update(ctx context.Context, 
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["onCallDutyPolicyId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["statusPageId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.OnCallDutyPolicyId = types.StringValue(val)
+            data.StatusPageId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.OnCallDutyPolicyId = types.StringValue(val)
+            data.StatusPageId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+            data.StatusPageId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+                data.StatusPageId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+                data.StatusPageId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
+            data.StatusPageId = types.StringValue(string(jsonBytes))
         } else {
-            data.OnCallDutyPolicyId = types.StringNull()
+            data.StatusPageId = types.StringNull()
         }
-    } else if val, ok := dataMap["onCallDutyPolicyId"].(string); ok {
-        data.OnCallDutyPolicyId = types.StringValue(val)
+    } else if val, ok := dataMap["statusPageId"].(string); ok {
+        data.StatusPageId = types.StringValue(val)
     } else {
-        data.OnCallDutyPolicyId = types.StringNull()
+        data.StatusPageId = types.StringNull()
     }
-    if obj, ok := dataMap["onCallDutyPolicyScheduleId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.OnCallDutyPolicyScheduleId = types.StringValue(fmt.Sprintf("%v", val))
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyScheduleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.StatusPageSubscriberNotificationTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
         } else {
-            data.OnCallDutyPolicyScheduleId = types.StringNull()
+            data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
         }
-    } else if val, ok := dataMap["onCallDutyPolicyScheduleId"].(string); ok {
-        data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+    } else if val, ok := dataMap["statusPageSubscriberNotificationTemplateId"].(string); ok {
+        data.StatusPageSubscriberNotificationTemplateId = types.StringValue(val)
     } else {
-        data.OnCallDutyPolicyScheduleId = types.StringNull()
-    }
-    if obj, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
-            } else {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
-            } else {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
-        } else {
-            data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
-        }
-    } else if val, ok := dataMap["onCallDutyPolicyEscalationRuleId"].(string); ok {
-        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
-    } else {
-        data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
-    }
-    if val, ok := dataMap["pageNextInRotation"].(bool); ok {
-        data.PageNextInRotation = types.BoolValue(val)
+        data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1006,15 +861,12 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Update(ctx context.Context, 
     }
     data.Id = state.Id
 
-    // Unconfigured attributes keep their planned value; see keepPlannedValues.
-    r.keepPlannedValues(&data, &plan, &config)
-
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *SchedulesOnCallDutyEscalationRuleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data SchedulesOnCallDutyEscalationRuleResourceModel
+func (r *StatusPageSubscriberNotificationTemplateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data StatusPageSubscriberNotificationTemplateResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -1024,9 +876,9 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Delete(ctx context.Context, 
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/on-call-duty-policy-escalation-rule-schedule/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete schedules_on_call_duty_escalation_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete status_page_subscriber_notification_template, got error: %s", err))
         return
     }
 
@@ -1034,7 +886,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Delete(ctx context.Context, 
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete schedules_on_call_duty_escalation_rule: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete status_page_subscriber_notification_template: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -1043,29 +895,13 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Delete(ctx context.Context, 
 }
 
 
-func (r *SchedulesOnCallDutyEscalationRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *StatusPageSubscriberNotificationTemplateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 
-// keepPlannedValues puts back, after a create or an update, the planned value
-// of each optional attribute the configuration leaves out. The server keeps
-// some of these up to date on its own (when it last checked a heartbeat, the
-// status a probe last reported...), so the value read back after the write can
-// already differ from the plan, and Terraform would fail the apply with
-// "Provider produced inconsistent result after apply". The next refresh reads
-// the server's value, which is never a diff for an attribute nobody configured.
-func (r *SchedulesOnCallDutyEscalationRuleResource) keepPlannedValues(data *SchedulesOnCallDutyEscalationRuleResourceModel, plan *SchedulesOnCallDutyEscalationRuleResourceModel, config *SchedulesOnCallDutyEscalationRuleResourceModel) {
-    if config.OnCallDutyPolicyScheduleId.IsNull() && !plan.OnCallDutyPolicyScheduleId.IsUnknown() {
-        data.OnCallDutyPolicyScheduleId = plan.OnCallDutyPolicyScheduleId
-    }
-    if config.PageNextInRotation.IsNull() && !plan.PageNextInRotation.IsUnknown() {
-        data.PageNextInRotation = plan.PageNextInRotation
-    }
-}
-
 // Helper method to convert Terraform map to Go interface{}
-func (r *SchedulesOnCallDutyEscalationRuleResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *StatusPageSubscriberNotificationTemplateResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -1083,7 +919,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) convertTerraformMapToInterfa
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *SchedulesOnCallDutyEscalationRuleResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *StatusPageSubscriberNotificationTemplateResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -1104,7 +940,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) convertTerraformListToInterf
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *SchedulesOnCallDutyEscalationRuleResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *StatusPageSubscriberNotificationTemplateResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -1126,7 +962,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) convertTerraformSetToInterfa
 
 
 // Helper method to parse JSON field for complex objects
-func (r *SchedulesOnCallDutyEscalationRuleResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *StatusPageSubscriberNotificationTemplateResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -1142,7 +978,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) parseJSONField(terraformStri
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *SchedulesOnCallDutyEscalationRuleResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *StatusPageSubscriberNotificationTemplateResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -1164,7 +1000,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) normalizeURLWrappers(value i
     }
 }
 
-func (r *SchedulesOnCallDutyEscalationRuleResource) normalizeURLString(value string) string {
+func (r *StatusPageSubscriberNotificationTemplateResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -1176,7 +1012,7 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) normalizeURLString(value str
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *SchedulesOnCallDutyEscalationRuleResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *StatusPageSubscriberNotificationTemplateResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -1186,6 +1022,6 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) bigFloatToFloat64(bf *big.Fl
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *SchedulesOnCallDutyEscalationRuleResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *StatusPageSubscriberNotificationTemplateResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

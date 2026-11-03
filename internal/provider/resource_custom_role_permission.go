@@ -21,11 +21,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &CustomRolePermissionResource{}
 var _ resource.ResourceWithImportState = &CustomRolePermissionResource{}
+var _ resource.ResourceWithModifyPlan = &CustomRolePermissionResource{}
 
 func NewCustomRolePermissionResource() resource.Resource {
     return &CustomRolePermissionResource{}
@@ -82,6 +84,7 @@ func (r *CustomRolePermissionResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_custom_role"),
             },
             "permission": schema.StringAttribute{
                 MarkdownDescription: "A built-in role, such as IncidentMember, or a single permission, such as ReadProjectIncident. You can find the list of permissions in the Permission Reference. ProjectOwner cannot be part of a custom role. A JSON value: write it with `jsonencode()`.",
@@ -89,6 +92,7 @@ func (r *CustomRolePermissionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -103,6 +107,7 @@ func (r *CustomRolePermissionResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "scope": schema.StringAttribute{
                 MarkdownDescription: "Which resources this permission reaches. One of: All (every resource in the project), Owned (resources the team given the role, or one of its members, owns), Labels (resources carrying one of the labels). Defaults to All.",
@@ -111,6 +116,9 @@ func (r *CustomRolePermissionResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("All"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("All", "Owned", "Labels"),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -135,6 +143,17 @@ func (r *CustomRolePermissionResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *CustomRolePermissionResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *CustomRolePermissionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -510,6 +529,9 @@ func (r *CustomRolePermissionResource) Create(ctx context.Context, req resource.
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -808,6 +830,11 @@ func (r *CustomRolePermissionResource) Update(ctx context.Context, req resource.
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "permission": !data.Permission.Equal(state.Permission),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config CustomRolePermissionResourceModel
@@ -1118,6 +1145,9 @@ func (r *CustomRolePermissionResource) Update(ctx context.Context, req resource.
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1154,6 +1184,9 @@ func (r *CustomRolePermissionResource) Delete(ctx context.Context, req resource.
 
 func (r *CustomRolePermissionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"permission"})...)
 }
 
 

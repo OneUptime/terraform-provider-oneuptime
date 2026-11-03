@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_runbook Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Runbooks & Runners"
 description: |-
   Reusable response procedures (manual checklists or scripts) that can be attached to incidents, alerts, or scheduled maintenance.
 ---
@@ -44,9 +44,9 @@ data "oneuptime_runbook" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `schedule_next_run_at` (String) When the runbook's schedule starts its next run. Worked out by OneUptime; empty while the schedule is off.
 - `schedule_queued_run_at` (String) The scheduled time a run is waiting for the current run to end for, when "If a Run Is Still Going" is "RunAfter". Set and cleared by OneUptime.
-- `steps` (String) Ordered list of steps to run for this runbook. Each step is one of Manual, JavaScript, HTTP request, Bash or AI. A JSON value: write it with `jsonencode()`.
+- `steps` (String) Ordered list of steps to run for this runbook. Each step is one of Manual, JavaScript, HTTP request, Bash or AI. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

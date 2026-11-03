@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_form_submission Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Forms"
 description: |-
   The submissions made through this project's forms: every answer, the name and email the submitter gave, and the incident or scheduled maintenance event each one created.
 ---
@@ -37,7 +37,7 @@ data "oneuptime_form_submission" "by_id" {
 
 ### Read-Only
 
-- `answers` (String) Every question the submitter answered, in the form's order: the question's id (fieldId), its label when the form was submitted, the stored value, and the value as a person reads it (displayValue). A JSON value: write it with `jsonencode()`.
+- `answers` (String) Every question the submitter answered, in the form's order: the question's id (fieldId), its label when the form was submitted, the stored value, and the value as a person reads it (displayValue). A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `submitter_email` (String) The email address the submitter gave. It is not verified, and nothing is sent to it. Empty when the form does not ask for it, or lets people leave it out and they did.

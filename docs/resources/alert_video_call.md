@@ -26,7 +26,7 @@ resource "oneuptime_alert_video_call" "example" {
 ### Optional
 
 - `join_url` (String) The link responders open to join the call. Set by OneUptime for a call started with a connection or a Slack huddle; required, as an https link, when you add a link of your own.
-- `provider_value` (String) Where the call is held: Zoom, GoogleMeet, MicrosoftTeams, SlackHuddle, or CustomLink for a link a person provided. Taken from the connection when one is given.
+- `provider_value` (String) Where the call is held: Zoom, GoogleMeet, MicrosoftTeams, SlackHuddle, or CustomLink for a link a person provided. Taken from the connection when one is given. Allowed values: `Zoom`, `GoogleMeet`, `MicrosoftTeams`, `SlackHuddle`, `CustomLink`.
 - `title` (String) What the call is called. A meeting a provider creates is named for the alert.
 - `video_call_connection_id` (String) ID of the Zoom, Google Meet, Microsoft Teams or meeting link connection to start the call with. Leave it out to add a link of your own, or to start the huddle of the alert's Slack channel. The ID of a `oneuptime_video_call_connection`.
 

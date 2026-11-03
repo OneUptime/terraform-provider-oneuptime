@@ -13,9 +13,9 @@ While someone is away, a user override sends the alerts that would page them to 
 
 ```terraform
 resource "oneuptime_user_override" "example" {
-  override_user_id = data.oneuptime_user.example.id
-  starts_at        = "2030-01-01T00:00:00Z"
-  ends_at          = "2030-01-01T00:00:00Z"
+  starts_at           = "2030-01-01T00:00:00Z"
+  ends_at             = "2030-01-01T00:00:00Z"
+  override_user_email = "alice@example.com"
 }
 ```
 
@@ -24,13 +24,15 @@ resource "oneuptime_user_override" "example" {
 ### Required
 
 - `ends_at` (String) When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again.
-- `override_user_id` (String) ID of the user who is away. While the override is in force, alerts that would page this user go to the user in Route Alerts To User ID instead. With no Route Alerts To User ID, they are skipped: each of their turns in an on-call schedule goes to the next person in the rotation who is not away. The ID of a `oneuptime_user` (see the data source).
 - `starts_at` (String) When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns.
 
 ### Optional
 
 - `on_call_duty_policy_id` (String) ID of the on-call policy this override applies to. Leave it empty for a global override, which applies to every on-call policy. The ID of a `oneuptime_on_call_policy`.
-- `route_alerts_to_user_id` (String) ID of the user who covers. While the override is in force, this user gets the alerts that would page the user in Override User ID. Leave it empty to skip that user instead: each of their turns in an on-call schedule goes to the next person in the rotation who is not away, and teams and escalation rules that name them do not page them until the override ends. The ID of a `oneuptime_user` (see the data source).
+- `override_user_email` (String) The email address of the person in `override_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `override_user_id` (String) ID of the user who is away. While the override is in force, alerts that would page this user go to the user in Route Alerts To User ID instead. With no Route Alerts To User ID, they are skipped: each of their turns in an on-call schedule goes to the next person in the rotation who is not away. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `override_user_email`.
+- `route_alerts_to_user_email` (String) The email address of the person in `route_alerts_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `route_alerts_to_user_id` (String) ID of the user who covers. While the override is in force, this user gets the alerts that would page the user in Override User ID. Leave it empty to skip that user instead: each of their turns in an on-call schedule goes to the next person in the rotation who is not away, and teams and escalation rules that name them do not page them until the override ends. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `route_alerts_to_user_email`.
 
 ### Read-Only
 

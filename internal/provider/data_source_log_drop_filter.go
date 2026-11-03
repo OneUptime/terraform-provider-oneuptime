@@ -116,6 +116,7 @@ func (d *LogDropFilterDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the user who created this log drop filter. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

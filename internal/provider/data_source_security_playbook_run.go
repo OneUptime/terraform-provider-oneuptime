@@ -76,11 +76,13 @@ func (d *SecurityPlaybookRunDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "ID of the case the playbook runs on. The ID of a `oneuptime_security_case`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "security_playbook_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the playbook being run. The ID of a `oneuptime_security_playbook`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_playbook"),
             },
             "playbook_name": schema.StringAttribute{
                 MarkdownDescription: "The playbook's name when the run started, kept if the playbook is renamed or deleted.",
@@ -95,6 +97,7 @@ func (d *SecurityPlaybookRunDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "ID of the person who ran the playbook. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Queued, Running, Waiting for Approval, Succeeded, Failed or Cancelled. Set it to Cancelled to stop a run that has not finished.",
@@ -102,11 +105,11 @@ func (d *SecurityPlaybookRunDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "steps": schema.StringAttribute{
-                MarkdownDescription: "The playbook's steps as they were when the run started. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The playbook's steps as they were when the run started. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "step_results": schema.StringAttribute{
-                MarkdownDescription: "What each step did: its status, when it started and finished, what it reported, and who decided on its approval. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What each step did: its status, when it started and finished, what it reported, and who decided on its approval. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "current_step_index": schema.NumberAttribute{
@@ -136,6 +139,7 @@ func (d *SecurityPlaybookRunDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "ID of the person who started the run. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

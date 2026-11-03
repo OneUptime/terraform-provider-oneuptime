@@ -62,7 +62,7 @@ func (d *MonitorLogDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "log_body": schema.StringAttribute{
-                MarkdownDescription: "Log Body. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Log Body. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

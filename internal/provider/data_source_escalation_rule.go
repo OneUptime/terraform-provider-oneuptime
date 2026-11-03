@@ -68,6 +68,7 @@ func (d *EscalationRuleDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of your On-Call Policy where this escalation rule belongs. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Any friendly name of this object.",
@@ -83,6 +84,7 @@ func (d *EscalationRuleDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "escalate_after_in_minutes": schema.NumberAttribute{
                 MarkdownDescription: "How long should we wait before we execute the next escalation rule?",

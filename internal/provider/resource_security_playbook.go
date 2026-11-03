@@ -20,11 +20,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SecurityPlaybookResource{}
 var _ resource.ResourceWithImportState = &SecurityPlaybookResource{}
+var _ resource.ResourceWithModifyPlan = &SecurityPlaybookResource{}
 
 func NewSecurityPlaybookResource() resource.Resource {
     return &SecurityPlaybookResource{}
@@ -114,6 +116,9 @@ func (r *SecurityPlaybookResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Case Opened", "Detection Added", "Triaged as Likely Malicious", "Manual"),
+                },
             },
             "minimum_security_case_priority_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the lowest case priority the playbook runs on by itself. Empty runs on every priority. The ID of a `oneuptime_security_case_priority`.",
@@ -122,6 +127,7 @@ func (r *SecurityPlaybookResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_security_case_priority"),
             },
             "detection_source": schema.StringAttribute{
                 MarkdownDescription: "Run only on cases raised by this source: a Detection Rule, Threat Intel, a Connected Product or Entity Risk. Empty runs on every source.",
@@ -130,6 +136,9 @@ func (r *SecurityPlaybookResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Detection Rule", "Threat Intel", "Connected Product", "Manual", "Entity Risk", "Data Security"),
+                },
             },
             "detection_rule_ids": schema.StringAttribute{
                 MarkdownDescription: "Run only on cases with a detection from one of these detection rules. Empty runs on cases from any rule. A JSON value: write it with `jsonencode()`.",
@@ -137,6 +146,7 @@ func (r *SecurityPlaybookResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -149,6 +159,7 @@ func (r *SecurityPlaybookResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -186,6 +197,17 @@ func (r *SecurityPlaybookResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SecurityPlaybookResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SecurityPlaybookResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -710,6 +732,9 @@ func (r *SecurityPlaybookResource) Create(ctx context.Context, req resource.Crea
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1145,6 +1170,12 @@ func (r *SecurityPlaybookResource) Update(ctx context.Context, req resource.Upda
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "detection_rule_ids": !data.DetectionRuleIds.Equal(state.DetectionRuleIds),
+        "steps": !data.Steps.Equal(state.Steps),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config SecurityPlaybookResourceModel
@@ -1617,6 +1648,9 @@ func (r *SecurityPlaybookResource) Update(ctx context.Context, req resource.Upda
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1653,6 +1687,9 @@ func (r *SecurityPlaybookResource) Delete(ctx context.Context, req resource.Dele
 
 func (r *SecurityPlaybookResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"detection_rule_ids", "steps"})...)
 }
 
 

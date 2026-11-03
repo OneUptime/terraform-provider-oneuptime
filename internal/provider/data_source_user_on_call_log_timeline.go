@@ -85,6 +85,7 @@ func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "User ID who this log belongs to. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
@@ -94,6 +95,7 @@ func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "ID of your OneUptime User Notification Log in which this object belongs. The ID of a `oneuptime_user_notification_log` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user_notification_log"),
             },
             "user_notification_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime User Notification Rule in which this object belongs.",
@@ -104,36 +106,43 @@ func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "ID of your OneUptime on-call duty policy in which this object belongs. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "triggered_by_incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Incident in which this object belongs. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "triggered_by_alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Alert in which this object belongs. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "triggered_by_alert_episode_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Alert Episode in which this object belongs. The ID of a `oneuptime_alert_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_episode"),
             },
             "triggered_by_incident_episode_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Incident Episode in which this object belongs. The ID of a `oneuptime_incident_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_episode"),
             },
             "on_call_duty_policy_execution_log_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your On-Call Policy Execution Log Timeline where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_duty_execution_log"),
             },
             "on_call_duty_policy_execution_log_timeline_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your On-Call Policy Execution Log where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log_timeline` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_on_call_duty_execution_log_timeline"),
             },
             "user_notification_event_type": schema.StringAttribute{
                 MarkdownDescription: "Notification Event Type of this execution.",
@@ -144,11 +153,13 @@ func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "ID of your On-Call Policy Escalation Rule where this timeline event belongs. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_escalation_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_escalation_rule"),
             },
             "user_belongs_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "Which team did the user belong to when the alert was sent? The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Status message of this execution timeline event.",
@@ -164,12 +175,15 @@ func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_acknowledged": schema.BoolAttribute{
+                MarkdownDescription: "Whether the person acknowledged this notification.",
                 Optional: true,
                 Computed: true,
             },
             "acknowledged_at": schema.StringAttribute{
+                MarkdownDescription: "When the person acknowledged this notification. Empty until they do.",
                 Computed: true,
             },
             "user_call_id": schema.StringAttribute{

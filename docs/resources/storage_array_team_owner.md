@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_storage_array_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your storage arrays.
 ---
@@ -22,8 +22,8 @@ resource "oneuptime_storage_array_team_owner" "example" {
 
 ### Required
 
-- `storage_array_id` (String) ID of your OneUptime Storage Array in which this object belongs. The ID of a `oneuptime_storage_array`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `storage_array_id` (String) ID of the storage array the team owns. The ID of a `oneuptime_storage_array`.
+- `team_id` (String) ID of the team that owns the storage array. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_storage_array_team_owner" "example" {
 
 ## Import
 
-Import an existing storage array team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing storage array team owner by its storage array and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_storage_array_team_owner.example
-  id = "<id>"
+  id = "<storage_array_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_storage_array_team_owner.example <id>
+terraform import oneuptime_storage_array_team_owner.example <storage_array_id>/<team_id>
 ```
+
+Its own ID works too.

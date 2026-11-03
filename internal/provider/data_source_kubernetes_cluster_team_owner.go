@@ -63,19 +63,22 @@ func (d *KubernetesClusterTeamOwnerDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the Kubernetes cluster. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "kubernetes_cluster_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Kubernetes Cluster in which this object belongs. The ID of a `oneuptime_kubernetes_cluster`.",
+                MarkdownDescription: "ID of the Kubernetes cluster the team owns. The ID of a `oneuptime_kubernetes_cluster`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_kubernetes_cluster"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",

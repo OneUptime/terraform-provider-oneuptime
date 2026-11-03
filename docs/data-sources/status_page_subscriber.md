@@ -41,15 +41,15 @@ data "oneuptime_status_page_subscriber" "by_id" {
 - `send_you_have_subscribed_message` (Boolean) Send You Have Subscribed Message when subscriber is created?
 - `slack_workspace_name` (String) Name of the Slack workspace for validation and identification.
 - `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
-- `subscriber_webhook` (String) Webhook to ping when events happen on Status Page.
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `status_page_event_types` (String) Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: write it with `jsonencode()`.
+- `status_page_event_types` (String) Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: read it with `jsondecode()`.
 - `status_page_resources` (Set of String) Relation to Status Page Resources where this subscriber is subscribed to. IDs of `oneuptime_status_page_resource` resources.
 - `subscriber_email` (String) Email address of the subscriber.
 - `subscriber_phone` (String) Phone number of subscriber.
+- `subscriber_webhook` (String, Sensitive) Webhook to ping when events happen on Status Page.
 - `unsubscribed_at` (String) When this subscriber unsubscribed. Set by OneUptime when Is Unsubscribed is turned on, and cleared when it is turned off; any value sent for it is ignored.
 - `updated_at` (String) Date and Time when the object was updated.

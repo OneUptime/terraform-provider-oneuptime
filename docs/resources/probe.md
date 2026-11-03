@@ -13,10 +13,8 @@ Manages custom probes. Deploy probes anywhere in the world and connect it to you
 
 ```terraform
 resource "oneuptime_probe" "example" {
-  key           = "Example short text"
-  name          = "Example probe"
-  probe_version = "1.0.0"
-  description   = "Managed by Terraform"
+  name        = "Example probe"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -24,16 +22,16 @@ resource "oneuptime_probe" "example" {
 
 ### Required
 
-- `key` (String)
-- `name` (String)
-- `probe_version` (String)
+- `name` (String) Any friendly name of this object.
 
 ### Optional
 
-- `description` (String)
+- `description` (String) Friendly description that will help you remember.
 - `icon_file_id` (String) Probe Page Icon File ID. The ID of a `oneuptime_file`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
-- `last_alive` (String)
+- `key` (String, Sensitive) The secret the probe connects with, its PROBE_KEY. Leave it out and OneUptime generates one.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_alive` (String) When the probe last checked in. Set by OneUptime.
+- `probe_version` (String) A version label for the probe. Leave it out and it is 1.0.0.
 - `should_auto_enable_probe_on_new_monitors` (Boolean) Auto Enable Probe on New Monitors.
 
 ### Read-Only
@@ -42,8 +40,8 @@ resource "oneuptime_probe" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
 - `id` (String) Unique identifier for the resource.
-- `packet_capture_capability` (String) What the probe last reported about packet capture: whether it is turned on (PROBE_PACKET_CAPTURE_ENABLED on the probe), whether tcpdump is installed, the network interfaces it can capture on, and the limits its operator set. Managed by the probe. A JSON value: write it with `jsonencode()`.
-- `project_id` (String)
+- `packet_capture_capability` (String) What the probe last reported about packet capture: whether it is turned on (PROBE_PACKET_CAPTURE_ENABLED on the probe), whether tcpdump is installed, the network interfaces it can capture on, and the limits its operator set. Managed by the probe. A JSON value: read it with `jsondecode()`.
+- `project_id` (String) ID of the project the probe belongs to. A global probe belongs to none.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.
 

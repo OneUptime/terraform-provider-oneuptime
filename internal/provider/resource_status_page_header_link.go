@@ -22,6 +22,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageHeaderLinkResource{}
 var _ resource.ResourceWithImportState = &StatusPageHeaderLinkResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageHeaderLinkResource{}
 
 func NewStatusPageHeaderLinkResource() resource.Resource {
     return &StatusPageHeaderLinkResource{}
@@ -78,6 +79,7 @@ func (r *StatusPageHeaderLinkResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "Title of this resource.",
@@ -92,6 +94,7 @@ func (r *StatusPageHeaderLinkResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -117,6 +120,17 @@ func (r *StatusPageHeaderLinkResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageHeaderLinkResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageHeaderLinkResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -460,6 +474,7 @@ func (r *StatusPageHeaderLinkResource) Create(ctx context.Context, req resource.
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

@@ -72,11 +72,13 @@ func (d *IncidentEpisodeInternalNoteDataSource) Schema(ctx context.Context, req 
                 MarkdownDescription: "Relation to Incident Episode ID in which this resource belongs. The ID of a `oneuptime_incident_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_episode"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "note": schema.StringAttribute{
                 MarkdownDescription: "Notes in markdown.",
@@ -103,7 +105,7 @@ func (d *IncidentEpisodeInternalNoteDataSource) Schema(ctx context.Context, req 
                 Computed: true,
             },
             "saved_from_chat_message": schema.StringAttribute{
-                MarkdownDescription: "When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

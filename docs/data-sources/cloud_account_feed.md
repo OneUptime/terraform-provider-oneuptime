@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_cloud_account_feed Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Cloud"
 description: |-
   Log of what happened to this cloud account: its Cloud AI agent connecting or being reset, and every change to what OneUptime AI may do there, with who made it.
 ---

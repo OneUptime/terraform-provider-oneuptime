@@ -75,6 +75,7 @@ func (d *WebAuthnCredentialDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "User ID who owns this WebAuthn credential. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

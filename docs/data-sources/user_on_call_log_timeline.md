@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_user_on_call_log_timeline Data Source - oneuptime"
-subcategory: "Teams & Access"
+subcategory: "On-Call & Escalation"
 description: |-
   Timeline events for user on-call log.
 ---
@@ -31,7 +31,7 @@ data "oneuptime_user_on_call_log_timeline" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `custom_notification_channel_id` (String) ID of the Custom Channel this notification was sent on.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `is_acknowledged` (Boolean)
+- `is_acknowledged` (Boolean) Whether the person acknowledged this notification.
 - `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule where this timeline event belongs. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_escalation_rule`.
 - `on_call_duty_policy_execution_log_id` (String) ID of your On-Call Policy Execution Log Timeline where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log`.
 - `on_call_duty_policy_execution_log_timeline_id` (String) ID of your On-Call Policy Execution Log where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log_timeline` (see the data source).
@@ -59,7 +59,7 @@ data "oneuptime_user_on_call_log_timeline" "by_id" {
 
 ### Read-Only
 
-- `acknowledged_at` (String)
+- `acknowledged_at` (String) When the person acknowledged this notification. Empty until they do.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

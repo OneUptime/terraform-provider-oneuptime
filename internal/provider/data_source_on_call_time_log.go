@@ -39,6 +39,7 @@ type OnCallTimeLogDataSourceModel struct {
     UserId types.String `tfsdk:"user_id"`
     StartsAt types.String `tfsdk:"starts_at"`
     EndsAt types.String `tfsdk:"ends_at"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (d *OnCallTimeLogDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -96,11 +97,13 @@ func (d *OnCallTimeLogDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "User ID for which this log belongs. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User ID for which this log belongs. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("user_email", false),
             },
             "starts_at": schema.StringAttribute{
                 MarkdownDescription: "When does this start?",
@@ -109,6 +112,12 @@ func (d *OnCallTimeLogDataSource) Schema(ctx context.Context, req datasource.Sch
             "ends_at": schema.StringAttribute{
                 MarkdownDescription: "When does this end?",
                 Computed: true,
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -176,6 +185,14 @@ func (d *OnCallTimeLogDataSource) Read(ctx context.Context, req datasource.ReadR
     if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
         filters["userId"] = data.UserId.ValueString()
         filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    }
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["userId"] = personID
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -488,6 +505,7 @@ func (d *OnCallTimeLogDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.EndsAt = types.StringNull()
     }
+    data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

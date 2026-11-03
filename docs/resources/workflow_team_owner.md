@@ -22,8 +22,8 @@ resource "oneuptime_workflow_team_owner" "example" {
 
 ### Required
 
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
-- `workflow_id` (String) ID of your OneUptime Workflow in which this object belongs. The ID of a `oneuptime_workflow`.
+- `team_id` (String) ID of the team that owns the workflow. The ID of a `oneuptime_team`.
+- `workflow_id` (String) ID of the workflow the team owns. The ID of a `oneuptime_workflow`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_workflow_team_owner" "example" {
 
 ## Import
 
-Import an existing workflow team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing workflow team owner by its workflow and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_workflow_team_owner.example
-  id = "<id>"
+  id = "<workflow_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_workflow_team_owner.example <id>
+terraform import oneuptime_workflow_team_owner.example <workflow_id>/<team_id>
 ```
+
+Its own ID works too.

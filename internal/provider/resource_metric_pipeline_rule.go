@@ -22,11 +22,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &MetricPipelineRuleResource{}
 var _ resource.ResourceWithImportState = &MetricPipelineRuleResource{}
+var _ resource.ResourceWithModifyPlan = &MetricPipelineRuleResource{}
 
 func NewMetricPipelineRuleResource() resource.Resource {
     return &MetricPipelineRuleResource{}
@@ -94,6 +96,7 @@ func (r *MetricPipelineRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Friendly name for this rule.",
@@ -114,6 +117,9 @@ func (r *MetricPipelineRuleResource) schemaDefinition() schema.Schema {
             "rule_type": schema.StringAttribute{
                 MarkdownDescription: "One of: Filter, Drop, RenameMetric, RenameAttribute, AddAttribute, RemoveAttribute, RedactAttribute, Sample.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Filter", "Drop", "RenameMetric", "RenameAttribute", "AddAttribute", "RemoveAttribute", "RedactAttribute", "Sample"),
+                },
             },
             "filter_condition": schema.StringAttribute{
                 MarkdownDescription: "How to combine filters: 'All' requires every filter to match (AND), 'Any' requires at least one to match (OR).",
@@ -123,6 +129,9 @@ func (r *MetricPipelineRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("All", "Any"),
+                },
             },
             "filters": schema.StringAttribute{
                 MarkdownDescription: "List of filters evaluated against each metric data point. An empty list matches every data point. A JSON value: write it with `jsonencode()`.",
@@ -130,6 +139,7 @@ func (r *MetricPipelineRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -182,6 +192,7 @@ func (r *MetricPipelineRuleResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(100)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -199,6 +210,7 @@ func (r *MetricPipelineRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -224,6 +236,17 @@ func (r *MetricPipelineRuleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *MetricPipelineRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *MetricPipelineRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -908,6 +931,9 @@ func (r *MetricPipelineRuleResource) Create(ctx context.Context, req resource.Cr
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1485,6 +1511,11 @@ func (r *MetricPipelineRuleResource) Update(ctx context.Context, req resource.Up
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "filters": !data.Filters.Equal(state.Filters),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config MetricPipelineRuleResourceModel
@@ -2112,6 +2143,9 @@ func (r *MetricPipelineRuleResource) Update(ctx context.Context, req resource.Up
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2148,6 +2182,9 @@ func (r *MetricPipelineRuleResource) Delete(ctx context.Context, req resource.De
 
 func (r *MetricPipelineRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"filters"})...)
 }
 
 

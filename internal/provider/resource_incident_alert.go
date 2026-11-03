@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentAlertResource{}
 var _ resource.ResourceWithImportState = &IncidentAlertResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentAlertResource{}
 
 func NewIncidentAlertResource() resource.Resource {
     return &IncidentAlertResource{}
@@ -75,6 +76,7 @@ func (r *IncidentAlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Alert that is linked to the incident. The ID of a `oneuptime_alert`.",
@@ -82,6 +84,7 @@ func (r *IncidentAlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -105,6 +108,17 @@ func (r *IncidentAlertResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentAlertResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentAlertResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -391,6 +405,7 @@ func (r *IncidentAlertResource) Create(ctx context.Context, req resource.CreateR
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

@@ -115,13 +115,14 @@ func (d *DataSourceDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "additional_options": schema.StringAttribute{
-                MarkdownDescription: "Per-type options that are not secrets — e.g. { \"sslEnabled\": true, \"elasticsearchIndex\": \"logs-*\" }. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-type options that are not secrets — e.g. { \"sslEnabled\": true, \"elasticsearchIndex\": \"logs-*\" }. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

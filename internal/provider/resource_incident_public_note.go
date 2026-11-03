@@ -25,6 +25,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentPublicNoteResource{}
 var _ resource.ResourceWithImportState = &IncidentPublicNoteResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentPublicNoteResource{}
 
 func NewIncidentPublicNoteResource() resource.Resource {
     return &IncidentPublicNoteResource{}
@@ -90,6 +91,7 @@ func (r *IncidentPublicNoteResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "note": schema.StringAttribute{
                 MarkdownDescription: "Notes in markdown.",
@@ -107,6 +109,7 @@ func (r *IncidentPublicNoteResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_file"),
             },
             "should_status_page_subscribers_be_notified_on_note_created": schema.BoolAttribute{
                 MarkdownDescription: "Should subscribers be notified about this note? If left out, this follows the incident: true when subscribers were notified that the incident was declared, false when it was declared without notifying them.",
@@ -123,6 +126,7 @@ func (r *IncidentPublicNoteResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -180,12 +184,23 @@ func (r *IncidentPublicNoteResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "saved_from_chat_message": schema.StringAttribute{
-                MarkdownDescription: "When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentPublicNoteResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentPublicNoteResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -816,6 +831,7 @@ func (r *IncidentPublicNoteResource) Create(ctx context.Context, req resource.Cr
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

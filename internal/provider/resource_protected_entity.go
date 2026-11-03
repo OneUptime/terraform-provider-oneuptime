@@ -16,11 +16,14 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ProtectedEntityResource{}
 var _ resource.ResourceWithImportState = &ProtectedEntityResource{}
+var _ resource.ResourceWithModifyPlan = &ProtectedEntityResource{}
 
 func NewProtectedEntityResource() resource.Resource {
     return &ProtectedEntityResource{}
@@ -73,6 +76,9 @@ func (r *ProtectedEntityResource) schemaDefinition() schema.Schema {
             "entity_type": schema.StringAttribute{
                 MarkdownDescription: "User or Host: what the value names.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("User", "Host", "IP Address", "Domain", "URL", "File Hash", "Process", "Data Store", "Other"),
+                },
             },
             "value": schema.StringAttribute{
                 MarkdownDescription: "The user's sign-in name or the host's name, matched whatever the case. * stands for any run of characters: svc-* protects every service account.",
@@ -108,6 +114,17 @@ func (r *ProtectedEntityResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ProtectedEntityResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ProtectedEntityResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -446,6 +463,7 @@ func (r *ProtectedEntityResource) Create(ctx context.Context, req resource.Creat
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

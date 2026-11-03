@@ -13,7 +13,7 @@ Manage incidents for your project
 
 ```terraform
 resource "oneuptime_incident" "example" {
-  title                = "This is an example of longer text content that might be stored in this field."
+  title                = "Database connection failure in production"
   incident_severity_id = oneuptime_incident_severity.example.id
   description          = "Managed by Terraform"
 }
@@ -48,7 +48,7 @@ resource "oneuptime_incident" "example" {
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters affected by this incident. IDs of `oneuptime_kubernetes_cluster` resources.
 - `kubernetes_containers` (Set of String) List of Kubernetes containers affected by this incident.
 - `kubernetes_resources` (Set of String) List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this incident.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.
 - `network_devices` (Set of String) List of network devices affected by this incident. IDs of `oneuptime_network_device` resources.
 - `notify_subscribers_on_postmortem_published` (Boolean) Should subscribers be notified when the postmortem is published? Defaults to `true`.
@@ -78,7 +78,7 @@ resource "oneuptime_incident" "example" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_criteria_id` (String) If this incident was created by a Probe, this is the ID of the criteria that created it.
 - `created_incident_template_id` (String) If this incident was created by a Probe, this is the ID of the incident template that was used for creation.
-- `created_state_log` (String) A JSON value: write it with `jsonencode()`.
+- `created_state_log` (String) A JSON value: read it with `jsondecode()`.
 - `first_paged_at` (String) When an on-call policy or a direct page first notified someone about this incident. Empty until someone is paged. Set by OneUptime.
 - `holds_monitors` (Boolean) Whether this incident is holding its monitors - keeping them in its monitor status, or their monitoring paused - so that resolving it gives them back: their monitoring resumes and their status returns to operational. True from when the incident is declared open, or from when an edit while it is open puts its monitors in its monitor status. False for an incident declared already resolved, which never held them, and once a resolve has given them back. Empty for incidents from before it was recorded, which give their monitors back when they are resolved. Set by OneUptime; it cannot be written.
 - `id` (String) Unique identifier for the resource.
@@ -88,15 +88,15 @@ resource "oneuptime_incident" "example" {
 - `is_created_automatically` (Boolean) Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
 - `is_scoped_to_status_pages` (Boolean) Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored.
-- `monitor_summary` (String) The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.
+- `monitor_summary` (String) The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: read it with `jsondecode()`.
 - `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this incident? This is set automatically based on the reminder rules configured for this project.
 - `postmortem_draft_waiting_since` (String) When the automatic postmortem draft started waiting for the transcript of the incident's call, so that the draft reads what was said on it: set when the incident resolves while a call's transcript is still on its way, and cleared once the draft is written. Empty the rest of the time. Set by OneUptime; it cannot be written.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `reminder_notification_sent_count` (Number) How many reminder notifications have been sent to owners of this incident so far.
 - `series_fingerprint` (String) For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one incident is created per affected series.
-- `series_labels` (String) Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach. A JSON value: write it with `jsonencode()`.
+- `series_labels` (String) Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach. A JSON value: read it with `jsondecode()`.
 - `slug` (String) Friendly globally unique name for your object.
-- `status_pages_notified_on_creation` (String) IDs of the status pages whose subscribers were sent the notification that this incident was created. A JSON value: write it with `jsonencode()`.
+- `status_pages_notified_on_creation` (String) IDs of the status pages whose subscribers were sent the notification that this incident was created. A JSON value: read it with `jsondecode()`.
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.
 - `subscriber_notification_status_message_on_postmortem_published` (String) Status message for subscriber notifications on postmortem published - includes success messages, failure reasons, or skip reasons.
 - `subscriber_notification_status_on_incident_created` (String) Status of notification sent to subscribers about this incident.

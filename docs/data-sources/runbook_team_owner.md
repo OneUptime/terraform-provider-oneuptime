@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_runbook_team_owner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Runbooks & Runners"
 description: |-
   Add teams as owners to your runbooks.
 ---
@@ -31,8 +31,8 @@ data "oneuptime_runbook_team_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `runbook_id` (String) ID of your OneUptime Runbook in which this object belongs. The ID of a `oneuptime_runbook`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `runbook_id` (String) ID of the runbook the team owns. The ID of a `oneuptime_runbook`.
+- `team_id` (String) ID of the team that owns the runbook. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

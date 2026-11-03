@@ -169,7 +169,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -177,6 +177,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online.",
@@ -191,26 +192,31 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "favicon_file_id": schema.StringAttribute{
                 MarkdownDescription: "Status Page Favicon File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "logo_file_id": schema.StringAttribute{
                 MarkdownDescription: "Status Page Logo File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "dark_theme_logo_file_id": schema.StringAttribute{
                 MarkdownDescription: "Status Page Dark Theme Logo File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "cover_image_file_id": schema.StringAttribute{
                 MarkdownDescription: "Status Page Cover Image ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "header_html": schema.StringAttribute{
                 MarkdownDescription: "Status Page Custom HTML Header. Served only from a verified custom domain.",
@@ -328,7 +334,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "require_sso_for_login": schema.BoolAttribute{
@@ -396,7 +402,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 ElementType: types.StringType,
             },
             "subscriber_timezones": schema.StringAttribute{
-                MarkdownDescription: "Timezones of subscribers to this status page. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Timezones of subscribers to this status page. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_report_enabled": schema.BoolAttribute{
@@ -409,7 +415,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "report_recurring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often a report goes out. Left out when reports are turned on, it is every month. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "How often a report goes out. Left out when reports are turned on, it is every month. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "send_next_report_by": schema.StringAttribute{
@@ -508,8 +514,8 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "embedded_overall_status_token": schema.StringAttribute{
                 MarkdownDescription: "Security token required to access the embedded overall status badge. This token must be provided in the URL.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "default_language": schema.StringAttribute{
                 MarkdownDescription: "Default language that the status page is shown in when a visitor arrives for the first time.",
@@ -517,7 +523,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "enabled_languages": schema.StringAttribute{
-                MarkdownDescription: "Languages offered in the footer language switcher. Leave empty to offer all supported languages. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Languages offered in the footer language switcher. Leave empty to offer all supported languages. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },
@@ -818,10 +824,6 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
     if !data.ShowUptimeHistoryInDays.IsNull() && !data.ShowUptimeHistoryInDays.IsUnknown() {
         filters["showUptimeHistoryInDays"] = lookupNumber(data.ShowUptimeHistoryInDays)
         filterNames = append(filterNames, "show_uptime_history_in_days = "+data.ShowUptimeHistoryInDays.ValueBigFloat().String())
-    }
-    if !data.EmbeddedOverallStatusToken.IsNull() && !data.EmbeddedOverallStatusToken.IsUnknown() {
-        filters["embeddedOverallStatusToken"] = data.EmbeddedOverallStatusToken.ValueString()
-        filterNames = append(filterNames, "embedded_overall_status_token = "+fmt.Sprintf("%q", data.EmbeddedOverallStatusToken.ValueString()))
     }
     if !data.DefaultLanguage.IsNull() && !data.DefaultLanguage.IsUnknown() {
         filters["defaultLanguage"] = data.DefaultLanguage.ValueString()

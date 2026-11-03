@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_proxmox_cluster_user_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add users as owners to your Proxmox clusters.
 ---
@@ -13,8 +13,8 @@ Add users as owners to your Proxmox clusters.
 
 ```terraform
 resource "oneuptime_proxmox_cluster_user_owner" "example" {
-  user_id            = data.oneuptime_user.example.id
   proxmox_cluster_id = oneuptime_proxmox_cluster.example.id
+  user_email         = "alice@example.com"
 }
 ```
 
@@ -22,8 +22,12 @@ resource "oneuptime_proxmox_cluster_user_owner" "example" {
 
 ### Required
 
-- `proxmox_cluster_id` (String) ID of your OneUptime Proxmox Cluster in which this object belongs. The ID of a `oneuptime_proxmox_cluster`.
-- `user_id` (String) ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).
+- `proxmox_cluster_id` (String) ID of the Proxmox cluster the user owns. The ID of a `oneuptime_proxmox_cluster`.
+
+### Optional
+
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of the user who owns the Proxmox cluster. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 
@@ -36,17 +40,19 @@ resource "oneuptime_proxmox_cluster_user_owner" "example" {
 
 ## Import
 
-Import an existing proxmox cluster user owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing proxmox cluster user owner by its proxmox cluster and the person's email address (or user ID), with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_proxmox_cluster_user_owner.example
-  id = "<id>"
+  id = "<proxmox_cluster_id>/alice@example.com"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_proxmox_cluster_user_owner.example <id>
+terraform import oneuptime_proxmox_cluster_user_owner.example <proxmox_cluster_id>/alice@example.com
 ```
+
+Imported by an address, the person's `user_email` stays as you wrote it. Its own ID works too.

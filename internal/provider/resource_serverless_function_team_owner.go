@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ServerlessFunctionTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &ServerlessFunctionTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &ServerlessFunctionTeamOwnerResource{}
 
 func NewServerlessFunctionTeamOwnerResource() resource.Resource {
     return &ServerlessFunctionTeamOwnerResource{}
@@ -71,18 +72,20 @@ func (r *ServerlessFunctionTeamOwnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the serverless function. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "serverless_function_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Serverless Function in which this object belongs. The ID of a `oneuptime_serverless_function`.",
+                MarkdownDescription: "ID of the serverless function the team owns. The ID of a `oneuptime_serverless_function`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_serverless_function"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -110,6 +113,17 @@ func (r *ServerlessFunctionTeamOwnerResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ServerlessFunctionTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ServerlessFunctionTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -400,6 +414,7 @@ func (r *ServerlessFunctionTeamOwnerResource) Create(ctx context.Context, req re
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -884,7 +899,22 @@ func (r *ServerlessFunctionTeamOwnerResource) Delete(ctx context.Context, req re
 
 
 func (r *ServerlessFunctionTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <serverless_function_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/serverless-function-owner-team/get-list",
+        parentField:     "serverlessFunctionId",
+        parentAttribute: "serverless_function_id",
+        parentNoun:      "serverless function",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 

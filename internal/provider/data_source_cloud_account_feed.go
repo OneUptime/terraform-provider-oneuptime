@@ -70,11 +70,13 @@ func (d *CloudAccountFeedDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the cloud account this entry is about. The ID of a `oneuptime_cloud_account`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_cloud_account"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "feed_info_in_markdown": schema.StringAttribute{
                 MarkdownDescription: "Log of the cloud resource change in Markdown.",
@@ -99,6 +101,7 @@ func (d *CloudAccountFeedDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "posted_at": schema.StringAttribute{
                 MarkdownDescription: "Date and time when the feed was posted.",

@@ -94,6 +94,7 @@ func (d *RunbookDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Is this runbook enabled?",
@@ -101,11 +102,11 @@ func (d *RunbookDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "steps": schema.StringAttribute{
-                MarkdownDescription: "Ordered list of steps to run for this runbook. Each step is one of Manual, JavaScript, HTTP request, Bash or AI. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Ordered list of steps to run for this runbook. Each step is one of Manual, JavaScript, HTTP request, Bash or AI. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

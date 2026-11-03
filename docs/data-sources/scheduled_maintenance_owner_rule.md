@@ -48,7 +48,7 @@ data "oneuptime_scheduled_maintenance_owner_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
 - `monitor_labels` (Set of String) Only trigger for events on monitors that have at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) Only trigger for scheduled maintenance events on these monitors. Leave empty to match events on any monitor. IDs of `oneuptime_monitor` resources.
 - `owner_teams` (Set of String) Teams to add as owners on the scheduled maintenance event when this rule matches. IDs of `oneuptime_team` resources.

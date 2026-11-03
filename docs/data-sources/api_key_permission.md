@@ -34,12 +34,12 @@ data "oneuptime_api_key_permission" "by_id" {
 - `custom_role_id` (String) ID of the custom role this permission comes from. Empty when the permission was given to the API key directly. The ID of a `oneuptime_custom_role`.
 - `custom_role_permission_id` (String) ID of the custom role's own permission this one copies. Empty when the permission was given to the API key directly. The ID of a `oneuptime_custom_role_permission`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `is_block_permission` (Boolean) Permissions - Create: [Project Owner, Project Admin, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key], Update: [Project Owner, Project Admin, Edit API Key Permissions]
+- `is_block_permission` (Boolean) When on, the permission is taken away instead of given. A block permission always wins over one that gives it.
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this permission is scoped at. IDs of `oneuptime_label` resources.
-- `permission` (String) Permission. You can find list of permissions on the Permissions page. A JSON value: write it with `jsonencode()`.
+- `labels` (Set of String) Labels that limit the permission to the resources carrying one of them. Empty means every resource. IDs of `oneuptime_label` resources.
+- `permission` (String) Permission. You can find list of permissions on the Permissions page. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

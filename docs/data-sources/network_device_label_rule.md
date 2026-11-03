@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_device_label_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Configure rules for automatically attaching labels to network devices when matching network devices are created
 ---
@@ -39,7 +39,7 @@ data "oneuptime_network_device_label_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
 - `labels_to_add` (Set of String) Labels to attach to the network device when this rule matches. Already-attached labels are not duplicated. IDs of `oneuptime_label` resources.
 - `network_device_labels` (Set of String) Only trigger for network devices that already have at least one of these labels. Leave empty to match regardless of labels. IDs of `oneuptime_label` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

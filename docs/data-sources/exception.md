@@ -15,7 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_exception" "example" {
-  primary_entity_id = "example-primary-entity-id"
+  created_by_user_id   = data.oneuptime_user.example.id
+  assign_to_user_email = "alice@example.com"
 }
 
 # Or by id:
@@ -30,7 +31,8 @@ data "oneuptime_exception" "by_id" {
 
 - `ai_classification` (String) AI triage verdict for this exception group (code-fault, user-error, expected-denial, infrastructure).
 - `assign_to_team_id` (String) Team ID who this exception is assigned to. The ID of a `oneuptime_team`.
-- `assign_to_user_id` (String) User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source).
+- `assign_to_user_email` (String) Look it up by the email address of the person in `assign_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `assign_to_user_id` (String) User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assign_to_user_email`.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `environment` (String) Deployment environment from deployment.environment resource attribute.
 - `error_class` (String) Fault domain of this exception group (code-fault, user-error, expected-denial, infrastructure, unknown). Non-actionable classes are excluded from the Issues list.
@@ -56,7 +58,7 @@ data "oneuptime_exception" "by_id" {
 
 ### Read-Only
 
-- `ai_explanation` (String) OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: write it with `jsonencode()`.
+- `ai_explanation` (String) OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: read it with `jsondecode()`.
 - `ai_explanation_generated_at` (String) When OneUptime AI last wrote its explanation of this exception.
 - `ai_fix_declined_at` (String) Set when an AI-authored fix pull request for this exception was closed without merging; suppresses further automatic fix attempts.
 - `created_at` (String) Date and Time when the object was created.

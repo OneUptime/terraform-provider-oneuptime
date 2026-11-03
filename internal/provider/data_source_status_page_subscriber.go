@@ -82,6 +82,7 @@ func (d *StatusPageSubscriberDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "subscriber_email": schema.StringAttribute{
                 MarkdownDescription: "Email address of the subscriber.",
@@ -93,8 +94,8 @@ func (d *StatusPageSubscriberDataSource) Schema(ctx context.Context, req datasou
             },
             "subscriber_webhook": schema.StringAttribute{
                 MarkdownDescription: "Webhook to ping when events happen on Status Page.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "slack_workspace_name": schema.StringAttribute{
                 MarkdownDescription: "Name of the Slack workspace for validation and identification.",
@@ -115,6 +116,7 @@ func (d *StatusPageSubscriberDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_subscription_confirmed": schema.BoolAttribute{
                 MarkdownDescription: "Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email).",
@@ -156,7 +158,7 @@ func (d *StatusPageSubscriberDataSource) Schema(ctx context.Context, req datasou
                 ElementType: types.StringType,
             },
             "status_page_event_types": schema.StringAttribute{
-                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "internal_note": schema.StringAttribute{
@@ -206,10 +208,6 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
     if !data.StatusPageId.IsNull() && !data.StatusPageId.IsUnknown() {
         filters["statusPageId"] = data.StatusPageId.ValueString()
         filterNames = append(filterNames, "status_page_id = "+fmt.Sprintf("%q", data.StatusPageId.ValueString()))
-    }
-    if !data.SubscriberWebhook.IsNull() && !data.SubscriberWebhook.IsUnknown() {
-        filters["subscriberWebhook"] = data.SubscriberWebhook.ValueString()
-        filterNames = append(filterNames, "subscriber_webhook = "+fmt.Sprintf("%q", data.SubscriberWebhook.ValueString()))
     }
     if !data.SlackWorkspaceName.IsNull() && !data.SlackWorkspaceName.IsUnknown() {
         filters["slackWorkspaceName"] = data.SlackWorkspaceName.ValueString()

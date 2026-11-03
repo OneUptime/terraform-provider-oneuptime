@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_whatsapp_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Notification Logs"
 description: |-
   Logs of all the WhatsApp messages sent out to all users and subscribers for this project.
 ---

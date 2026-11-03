@@ -19,11 +19,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &LlmProviderResource{}
 var _ resource.ResourceWithImportState = &LlmProviderResource{}
+var _ resource.ResourceWithModifyPlan = &LlmProviderResource{}
 
 func NewLlmProviderResource() resource.Resource {
     return &LlmProviderResource{}
@@ -93,6 +95,9 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
             "llm_type": schema.StringAttribute{
                 MarkdownDescription: "The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAICompatible, etc.).",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("OpenAI", "AzureOpenAI", "Anthropic", "Groq", "Mistral", "Ollama", "OpenAICompatible"),
+                },
             },
             "api_key": schema.StringAttribute{
                 MarkdownDescription: "The API key for the LLM provider. Required for OpenAI, Azure OpenAI / Microsoft Foundry (one of the resource's keys), Anthropic, Groq, and Mistral.",
@@ -125,6 +130,7 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -163,6 +169,9 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "has_additional_params": schema.BoolAttribute{
                 MarkdownDescription: "Whether Additional Parameters are saved. Worked out from the parameters on every read.",
@@ -181,6 +190,17 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *LlmProviderResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *LlmProviderResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -737,6 +757,9 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1204,6 +1227,11 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "additional_params": !data.AdditionalParams.Equal(state.AdditionalParams),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config LlmProviderResourceModel
@@ -1703,6 +1731,9 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1739,6 +1770,9 @@ func (r *LlmProviderResource) Delete(ctx context.Context, req resource.DeleteReq
 
 func (r *LlmProviderResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"additional_params"})...)
 }
 
 

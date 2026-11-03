@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_site_type Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Configure the levels of your network site hierarchy (Region, Market, Unit and so on). Choose each type's parent, rename it, or add your own.
 ---

@@ -13,9 +13,9 @@ Assign users with specific roles to incidents.
 
 ```terraform
 resource "oneuptime_incident_member" "example" {
-  user_id          = data.oneuptime_user.example.id
   incident_id      = oneuptime_incident.example.id
   incident_role_id = oneuptime_incident_role.example.id
+  user_email       = "alice@example.com"
 }
 ```
 
@@ -25,11 +25,12 @@ resource "oneuptime_incident_member" "example" {
 
 - `incident_id` (String) ID of your OneUptime Incident in which this object belongs. The ID of a `oneuptime_incident`.
 - `incident_role_id` (String) ID of the Incident Role assigned to this user. The ID of a `oneuptime_incident_role`.
-- `user_id` (String) ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).
 
 ### Optional
 
 - `notes` (String) Assignment context or notes.
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

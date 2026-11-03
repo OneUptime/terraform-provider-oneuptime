@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_event_connection_run Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   History of connection tests, previews, scheduled polls and historical imports for security event connections. Credentials are never included.
 ---
@@ -40,7 +40,7 @@ data "oneuptime_security_event_connection_run" "by_id" {
 - `completed_at` (String) When this run completed.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of the project for this run. The ID of a `oneuptime_project`.
-- `request` (String) Validated operation and selected time range. Contains no credentials. A JSON value: write it with `jsonencode()`.
-- `result` (String) Counts, requested time range, checks and a bounded preview of records. A JSON value: write it with `jsonencode()`.
+- `request` (String) Validated operation and selected time range. Contains no credentials. A JSON value: read it with `jsondecode()`.
+- `result` (String) Counts, requested time range, checks and a bounded preview of records. A JSON value: read it with `jsondecode()`.
 - `started_at` (String) When this run started.
 - `updated_at` (String) Date and Time when the object was updated.

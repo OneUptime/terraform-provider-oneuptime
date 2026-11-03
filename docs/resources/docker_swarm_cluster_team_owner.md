@@ -1,13 +1,13 @@
 ---
 page_title: "oneuptime_docker_swarm_cluster_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
-  Add teams as owners to your DockerSwarm clusters.
+  Add teams as owners to your Docker Swarm clusters.
 ---
 
 # oneuptime_docker_swarm_cluster_team_owner (Resource)
 
-Add teams as owners to your DockerSwarm clusters.
+Add teams as owners to your Docker Swarm clusters.
 
 ## Example Usage
 
@@ -22,8 +22,8 @@ resource "oneuptime_docker_swarm_cluster_team_owner" "example" {
 
 ### Required
 
-- `docker_swarm_cluster_id` (String) ID of your OneUptime DockerSwarm Cluster in which this object belongs. The ID of a `oneuptime_docker_swarm_cluster`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `docker_swarm_cluster_id` (String) ID of the Docker Swarm cluster the team owns. The ID of a `oneuptime_docker_swarm_cluster`.
+- `team_id` (String) ID of the team that owns the Docker Swarm cluster. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_docker_swarm_cluster_team_owner" "example" {
 
 ## Import
 
-Import an existing docker swarm cluster team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing docker swarm cluster team owner by its docker swarm cluster and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_docker_swarm_cluster_team_owner.example
-  id = "<id>"
+  id = "<docker_swarm_cluster_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_docker_swarm_cluster_team_owner.example <id>
+terraform import oneuptime_docker_swarm_cluster_team_owner.example <docker_swarm_cluster_id>/<team_id>
 ```
+
+Its own ID works too.

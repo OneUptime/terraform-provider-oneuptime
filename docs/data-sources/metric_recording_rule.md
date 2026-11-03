@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_metric_recording_rule Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Derived metrics computed on a schedule from an expression over other metrics. Results are written back into the metric store as a new series.
 ---
@@ -39,6 +39,6 @@ data "oneuptime_metric_recording_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `definition` (String) Sources (aliased input metrics), arithmetic expression, and optional group-by attribute. A JSON value: write it with `jsonencode()`.
+- `definition` (String) Sources (aliased input metrics), arithmetic expression, and optional group-by attribute. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this recording rule belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

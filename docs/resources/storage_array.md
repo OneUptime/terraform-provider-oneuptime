@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_storage_array Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Storage arrays (Pure Storage FlashArray and FlashBlade) that are being monitored in this project. Each array is auto-discovered when the OneUptime Storage Array Agent sends metrics, or can be registered by hand.
 ---
@@ -38,7 +38,7 @@ resource "oneuptime_storage_array" "example" {
 - `health_status` (Number) Cached array health derived from the array's open alerts and hardware state: 0 = OK, 1 = Warning (a warning alert, or a degraded or unknown component), 2 = Critical (a critical alert, or a failed or critical component). Rendered as the health pill. Null until the first metric batch arrives.
 - `host_count` (Number) Cached count of hosts defined on the array (FlashArray).
 - `is_archived` (Boolean) Is this storage array archived? Archived storage arrays are hidden from lists but keep collecting telemetry. Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When metrics were last received from this storage array.
 - `open_alert_count` (Number) Cached count of alerts open on the array itself (purefa_alerts_open / purefb_alerts_open series, hidden alerts excluded).
 - `os_name` (String) Name of the array's operating system as it reports it (os on purefa_info / purefb_info).

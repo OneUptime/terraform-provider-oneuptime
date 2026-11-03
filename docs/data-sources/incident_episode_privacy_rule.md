@@ -39,7 +39,7 @@ data "oneuptime_incident_episode_privacy_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
 - `episode_labels` (Set of String) Only trigger for episodes that have at least one of these labels. Leave empty to match regardless of episode labels. IDs of `oneuptime_label` resources.
 - `incident_severities` (Set of String) Only trigger for episodes with these severities. Leave empty to match episodes of any severity. IDs of `oneuptime_incident_severity` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

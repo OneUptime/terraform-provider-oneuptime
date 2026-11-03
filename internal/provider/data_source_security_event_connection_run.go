@@ -71,11 +71,13 @@ func (d *SecurityEventConnectionRunDataSource) Schema(ctx context.Context, req d
                 MarkdownDescription: "ID of the connection for this run. The ID of a `oneuptime_security_event_connection`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_event_connection"),
             },
             "requested_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the user who requested this run. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "type": schema.StringAttribute{
                 MarkdownDescription: "Operation of this connection run.",
@@ -96,11 +98,11 @@ func (d *SecurityEventConnectionRunDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "request": schema.StringAttribute{
-                MarkdownDescription: "Validated operation and selected time range. Contains no credentials. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Validated operation and selected time range. Contains no credentials. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "result": schema.StringAttribute{
-                MarkdownDescription: "Counts, requested time range, checks and a bounded preview of records. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Counts, requested time range, checks and a bounded preview of records. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "error": schema.StringAttribute{

@@ -26,13 +26,13 @@ resource "oneuptime_incident_custom_field" "example" {
 
 ### Optional
 
-- `custom_field_type` (String) Is this field Text, Number or Boolean? A JSON value: write it with `jsonencode()`.
+- `custom_field_type` (String) What kind of value the field holds, such as Text, Number or Dropdown. Allowed values: `Text`, `Number`, `Boolean`, `Dropdown`, `MultiSelectDropdown`, `Date`, `DateTime`, `LongText`, `Markdown`, `File`, `MultipleFiles`.
 - `description` (String) Friendly description of this custom field that will help you remember.
 - `dropdown_options` (String) Options and optional colors for dropdown fields, in the order they are listed. Plain one-per-line values remain supported. Records store an option as its text: changing an option here keeps the values records already hold. To rename an option and move those values with it, send the renames with the update, in miscDataProps: {"renamedDropdownOptions": [{"from": "Old text", "to": "New text"}]}. "to" must be one of the options.
 - `include_in_subscriber_notifications` (Boolean) When on, this field and its value appear in the messages status page subscribers get about an incident: the default email, Slack and Microsoft Teams messages, and webhooks (under customFields, by the field's template variable key). The default SMS is kept short and leaves it out. Subscribers are usually people outside your team, so turn this on only for fields that are safe to share with them. Defaults to `false`.
 - `is_required_on_create` (Boolean) When on, an incident declared from the dashboard cannot be created until this field is filled in (a Boolean field must be ticked). It applies only to fields shown on create. Incidents created by monitors, the API, Slack, Microsoft Teams or AI can leave it empty, and it stays optional when an incident is edited later. Defaults to `false`.
 - `map_from_custom_field_name` (String) Name of the custom field on the related resource this field copies its value from.
-- `map_from_resource_type` (String) Related resource this field copies its value from. Empty means values are entered by hand.
+- `map_from_resource_type` (String) Related resource this field copies its value from. Empty means values are entered by hand. Allowed values: `Monitor`.
 - `show_on_create` (Boolean) When on, this field is asked for in a Details step when an incident is declared from the dashboard, and incident templates can fill it in. Defaults to `false`.
 - `sort_order` (Number) Where this field appears among the incident's custom fields, lowest number first. A new field is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
 

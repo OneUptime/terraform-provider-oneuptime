@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_audit_log_export Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Teams & Access"
 description: |-
   Where the audit log is exported: S3 or S3-compatible storage, Google Cloud Storage, Azure Blob Storage, a webhook or a syslog receiver.
 ---
@@ -40,7 +40,7 @@ data "oneuptime_audit_log_export" "by_id" {
 
 ### Read-Only
 
-- `config` (String) The destination's settings that are not secret, such as the bucket and the region. Keys are defined by the destination. A JSON value: write it with `jsonencode()`.
+- `config` (String) The destination's settings that are not secret, such as the bucket and the region. Keys are defined by the destination. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `cursor_created_at` (String) When the last entry delivered was recorded: where the next batch starts.
 - `failing_since` (String) When deliveries started failing. Cleared by the next delivery that succeeds.

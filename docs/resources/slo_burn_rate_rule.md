@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_slo_burn_rate_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Configure multi-window burn rate rules that raise alerts and/or declare incidents when a Service Level Objective consumes its error budget too quickly
 ---
@@ -37,7 +37,8 @@ resource "oneuptime_slo_burn_rate_rule" "example" {
 - `alert_description_template` (String) Description (in Markdown) of the alert raised when this burn rate rule fires. Supports template variables. Leave empty to use the default description.
 - `alert_labels` (Set of String) Labels added to alerts raised by this burn rate rule. IDs of `oneuptime_label` resources.
 - `alert_owner_teams` (Set of String) Teams added as owners of alerts raised by this burn rate rule. IDs of `oneuptime_team` resources.
-- `alert_owner_users` (Set of String) Users added as owners of alerts raised by this burn rate rule. IDs of `oneuptime_user` records.
+- `alert_owner_user_emails` (Set of String) The email addresses of the people in `alert_owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `alert_owner_users` (Set of String) Users added as owners of alerts raised by this burn rate rule. IDs of `oneuptime_user` records. Or name them by email address, in `alert_owner_user_emails`.
 - `alert_remediation_notes` (String) Remediation notes (in Markdown) attached to the alert raised when this burn rate rule fires. Supports template variables.
 - `alert_severity_id` (String) ID of the Alert Severity of the alert created when this burn rate rule fires. The ID of a `oneuptime_alert_severity`.
 - `alert_title_template` (String) Title of the alert raised when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title.
@@ -47,7 +48,8 @@ resource "oneuptime_slo_burn_rate_rule" "example" {
 - `incident_labels` (Set of String) Labels added to incidents declared by this burn rate rule. IDs of `oneuptime_label` resources.
 - `incident_on_call_duty_policies` (Set of String) On-call duty policies attached to incidents declared by this burn rate rule. IDs of `oneuptime_on_call_policy` resources.
 - `incident_owner_teams` (Set of String) Teams added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_team` resources.
-- `incident_owner_users` (Set of String) Users added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_user` records.
+- `incident_owner_user_emails` (Set of String) The email addresses of the people in `incident_owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `incident_owner_users` (Set of String) Users added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_user` records. Or name them by email address, in `incident_owner_user_emails`.
 - `incident_remediation_notes` (String) Remediation notes (in Markdown) attached to the incident declared when this burn rate rule fires. Supports template variables.
 - `incident_severity_id` (String) ID of the Incident Severity of the incident declared when this burn rate rule fires. The ID of a `oneuptime_incident_severity`.
 - `incident_title_template` (String) Title of the incident declared when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title.

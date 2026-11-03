@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_threat_intel_feed Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Threat-intelligence feeds: TAXII 2.1 collections, lists of indicators and Google SecOps. Indicators are polled and matched against security events.
 ---
@@ -33,7 +33,7 @@ resource "oneuptime_threat_intel_feed" "example" {
 - `basic_auth_username` (String) Username for basic-auth collections. Leave empty for anonymous or token-authenticated collections.
 - `collection_id` (String) ID of the TAXII collection to poll for indicator objects.
 - `description` (String) What this feed carries and why it is subscribed.
-- `feed_type` (String) Where the indicators come from: a TAXII 2.1 collection (taxii), a list at an https address (list) or Google SecOps (google-secops). Defaults to `taxii`.
+- `feed_type` (String) Where the indicators come from: a TAXII 2.1 collection (taxii), a list at an https address (list) or Google SecOps (google-secops). Allowed values: `taxii`, `list`, `google-secops`. Defaults to `taxii`.
 - `incident_severity_id` (String) ID of the incident severity for incidents opened by this feed. The ID of a `oneuptime_incident_severity`.
 - `indicator_confidence` (Number) For a list feed: how sure the list is, 1 to 100, given to each of its indicators. It sets the severity of a match.
 - `is_enabled` (Boolean) Whether this feed is polled and matched. Defaults to `true`.

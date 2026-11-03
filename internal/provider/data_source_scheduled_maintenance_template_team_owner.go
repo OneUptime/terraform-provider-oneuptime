@@ -62,19 +62,22 @@ func (d *ScheduledMaintenanceTemplateTeamOwnerDataSource) Schema(ctx context.Con
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the scheduled maintenance template. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "scheduled_maintenance_template_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Scheduled Maintenance Template in which this object belongs. The ID of a `oneuptime_scheduled_maintenance_template`.",
+                MarkdownDescription: "ID of the scheduled maintenance template the team owns. The ID of a `oneuptime_scheduled_maintenance_template`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_template"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

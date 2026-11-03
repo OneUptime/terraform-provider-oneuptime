@@ -90,6 +90,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 MarkdownDescription: "ID of the Probe that runs this discovery scan. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Optional name for this scan, so it can be told apart from other scans at a glance. Falls back to the scan target when empty.",
@@ -102,8 +103,9 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "snmp_configs": schema.StringAttribute{
-                MarkdownDescription: "Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
+                Sensitive: true,
             },
             "is_snmp_enabled": schema.BoolAttribute{
                 MarkdownDescription: "The scan method: true for an SNMP scan (the default), which also asks each host that answers ping for its name and vendor over SNMP; false for an ICMP scan, which only pings.",
@@ -122,8 +124,8 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
             },
             "snmp_community_string": schema.StringAttribute{
                 MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c). Ignored on an ICMP scan.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "snmp_port": schema.NumberAttribute{
                 MarkdownDescription: "UDP port tried against every host in the subnet. Ignored on an ICMP scan.",
@@ -147,8 +149,8 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
             },
             "snmp_v3_auth_key": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Ignored on an ICMP scan.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "snmp_v3_priv_protocol": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256. Ignored on an ICMP scan.",
@@ -157,8 +159,8 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
             },
             "snmp_v3_priv_key": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Ignored on an ICMP scan.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Status of this discovery scan: \"Pending\", \"In Progress\", \"Completed\" or \"Failed\". Managed by the scanning probe.",
@@ -176,7 +178,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "discovered_devices": schema.StringAttribute{
-                MarkdownDescription: "Devices found by this scan: array of {ipAddress, sysName, sysDescr, isAlreadyRegistered}. Managed by the scanning probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Devices found by this scan: array of {ipAddress, sysName, sysDescr, isAlreadyRegistered}. Managed by the scanning probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "scanned_host_count": schema.NumberAttribute{
@@ -219,6 +221,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }
@@ -283,10 +286,6 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
         filters["snmpVersion"] = data.SnmpVersion.ValueString()
         filterNames = append(filterNames, "snmp_version = "+fmt.Sprintf("%q", data.SnmpVersion.ValueString()))
     }
-    if !data.SnmpCommunityString.IsNull() && !data.SnmpCommunityString.IsUnknown() {
-        filters["snmpCommunityString"] = data.SnmpCommunityString.ValueString()
-        filterNames = append(filterNames, "snmp_community_string = "+fmt.Sprintf("%q", data.SnmpCommunityString.ValueString()))
-    }
     if !data.SnmpPort.IsNull() && !data.SnmpPort.IsUnknown() {
         filters["snmpPort"] = lookupNumber(data.SnmpPort)
         filterNames = append(filterNames, "snmp_port = "+data.SnmpPort.ValueBigFloat().String())
@@ -303,17 +302,9 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
         filters["snmpV3AuthProtocol"] = data.SnmpV3AuthProtocol.ValueString()
         filterNames = append(filterNames, "snmp_v3_auth_protocol = "+fmt.Sprintf("%q", data.SnmpV3AuthProtocol.ValueString()))
     }
-    if !data.SnmpV3AuthKey.IsNull() && !data.SnmpV3AuthKey.IsUnknown() {
-        filters["snmpV3AuthKey"] = data.SnmpV3AuthKey.ValueString()
-        filterNames = append(filterNames, "snmp_v3_auth_key = "+fmt.Sprintf("%q", data.SnmpV3AuthKey.ValueString()))
-    }
     if !data.SnmpV3PrivProtocol.IsNull() && !data.SnmpV3PrivProtocol.IsUnknown() {
         filters["snmpV3PrivProtocol"] = data.SnmpV3PrivProtocol.ValueString()
         filterNames = append(filterNames, "snmp_v3_priv_protocol = "+fmt.Sprintf("%q", data.SnmpV3PrivProtocol.ValueString()))
-    }
-    if !data.SnmpV3PrivKey.IsNull() && !data.SnmpV3PrivKey.IsUnknown() {
-        filters["snmpV3PrivKey"] = data.SnmpV3PrivKey.ValueString()
-        filterNames = append(filterNames, "snmp_v3_priv_key = "+fmt.Sprintf("%q", data.SnmpV3PrivKey.ValueString()))
     }
     if !data.Status.IsNull() && !data.Status.IsUnknown() {
         filters["status"] = data.Status.ValueString()

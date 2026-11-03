@@ -141,13 +141,14 @@ func (d *QueueDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "automatic_assignments": schema.StringAttribute{
-                MarkdownDescription: "Label and owner ids that label rules or owner rules attached automatically. Maintained by OneUptime. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Label and owner ids that label rules or owner rules attached automatically. Maintained by OneUptime. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this queue archived? Archived queues are hidden from lists but their telemetry is still collected.",
@@ -162,9 +163,10 @@ func (d *QueueDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

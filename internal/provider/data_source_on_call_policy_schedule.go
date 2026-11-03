@@ -79,7 +79,7 @@ func (d *OnCallPolicyScheduleDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -102,16 +102,19 @@ func (d *OnCallPolicyScheduleDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "current_user_id_on_roster": schema.StringAttribute{
                 MarkdownDescription: "User ID who is currently on roster. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "next_user_id_on_roster": schema.StringAttribute{
                 MarkdownDescription: "Next ID who is currently on roster. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "roster_handoff_at": schema.StringAttribute{
                 MarkdownDescription: "When does the roster handoff occur for this schedule for the current user?",

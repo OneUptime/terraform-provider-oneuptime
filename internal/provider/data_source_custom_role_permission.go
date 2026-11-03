@@ -69,9 +69,10 @@ func (d *CustomRolePermissionDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of the custom role this permission is part of. The ID of a `oneuptime_custom_role`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_custom_role"),
             },
             "permission": schema.StringAttribute{
-                MarkdownDescription: "A built-in role, such as IncidentMember, or a single permission, such as ReadProjectIncident. You can find the list of permissions in the Permission Reference. ProjectOwner cannot be part of a custom role. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "A built-in role, such as IncidentMember, or a single permission, such as ReadProjectIncident. You can find the list of permissions in the Permission Reference. ProjectOwner cannot be part of a custom role. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
@@ -88,6 +89,7 @@ func (d *CustomRolePermissionDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

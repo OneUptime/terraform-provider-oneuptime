@@ -69,7 +69,7 @@ func (d *QueueOwnerRuleDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -130,6 +130,7 @@ func (d *QueueOwnerRuleDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

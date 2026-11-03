@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkSiteAssignmentRuleResource{}
 var _ resource.ResourceWithImportState = &NetworkSiteAssignmentRuleResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkSiteAssignmentRuleResource{}
 
 func NewNetworkSiteAssignmentRuleResource() resource.Resource {
     return &NetworkSiteAssignmentRuleResource{}
@@ -73,6 +74,7 @@ func (r *NetworkSiteAssignmentRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -89,6 +91,7 @@ func (r *NetworkSiteAssignmentRuleResource) schemaDefinition() schema.Schema {
             "site_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Site matched resources are assigned to. The ID of a `oneuptime_network_site`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "subnet_cidr": schema.StringAttribute{
                 MarkdownDescription: "Devices and endpoints with an IP in this CIDR are assigned to the site.",
@@ -111,6 +114,7 @@ func (r *NetworkSiteAssignmentRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -136,6 +140,17 @@ func (r *NetworkSiteAssignmentRuleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkSiteAssignmentRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkSiteAssignmentRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -521,6 +536,9 @@ func (r *NetworkSiteAssignmentRuleResource) Create(ctx context.Context, req reso
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -826,6 +844,11 @@ func (r *NetworkSiteAssignmentRuleResource) Update(ctx context.Context, req reso
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "criteria": !data.Criteria.Equal(state.Criteria),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config NetworkSiteAssignmentRuleResourceModel
@@ -1149,6 +1172,9 @@ func (r *NetworkSiteAssignmentRuleResource) Update(ctx context.Context, req reso
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1185,6 +1211,9 @@ func (r *NetworkSiteAssignmentRuleResource) Delete(ctx context.Context, req reso
 
 func (r *NetworkSiteAssignmentRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"criteria"})...)
 }
 
 

@@ -34,12 +34,12 @@ resource "oneuptime_dashboard" "example" {
 - `ip_whitelist` (String) IP Whitelist for this dashboard. One IP per line. Only used when the dashboard is public.
 - `is_archived` (Boolean) Archived dashboards are hidden from the Dashboards list and their public link stops working. Unarchiving restores them as they were. Defaults to `false`.
 - `is_public_dashboard` (Boolean) Is this dashboard public? Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `logo_file_id` (String) Dashboard Logo File ID. The ID of a `oneuptime_file`.
 - `master_password` (String, Sensitive) Password required to unlock a public dashboard. This value is stored as a secure hash.
 - `page_description` (String) Description of the public dashboard page. This will be used for SEO.
 - `page_title` (String) Title of the public dashboard page. This will be used for SEO and the browser tab.
-- `theme` (String) How the public dashboard looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). Visitors can switch between light and dark from its toolbar. A dashboard created without a theme starts with System. Defaults to `Light`.
+- `theme` (String) How the public dashboard looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). Visitors can switch between light and dark from its toolbar. A dashboard created without a theme starts with System. Allowed values: `Light`, `Dark`, `System`. Defaults to `Light`.
 
 ### Read-Only
 

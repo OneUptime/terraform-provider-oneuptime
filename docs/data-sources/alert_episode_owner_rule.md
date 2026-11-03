@@ -41,7 +41,7 @@ data "oneuptime_alert_episode_owner_rule" "by_id" {
 
 - `alert_severities` (Set of String) Only trigger for episodes with these severities. Leave empty to match any severity. IDs of `oneuptime_alert_severity` resources.
 - `created_at` (String) Date and Time when the object was created.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
 - `episode_labels` (Set of String) Only trigger for episodes that have at least one of these labels. IDs of `oneuptime_label` resources.
 - `owner_teams` (Set of String) Teams to add as owners on the alert episode when this rule matches. IDs of `oneuptime_team` resources.
 - `owner_users` (Set of String) Users to add as owners on the alert episode when this rule matches. IDs of `oneuptime_user` records.

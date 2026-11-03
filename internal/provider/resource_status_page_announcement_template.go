@@ -26,6 +26,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageAnnouncementTemplateResource{}
 var _ resource.ResourceWithImportState = &StatusPageAnnouncementTemplateResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageAnnouncementTemplateResource{}
 
 func NewStatusPageAnnouncementTemplateResource() resource.Resource {
     return &StatusPageAnnouncementTemplateResource{}
@@ -107,6 +108,7 @@ func (r *StatusPageAnnouncementTemplateResource) schemaDefinition() schema.Schem
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_status_page"),
             },
             "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors affected by this announcement template. If none are selected, all subscribers will be notified. IDs of `oneuptime_monitor` resources.",
@@ -116,6 +118,7 @@ func (r *StatusPageAnnouncementTemplateResource) schemaDefinition() schema.Schem
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
                 MarkdownDescription: "Should subscribers be notified about announcements created from this template?",
@@ -148,6 +151,17 @@ func (r *StatusPageAnnouncementTemplateResource) schemaDefinition() schema.Schem
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageAnnouncementTemplateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageAnnouncementTemplateResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -606,6 +620,7 @@ func (r *StatusPageAnnouncementTemplateResource) Create(ctx context.Context, req
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

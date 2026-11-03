@@ -15,7 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_scheduled_maintenance_user_owner" "example" {
-  user_id = data.oneuptime_user.example.id
+  scheduled_maintenance_id = oneuptime_scheduled_maintenance_event.example.id
+  user_email               = "alice@example.com"
 }
 
 # Or by id:
@@ -31,8 +32,9 @@ data "oneuptime_scheduled_maintenance_user_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `scheduled_maintenance_id` (String) ID of your OneUptime ScheduledMaintenance in which this object belongs. The ID of a `oneuptime_scheduled_maintenance_event`.
-- `user_id` (String) ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).
+- `scheduled_maintenance_id` (String) ID of the scheduled maintenance event the user owns. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of the user who owns the scheduled maintenance event. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

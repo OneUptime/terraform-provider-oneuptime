@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_proxmox_cluster_label_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically attaching labels to Proxmox clusters when matching Proxmox clusters are created
 ---
@@ -39,7 +39,7 @@ data "oneuptime_proxmox_cluster_label_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
 - `labels_to_add` (Set of String) Labels to attach to the Proxmox cluster when this rule matches. Already-attached labels are not duplicated. IDs of `oneuptime_label` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `proxmox_cluster_labels` (Set of String) Only trigger for Proxmox clusters that already have at least one of these labels. Leave empty to match regardless of labels. IDs of `oneuptime_label` resources.

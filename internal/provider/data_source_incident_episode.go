@@ -65,6 +65,7 @@ type IncidentEpisodeDataSourceModel struct {
     SubscriberNotificationStatusOnEpisodeCreated types.String `tfsdk:"subscriber_notification_status_on_episode_created"`
     SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
     IsPrivate types.Bool `tfsdk:"is_private"`
+    AssignedToUserEmail types.String `tfsdk:"assigned_to_user_email"`
 }
 
 func (d *IncidentEpisodeDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -73,7 +74,7 @@ func (d *IncidentEpisodeDataSource) Metadata(ctx context.Context, req datasource
 
 func (d *IncidentEpisodeDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage incident episodes (groups of related incidents) for your project Look up an existing incident episode by `id`, or by any of its other arguments (`assigned_to_team_id`, `assigned_to_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one incident episode may match them all.",
+        MarkdownDescription: "Manage incident episodes (groups of related incidents) for your project Look up an existing incident episode by `id`, or by any of its other arguments (`assigned_to_team_id`, `assigned_to_user_email`, `assigned_to_user_id`, ...): each one set must match, and exactly one incident episode may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -117,11 +118,13 @@ func (d *IncidentEpisodeDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "Current Incident State ID. The ID of a `oneuptime_incident_state`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_state"),
             },
             "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "Incident Severity ID. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "root_cause": schema.StringAttribute{
                 MarkdownDescription: "User-documented root cause of this episode.",
@@ -145,14 +148,16 @@ func (d *IncidentEpisodeDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "assigned_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assigned_to_user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("assigned_to_user_email", false),
             },
             "assigned_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "Team ID that is assigned to this episode. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.",
@@ -185,7 +190,7 @@ func (d *IncidentEpisodeDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -193,6 +198,7 @@ func (d *IncidentEpisodeDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified_of_episode_creation": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified when this episode is created?",
@@ -208,6 +214,7 @@ func (d *IncidentEpisodeDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the Incident Grouping Rule that created this episode (if applicable). The ID of a `oneuptime_incident_grouping_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_grouping_rule"),
             },
             "remediation_notes": schema.StringAttribute{
                 MarkdownDescription: "User-documented remediation steps and notes for this episode.",
@@ -220,7 +227,7 @@ func (d *IncidentEpisodeDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "post_updates_to_workspace_channels": schema.StringAttribute{
-                MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_visible_on_status_page": schema.BoolAttribute{
@@ -251,6 +258,12 @@ func (d *IncidentEpisodeDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "If true, this incident episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.",
                 Optional: true,
                 Computed: true,
+            },
+            "assigned_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -390,6 +403,14 @@ func (d *IncidentEpisodeDataSource) Read(ctx context.Context, req datasource.Rea
     if !data.IsPrivate.IsNull() && !data.IsPrivate.IsUnknown() {
         filters["isPrivate"] = data.IsPrivate.ValueBool()
         filterNames = append(filterNames, "is_private = "+fmt.Sprintf("%t", data.IsPrivate.ValueBool()))
+    }
+    if !data.AssignedToUserEmail.IsNull() && !data.AssignedToUserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.AssignedToUserEmail.ValueString(), "assigned_to_user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["assignedToUserId"] = personID
+        filterNames = append(filterNames, "assigned_to_user_email = "+fmt.Sprintf("%q", data.AssignedToUserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -1044,6 +1065,7 @@ func (d *IncidentEpisodeDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.IsPrivate = types.BoolNull()
     }
+    data.AssignedToUserEmail = personEmailAfterLookup(ctx, d.client, data.AssignedToUserId, data.AssignedToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

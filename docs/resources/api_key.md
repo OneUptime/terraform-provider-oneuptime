@@ -32,7 +32,7 @@ resource "oneuptime_api_key" "example" {
 
 ### Read-Only
 
-- `api_key` (String) Secret API Key.
+- `api_key` (String, Sensitive) Secret API Key.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.

@@ -71,16 +71,19 @@ func (d *ScheduledMaintenanceStateTimelineDataSource) Schema(ctx context.Context
                 MarkdownDescription: "ID of Scheduled Maintenance this resource belongs to. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "scheduled_maintenance_state_id": schema.StringAttribute{
-                MarkdownDescription: "Scheduled Maintenance State ID. Which state does this event belongs to? The ID of a `oneuptime_scheduled_maintenance_state`.",
+                MarkdownDescription: "ID of the state the scheduled maintenance event changes to. The ID of a `oneuptime_scheduled_maintenance_state`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_state"),
             },
             "subscriber_notification_status": schema.StringAttribute{
                 MarkdownDescription: "Status of notification sent to subscribers about this scheduled maintenance state change.",

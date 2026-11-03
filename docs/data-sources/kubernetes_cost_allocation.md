@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_kubernetes_cost_allocation Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   API endpoints for Kubernetes Cost Allocation
 ---

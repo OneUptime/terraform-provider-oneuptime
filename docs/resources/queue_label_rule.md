@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_queue_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically attaching labels to queues when matching queues are created
 ---

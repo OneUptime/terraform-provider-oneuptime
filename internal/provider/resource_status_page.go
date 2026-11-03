@@ -25,11 +25,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageResource{}
 var _ resource.ResourceWithImportState = &StatusPageResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageResource{}
 
 func NewStatusPageResource() resource.Resource {
     return &StatusPageResource{}
@@ -191,13 +193,14 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online.",
@@ -215,6 +218,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "logo_file_id": schema.StringAttribute{
                 MarkdownDescription: "Status Page Logo File ID. The ID of a `oneuptime_file`.",
@@ -223,6 +227,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "dark_theme_logo_file_id": schema.StringAttribute{
                 MarkdownDescription: "Status Page Dark Theme Logo File ID. The ID of a `oneuptime_file`.",
@@ -231,6 +236,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "cover_image_file_id": schema.StringAttribute{
                 MarkdownDescription: "Status Page Cover Image ID. The ID of a `oneuptime_file`.",
@@ -239,6 +245,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "header_html": schema.StringAttribute{
                 MarkdownDescription: "Status Page Custom HTML Header. Served only from a verified custom domain.",
@@ -445,6 +452,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -465,6 +473,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -490,6 +499,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -499,6 +509,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -508,6 +519,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -548,6 +560,9 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Light", "Dark", "System"),
+                },
             },
             "subscriber_timezones": schema.StringAttribute{
                 MarkdownDescription: "Timezones of subscribers to this status page. A JSON value: write it with `jsonencode()`.",
@@ -555,6 +570,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -576,6 +592,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -585,6 +602,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -597,6 +615,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -606,6 +625,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(30)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -616,6 +636,9 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("Rolling"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Rolling", "Previous Calendar Period"),
                 },
             },
             "report_timezone": schema.StringAttribute{
@@ -643,6 +666,9 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("99.99% (Two Decimal)"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("99% (No Decimal)", "99.9% (One Decimal)", "99.99% (Two Decimal)", "99.999% (Three Decimal)"),
                 },
             },
             "subscriber_email_notification_footer_text": schema.StringAttribute{
@@ -704,6 +730,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -757,6 +784,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(90)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -764,6 +792,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Security token required to access the embedded overall status badge. This token must be provided in the URL.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -783,6 +812,7 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -805,6 +835,9 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -833,6 +866,17 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -2831,6 +2875,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -4548,6 +4595,14 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "custom_fields": !data.CustomFields.Equal(state.CustomFields),
+        "enabled_languages": !data.EnabledLanguages.Equal(state.EnabledLanguages),
+        "report_recurring_interval": !data.ReportRecurringInterval.Equal(state.ReportRecurringInterval),
+        "subscriber_timezones": !data.SubscriberTimezones.Equal(state.SubscriberTimezones),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config StatusPageResourceModel
@@ -6504,6 +6559,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -6540,6 +6598,9 @@ func (r *StatusPageResource) Delete(ctx context.Context, req resource.DeleteRequ
 
 func (r *StatusPageResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "enabled_languages", "report_recurring_interval", "subscriber_timezones"})...)
 }
 
 

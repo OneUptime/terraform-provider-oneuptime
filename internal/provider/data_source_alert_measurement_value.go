@@ -72,11 +72,13 @@ func (d *AlertMeasurementValueDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "ID of the alert this measurement value was computed for. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "alert_measurement_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the measurement definition this value was computed from. The ID of a `oneuptime_alert_measurement`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_measurement"),
             },
             "started_at": schema.StringAttribute{
                 MarkdownDescription: "When this measurement's start anchor resolved to. Blank while the start anchor has not resolved.",

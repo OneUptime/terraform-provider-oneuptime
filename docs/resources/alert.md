@@ -13,7 +13,7 @@ Manage alerts for your project
 
 ```terraform
 resource "oneuptime_alert" "example" {
-  title             = "This is an example of longer text content that might be stored in this field."
+  title             = "High CPU usage detected on production server"
   alert_severity_id = oneuptime_alert_severity.example.id
   description       = "Managed by Terraform"
 }
@@ -45,7 +45,7 @@ resource "oneuptime_alert" "example" {
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters affected by this alert. IDs of `oneuptime_kubernetes_cluster` resources.
 - `kubernetes_containers` (Set of String) List of Kubernetes containers affected by this alert.
 - `kubernetes_resources` (Set of String) List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this alert.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `monitor_id` (String) ID of the monitor this alert belongs to. The ID of a `oneuptime_monitor`.
 - `monitor_status_when_this_alert_was_created_id` (String) Monitor Status ID when this alert was created. The ID of a `oneuptime_monitor_status`.
 - `network_devices` (Set of String) List of network devices affected by this alert. IDs of `oneuptime_network_device` resources.
@@ -70,17 +70,17 @@ resource "oneuptime_alert" "example" {
 - `created_by_probe_id` (String) If this alert was created by a Probe, this is the ID of the probe that created it. The ID of a `oneuptime_probe`.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_criteria_id` (String) If this alert was created by a Probe, this is the ID of the criteria that created it.
-- `created_state_log` (String) A JSON value: write it with `jsonencode()`.
+- `created_state_log` (String) A JSON value: read it with `jsondecode()`.
 - `first_paged_at` (String) When an on-call policy or a direct page first notified someone about this alert. Empty until someone is paged. Set by OneUptime.
 - `id` (String) Unique identifier for the resource.
 - `is_created_automatically` (Boolean) Is this alert created by OneUptime Probe or Workers automatically (and not created manually by a user)?
 - `is_owner_notified_of_alert_creation` (Boolean) Are owners notified of when this alert is created?
-- `monitor_summary` (String) The monitor summary captured at the moment this alert was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.
+- `monitor_summary` (String) The monitor summary captured at the moment this alert was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: read it with `jsondecode()`.
 - `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this alert? This is set automatically based on the reminder rules configured for this project.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `reminder_notification_sent_count` (Number) How many reminder notifications have been sent to owners of this alert so far.
 - `series_fingerprint` (String) For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one alert is created per affected series.
-- `series_labels` (String) Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach. A JSON value: write it with `jsonencode()`.
+- `series_labels` (String) Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

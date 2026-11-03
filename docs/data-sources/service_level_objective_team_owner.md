@@ -31,8 +31,8 @@ data "oneuptime_service_level_objective_team_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `service_level_objective_id` (String) ID of your OneUptime Service Level Objective in which this object belongs. The ID of a `oneuptime_service_level_objective`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `service_level_objective_id` (String) ID of the service level objective the team owns. The ID of a `oneuptime_service_level_objective`.
+- `team_id` (String) ID of the team that owns the service level objective. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

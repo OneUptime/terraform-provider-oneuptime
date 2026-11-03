@@ -50,7 +50,7 @@ func (d *DashboardDomainDataSource) Metadata(ctx context.Context, req datasource
 
 func (d *DashboardDomainDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage custom domains for your dashboard Look up an existing dashboard domain by `id`, or by any of its other arguments (`created_by_user_id`, `custom_certificate`, `custom_certificate_key`, ...): each one set must match, and exactly one dashboard domain may match them all.",
+        MarkdownDescription: "Manage custom domains for your dashboard Look up an existing dashboard domain by `id`, or by any of its other arguments (`created_by_user_id`, `custom_certificate`, `dashboard_id`, ...): each one set must match, and exactly one dashboard domain may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -74,11 +74,13 @@ func (d *DashboardDomainDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Dashboard Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Dashboard Domain], Update: [No access - you don't have permission for this operation] The ID of a `oneuptime_domain`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_domain"),
             },
             "dashboard_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your Dashboard resource where this object belongs. The ID of a `oneuptime_dashboard`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_dashboard"),
             },
             "subdomain": schema.StringAttribute{
                 MarkdownDescription: "Subdomain label for your dashboard such as 'dashboard'. Leave blank or enter @ to use the root domain.",
@@ -94,6 +96,7 @@ func (d *DashboardDomainDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_cname_verified": schema.BoolAttribute{
                 MarkdownDescription: "Is CNAME Verified?",
@@ -111,17 +114,17 @@ func (d *DashboardDomainDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "custom_certificate": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Dashboard Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Dashboard Domain], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Dashboard Domain]",
+                MarkdownDescription: "Your certificate for the domain, in PEM, with its chain. Used when Is Custom Certificate is on.",
                 Optional: true,
                 Computed: true,
             },
             "custom_certificate_key": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Dashboard Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Dashboard Domain], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Dashboard Domain]",
-                Optional: true,
+                MarkdownDescription: "The private key of your certificate, in PEM. Used when Is Custom Certificate is on.",
                 Computed: true,
+                Sensitive: true,
             },
             "is_custom_certificate": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Dashboard Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Dashboard Domain], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Dashboard Domain]",
+                MarkdownDescription: "When on, the domain is served with your own certificate (custom_certificate and its key) instead of one OneUptime gets from Let's Encrypt.",
                 Optional: true,
                 Computed: true,
             },
@@ -203,10 +206,6 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
     if !data.CustomCertificate.IsNull() && !data.CustomCertificate.IsUnknown() {
         filters["customCertificate"] = data.CustomCertificate.ValueString()
         filterNames = append(filterNames, "custom_certificate = "+fmt.Sprintf("%q", data.CustomCertificate.ValueString()))
-    }
-    if !data.CustomCertificateKey.IsNull() && !data.CustomCertificateKey.IsUnknown() {
-        filters["customCertificateKey"] = data.CustomCertificateKey.ValueString()
-        filterNames = append(filterNames, "custom_certificate_key = "+fmt.Sprintf("%q", data.CustomCertificateKey.ValueString()))
     }
     if !data.IsCustomCertificate.IsNull() && !data.IsCustomCertificate.IsUnknown() {
         filters["isCustomCertificate"] = data.IsCustomCertificate.ValueBool()

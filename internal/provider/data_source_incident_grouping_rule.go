@@ -72,6 +72,7 @@ type IncidentGroupingRuleDataSourceModel struct {
     EpisodeMemberRoleAssignments types.String `tfsdk:"episode_member_role_assignments"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ShowEpisodeOnStatusPage types.Bool `tfsdk:"show_episode_on_status_page"`
+    DefaultAssignToUserEmail types.String `tfsdk:"default_assign_to_user_email"`
 }
 
 func (d *IncidentGroupingRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -97,7 +98,7 @@ func (d *IncidentGroupingRuleDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -125,7 +126,7 @@ func (d *IncidentGroupingRuleDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "match_criteria": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the criteria for matching incidents to this rule. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "JSON object defining the criteria for matching incidents to this rule. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
@@ -204,7 +205,7 @@ func (d *IncidentGroupingRuleDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "group_by_fields": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the fields to group incidents by (e.g., monitorId, severity). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "JSON object defining the fields to group incidents by (e.g., monitorId, severity). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "episode_title_template": schema.StringAttribute{
@@ -253,14 +254,16 @@ func (d *IncidentGroupingRuleDataSource) Schema(ctx context.Context, req datasou
                 ElementType: types.StringType,
             },
             "default_assign_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `default_assign_to_user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("default_assign_to_user_email", false),
             },
             "default_assign_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "ID of defaultAssignToTeam. Kept for API compatibility: OneUptime does not show it anywhere. To make a team responsible for the episodes this rule opens, use episodeOwnerTeams. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "episode_labels": schema.SetAttribute{
                 MarkdownDescription: "Labels to automatically apply to episodes created by this rule. IDs of `oneuptime_label` resources.",
@@ -283,18 +286,25 @@ func (d *IncidentGroupingRuleDataSource) Schema(ctx context.Context, req datasou
                 ElementType: types.StringType,
             },
             "episode_member_role_assignments": schema.StringAttribute{
-                MarkdownDescription: "Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "show_episode_on_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Should episodes created by this rule be shown on the status page?",
                 Optional: true,
                 Computed: true,
+            },
+            "default_assign_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `default_assign_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -442,6 +452,14 @@ func (d *IncidentGroupingRuleDataSource) Read(ctx context.Context, req datasourc
     if !data.ShowEpisodeOnStatusPage.IsNull() && !data.ShowEpisodeOnStatusPage.IsUnknown() {
         filters["showEpisodeOnStatusPage"] = data.ShowEpisodeOnStatusPage.ValueBool()
         filterNames = append(filterNames, "show_episode_on_status_page = "+fmt.Sprintf("%t", data.ShowEpisodeOnStatusPage.ValueBool()))
+    }
+    if !data.DefaultAssignToUserEmail.IsNull() && !data.DefaultAssignToUserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.DefaultAssignToUserEmail.ValueString(), "default_assign_to_user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["defaultAssignToUserId"] = personID
+        filterNames = append(filterNames, "default_assign_to_user_email = "+fmt.Sprintf("%q", data.DefaultAssignToUserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -1163,6 +1181,7 @@ func (d *IncidentGroupingRuleDataSource) Read(ctx context.Context, req datasourc
     } else {
         data.ShowEpisodeOnStatusPage = types.BoolNull()
     }
+    data.DefaultAssignToUserEmail = personEmailAfterLookup(ctx, d.client, data.DefaultAssignToUserId, data.DefaultAssignToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

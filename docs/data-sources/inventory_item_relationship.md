@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_inventory_item_relationship Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Directed relationships between telemetry entities (runs-on, member-of, hosted-on, part-of, instance-of), inferred from resource co-occurrence.
 ---

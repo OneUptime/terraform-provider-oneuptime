@@ -22,11 +22,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &CodeRepositoryResource{}
 var _ resource.ResourceWithImportState = &CodeRepositoryResource{}
+var _ resource.ResourceWithModifyPlan = &CodeRepositoryResource{}
 
 func NewCodeRepositoryResource() resource.Resource {
     return &CodeRepositoryResource{}
@@ -114,6 +117,9 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("GitHub", "GitLab", "Forgejo", "Git"),
+                },
             },
             "organization_name": schema.StringAttribute{
                 MarkdownDescription: "The organization, group or user that owns this repository, as its host names it (a GitLab group's full path, such as my-group/backend).",
@@ -168,6 +174,7 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_runner"),
             },
             "is_global_runner_picked": schema.BoolAttribute{
                 MarkdownDescription: "Whether this repository runs on a global Runner, one OneUptime runs for every project, even when the project has a default Runner. Read only when the repository picks no Runner of its own. Unset, a repository that picks no Runner follows the project's default Runner, and runs on a global Runner while there is none.",
@@ -182,6 +189,7 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -217,6 +225,9 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Review", "Link", "ReviewEvenIfPublic"),
+                },
             },
             "production_review_llm_provider_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the LLM provider OneUptime AI reads this repository's pull requests with in its production reviews. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
@@ -225,6 +236,7 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_llm_provider"),
             },
             "repository_url": schema.StringAttribute{
                 MarkdownDescription: "The repository's address: its page on GitHub, GitLab or Forgejo, or the HTTPS address a Git repository is cloned with.",
@@ -238,15 +250,17 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
             "secret_token": schema.StringAttribute{
                 MarkdownDescription: "Secret token used to verify incoming webhooks.",
                 Optional: true,
+                Sensitive: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -264,6 +278,9 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "git_hub_app_installation_id": schema.StringAttribute{
                 MarkdownDescription: "The GitHub App installation ID used to authenticate with this repository.",
@@ -282,6 +299,17 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *CodeRepositoryResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *CodeRepositoryResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1254,6 +1282,7 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

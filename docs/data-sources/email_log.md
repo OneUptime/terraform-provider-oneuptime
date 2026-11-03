@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_email_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Notification Logs"
 description: |-
   Logs of all the Email sent out to all users and subscribers for this project.
 ---

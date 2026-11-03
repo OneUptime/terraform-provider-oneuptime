@@ -68,6 +68,7 @@ func (d *ApiKeyPermissionDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of API Key resource in which this object belongs. The ID of a `oneuptime_api_key`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_api_key"),
             },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
@@ -77,18 +78,19 @@ func (d *ApiKeyPermissionDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "permission": schema.StringAttribute{
-                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this permission is scoped at. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels that limit the permission to the resources carrying one of them. Empty means every resource. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "is_block_permission": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key], Update: [Project Owner, Project Admin, Edit API Key Permissions]",
+                MarkdownDescription: "When on, the permission is taken away instead of given. A block permission always wins over one that gives it.",
                 Optional: true,
                 Computed: true,
             },
@@ -96,16 +98,19 @@ func (d *ApiKeyPermissionDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the custom role this permission comes from. Empty when the permission was given to the API key directly. The ID of a `oneuptime_custom_role`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_custom_role"),
             },
             "api_key_custom_role_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the custom role given to the API key that brought this permission. Empty when the permission was given to the API key directly. The ID of a `oneuptime_api_key_custom_role`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_api_key_custom_role"),
             },
             "custom_role_permission_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the custom role's own permission this one copies. Empty when the permission was given to the API key directly. The ID of a `oneuptime_custom_role_permission`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_custom_role_permission"),
             },
         },
     }

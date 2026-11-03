@@ -101,7 +101,7 @@ func (d *CustomDataTypeDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "keywords": schema.StringAttribute{
-                MarkdownDescription: "Words that, near a value, confirm it is this type. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Words that, near a value, confirm it is this type. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "requires_keyword": schema.BoolAttribute{
@@ -110,7 +110,7 @@ func (d *CustomDataTypeDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "name_hints": schema.StringAttribute{
-                MarkdownDescription: "Field, column and attribute names that hold this type, such as employee id. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Field, column and attribute names that hold this type, such as employee id. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "validator": schema.StringAttribute{
@@ -127,6 +127,7 @@ func (d *CustomDataTypeDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the user who created this custom data type. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

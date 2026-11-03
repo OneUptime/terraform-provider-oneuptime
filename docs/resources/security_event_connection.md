@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_event_connection Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Managed connections to SIEM, EDR, cloud security and identity products. Records are polled on an interval and ingested as security events.
 ---
@@ -14,7 +14,7 @@ Managed connections to SIEM, EDR, cloud security and identity products. Records 
 ```terraform
 resource "oneuptime_security_event_connection" "example" {
   name           = "Example security event connection"
-  provider_value = "Example short text"
+  provider_value = "microsoft-sentinel"
   secrets        = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
   description    = "Managed by Terraform"
 }
@@ -25,7 +25,7 @@ resource "oneuptime_security_event_connection" "example" {
 ### Required
 
 - `name` (String) Friendly name for this connection.
-- `provider_value` (String) Which security product this connection polls, e.g. 'microsoft-sentinel' or 'crowdstrike-falcon'. Fixed once created.
+- `provider_value` (String) Which security product this connection polls, e.g. 'microsoft-sentinel' or 'crowdstrike-falcon'. Fixed once created. Allowed values: `microsoft-sentinel`, `microsoft-defender-xdr`, `crowdstrike-falcon`, `splunk`, `elastic-security`, `aws-security-hub`, `okta`, `google-secops`, `microsoft-entra-id`, `google-workspace`.
 - `secrets` (String, Sensitive) Provider-specific secrets (client secret, API token, secret access key) as a JSON object. Encrypted at rest and never returned by the API.
 
 ### Optional
@@ -45,7 +45,7 @@ resource "oneuptime_security_event_connection" "example" {
 - `id` (String) Unique identifier for the resource.
 - `last_error` (String) The most recent poll error with credentials redacted, if any. Cleared on the next successful poll.
 - `last_event_ingested_at` (String) When a new security event was last imported from this connection.
-- `last_poll_result` (String) The latest scheduled or on-demand poll result with counts and warnings. A JSON value: write it with `jsonencode()`.
+- `last_poll_result` (String) The latest scheduled or on-demand poll result with counts and warnings. A JSON value: read it with `jsondecode()`.
 - `last_polled_at` (String) When this connection was last polled. Null means it has never run.
 - `last_successful_poll_at` (String) When a complete poll last finished successfully, including an empty result.
 - `project_id` (String) ID of the project this connection belongs to. The ID of a `oneuptime_project`.

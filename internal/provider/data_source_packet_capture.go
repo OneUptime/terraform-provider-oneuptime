@@ -79,11 +79,13 @@ func (d *PacketCaptureDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the probe that runs the capture: one of the project's own probes, with packet capture turned on. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "network_device_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the network device the capture was started from, if it was started from a device's page. The ID of a `oneuptime_network_device`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_device"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "The interface and the filter of the capture, written by OneUptime: eth0: host 10.0.0.5.",
@@ -156,6 +158,7 @@ func (d *PacketCaptureDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

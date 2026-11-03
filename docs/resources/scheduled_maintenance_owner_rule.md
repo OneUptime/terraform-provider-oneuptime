@@ -42,7 +42,8 @@ resource "oneuptime_scheduled_maintenance_owner_rule" "example" {
 - `monitors` (Set of String) Only trigger for scheduled maintenance events on these monitors. Leave empty to match events on any monitor. IDs of `oneuptime_monitor` resources.
 - `notify_owners` (Boolean) Send notifications to owner users and teams when they are added by this rule. Defaults to `true`.
 - `owner_teams` (Set of String) Teams to add as owners on the scheduled maintenance event when this rule matches. IDs of `oneuptime_team` resources.
-- `owner_users` (Set of String) Users to add as owners on the scheduled maintenance event when this rule matches. IDs of `oneuptime_user` records.
+- `owner_user_emails` (Set of String) The email addresses of the people in `owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `owner_users` (Set of String) Users to add as owners on the scheduled maintenance event when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.
 - `scheduled_maintenance_labels` (Set of String) Only trigger for events that have at least one of these labels. Leave empty to match regardless of event labels. IDs of `oneuptime_label` resources.
 - `title_pattern` (String) Regex (case-insensitive) matched against the scheduled maintenance event title. Leave empty to match any title.
 

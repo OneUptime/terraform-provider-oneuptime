@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_recommendation_dismissal Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Organization"
 description: |-
   Recommendations your team has dismissed. Dismissing hides a recommendation for everyone on the project until it is restored; it never deletes anything that was already created from it.
 ---

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_llm_provider Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   Manage LLM Provider configurations. Connect to OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAI-compatible servers (e.g. vLLM, LocalAI), or other LLM providers to enable AI features.
 ---
@@ -42,7 +42,7 @@ data "oneuptime_llm_provider" "by_id" {
 
 ### Read-Only
 
-- `additional_params` (String) Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. Read only by project owners and admins, like the API key. A JSON value: write it with `jsonencode()`.
+- `additional_params` (String) Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. Read only by project owners and admins, like the API key. A JSON value: read it with `jsondecode()`.
 - `api_key` (String, Sensitive) The API key for the LLM provider. Required for OpenAI, Azure OpenAI / Microsoft Foundry (one of the resource's keys), Anthropic, Groq, and Mistral.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of the project this LLM belongs to. If null, it is a global LLM.

@@ -14,9 +14,9 @@ Connect and manage code repositories from GitHub, GitLab, Forgejo, Gitea and any
 ```terraform
 resource "oneuptime_code_repository" "example" {
   name                 = "Example code repository"
-  repository_hosted_at = "Example short text"
-  organization_name    = "Example short text"
-  repository_name      = "Example short text"
+  repository_hosted_at = "GitHub"
+  organization_name    = "my-organization"
+  repository_name      = "my-backend-api"
   description          = "Managed by Terraform"
 }
 ```
@@ -27,7 +27,7 @@ resource "oneuptime_code_repository" "example" {
 
 - `name` (String) A friendly name for this code repository.
 - `organization_name` (String) The organization, group or user that owns this repository, as its host names it (a GitLab group's full path, such as my-group/backend).
-- `repository_hosted_at` (String) Where this repository is hosted, and so how OneUptime reaches it: GitHub (the GitHub App), GitLab, Forgejo (Forgejo, Gitea and Codeberg) or Git (any Git server over HTTPS).
+- `repository_hosted_at` (String) Where this repository is hosted, and so how OneUptime reaches it: GitHub (the GitHub App), GitLab, Forgejo (Forgejo, Gitea and Codeberg) or Git (any Git server over HTTPS). Allowed values: `GitHub`, `GitLab`, `Forgejo`, `Git`.
 - `repository_name` (String) The name of the repository.
 
 ### Optional
@@ -38,14 +38,14 @@ resource "oneuptime_code_repository" "example" {
 - `is_git_hub_commands_enabled` (Boolean) Whether the OneUptime GitHub App acts on mentions, assignments and trigger labels in this repository. Only people with write access to the repository can command it, and it never merges anything. On by default. Defaults to `true`.
 - `is_global_runner_picked` (Boolean) Whether this repository runs on a global Runner, one OneUptime runs for every project, even when the project has a default Runner. Read only when the repository picks no Runner of its own. Unset, a repository that picks no Runner follows the project's default Runner, and runs on a global Runner while there is none.
 - `is_production_review_enabled` (Boolean) Whether OneUptime comments on this repository's pull requests with what production says about the code they change: the exceptions thrown in it, how busy and slow the operations it runs are, and the incidents and deploys around it. Only pull requests from people who can write to the repository are reviewed on their own.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `main_branch_name` (String) The name of the main/default branch.
 - `max_open_fix_pull_requests` (Number) Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means no cap; 0 blocks AI fix pull requests for this repository entirely.
 - `production_review_llm_provider_id` (String) ID of the LLM provider OneUptime AI reads this repository's pull requests with in its production reviews. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.
-- `production_review_pull_request_content` (String) What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository.
+- `production_review_pull_request_content` (String) What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository. Allowed values: `Review`, `Link`, `ReviewEvenIfPublic`.
 - `repository_url` (String) The repository's address: its page on GitHub, GitLab or Forgejo, or the HTTPS address a Git repository is cloned with.
 - `runner_id` (String) ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means the project's default Runner when it has one, and otherwise a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.
-- `secret_token` (String) Secret token used to verify incoming webhooks.
+- `secret_token` (String, Sensitive) Secret token used to verify incoming webhooks.
 - `setup_command` (String) Optional. Leave it empty: the code agent learns how to set up, build and test the repository from the repository itself (its AGENTS.md first) and checks its change that way. When set, a Runner of the project's own also runs it at the repository root, in the cloned workspace, to install dependencies before the build and test commands check an AI-authored fix (e.g. 'npm ci').
 - `test_command` (String) Optional. Leave it empty: the code agent learns how to test the repository from the repository itself (its AGENTS.md first) and checks its change that way. When set, a Runner of the project's own also runs it at the repository root to run the test suite against an AI-authored fix (e.g. 'npm test'); a failure is fed back to the code agent for bounded repair attempts before the pull request opens.
 

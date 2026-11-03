@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_device_auto_import_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Automatically import matching hosts from network device discovery scan results as Network Devices and optionally provision a monitor from a template
 ---

@@ -42,7 +42,6 @@ data "oneuptime_status_page" "by_id" {
 - `dark_theme_logo_file_id` (String) Status Page Dark Theme Logo File ID. The ID of a `oneuptime_file`.
 - `default_language` (String) Default language that the status page is shown in when a visitor arrives for the first time.
 - `description` (String) Friendly description that will help you remember.
-- `embedded_overall_status_token` (String) Security token required to access the embedded overall status badge. This token must be provided in the URL.
 - `enable_custom_subscriber_email_notification_footer_text` (Boolean) Enable custom footer text in subscriber email notifications.
 - `enable_email_subscribers` (Boolean) Can email subscribers subscribe to this Status Page?
 - `enable_embedded_overall_status` (Boolean) Enable embedded overall status badge that can be displayed on external websites?
@@ -101,15 +100,16 @@ data "oneuptime_status_page" "by_id" {
 
 - `archived_at` (String) When this status page was archived. Empty while it is not archived.
 - `created_at` (String) Date and Time when the object was created.
-- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `custom_fields` (String) Custom Fields on this resource. A JSON value: read it with `jsondecode()`.
 - `default_bar_color` (String) Default color of the bar on the overview page.
 - `downtime_monitor_statuses` (Set of String) List of monitors statuses that are considered as "down" for this status page. IDs of `oneuptime_monitor_status` resources.
-- `enabled_languages` (String) Languages offered in the footer language switcher. Leave empty to offer all supported languages. A JSON value: write it with `jsonencode()`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `embedded_overall_status_token` (String, Sensitive) Security token required to access the embedded overall status badge. This token must be provided in the URL.
+- `enabled_languages` (String) Languages offered in the footer language switcher. Leave empty to offer all supported languages. A JSON value: read it with `jsondecode()`.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `master_password` (String, Sensitive) Password required to unlock a private status page. This value is stored as a secure hash.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `report_recurring_interval` (String) How often a report goes out. Left out when reports are turned on, it is every month. A JSON value: write it with `jsonencode()`.
+- `report_recurring_interval` (String) How often a report goes out. Left out when reports are turned on, it is every month. A JSON value: read it with `jsondecode()`.
 - `report_start_date_time` (String) When the first report goes out. Every later one follows it by the recurring interval, at the same time of day. Left out when reports are turned on, it is 09:00 in the report timezone at the start of the next period of the interval: the next 1st of the month for a monthly schedule (the default), the next Monday for a weekly one, the next day for a daily one and the next 1 January for a yearly one. An hourly schedule starts at the next full hour.
 - `send_next_report_by` (String) When the next report goes out. The server works it out from the schedule.
-- `subscriber_timezones` (String) Timezones of subscribers to this status page. A JSON value: write it with `jsonencode()`.
+- `subscriber_timezones` (String) Timezones of subscribers to this status page. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

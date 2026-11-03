@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_trace_scrub_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Configure rules to automatically detect and scrub sensitive data (PII) from spans at ingest time.
 ---

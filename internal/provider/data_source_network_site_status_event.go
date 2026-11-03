@@ -67,11 +67,13 @@ func (d *NetworkSiteStatusEventDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "Relation to Network Site ID Resource in which this object belongs. The ID of a `oneuptime_network_site`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "monitor_status_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor Status ID Resource in which this object belongs. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "starts_at": schema.StringAttribute{
                 MarkdownDescription: "When did this status change?",
@@ -85,6 +87,7 @@ func (d *NetworkSiteStatusEventDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

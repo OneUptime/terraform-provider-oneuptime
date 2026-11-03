@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_docker_host_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your Docker hosts.
 ---
@@ -22,8 +22,8 @@ resource "oneuptime_docker_host_team_owner" "example" {
 
 ### Required
 
-- `docker_host_id` (String) ID of your OneUptime Docker Host in which this object belongs. The ID of a `oneuptime_docker_host`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `docker_host_id` (String) ID of the Docker host the team owns. The ID of a `oneuptime_docker_host`.
+- `team_id` (String) ID of the team that owns the Docker host. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_docker_host_team_owner" "example" {
 
 ## Import
 
-Import an existing docker host team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing docker host team owner by its docker host and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_docker_host_team_owner.example
-  id = "<id>"
+  id = "<docker_host_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_docker_host_team_owner.example <id>
+terraform import oneuptime_docker_host_team_owner.example <docker_host_id>/<team_id>
 ```
+
+Its own ID works too.

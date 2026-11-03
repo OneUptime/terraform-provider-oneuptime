@@ -20,11 +20,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ExceptionResource{}
 var _ resource.ResourceWithImportState = &ExceptionResource{}
+var _ resource.ResourceWithModifyPlan = &ExceptionResource{}
 
 func NewExceptionResource() resource.Resource {
     return &ExceptionResource{}
@@ -74,6 +77,7 @@ type ExceptionResourceModel struct {
     MergedIntoTelemetryExceptionId types.String `tfsdk:"merged_into_telemetry_exception_id"`
     MergedAt RFC3339Value `tfsdk:"merged_at"`
     MergedByUserId types.String `tfsdk:"merged_by_user_id"`
+    AssignToUserEmail types.String `tfsdk:"assign_to_user_email"`
 }
 
 func (r *ExceptionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -115,6 +119,9 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("OpenTelemetry", "Monitor", "NetworkDevice", "Alert", "Incident", "ScheduledMaintenance", "ServiceLevelObjective", "Host", "DockerHost", "PodmanHost", "KubernetesCluster", "ProxmoxCluster", "CephCluster", "StorageArray", "DockerSwarmCluster", "VMwareVCenter", "IoTDevice", "ServerlessFunction", "CloudResource", "RealUserMonitor", "DatabaseServer", "Unknown"),
+                },
             },
             "message": schema.StringAttribute{
                 MarkdownDescription: "Exception message that was thrown by the telemetry service.",
@@ -154,6 +161,7 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -163,16 +171,15 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "assign_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assign_to_user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDValidators("assign_to_user_email", false),
             },
             "assign_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "Team ID who this exception is assigned to. The ID of a `oneuptime_team`.",
@@ -181,6 +188,7 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "is_resolved": schema.BoolAttribute{
                 MarkdownDescription: "Is this exception resolved?",
@@ -206,6 +214,7 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -239,6 +248,7 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -310,7 +320,7 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "ai_explanation": schema.StringAttribute{
-                MarkdownDescription: "OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -332,8 +342,34 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "ID of the user who merged this exception into another. The ID of a `oneuptime_user` (see the data source).",
                 Computed: true,
             },
+            "assign_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `assign_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("assign_to_user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this exception names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ExceptionResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "assign_to_user_id",
+        email:    "assign_to_user_email",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ExceptionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -375,6 +411,11 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.AssignToUserId, data.AssignToUserEmail, "assign_to_user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -462,6 +503,19 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.AssignToUserId.IsUnknown() {
+        created := exceptionResponse
+        if wrapper, ok := exceptionResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["assignToUserId"]); id != "" {
+            data.AssignToUserId = types.StringValue(id)
+        } else {
+            data.AssignToUserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -1464,9 +1518,12 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.AssignToUserEmail = personEmailAfterWrite(ctx, r.client, data.AssignToUserId, data.AssignToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1522,6 +1579,10 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
         "mergedByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorAssignToUserId := data.AssignToUserId
+    priorAssignToUserEmail := data.AssignToUserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/telemetry-exception/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -2466,6 +2527,8 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.AssignToUserEmail = personEmailAfterRead(ctx, r.client, priorAssignToUserId, data.AssignToUserId, priorAssignToUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2497,6 +2560,11 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.AssignToUserId, data.AssignToUserEmail, "assign_to_user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     exceptionRequest := map[string]interface{}{
@@ -3558,6 +3626,8 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.AssignToUserEmail = personEmailAfterWrite(ctx, r.client, data.AssignToUserId, data.AssignToUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -3656,6 +3726,9 @@ func (r *ExceptionResource) keepPlannedValues(data *ExceptionResourceModel, plan
     }
     if config.ResolvedInReleaseAfter.IsNull() && !plan.ResolvedInReleaseAfter.IsUnknown() {
         data.ResolvedInReleaseAfter = plan.ResolvedInReleaseAfter
+    }
+    if config.AssignToUserEmail.IsNull() && !plan.AssignToUserEmail.IsUnknown() {
+        data.AssignToUserEmail = plan.AssignToUserEmail
     }
 }
 

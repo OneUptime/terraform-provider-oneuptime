@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &DatabaseEndpointResource{}
 var _ resource.ResourceWithImportState = &DatabaseEndpointResource{}
+var _ resource.ResourceWithModifyPlan = &DatabaseEndpointResource{}
 
 func NewDatabaseEndpointResource() resource.Resource {
     return &DatabaseEndpointResource{}
@@ -77,6 +78,7 @@ func (r *DatabaseEndpointResource) schemaDefinition() schema.Schema {
             "database_server_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the database this endpoint belongs to. The ID of a `oneuptime_database`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_database"),
             },
             "endpoint": schema.StringAttribute{
                 MarkdownDescription: "Canonical endpoint of the database: host:port, with an @cluster qualifier for Kubernetes-internal names and private IPs (e.g. orders-db.data.svc.cluster.local:5432@prod-cluster). What you type is canonicalized; the default port of the engine is filled in.",
@@ -126,6 +128,17 @@ func (r *DatabaseEndpointResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *DatabaseEndpointResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *DatabaseEndpointResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -483,6 +496,7 @@ func (r *DatabaseEndpointResource) Create(ctx context.Context, req resource.Crea
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

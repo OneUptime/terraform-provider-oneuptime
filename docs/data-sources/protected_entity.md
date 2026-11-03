@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_protected_entity Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Users and hosts that security playbooks never contain, such as break-glass accounts, domain controllers and VPN gateways.
 ---
@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_protected_entity" "example" {
-  entity_type = "example-entity-type"
+  entity_type = "User"
 }
 
 # Or by id:

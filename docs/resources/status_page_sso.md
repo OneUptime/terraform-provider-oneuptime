@@ -16,11 +16,11 @@ resource "oneuptime_status_page_sso" "example" {
   status_page_id     = oneuptime_status_page.example.id
   name               = "Example status page sso"
   description        = "Managed by Terraform"
-  signature_method   = "Example short text"
-  digest_method      = "Example short text"
+  signature_method   = "RSA-SHA1"
+  digest_method      = "SHA1"
   sign_on_url        = "https://www.example.com/path/to/resource?param=value"
-  issuer_url         = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
-  public_certificate = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
+  issuer_url         = "https://idp.example.com/saml/metadata"
+  public_certificate = "-----BEGIN CERTIFICATE-----\nMIIDXTCCAkWgAwIBAgIJAKL0UG+mRKU...\n-----END CERTIFICATE-----"
 }
 ```
 
@@ -28,19 +28,19 @@ resource "oneuptime_status_page_sso" "example" {
 
 ### Required
 
-- `description` (String)
-- `digest_method` (String)
-- `issuer_url` (String)
+- `description` (String) What this sign-in is for, such as which identity provider it uses.
+- `digest_method` (String) The digest algorithm your identity provider's SAML signatures use. Allowed values: `SHA1`, `SHA256`, `SHA384`, `SHA512`.
+- `issuer_url` (String) Your identity provider's issuer (entity ID), as its SAML responses name it.
 - `name` (String) Any friendly name of this object.
-- `public_certificate` (String)
-- `sign_on_url` (String)
-- `signature_method` (String)
+- `public_certificate` (String) Your identity provider's signing certificate, in PEM, to check its SAML responses with.
+- `sign_on_url` (String) Your identity provider's single sign-on URL, where visitors are sent to sign in.
+- `signature_method` (String) The algorithm your identity provider signs SAML responses with. Allowed values: `RSA-SHA1`, `RSA-SHA256`, `RSA-SHA384`, `RSA-SHA512`.
 - `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
 
 ### Optional
 
-- `is_enabled` (Boolean) Defaults to `false`.
-- `is_tested` (Boolean) Defaults to `false`.
+- `is_enabled` (Boolean) When on, visitors of a private status page can sign in with this provider. Defaults to `false`.
+- `is_tested` (Boolean) Whether a sign-in with this provider has been tested. It does not turn the provider on. Defaults to `false`.
 
 ### Read-Only
 

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_store_team_owner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Add teams as owners to your data stores.
 ---
@@ -29,10 +29,10 @@ data "oneuptime_data_store_team_owner" "by_id" {
 ### Optional
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
-- `data_store_id` (String) ID of your OneUptime Data Store in which this object belongs. The ID of a `oneuptime_data_store`.
+- `data_store_id` (String) ID of the data store the team owns. The ID of a `oneuptime_data_store`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `team_id` (String) ID of the team that owns the data store. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

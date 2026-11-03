@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_site Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Self-nesting sites (Account Type -> Region / Franchisee -> Market -> Unit) that group Network Devices into a drill-down hierarchy with a persisted health rollup.
 ---

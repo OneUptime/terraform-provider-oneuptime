@@ -76,13 +76,14 @@ func (d *LogSavedViewDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "ID of the user who created this saved log view. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "query": schema.StringAttribute{
-                MarkdownDescription: "Serialized log query for this saved view. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Serialized log query for this saved view. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "columns": schema.StringAttribute{
-                MarkdownDescription: "Selected log table columns for this saved view. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Selected log table columns for this saved view. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "sort_field": schema.StringAttribute{
@@ -101,7 +102,7 @@ func (d *LogSavedViewDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "time_range": schema.StringAttribute{
-                MarkdownDescription: "Time selection for this saved view — the rolling range token (e.g. Past 1 Hour), or an absolute window when the range is Custom. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Time selection for this saved view — the rolling range token (e.g. Past 1 Hour), or an absolute window when the range is Custom. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_default": schema.BoolAttribute{

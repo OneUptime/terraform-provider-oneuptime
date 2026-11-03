@@ -18,11 +18,14 @@ import (
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &OnCallUserGroupResource{}
 var _ resource.ResourceWithImportState = &OnCallUserGroupResource{}
+var _ resource.ResourceWithModifyPlan = &OnCallUserGroupResource{}
 
 func NewOnCallUserGroupResource() resource.Resource {
     return &OnCallUserGroupResource{}
@@ -84,6 +87,9 @@ func (r *OnCallUserGroupResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Slack", "MicrosoftTeams"),
+                },
             },
             "workspace_group_id": schema.StringAttribute{
                 MarkdownDescription: "The group's id in the workspace: a Slack user group id, such as S0604QSJC, or a Microsoft Teams tag id.",
@@ -123,6 +129,7 @@ func (r *OnCallUserGroupResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "The on-call schedules the group follows: it holds whoever is on call in any of them right now. IDs of `oneuptime_on_call_policy_schedule` resources.",
                 Required: true,
                 ElementType: types.StringType,
+                Validators: recordIDSetValidators("oneuptime_on_call_policy_schedule"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -138,7 +145,7 @@ func (r *OnCallUserGroupResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "sync_state": schema.StringAttribute{
-                MarkdownDescription: "What the last sync came to: who OneUptime put in the group, who is on call but could not be added and why, whether the group is turned off while nobody is on call, and what stopped the sync, if anything. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the last sync came to: who OneUptime put in the group, who is on call but could not be added and why, whether the group is turned off while nobody is on call, and what stopped the sync, if anything. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -161,6 +168,17 @@ func (r *OnCallUserGroupResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *OnCallUserGroupResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *OnCallUserGroupResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -679,6 +697,7 @@ func (r *OnCallUserGroupResource) Create(ctx context.Context, req resource.Creat
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

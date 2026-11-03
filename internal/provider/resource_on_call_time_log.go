@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &OnCallTimeLogResource{}
 var _ resource.ResourceWithImportState = &OnCallTimeLogResource{}
+var _ resource.ResourceWithModifyPlan = &OnCallTimeLogResource{}
 
 func NewOnCallTimeLogResource() resource.Resource {
     return &OnCallTimeLogResource{}
@@ -46,6 +47,7 @@ type OnCallTimeLogResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *OnCallTimeLogResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -121,17 +123,17 @@ func (r *OnCallTimeLogResource) schemaDefinition() schema.Schema {
                 },
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "User ID for which this log belongs. The ID of a `oneuptime_user` (see the data source).",
-                Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
+                MarkdownDescription: "User ID for which this log belongs. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
+                Optional: true,
+                Computed: true,
+                Validators: personIDValidators("user_email", true),
             },
             "starts_at": schema.StringAttribute{
                 MarkdownDescription: "When does this start?",
                 CustomType: RFC3339Type{},
                 Required: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.RequiresReplace(),
                 },
             },
@@ -141,6 +143,7 @@ func (r *OnCallTimeLogResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -165,8 +168,34 @@ func (r *OnCallTimeLogResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this on call time log names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *OnCallTimeLogResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: true,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *OnCallTimeLogResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -208,6 +237,11 @@ func (r *OnCallTimeLogResource) Create(ctx context.Context, req resource.CreateR
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -271,6 +305,19 @@ func (r *OnCallTimeLogResource) Create(ctx context.Context, req resource.CreateR
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := onCallTimeLogResponse
+        if wrapper, ok := onCallTimeLogResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -655,9 +702,12 @@ func (r *OnCallTimeLogResource) Create(ctx context.Context, req resource.CreateR
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -689,6 +739,10 @@ func (r *OnCallTimeLogResource) Read(ctx context.Context, req resource.ReadReque
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-policy-time-log/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -1039,6 +1093,8 @@ func (r *OnCallTimeLogResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1070,6 +1126,11 @@ func (r *OnCallTimeLogResource) Update(ctx context.Context, req resource.UpdateR
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     onCallTimeLogRequest := map[string]interface{}{
@@ -1461,6 +1522,8 @@ func (r *OnCallTimeLogResource) Update(ctx context.Context, req resource.UpdateR
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1524,8 +1587,14 @@ func (r *OnCallTimeLogResource) keepPlannedValues(data *OnCallTimeLogResourceMod
     if config.MoreInfo.IsNull() && !plan.MoreInfo.IsUnknown() {
         data.MoreInfo = plan.MoreInfo
     }
+    if config.UserId.IsNull() && !plan.UserId.IsUnknown() {
+        data.UserId = plan.UserId
+    }
     if config.EndsAt.IsNull() && !plan.EndsAt.IsUnknown() {
         data.EndsAt = plan.EndsAt
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 

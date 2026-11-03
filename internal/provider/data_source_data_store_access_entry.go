@@ -76,6 +76,7 @@ func (d *DataStoreAccessEntryDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "The store that can be reached. The ID of a `oneuptime_data_store`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_data_store"),
             },
             "access_key": schema.StringAttribute{
                 MarkdownDescription: "The principal, level and grant, which identify the entry within its store.",

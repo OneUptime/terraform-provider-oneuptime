@@ -169,7 +169,7 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "discovered_details": schema.StringAttribute{
-                MarkdownDescription: "What discovery found out about this device and has not been saved on it: the SNMP system information and the reverse-DNS and NetBIOS names a discovery scan read at its address, the MAC address a walked router's ARP table gave it, and the IP address its probe resolved its DNS name to - each with how it was read, by which scan, device or probe, and when. Managed by the server; it never changes the device's own details. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What discovery found out about this device and has not been saved on it: the SNMP system information and the reverse-DNS and NetBIOS names a discovery scan read at its address, the MAC address a walked router's ARP table gave it, and the IP address its probe resolved its DNS name to - each with how it was read, by which scan, device or probe, and when. Managed by the server; it never changes the device's own details. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "mac_address": schema.StringAttribute{
@@ -186,26 +186,31 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the Probe that polls this network device. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "site_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Site this network device belongs to. The ID of a `oneuptime_network_site`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "oid_template_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the OID Collection Template this device collects. The ID of a `oneuptime_oid_collection_template`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_oid_collection_template"),
             },
             "snmp_credential_profile_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the SNMP Credential Profile this device is walked with. The ID of a `oneuptime_snmp_credential_profile`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_snmp_credential_profile"),
             },
             "current_monitor_status_id": schema.StringAttribute{
                 MarkdownDescription: "Whats the current status ID of this network device? Stamped from the monitor that polls it. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "monitoring_method": schema.StringAttribute{
                 MarkdownDescription: "How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP.",
@@ -221,11 +226,13 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the Network Device Role this device is assigned. The ID of a `oneuptime_network_device_role`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_device_role"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the monitor that reports this device's health when its monitoring method is Monitor. The ID of a `oneuptime_monitor`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "snmp_version": schema.StringAttribute{
                 MarkdownDescription: "SNMP version to use when polling this device (V1, V2c, V3).",
@@ -234,8 +241,8 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "snmp_community_string": schema.StringAttribute{
                 MarkdownDescription: "Community string used for SNMP v1/v2c polling.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "snmp_port": schema.NumberAttribute{
                 MarkdownDescription: "UDP port used for SNMP polling.",
@@ -243,8 +250,9 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "snmp_v3_auth": schema.StringAttribute{
-                MarkdownDescription: "Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
+                Sensitive: true,
             },
             "snmp_v3_security_level": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 security level: noAuthNoPriv, authNoPriv, or authPriv.",
@@ -263,8 +271,8 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "snmp_v3_auth_key": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 authentication passphrase.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "snmp_v3_priv_protocol": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256.",
@@ -273,8 +281,8 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "snmp_v3_priv_key": schema.StringAttribute{
                 MarkdownDescription: "SNMP v3 privacy (encryption) passphrase.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "is_polling_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether the assigned probe polls this device on a schedule. Disable to pause SNMP polling without deleting the device.",
@@ -297,11 +305,11 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "snmp_oids": schema.StringAttribute{
-                MarkdownDescription: "SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "snmp_tables": schema.StringAttribute{
-                MarkdownDescription: "SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "auto_apply_vendor_health_template": schema.BoolAttribute{
@@ -314,7 +322,7 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "last_walk_log": schema.StringAttribute{
-                MarkdownDescription: "The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "sys_descr": schema.StringAttribute{
@@ -372,19 +380,19 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "cdp_neighbors": schema.StringAttribute{
-                MarkdownDescription: "CDP neighbors discovered on the last SNMP walk, complementing LLDP for the topology graph. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "CDP neighbors discovered on the last SNMP walk, complementing LLDP for the topology graph. Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "lldp_neighbors": schema.StringAttribute{
-                MarkdownDescription: "LLDP neighbors discovered on the last SNMP walk, used to build the network topology graph. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "LLDP neighbors discovered on the last SNMP walk, used to build the network topology graph. Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "snmp_table_snapshot": schema.StringAttribute{
-                MarkdownDescription: "The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "transceiver_snapshot": schema.StringAttribute{
-                MarkdownDescription: "The transceivers (SFP, SFP+, QSFP and similar optics) in this device's ports: who made each one, its temperature, supply voltage, bias current and transmit and receive power against the device's own warning and alarm thresholds, its health, whether it is still detected, and a month of daily received power averages. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The transceivers (SFP, SFP+, QSFP and similar optics) in this device's ports: who made each one, its temperature, supply voltage, bias current and transmit and receive power against the device's own warning and alarm thresholds, its health, whether it is still detected, and a month of daily received power averages. Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -432,6 +440,7 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this network device archived? Archived network devices are hidden from lists but keep collecting telemetry.",
@@ -446,9 +455,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -571,10 +581,6 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["snmpVersion"] = data.SnmpVersion.ValueString()
         filterNames = append(filterNames, "snmp_version = "+fmt.Sprintf("%q", data.SnmpVersion.ValueString()))
     }
-    if !data.SnmpCommunityString.IsNull() && !data.SnmpCommunityString.IsUnknown() {
-        filters["snmpCommunityString"] = data.SnmpCommunityString.ValueString()
-        filterNames = append(filterNames, "snmp_community_string = "+fmt.Sprintf("%q", data.SnmpCommunityString.ValueString()))
-    }
     if !data.SnmpPort.IsNull() && !data.SnmpPort.IsUnknown() {
         filters["snmpPort"] = lookupNumber(data.SnmpPort)
         filterNames = append(filterNames, "snmp_port = "+data.SnmpPort.ValueBigFloat().String())
@@ -591,17 +597,9 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["snmpV3AuthProtocol"] = data.SnmpV3AuthProtocol.ValueString()
         filterNames = append(filterNames, "snmp_v3_auth_protocol = "+fmt.Sprintf("%q", data.SnmpV3AuthProtocol.ValueString()))
     }
-    if !data.SnmpV3AuthKey.IsNull() && !data.SnmpV3AuthKey.IsUnknown() {
-        filters["snmpV3AuthKey"] = data.SnmpV3AuthKey.ValueString()
-        filterNames = append(filterNames, "snmp_v3_auth_key = "+fmt.Sprintf("%q", data.SnmpV3AuthKey.ValueString()))
-    }
     if !data.SnmpV3PrivProtocol.IsNull() && !data.SnmpV3PrivProtocol.IsUnknown() {
         filters["snmpV3PrivProtocol"] = data.SnmpV3PrivProtocol.ValueString()
         filterNames = append(filterNames, "snmp_v3_priv_protocol = "+fmt.Sprintf("%q", data.SnmpV3PrivProtocol.ValueString()))
-    }
-    if !data.SnmpV3PrivKey.IsNull() && !data.SnmpV3PrivKey.IsUnknown() {
-        filters["snmpV3PrivKey"] = data.SnmpV3PrivKey.ValueString()
-        filterNames = append(filterNames, "snmp_v3_priv_key = "+fmt.Sprintf("%q", data.SnmpV3PrivKey.ValueString()))
     }
     if !data.IsPollingEnabled.IsNull() && !data.IsPollingEnabled.IsUnknown() {
         filters["isPollingEnabled"] = data.IsPollingEnabled.ValueBool()

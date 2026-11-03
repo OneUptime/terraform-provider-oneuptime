@@ -40,7 +40,7 @@ data "oneuptime_team_compliance_setting" "by_id" {
 - `alert_severities` (Set of String) Alert and alert episode on-call rules only: the severities members must have a rule for. Leave empty to require every alert severity. IDs of `oneuptime_alert_severity` resources.
 - `created_at` (String) Date and Time when the object was created.
 - `incident_severities` (Set of String) Incident and incident episode on-call rules only: the severities members must have a rule for. Leave empty to require every incident severity. IDs of `oneuptime_incident_severity` resources.
-- `notification_channels` (String) On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Webhook or CustomChannel, which any custom channel that is on meets). Leave empty to accept any channel. A JSON value: write it with `jsonencode()`.
-- `options` (String) Additional options for this compliance rule. A JSON value: write it with `jsonencode()`.
+- `notification_channels` (String) On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Webhook or CustomChannel, which any custom channel that is on meets). Leave empty to accept any channel. A JSON value: read it with `jsondecode()`.
+- `options` (String) Additional options for this compliance rule. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

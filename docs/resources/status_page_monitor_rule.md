@@ -38,7 +38,7 @@ resource "oneuptime_status_page_monitor_rule" "example" {
 - `show_status_history_chart` (Boolean) Show a 90 day uptime history on the resources this rule adds to the status page. Defaults to `true`.
 - `show_uptime_percent` (Boolean) Show uptime percent on the resources this rule adds to the status page. Defaults to `true`.
 - `status_page_group_id` (String) ID of the group that matched monitors are added to. Empty means ungrouped. The ID of a `oneuptime_status_page_group`.
-- `uptime_percent_precision` (String) Precision of the uptime percent shown on the resources this rule adds.
+- `uptime_percent_precision` (String) Precision of the uptime percent shown on the resources this rule adds. Allowed values: `99% (No Decimal)`, `99.9% (One Decimal)`, `99.99% (Two Decimal)`, `99.999% (Three Decimal)`.
 
 ### Read-Only
 

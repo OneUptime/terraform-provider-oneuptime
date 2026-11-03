@@ -13,36 +13,50 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &UsersOnCallDutyEscalationRuleDataSource{}
+var _ datasource.DataSource = &EscalationRuleScheduleDataSource{}
 
-func NewUsersOnCallDutyEscalationRuleDataSource() datasource.DataSource {
-    return &UsersOnCallDutyEscalationRuleDataSource{}
+func NewEscalationRuleScheduleDataSource() datasource.DataSource {
+    return &EscalationRuleScheduleDataSource{}
 }
 
-// UsersOnCallDutyEscalationRuleDataSource defines the data source implementation.
-type UsersOnCallDutyEscalationRuleDataSource struct {
+// NewEscalationRuleScheduleLegacyDataSource registers this data source under the
+// name it had before type names kept mixed-case words whole,
+// oneuptime_schedules_on_call_duty_escalation_rule. Deprecated.
+func NewEscalationRuleScheduleLegacyDataSource() datasource.DataSource {
+    return &EscalationRuleScheduleDataSource{isLegacyAlias: true}
+}
+
+// EscalationRuleScheduleDataSource defines the data source implementation.
+type EscalationRuleScheduleDataSource struct {
     client *Client
+    // Registered under the name this data source had before.
+    isLegacyAlias bool
 }
 
-// UsersOnCallDutyEscalationRuleDataSourceModel describes the data source data model.
-type UsersOnCallDutyEscalationRuleDataSourceModel struct {
+// EscalationRuleScheduleDataSourceModel describes the data source data model.
+type EscalationRuleScheduleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     ProjectId types.String `tfsdk:"project_id"`
     OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
+    OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
     OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
-    UserId types.String `tfsdk:"user_id"`
+    PageNextInRotation types.Bool `tfsdk:"page_next_in_rotation"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
-func (d *UsersOnCallDutyEscalationRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_users_on_call_duty_escalation_rule"
+func (d *EscalationRuleScheduleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    if d.isLegacyAlias {
+        resp.TypeName = req.ProviderTypeName + "_schedules_on_call_duty_escalation_rule"
+        return
+    }
+    resp.TypeName = req.ProviderTypeName + "_escalation_rule_schedule"
 }
 
-func (d *UsersOnCallDutyEscalationRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *EscalationRuleScheduleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage on-call duty escalation rule for the on-call policy. Look up an existing users on call duty escalation rule by `id`, or by any of its other arguments (`created_by_user_id`, `on_call_duty_policy_escalation_rule_id`, `on_call_duty_policy_id`, ...): each one set must match, and exactly one users on call duty escalation rule may match them all.",
+        MarkdownDescription: "Add on-call schedules to your escalation rules. Look up an existing escalation rule schedule by `id`, or by any of its other arguments (`created_by_user_id`, `on_call_duty_policy_escalation_rule_id`, `on_call_duty_policy_id`, ...): each one set must match, and exactly one escalation rule schedule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -63,17 +77,25 @@ func (d *UsersOnCallDutyEscalationRuleDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy where this escalation rule belongs. The ID of a `oneuptime_on_call_policy`.",
+                MarkdownDescription: "ID of the on-call policy the escalation rule is in. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
+            },
+            "on_call_duty_policy_schedule_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the on-call schedule the escalation rule pages: whoever is on call in it. The ID of a `oneuptime_on_call_policy_schedule`.",
+                Optional: true,
+                Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Escalation Rule where this user belongs. The ID of a `oneuptime_escalation_rule`.",
+                MarkdownDescription: "ID of the escalation rule that pages the schedule. The ID of a `oneuptime_escalation_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_escalation_rule"),
             },
-            "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user who is in this escalation rule. The ID of a `oneuptime_user` (see the data source).",
+            "page_next_in_rotation": schema.BoolAttribute{
+                MarkdownDescription: "When true, the escalation rule pages the next person in this schedule's rotation - the person after whoever is on call, passing over anyone who is away - instead of whoever is on call. Use it on the level after the one that pages the schedule, so a page nobody acknowledges goes to the backup from the same rotation.",
                 Optional: true,
                 Computed: true,
             },
@@ -81,12 +103,16 @@ func (d *UsersOnCallDutyEscalationRuleDataSource) Schema(ctx context.Context, re
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }
+    if d.isLegacyAlias {
+        resp.Schema.DeprecationMessage = "oneuptime_schedules_on_call_duty_escalation_rule has been renamed to oneuptime_escalation_rule_schedule. Use the new name; the old one keeps working until then."
+    }
 }
 
-func (d *UsersOnCallDutyEscalationRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *EscalationRuleScheduleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -106,8 +132,8 @@ func (d *UsersOnCallDutyEscalationRuleDataSource) Configure(ctx context.Context,
     d.client = client
 }
 
-func (d *UsersOnCallDutyEscalationRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data UsersOnCallDutyEscalationRuleDataSourceModel
+func (d *EscalationRuleScheduleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data EscalationRuleScheduleDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -125,13 +151,17 @@ func (d *UsersOnCallDutyEscalationRuleDataSource) Read(ctx context.Context, req 
         filters["onCallDutyPolicyId"] = data.OnCallDutyPolicyId.ValueString()
         filterNames = append(filterNames, "on_call_duty_policy_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyId.ValueString()))
     }
+    if !data.OnCallDutyPolicyScheduleId.IsNull() && !data.OnCallDutyPolicyScheduleId.IsUnknown() {
+        filters["onCallDutyPolicyScheduleId"] = data.OnCallDutyPolicyScheduleId.ValueString()
+        filterNames = append(filterNames, "on_call_duty_policy_schedule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyScheduleId.ValueString()))
+    }
     if !data.OnCallDutyPolicyEscalationRuleId.IsNull() && !data.OnCallDutyPolicyEscalationRuleId.IsUnknown() {
         filters["onCallDutyPolicyEscalationRuleId"] = data.OnCallDutyPolicyEscalationRuleId.ValueString()
         filterNames = append(filterNames, "on_call_duty_policy_escalation_rule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyEscalationRuleId.ValueString()))
     }
-    if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
-        filters["userId"] = data.UserId.ValueString()
-        filterNames = append(filterNames, "user_id = "+fmt.Sprintf("%q", data.UserId.ValueString()))
+    if !data.PageNextInRotation.IsNull() && !data.PageNextInRotation.IsUnknown() {
+        filters["pageNextInRotation"] = data.PageNextInRotation.ValueBool()
+        filterNames = append(filterNames, "page_next_in_rotation = "+fmt.Sprintf("%t", data.PageNextInRotation.ValueBool()))
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
@@ -141,14 +171,14 @@ func (d *UsersOnCallDutyEscalationRuleDataSource) Read(ctx context.Context, req 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Look the users on call duty escalation rule up either by `id` or by its other arguments, not both.",
+            "Look the escalation rule schedule up either by `id` or by its other arguments, not both.",
         )
         return
     }
     if !hasId && len(filters) == 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Set `id`, or at least one other argument to look the users on call duty escalation rule up by.",
+            "Set `id`, or at least one other argument to look the escalation rule schedule up by.",
         )
         return
     }
@@ -158,27 +188,28 @@ func (d *UsersOnCallDutyEscalationRuleDataSource) Read(ctx context.Context, req 
         "updatedAt": true,
         "projectId": true,
         "onCallDutyPolicyId": true,
+        "onCallDutyPolicyScheduleId": true,
         "onCallDutyPolicyEscalationRuleId": true,
-        "userId": true,
+        "pageNextInRotation": true,
         "createdByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/on-call-duty-policy-escalation-rule-user/" + data.Id.ValueString() + "/get-item"
+        readPath := "/on-call-duty-policy-escalation-rule-schedule/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read users_on_call_duty_escalation_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read escalation_rule_schedule, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No users on call duty escalation rule found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No escalation rule schedule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read users_on_call_duty_escalation_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read escalation_rule_schedule: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -194,28 +225,28 @@ func (d *UsersOnCallDutyEscalationRuleDataSource) Read(ctx context.Context, req 
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/on-call-duty-policy-escalation-rule-user/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/on-call-duty-policy-escalation-rule-schedule/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list users_on_call_duty_escalation_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list escalation_rule_schedule, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list users_on_call_duty_escalation_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list escalation_rule_schedule: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No users on call duty escalation rule matches %s.", describeLookup(filterNames)))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No escalation rule schedule matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one users on call duty escalation rule matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one escalation rule schedule matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for users_on_call_duty_escalation_rule.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for escalation_rule_schedule.")
             return
         }
         item = first
@@ -307,6 +338,23 @@ func (d *UsersOnCallDutyEscalationRuleDataSource) Read(ctx context.Context, req 
     } else {
         data.OnCallDutyPolicyId = types.StringNull()
     }
+    if obj, ok := item["onCallDutyPolicyScheduleId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OnCallDutyPolicyScheduleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OnCallDutyPolicyScheduleId = types.StringNull()
+        }
+    } else if val, ok := item["onCallDutyPolicyScheduleId"].(string); ok {
+        data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+    } else {
+        data.OnCallDutyPolicyScheduleId = types.StringNull()
+    }
     if obj, ok := item["onCallDutyPolicyEscalationRuleId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
@@ -324,22 +372,10 @@ func (d *UsersOnCallDutyEscalationRuleDataSource) Read(ctx context.Context, req 
     } else {
         data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
     }
-    if obj, ok := item["userId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.UserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.UserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.UserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.UserId = types.StringNull()
-        }
-    } else if val, ok := item["userId"].(string); ok {
-        data.UserId = types.StringValue(val)
+    if val, ok := item["pageNextInRotation"].(bool); ok {
+        data.PageNextInRotation = types.BoolValue(val)
     } else {
-        data.UserId = types.StringNull()
+        data.PageNextInRotation = types.BoolNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

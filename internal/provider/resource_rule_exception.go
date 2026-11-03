@@ -16,11 +16,14 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &RuleExceptionResource{}
 var _ resource.ResourceWithImportState = &RuleExceptionResource{}
+var _ resource.ResourceWithModifyPlan = &RuleExceptionResource{}
 
 func NewRuleExceptionResource() resource.Resource {
     return &RuleExceptionResource{}
@@ -79,10 +82,14 @@ func (r *RuleExceptionResource) schemaDefinition() schema.Schema {
             "detection_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the detection rule that skips what this names. The ID of a `oneuptime_detection_rule`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_detection_rule"),
             },
             "kind": schema.StringAttribute{
                 MarkdownDescription: "What the rule skips: Entity (a user, host or IP address), Value (one event field's value) or Time Window (every event between two times).",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Entity", "Value", "Time Window"),
+                },
             },
             "entity_type": schema.StringAttribute{
                 MarkdownDescription: "For an Entity: User, Host or IP Address. The rule skips every event that names it, as who acted, as who was acted on, or among its observables.",
@@ -90,6 +97,9 @@ func (r *RuleExceptionResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("User", "Host", "IP Address", "Domain", "URL", "File Hash", "Process", "Data Store", "Other"),
                 },
             },
             "field_name": schema.StringAttribute{
@@ -114,6 +124,7 @@ func (r *RuleExceptionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -123,6 +134,7 @@ func (r *RuleExceptionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -136,6 +148,7 @@ func (r *RuleExceptionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -161,6 +174,17 @@ func (r *RuleExceptionResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *RuleExceptionResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *RuleExceptionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -667,6 +691,7 @@ func (r *RuleExceptionResource) Create(ctx context.Context, req resource.CreateR
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

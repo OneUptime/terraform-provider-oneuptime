@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_collector_config Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   The OpenTelemetry Collector config OneUptime sends to the hosts it manages, by system and label.
 ---
@@ -30,7 +30,7 @@ resource "oneuptime_collector_config" "example" {
 - `description` (String) What this config collects, for the people who edit it.
 - `labels` (Set of String) Only hosts with at least one of these labels get this config. Leave empty for every host of its system. IDs of `oneuptime_label` resources.
 - `order` (Number) Where this config sits in the list. A host runs the first config in the list that applies to it. A new config is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along. In the dashboard, drag the rows to reorder them.
-- `os_type` (String) The system of the hosts this config is for: linux, windows, darwin (macOS) or any. Defaults to `linux`.
+- `os_type` (String) The system of the hosts this config is for: linux, windows, darwin (macOS) or any. Allowed values: `any`, `linux`, `windows`, `darwin`. Defaults to `linux`.
 
 ### Read-Only
 

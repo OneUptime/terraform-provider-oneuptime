@@ -160,6 +160,7 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.",
@@ -267,7 +268,7 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -275,16 +276,19 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "Current Incident State ID. The ID of a `oneuptime_incident_state`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_state"),
             },
             "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "Incident Severity ID. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "change_monitor_status_to_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the incident is created. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "subscriber_notification_status_on_incident_created": schema.StringAttribute{
                 MarkdownDescription: "Status of notification sent to subscribers about this incident.",
@@ -312,7 +316,7 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
@@ -353,9 +357,10 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "ID of the incident's postmortem status. Left out on create, the postmortem starts in the project's not started status - or its draft status when the incident is created with a postmortem note, its completed status when that note is published on a status page. The ID of a `oneuptime_postmortem_status`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_postmortem_status"),
             },
             "created_state_log": schema.StringAttribute{
-                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_criteria_id": schema.StringAttribute{
@@ -374,17 +379,18 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "series_labels": schema.StringAttribute{
-                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "monitor_summary": schema.StringAttribute{
-                MarkdownDescription: "The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_probe_id": schema.StringAttribute{
                 MarkdownDescription: "If this incident was created by a Probe, this is the ID of the probe that created it. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "is_created_automatically": schema.BoolAttribute{
                 MarkdownDescription: "Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?",
@@ -406,7 +412,7 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "telemetry_query": schema.StringAttribute{
-                MarkdownDescription: "Telemetry query for this incident. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Telemetry query for this incident. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "incident_number": schema.NumberAttribute{
@@ -435,7 +441,7 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "status_pages_notified_on_creation": schema.StringAttribute{
-                MarkdownDescription: "IDs of the status pages whose subscribers were sent the notification that this incident was created. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "IDs of the status pages whose subscribers were sent the notification that this incident was created. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_private": schema.BoolAttribute{
@@ -461,6 +467,7 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "ID of the latest Incident Episode this incident is a member of. Read-only: set by OneUptime when the incident is added to or removed from an episode's members (Incident Episode Member). The ID of a `oneuptime_incident_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_episode"),
             },
         },
     }

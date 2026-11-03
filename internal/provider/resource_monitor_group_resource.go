@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &MonitorGroupResourceResource{}
 var _ resource.ResourceWithImportState = &MonitorGroupResourceResource{}
+var _ resource.ResourceWithModifyPlan = &MonitorGroupResourceResource{}
 
 func NewMonitorGroupResourceResource() resource.Resource {
     return &MonitorGroupResourceResource{}
@@ -75,10 +76,12 @@ func (r *MonitorGroupResourceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor_group"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor ID Resource in which this object belongs. The ID of a `oneuptime_monitor`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -102,6 +105,17 @@ func (r *MonitorGroupResourceResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *MonitorGroupResourceResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *MonitorGroupResourceResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -388,6 +402,7 @@ func (r *MonitorGroupResourceResource) Create(ctx context.Context, req resource.
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

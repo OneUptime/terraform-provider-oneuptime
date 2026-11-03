@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_workspace_notification_summary Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Slack, Teams & Video Calls"
 description: |-
   Recurring summary reports for incidents and alerts sent to Slack or Microsoft Teams
 ---
@@ -14,8 +14,8 @@ Recurring summary reports for incidents and alerts sent to Slack or Microsoft Te
 ```terraform
 resource "oneuptime_workspace_notification_summary" "example" {
   name                   = "Example workspace notification summary"
-  workspace_type         = "This is an example of longer text content that might be stored in this field."
-  summary_type           = "Example short text"
+  workspace_type         = "Slack"
+  summary_type           = "Incident"
   number_of_days_of_data = 42
   is_enabled             = true
   description            = "Managed by Terraform"
@@ -29,14 +29,14 @@ resource "oneuptime_workspace_notification_summary" "example" {
 - `is_enabled` (Boolean) Is this summary rule enabled?
 - `name` (String) Name of the Summary Rule.
 - `number_of_days_of_data` (Number) How many days of data to include in the summary.
-- `summary_type` (String) Type of summary - Incident, Alert, Incident Episode, or Alert Episode.
-- `workspace_type` (String) Type of Workspace - Slack, Microsoft Teams, etc.
+- `summary_type` (String) Type of summary - Incident, Alert, Incident Episode, or Alert Episode. Allowed values: `Incident`, `Alert`, `Incident Episode`, `Alert Episode`.
+- `workspace_type` (String) Type of Workspace - Slack, Microsoft Teams, etc. Allowed values: `Slack`, `MicrosoftTeams`.
 
 ### Optional
 
 - `channel_names` (String) List of channel names to post the summary to. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of the Summary Rule.
-- `filter_condition` (String) How to combine filters - Any or All.
+- `filter_condition` (String) How to combine filters - Any or All. Allowed values: `All`, `Any`.
 - `filters` (String) Filter conditions for which items to include in the summary. A JSON value: write it with `jsonencode()`.
 - `last_sent_at` (String) When the last summary was sent.
 - `next_send_at` (String) When the next summary should be sent.

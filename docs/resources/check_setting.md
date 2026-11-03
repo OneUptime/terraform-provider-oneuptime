@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_check_setting Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   How a project tunes a built-in check: turn it off, or give its failures another severity.
 ---
@@ -27,7 +27,7 @@ resource "oneuptime_check_setting" "example" {
 
 - `is_enabled` (Boolean) Whether the check runs. Defaults to `true`.
 - `note` (String) Why the check was changed.
-- `severity_override` (String) The severity every failure of the check gets, instead of the one its store's sensitivity sets.
+- `severity_override` (String) The severity every failure of the check gets, instead of the one its store's sensitivity sets. Allowed values: `Critical`, `High`, `Medium`, `Low`.
 
 ### Read-Only
 

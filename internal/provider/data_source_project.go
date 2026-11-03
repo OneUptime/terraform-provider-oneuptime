@@ -218,7 +218,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "payment_provider_promo_code": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The promotion code the project's subscription was started with.",
                 Optional: true,
                 Computed: true,
             },
@@ -226,6 +226,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_feature_flag_monitor_groups_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Is Feature Flag Monitor Groups Enabled.",
@@ -238,7 +239,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "require_sso_for_login": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "When on, the project's members sign in to it with the project's SSO only.",
                 Optional: true,
                 Computed: true,
             },
@@ -481,6 +482,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "ID of the minimum AlertSeverity that triggers automatic investigation. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "ai_daily_autonomous_token_limit": schema.NumberAttribute{
                 MarkdownDescription: "Legacy setting, no longer enforced: autonomous AI work that is not associated with an incident or alert has no daily token limit. Use the Daily Incident AI Token Limit and Daily Alert AI Token Limit instead.",
@@ -521,6 +523,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "ID of the minimum incident severity that is investigated automatically by AI. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "incident_investigation_dedupe_window_minutes": schema.NumberAttribute{
                 MarkdownDescription: "Incidents affecting a monitor that AI investigated within this many minutes are not re-investigated — the first analysis stands. Unset or 0 means no cooldown, so every incident is investigated; at most 1440 minutes (a day).",
@@ -618,11 +621,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "default_metric_downsampling_retention_days": schema.StringAttribute{
-                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "enable_audit_logs": schema.BoolAttribute{

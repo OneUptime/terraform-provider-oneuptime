@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_case_evidence Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Files, links and security events kept on a security case as evidence, each with who added it and when: a file with the SHA-256 of what was uploaded, an event as OneUptime read it when it was kept.
 ---
@@ -45,7 +45,7 @@ data "oneuptime_security_case_evidence" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `event_snapshot` (String) For Event evidence: the security event as OneUptime read it when it was kept - its severity, class, message, who and where - and the hunt that found it. A JSON value: write it with `jsonencode()`.
+- `event_snapshot` (String) For Event evidence: the security event as OneUptime read it when it was kept - its severity, class, message, who and where - and the hunt that found it. A JSON value: read it with `jsondecode()`.
 - `event_time` (String) For Event evidence: when the security event happened.
 - `project_id` (String) ID of the project this evidence belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

@@ -22,6 +22,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ProjectUserProfileResource{}
 var _ resource.ResourceWithImportState = &ProjectUserProfileResource{}
+var _ resource.ResourceWithModifyPlan = &ProjectUserProfileResource{}
 
 func NewProjectUserProfileResource() resource.Resource {
     return &ProjectUserProfileResource{}
@@ -41,6 +42,7 @@ type ProjectUserProfileResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *ProjectUserProfileResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -71,11 +73,10 @@ func (r *ProjectUserProfileResource) schemaDefinition() schema.Schema {
                 },
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of User this profile belongs to. The ID of a `oneuptime_user` (see the data source).",
-                Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
+                MarkdownDescription: "ID of User this profile belongs to. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
+                Optional: true,
+                Computed: true,
+                Validators: personIDValidators("user_email", true),
             },
             "custom_fields": schema.StringAttribute{
                 MarkdownDescription: "Custom Fields for this user in this project. A JSON value: write it with `jsonencode()`.",
@@ -83,6 +84,7 @@ func (r *ProjectUserProfileResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -109,8 +111,34 @@ func (r *ProjectUserProfileResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this project user profile names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ProjectUserProfileResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: true,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ProjectUserProfileResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -152,6 +180,11 @@ func (r *ProjectUserProfileResource) Create(ctx context.Context, req resource.Cr
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -197,6 +230,19 @@ func (r *ProjectUserProfileResource) Create(ctx context.Context, req resource.Cr
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := projectUserProfileResponse
+        if wrapper, ok := projectUserProfileResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -405,10 +451,15 @@ func (r *ProjectUserProfileResource) Create(ctx context.Context, req resource.Cr
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -433,6 +484,10 @@ func (r *ProjectUserProfileResource) Read(ctx context.Context, req resource.Read
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/project-user-profile/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -613,6 +668,8 @@ func (r *ProjectUserProfileResource) Read(ctx context.Context, req resource.Read
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -637,6 +694,11 @@ func (r *ProjectUserProfileResource) Update(ctx context.Context, req resource.Up
     // Use the ID from the current state
     data.Id = state.Id
 
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "custom_fields": !data.CustomFields.Equal(state.CustomFields),
+    }
+
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config ProjectUserProfileResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -644,6 +706,11 @@ func (r *ProjectUserProfileResource) Update(ctx context.Context, req resource.Up
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     projectUserProfileRequest := map[string]interface{}{
@@ -868,6 +935,11 @@ func (r *ProjectUserProfileResource) Update(ctx context.Context, req resource.Up
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
+
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -905,6 +977,9 @@ func (r *ProjectUserProfileResource) Delete(ctx context.Context, req resource.De
 
 func (r *ProjectUserProfileResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields"})...)
 }
 
 
@@ -916,8 +991,14 @@ func (r *ProjectUserProfileResource) ImportState(ctx context.Context, req resour
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
 func (r *ProjectUserProfileResource) keepPlannedValues(data *ProjectUserProfileResourceModel, plan *ProjectUserProfileResourceModel, config *ProjectUserProfileResourceModel) {
+    if config.UserId.IsNull() && !plan.UserId.IsUnknown() {
+        data.UserId = plan.UserId
+    }
     if config.CustomFields.IsNull() && !plan.CustomFields.IsUnknown() {
         data.CustomFields = plan.CustomFields
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 

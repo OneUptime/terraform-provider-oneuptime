@@ -14,7 +14,7 @@ Manage header links on your status page
 ```terraform
 resource "oneuptime_status_page_header_link" "example" {
   status_page_id = oneuptime_status_page.example.id
-  title          = "Example short text"
+  title          = "Documentation"
   link           = "https://short.url/abc123"
 }
 ```

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_case_evidence Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Files, links and security events kept on a security case as evidence, each with who added it and when: a file with the SHA-256 of what was uploaded, an event as OneUptime read it when it was kept.
 ---
@@ -14,7 +14,7 @@ Files, links and security events kept on a security case as evidence, each with 
 ```terraform
 resource "oneuptime_security_case_evidence" "example" {
   security_case_id = oneuptime_security_case.example.id
-  kind             = "Example short text"
+  kind             = "File"
   name             = "Example security case evidence"
   description      = "Managed by Terraform"
 }
@@ -24,7 +24,7 @@ resource "oneuptime_security_case_evidence" "example" {
 
 ### Required
 
-- `kind` (String) What the evidence is: a File uploaded to OneUptime, a Link to evidence kept somewhere else, or an Event bookmarked from Security Events. It can't be changed.
+- `kind` (String) What the evidence is: a File uploaded to OneUptime, a Link to evidence kept somewhere else, or an Event bookmarked from Security Events. It can't be changed. Allowed values: `File`, `Link`, `Event`.
 - `name` (String) What the evidence is, in a few words. A file's own name when none is given.
 - `security_case_id` (String) ID of the case this evidence is kept on. The ID of a `oneuptime_security_case`.
 
@@ -38,7 +38,7 @@ resource "oneuptime_security_case_evidence" "example" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) ID of the person who added the evidence. The ID of a `oneuptime_user` (see the data source).
-- `event_snapshot` (String) For Event evidence: the security event as OneUptime read it when it was kept - its severity, class, message, who and where - and the hunt that found it. A JSON value: write it with `jsonencode()`.
+- `event_snapshot` (String) For Event evidence: the security event as OneUptime read it when it was kept - its severity, class, message, who and where - and the hunt that found it. A JSON value: read it with `jsondecode()`.
 - `event_time` (String) For Event evidence: when the security event happened.
 - `event_uid` (String) For Event evidence: the security event's ID, as its source gave it.
 - `file_name` (String) The file's name as it was uploaded, for File evidence.

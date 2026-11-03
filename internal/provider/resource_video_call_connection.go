@@ -17,11 +17,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &VideoCallConnectionResource{}
 var _ resource.ResourceWithImportState = &VideoCallConnectionResource{}
+var _ resource.ResourceWithModifyPlan = &VideoCallConnectionResource{}
 
 func NewVideoCallConnectionResource() resource.Resource {
     return &VideoCallConnectionResource{}
@@ -101,6 +103,9 @@ func (r *VideoCallConnectionResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Zoom", "GoogleMeet", "MicrosoftTeams", "SlackHuddle", "CustomLink"),
+                },
             },
             "auth_method": schema.StringAttribute{
                 MarkdownDescription: "How this connection signs in to its provider: OAuth when someone connected it by signing in to Zoom, Google or Microsoft (Connect in Project Settings > Workspace > Video Calls), AppCredentials when it uses the project's own app - a Zoom Server-to-Server OAuth app, a Google service account or a Microsoft Entra app registration. Empty for a meeting link. Fixed once created. A connection made by signing in is created by signing in, never through the API.",
@@ -110,6 +115,9 @@ func (r *VideoCallConnectionResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("OAuth", "AppCredentials"),
+                },
             },
             "config": schema.StringAttribute{
                 MarkdownDescription: "Provider-specific, non-secret settings such as the Zoom account and meeting host, the Google Workspace user or the Microsoft Entra tenant and organizer. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.",
@@ -117,6 +125,7 @@ func (r *VideoCallConnectionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -172,6 +181,17 @@ func (r *VideoCallConnectionResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *VideoCallConnectionResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *VideoCallConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -734,6 +754,9 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1213,6 +1236,11 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "config": !data.Config.Equal(state.Config),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config VideoCallConnectionResourceModel
@@ -1712,6 +1740,9 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1748,6 +1779,9 @@ func (r *VideoCallConnectionResource) Delete(ctx context.Context, req resource.D
 
 func (r *VideoCallConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"config"})...)
 }
 
 

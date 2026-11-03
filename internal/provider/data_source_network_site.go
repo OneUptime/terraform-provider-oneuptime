@@ -103,21 +103,25 @@ func (d *NetworkSiteDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "ID of the Network Site Type this site belongs to. The ID of a `oneuptime_network_site_type`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_site_type"),
             },
             "probe_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the probe that polls devices in this site by default. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "snmp_credential_profile_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the SNMP Credential Profile devices in this site inherit. The ID of a `oneuptime_snmp_credential_profile`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_snmp_credential_profile"),
             },
             "parent_site_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the parent Network Site this site is nested under (empty for root sites). The ID of a `oneuptime_network_site`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "materialized_path": schema.StringAttribute{
                 MarkdownDescription: "Slash-separated ancestor IDs of this site (e.g. '/rootId/childId/'). Managed by the server on parent changes; used for subtree queries and rollups.",
@@ -148,6 +152,7 @@ func (d *NetworkSiteDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Whats the current rolled-up status ID of this site? Computed from the devices and child sites below it. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "last_rollup_at": schema.StringAttribute{
                 MarkdownDescription: "When the health rollup for this site was last computed.",
@@ -172,6 +177,7 @@ func (d *NetworkSiteDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "ID of the severity used for site-unhealthy alerts. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "current_active_alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the currently open site-unhealthy alert, if any. Managed by the rollup engine.",
@@ -182,6 +188,7 @@ func (d *NetworkSiteDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

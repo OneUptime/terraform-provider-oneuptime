@@ -27,6 +27,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SloBurnRateRuleResource{}
 var _ resource.ResourceWithImportState = &SloBurnRateRuleResource{}
+var _ resource.ResourceWithModifyPlan = &SloBurnRateRuleResource{}
 
 func NewSloBurnRateRuleResource() resource.Resource {
     return &SloBurnRateRuleResource{}
@@ -79,6 +80,8 @@ type SloBurnRateRuleResourceModel struct {
     LastIncidentCreatedAt RFC3339Value `tfsdk:"last_incident_created_at"`
     LastIncidentResolvedAt RFC3339Value `tfsdk:"last_incident_resolved_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    AlertOwnerUserEmails types.Set `tfsdk:"alert_owner_user_emails"`
+    IncidentOwnerUserEmails types.Set `tfsdk:"incident_owner_user_emails"`
 }
 
 func (r *SloBurnRateRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -114,6 +117,7 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_service_level_objective"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Name of this burn rate rule.",
@@ -131,20 +135,30 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
             "burn_rate_threshold": schema.NumberAttribute{
                 MarkdownDescription: "Alert when the burn rate in both the long and short windows is at or above this threshold (e.g. 14.4).",
                 Required: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "long_window_in_minutes": schema.NumberAttribute{
                 MarkdownDescription: "Length of the long lookback window in minutes (e.g. 60). The alert fires when both windows exceed the threshold and resolves when the long window drops below it.",
                 Required: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "short_window_in_minutes": schema.NumberAttribute{
                 MarkdownDescription: "Length of the short lookback window in minutes (e.g. 5). Guards against alerting on burn that has already stopped.",
                 Required: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "minimum_sample_count": schema.NumberAttribute{
                 MarkdownDescription: "For event-based SLIs only: skip this rule when the long window has fewer than this many total events. Prevents noisy alerts on low traffic.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -153,6 +167,7 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -181,6 +196,7 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "On-call duty policies attached to alerts created by this burn rate rule. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.",
@@ -190,6 +206,7 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_on_call_policy"),
             },
             "alert_title_template": schema.StringAttribute{
                 MarkdownDescription: "Title of the alert raised when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title.",
@@ -241,6 +258,7 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "alert_owner_teams": schema.SetAttribute{
                 MarkdownDescription: "Teams added as owners of alerts raised by this burn rate rule. IDs of `oneuptime_team` resources.",
@@ -250,15 +268,14 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_team"),
             },
             "alert_owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users added as owners of alerts raised by this burn rate rule. IDs of `oneuptime_user` records.",
+                MarkdownDescription: "Users added as owners of alerts raised by this burn rate rule. IDs of `oneuptime_user` records. Or name them by email address, in `alert_owner_user_emails`.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
-                PlanModifiers: []planmodifier.Set{
-                    setplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDsValidators("alert_owner_user_emails", false),
             },
             "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Incident Severity of the incident declared when this burn rate rule fires. The ID of a `oneuptime_incident_severity`.",
@@ -267,6 +284,7 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "incident_on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "On-call duty policies attached to incidents declared by this burn rate rule. IDs of `oneuptime_on_call_policy` resources.",
@@ -276,6 +294,7 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_on_call_policy"),
             },
             "incident_title_template": schema.StringAttribute{
                 MarkdownDescription: "Title of the incident declared when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title.",
@@ -327,6 +346,7 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "incident_owner_teams": schema.SetAttribute{
                 MarkdownDescription: "Teams added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_team` resources.",
@@ -336,15 +356,14 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_team"),
             },
             "incident_owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_user` records.",
+                MarkdownDescription: "Users added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_user` records. Or name them by email address, in `incident_owner_user_emails`.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
-                PlanModifiers: []planmodifier.Set{
-                    setplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDsValidators("incident_owner_user_emails", false),
             },
             "add_slo_owners_as_owners": schema.BoolAttribute{
                 MarkdownDescription: "Also add the owner users and owner teams of the Service Level Objective as owners of the alerts and incidents this burn rate rule creates. Disabled by default.",
@@ -395,8 +414,49 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "alert_owner_user_emails": schema.SetAttribute{
+                MarkdownDescription: "The email addresses of the people in `alert_owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: personEmailsPlanModifiers("alert_owner_users"),
+                Validators: personEmailsValidators(),
+            },
+            "incident_owner_user_emails": schema.SetAttribute{
+                MarkdownDescription: "The email addresses of the people in `incident_owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: personEmailsPlanModifiers("incident_owner_users"),
+                Validators: personEmailsValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this slo burn rate rule names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SloBurnRateRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPeopleIDs(ctx, r.client, req, resp, personAttribute{
+        id:       "alert_owner_users",
+        email:    "alert_owner_user_emails",
+        invites:  false,
+        replaces: false,
+    })
+    planPeopleIDs(ctx, r.client, req, resp, personAttribute{
+        id:       "incident_owner_users",
+        email:    "incident_owner_user_emails",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SloBurnRateRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -438,6 +498,14 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDsForWrite(ctx, r.client, &data.AlertOwnerUsers, data.AlertOwnerUserEmails, "alert_owner_user_emails", &resp.Diagnostics) {
+        return
+    }
+    if !personIDsForWrite(ctx, r.client, &data.IncidentOwnerUsers, data.IncidentOwnerUserEmails, "incident_owner_user_emails", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -1436,9 +1504,13 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.AlertOwnerUserEmails = personEmailsAfterWrite(ctx, r.client, data.AlertOwnerUsers, data.AlertOwnerUserEmails)
+    data.IncidentOwnerUserEmails = personEmailsAfterWrite(ctx, r.client, data.IncidentOwnerUsers, data.IncidentOwnerUserEmails)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1497,6 +1569,12 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorAlertOwnerUsers := data.AlertOwnerUsers
+    priorAlertOwnerUserEmails := data.AlertOwnerUserEmails
+    priorIncidentOwnerUsers := data.IncidentOwnerUsers
+    priorIncidentOwnerUserEmails := data.IncidentOwnerUserEmails
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/service-level-objective-burn-rate-rule/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -2302,6 +2380,9 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.AlertOwnerUserEmails = personEmailsAfterRead(ctx, r.client, priorAlertOwnerUsers, data.AlertOwnerUsers, priorAlertOwnerUserEmails)
+    data.IncidentOwnerUserEmails = personEmailsAfterRead(ctx, r.client, priorIncidentOwnerUsers, data.IncidentOwnerUsers, priorIncidentOwnerUserEmails)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2333,6 +2414,14 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDsForWrite(ctx, r.client, &data.AlertOwnerUsers, data.AlertOwnerUserEmails, "alert_owner_user_emails", &resp.Diagnostics) {
+        return
+    }
+    if !personIDsForWrite(ctx, r.client, &data.IncidentOwnerUsers, data.IncidentOwnerUserEmails, "incident_owner_user_emails", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     sloBurnRateRuleRequest := map[string]interface{}{
@@ -3297,6 +3386,9 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.AlertOwnerUserEmails = personEmailsAfterWrite(ctx, r.client, data.AlertOwnerUsers, data.AlertOwnerUserEmails)
+    data.IncidentOwnerUserEmails = personEmailsAfterWrite(ctx, r.client, data.IncidentOwnerUsers, data.IncidentOwnerUserEmails)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -3422,6 +3514,12 @@ func (r *SloBurnRateRuleResource) keepPlannedValues(data *SloBurnRateRuleResourc
     }
     if config.AddSloOwnersAsOwners.IsNull() && !plan.AddSloOwnersAsOwners.IsUnknown() {
         data.AddSloOwnersAsOwners = plan.AddSloOwnersAsOwners
+    }
+    if config.AlertOwnerUserEmails.IsNull() && !plan.AlertOwnerUserEmails.IsUnknown() {
+        data.AlertOwnerUserEmails = plan.AlertOwnerUserEmails
+    }
+    if config.IncidentOwnerUserEmails.IsNull() && !plan.IncidentOwnerUserEmails.IsUnknown() {
+        data.IncidentOwnerUserEmails = plan.IncidentOwnerUserEmails
     }
 }
 

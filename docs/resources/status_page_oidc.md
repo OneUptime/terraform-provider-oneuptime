@@ -17,11 +17,11 @@ resource "oneuptime_status_page_oidc" "example" {
   name             = "Example status page oidc"
   description      = "Managed by Terraform"
   discovery_url    = "https://www.example.com/path/to/resource?param=value"
-  issuer_url       = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
-  client_id        = "Example short text"
+  issuer_url       = "https://accounts.google.com"
+  client_id        = "1234567890-abcdefgh.apps.googleusercontent.com"
   client_secret    = "This is an example of longer text content that might be stored in this field."
-  scopes           = "Example short text"
-  email_claim_name = "Example short text"
+  scopes           = "openid email profile"
+  email_claim_name = "email"
 }
 ```
 
@@ -31,7 +31,7 @@ resource "oneuptime_status_page_oidc" "example" {
 
 - `client_id` (String) OIDC client ID issued by the identity provider.
 - `client_secret` (String, Sensitive) OIDC client secret issued by the identity provider. Stored encrypted at rest.
-- `description` (String)
+- `description` (String) What this sign-in is for, such as which identity provider it uses.
 - `discovery_url` (String) OIDC discovery URL (typically ends in /.well-known/openid-configuration). Used to discover authorization, token, JWKS and userinfo endpoints.
 - `email_claim_name` (String) Claim name in the ID token (or userinfo response) that contains the user's email address.
 - `issuer_url` (String) Expected OIDC issuer URL. Must match the 'iss' claim in the ID token returned by the identity provider.
@@ -41,8 +41,8 @@ resource "oneuptime_status_page_oidc" "example" {
 
 ### Optional
 
-- `is_enabled` (Boolean) Defaults to `false`.
-- `is_tested` (Boolean) Defaults to `false`.
+- `is_enabled` (Boolean) When on, visitors of a private status page can sign in with this provider. Defaults to `false`.
+- `is_tested` (Boolean) Whether a sign-in with this provider has been tested. It does not turn the provider on. Defaults to `false`.
 - `name_claim_name` (String) Claim name in the ID token (or userinfo response) that contains the user's display name.
 
 ### Read-Only

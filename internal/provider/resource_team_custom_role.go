@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &TeamCustomRoleResource{}
 var _ resource.ResourceWithImportState = &TeamCustomRoleResource{}
+var _ resource.ResourceWithModifyPlan = &TeamCustomRoleResource{}
 
 func NewTeamCustomRoleResource() resource.Resource {
     return &TeamCustomRoleResource{}
@@ -75,6 +76,7 @@ func (r *TeamCustomRoleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "custom_role_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the custom role given to the team. The ID of a `oneuptime_custom_role`.",
@@ -82,6 +84,7 @@ func (r *TeamCustomRoleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_custom_role"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -105,6 +108,17 @@ func (r *TeamCustomRoleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *TeamCustomRoleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *TeamCustomRoleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -391,6 +405,7 @@ func (r *TeamCustomRoleResource) Create(ctx context.Context, req resource.Create
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

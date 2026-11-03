@@ -37,5 +37,5 @@ data "oneuptime_exception_saved_view" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of the project this saved exceptions view belongs to. The ID of a `oneuptime_project`.
-- `query` (String) Serialized exceptions list view state (search, filters, time range, page size, status, lens, assignee filter and sort) for this saved view. A JSON value: write it with `jsonencode()`.
+- `query` (String) Serialized exceptions list view state (search, filters, time range, page size, status, lens, assignee filter and sort) for this saved view. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

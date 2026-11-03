@@ -76,15 +76,15 @@ func (d *ResidencyRuleDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "data_categories": schema.StringAttribute{
-                MarkdownDescription: "The categories of data the rule covers. Empty means every kind of personal data. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The categories of data the rule covers. Empty means every kind of personal data. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "subject_countries": schema.StringAttribute{
-                MarkdownDescription: "Only data about people in these countries (ISO 3166-1 alpha-2). Empty means data about anyone. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Only data about people in these countries (ISO 3166-1 alpha-2). Empty means data about anyone. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "allowed_regions": schema.StringAttribute{
-                MarkdownDescription: "The regions the data may live in. A * matches any characters: eu-*, europe-*, westeurope. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The regions the data may live in. A * matches any characters: eu-*, europe-*, westeurope. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
@@ -96,6 +96,7 @@ func (d *ResidencyRuleDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the user who created this residency rule. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

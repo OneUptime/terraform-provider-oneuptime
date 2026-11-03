@@ -46,7 +46,7 @@ data "oneuptime_workflow_variable" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `oauth_access_token_expires_at` (String) When the cached access token expires, as reported by the identity provider (expires_in) or by the token itself (the JWT exp claim). Empty when neither says.
-- `oauth_additional_parameters` (String) OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here. A JSON value: write it with `jsonencode()`.
+- `oauth_additional_parameters` (String) OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here. A JSON value: read it with `jsondecode()`.
 - `oauth_last_refresh_error_at` (String) When the last failed attempt to fetch an access token happened.
 - `oauth_last_refreshed_at` (String) When OneUptime last fetched an access token for this variable. Cleared when the OAuth settings change.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

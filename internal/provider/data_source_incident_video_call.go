@@ -87,6 +87,7 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the incident this call is for. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "provider_value": schema.StringAttribute{
                 MarkdownDescription: "Where the call is held: Zoom, GoogleMeet, MicrosoftTeams, SlackHuddle, or CustomLink for a link a person provided. Taken from the connection when one is given.",
@@ -97,6 +98,7 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the Zoom, Google Meet, Microsoft Teams or meeting link connection to start the call with. Leave it out to add a link of your own, or to start the huddle of the incident's Slack channel. The ID of a `oneuptime_video_call_connection`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_video_call_connection"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "What the call is called. A meeting a provider creates is named for the incident.",
@@ -122,6 +124,7 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the Slack or Microsoft Teams notification rule that started this call. The ID of a `oneuptime_workspace_notification_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_workspace_notification_rule"),
             },
             "transcript": schema.StringAttribute{
                 MarkdownDescription: "What was said on the call, one remark a line: how far into the call (HH:MM:SS, empty when unknown), a tab, who spoke (empty when unknown), a tab, and the words. Read from Zoom or Google Meet, or added by a person, through the call's transcript routes.",
@@ -134,7 +137,7 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "transcript_info": schema.StringAttribute{
-                MarkdownDescription: "How long the transcript is - remarks, speakers, characters and how many seconds it spans - and the name of the file it was added from, so the call can be described without reading the transcript. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "How long the transcript is - remarks, speakers, characters and how many seconds it spans - and the name of the file it was added from, so the call can be described without reading the transcript. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "transcript_added_at": schema.StringAttribute{
@@ -145,9 +148,10 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the person who added the transcript. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "call_summary": schema.StringAttribute{
-                MarkdownDescription: "What OneUptime AI read in the transcript: the root cause the call points at (a suggestion, or that the call did not discuss it enough), what was found, tried, decided and left to do, and open questions - each with the transcript lines it rests on. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What OneUptime AI read in the transcript: the root cause the call points at (a suggestion, or that the call did not discuss it enough), what was found, tried, decided and left to do, and open questions - each with the transcript lines it rests on. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "call_summary_status": schema.StringAttribute{
@@ -177,6 +181,7 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the person who accepted or dismissed the root cause suggested from the call. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "transcript_fetch_status": schema.StringAttribute{
                 MarkdownDescription: "Whether OneUptime gets the call's transcript from Zoom, Google Meet or Microsoft Teams by itself, as it does for the calls it starts while Record and transcribe incident calls is on: Waiting while it asks the provider (again at Transcript Fetch Next Attempt At), Stopped once it no longer asks, or when the provider could not be set up to record the call (Transcript Fetch Reason says why). Empty for a call it does not ask about, and once it has the transcript.",
@@ -200,6 +205,7 @@ func (d *IncidentVideoCallDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

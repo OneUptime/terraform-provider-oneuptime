@@ -71,9 +71,10 @@ func (d *ExceptionSavedViewDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "ID of the user who created this saved exceptions view. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "query": schema.StringAttribute{
-                MarkdownDescription: "Serialized exceptions list view state (search, filters, time range, page size, status, lens, assignee filter and sort) for this saved view. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Serialized exceptions list view state (search, filters, time range, page size, status, lens, assignee filter and sort) for this saved view. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_default": schema.BoolAttribute{

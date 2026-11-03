@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkDeviceLinkResource{}
 var _ resource.ResourceWithImportState = &NetworkDeviceLinkResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkDeviceLinkResource{}
 
 func NewNetworkDeviceLinkResource() resource.Resource {
     return &NetworkDeviceLinkResource{}
@@ -85,10 +86,12 @@ func (r *NetworkDeviceLinkResource) schemaDefinition() schema.Schema {
             "from_device_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Device this link starts from. The ID of a `oneuptime_network_device`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_network_device"),
             },
             "to_device_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Device this link ends at. The ID of a `oneuptime_network_device`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_network_device"),
             },
             "parent_device_id": schema.StringAttribute{
                 MarkdownDescription: "ID of whichever end of this link is the parent. Must be the From Device or the To Device. Empty means the two are peers and the map infers the hierarchy. The ID of a `oneuptime_network_device`.",
@@ -97,6 +100,7 @@ func (r *NetworkDeviceLinkResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_network_device"),
             },
             "from_port_name": schema.StringAttribute{
                 MarkdownDescription: "Port on the starting device, as free text. Nothing resolves it to an interface row — a hand-drawn link usually exists precisely because the port is not discoverable.",
@@ -121,6 +125,7 @@ func (r *NetworkDeviceLinkResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -144,6 +149,17 @@ func (r *NetworkDeviceLinkResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkDeviceLinkResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkDeviceLinkResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -646,6 +662,7 @@ func (r *NetworkDeviceLinkResource) Create(ctx context.Context, req resource.Cre
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

@@ -20,11 +20,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ScheduledMaintenanceMeasurementResource{}
 var _ resource.ResourceWithImportState = &ScheduledMaintenanceMeasurementResource{}
+var _ resource.ResourceWithModifyPlan = &ScheduledMaintenanceMeasurementResource{}
 
 func NewScheduledMaintenanceMeasurementResource() resource.Resource {
     return &ScheduledMaintenanceMeasurementResource{}
@@ -116,10 +119,16 @@ func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Sche
             "start_anchor_type": schema.StringAttribute{
                 MarkdownDescription: "Where the measurement starts - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Created At", "Scheduled Starts At", "Scheduled Ends At", "Timeline Start", "State Entered", "State Role Entered"),
+                },
             },
             "end_anchor_type": schema.StringAttribute{
                 MarkdownDescription: "Where the measurement ends - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Created At", "Scheduled Starts At", "Scheduled Ends At", "Timeline Start", "State Entered", "State Role Entered"),
+                },
             },
             "start_scheduled_maintenance_state_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the state whose entry starts this measurement, when the start anchor is a specific state. The ID of a `oneuptime_scheduled_maintenance_state`.",
@@ -128,6 +137,7 @@ func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Sche
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_state"),
             },
             "end_scheduled_maintenance_state_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the state whose entry ends this measurement, when the end anchor is a specific state. The ID of a `oneuptime_scheduled_maintenance_state`.",
@@ -136,6 +146,7 @@ func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Sche
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_state"),
             },
             "start_scheduled_maintenance_state_role": schema.StringAttribute{
                 MarkdownDescription: "The role of the state that starts this measurement (Scheduled, Ongoing, Ended or Resolved), when the start anchor is a state role. Resolving by role keeps working when a project renames or replaces the state.",
@@ -144,6 +155,9 @@ func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Sche
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Scheduled", "Ongoing", "Ended", "Resolved"),
+                },
             },
             "end_scheduled_maintenance_state_role": schema.StringAttribute{
                 MarkdownDescription: "The role of the state that ends this measurement (Scheduled, Ongoing, Ended or Resolved), when the end anchor is a state role. Resolving by role keeps working when a project renames or replaces the state.",
@@ -151,6 +165,9 @@ func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Sche
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Scheduled", "Ongoing", "Ended", "Resolved"),
                 },
             },
             "start_state_occurrence": schema.StringAttribute{
@@ -161,6 +178,9 @@ func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Sche
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("First", "Last"),
+                },
             },
             "end_state_occurrence": schema.StringAttribute{
                 MarkdownDescription: "Which entry to use when the end state is entered more than once - the first time it was entered, or the last.",
@@ -169,6 +189,9 @@ func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Sche
                 Default: stringdefault.StaticString("First"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("First", "Last"),
                 },
             },
             "unit": schema.StringAttribute{
@@ -187,6 +210,9 @@ func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Sche
                 Default: stringdefault.StaticString("Avg"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Avg", "Max", "Min", "P50", "P90", "P95", "P99"),
                 },
             },
             "is_enabled": schema.BoolAttribute{
@@ -212,6 +238,7 @@ func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Sche
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -260,6 +287,17 @@ func (r *ScheduledMaintenanceMeasurementResource) schemaDefinition() schema.Sche
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ScheduledMaintenanceMeasurementResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ScheduledMaintenanceMeasurementResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1105,6 +1143,7 @@ func (r *ScheduledMaintenanceMeasurementResource) Create(ctx context.Context, re
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

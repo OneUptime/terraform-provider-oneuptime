@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_trace_saved_view Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Save and reuse traces explorer views, including the current search, filters, time range, and page size.
 ---

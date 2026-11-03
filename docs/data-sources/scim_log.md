@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_scim_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Teams & Access"
 description: |-
   Logs of all SCIM provisioning operations for this project.
 ---

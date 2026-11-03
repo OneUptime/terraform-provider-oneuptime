@@ -76,6 +76,7 @@ func (d *DomainDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_verified": schema.BoolAttribute{
                 MarkdownDescription: "Is this domain verified?",

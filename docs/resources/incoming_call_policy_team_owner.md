@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_incoming_call_policy_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "On-Call & Escalation"
 description: |-
   Add teams as owners to your incoming call policies.
 ---
@@ -22,8 +22,8 @@ resource "oneuptime_incoming_call_policy_team_owner" "example" {
 
 ### Required
 
-- `incoming_call_policy_id` (String) ID of your OneUptime Incoming Call Policy in which this object belongs. The ID of a `oneuptime_incoming_call_policy`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `incoming_call_policy_id` (String) ID of the incoming call policy the team owns. The ID of a `oneuptime_incoming_call_policy`.
+- `team_id` (String) ID of the team that owns the incoming call policy. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_incoming_call_policy_team_owner" "example" {
 
 ## Import
 
-Import an existing incoming call policy team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing incoming call policy team owner by its incoming call policy and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_incoming_call_policy_team_owner.example
-  id = "<id>"
+  id = "<incoming_call_policy_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_incoming_call_policy_team_owner.example <id>
+terraform import oneuptime_incoming_call_policy_team_owner.example <incoming_call_policy_id>/<team_id>
 ```
+
+Its own ID works too.

@@ -21,11 +21,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &TelemetryIngestionKeyResource{}
 var _ resource.ResourceWithImportState = &TelemetryIngestionKeyResource{}
+var _ resource.ResourceWithModifyPlan = &TelemetryIngestionKeyResource{}
 
 func NewTelemetryIngestionKeyResource() resource.Resource {
     return &TelemetryIngestionKeyResource{}
@@ -103,6 +105,9 @@ func (r *TelemetryIngestionKeyResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Server", "Browser"),
+                },
             },
             "allowed_origins": schema.StringAttribute{
                 MarkdownDescription: "Web origins (for example https://app.example.com or https://*.example.com) and exact React Native identities (for example app://com.example.mobile) that may use this key. Required on a Browser key. Web requests need a listed Origin; mobile replay requests without Origin need a listed app identity. app:// entries cannot use wildcards and are self-asserted identifiers, not platform attestation. Ignored on a Server key. A JSON value: write it with `jsonencode()`.",
@@ -110,6 +115,7 @@ func (r *TelemetryIngestionKeyResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -139,6 +145,7 @@ func (r *TelemetryIngestionKeyResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -147,6 +154,7 @@ func (r *TelemetryIngestionKeyResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -173,6 +181,7 @@ func (r *TelemetryIngestionKeyResource) schemaDefinition() schema.Schema {
             "secret_key": schema.StringAttribute{
                 MarkdownDescription: "Secret Telemetry Ingestion Key.",
                 Computed: true,
+                Sensitive: true,
             },
             "last_used_at": schema.StringAttribute{
                 MarkdownDescription: "The last time telemetry was accepted with this key. Empty means it has never been used since this was recorded. Use it to find keys that are safe to rotate or delete.",
@@ -181,6 +190,17 @@ func (r *TelemetryIngestionKeyResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *TelemetryIngestionKeyResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *TelemetryIngestionKeyResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -679,6 +699,9 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1088,6 +1111,11 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "allowed_origins": !data.AllowedOrigins.Equal(state.AllowedOrigins),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config TelemetryIngestionKeyResourceModel
@@ -1521,6 +1549,9 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1557,6 +1588,9 @@ func (r *TelemetryIngestionKeyResource) Delete(ctx context.Context, req resource
 
 func (r *TelemetryIngestionKeyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"allowed_origins"})...)
 }
 
 

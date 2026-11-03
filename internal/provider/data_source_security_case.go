@@ -72,6 +72,7 @@ type SecurityCaseDataSourceModel struct {
     AiTriagePromptInjectionSuspected types.Bool `tfsdk:"ai_triage_prompt_injection_suspected"`
     Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    AssignedToUserEmail types.String `tfsdk:"assigned_to_user_email"`
 }
 
 func (d *SecurityCaseDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -124,11 +125,13 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "ID of the case's status. Optional on create: a new case starts in the project's new status. The ID of a `oneuptime_security_case_status`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_case_status"),
             },
             "security_case_priority_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the case's priority. Optional on create: a case opened by hand starts at the project's medium priority. The ID of a `oneuptime_security_case_priority`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_case_priority"),
             },
             "verdict": schema.StringAttribute{
                 MarkdownDescription: "What the case turned out to be, set when it is closed: True Positive, Benign Positive, False Positive or Undetermined.",
@@ -141,14 +144,16 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "assigned_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the person working the case. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the person working the case. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assigned_to_user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("assigned_to_user_email", false),
             },
             "assigned_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the team whose queue the case is in. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "source": schema.StringAttribute{
                 MarkdownDescription: "What opened the case: a Detection Rule, Threat Intel, a Connected Product, Entity Risk, or a person (Manual).",
@@ -156,15 +161,15 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "entities": schema.StringAttribute{
-                MarkdownDescription: "The users, hosts, IP addresses, domains and files the case is about, each as { type, value }. Detections add theirs as they join the case. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The users, hosts, IP addresses, domains and files the case is about, each as { type, value }. Detections add theirs as they join the case. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "mitre_tactics": schema.StringAttribute{
-                MarkdownDescription: "ATT&CK tactic ids (TA0006) the case's detections are tagged with. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "ATT&CK tactic ids (TA0006) the case's detections are tagged with. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "mitre_techniques": schema.StringAttribute{
-                MarkdownDescription: "ATT&CK technique ids (T1110) the case's detections are tagged with. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "ATT&CK technique ids (T1110) the case's detections are tagged with. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "detection_count": schema.NumberAttribute{
@@ -228,6 +233,7 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "ID of the person who closed the case. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "grouping_key": schema.StringAttribute{
                 MarkdownDescription: "What new detections are matched on to join this case while it is open: the entity they are about, or the detection's own fingerprint.",
@@ -243,6 +249,7 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "ID of the OneUptime incident declared for this case. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "ai_verdict": schema.StringAttribute{
                 MarkdownDescription: "What OneUptime AI made of the case when it triaged it: Likely Malicious, Likely Benign, Likely False Positive or Inconclusive. A suggestion; a person sets the case's verdict.",
@@ -282,6 +289,13 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "ID of the person who opened the case by hand. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
+            },
+            "assigned_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -409,6 +423,14 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.AssignedToUserEmail.IsNull() && !data.AssignedToUserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.AssignedToUserEmail.ValueString(), "assigned_to_user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["assignedToUserId"] = personID
+        filterNames = append(filterNames, "assigned_to_user_email = "+fmt.Sprintf("%q", data.AssignedToUserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -1242,6 +1264,7 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    data.AssignedToUserEmail = personEmailAfterLookup(ctx, d.client, data.AssignedToUserId, data.AssignedToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

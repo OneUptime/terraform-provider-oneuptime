@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_custom_role Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Teams & Access"
 description: |-
   A set of permissions you name once, such as Incident Responder, and give to teams and API keys. Changing a role changes every team and key that has it.
 ---

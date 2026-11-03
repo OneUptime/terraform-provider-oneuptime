@@ -42,5 +42,5 @@ data "oneuptime_workflow_log" "by_id" {
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `resume_at` (String) When this workflow run is scheduled to resume after a Sleep step (only set while the run is Waiting).
 - `started_at` (String) When did this workflow start.
-- `step_trace` (String) Structured per-step record of this run: arguments, return values, the port taken and timing. A JSON value: write it with `jsonencode()`.
+- `step_trace` (String) Structured per-step record of this run: arguments, return values, the port taken and timing. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

@@ -65,16 +65,19 @@ func (d *MonitorGroupResourceDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of your Monitor Group resource where this object belongs. The ID of a `oneuptime_monitor_group`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_group"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor ID Resource in which this object belongs. The ID of a `oneuptime_monitor`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

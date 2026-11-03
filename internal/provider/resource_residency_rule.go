@@ -24,6 +24,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ResidencyRuleResource{}
 var _ resource.ResourceWithImportState = &ResidencyRuleResource{}
+var _ resource.ResourceWithModifyPlan = &ResidencyRuleResource{}
 
 func NewResidencyRuleResource() resource.Resource {
     return &ResidencyRuleResource{}
@@ -94,6 +95,7 @@ func (r *ResidencyRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -106,6 +108,7 @@ func (r *ResidencyRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -118,6 +121,7 @@ func (r *ResidencyRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -155,6 +159,17 @@ func (r *ResidencyRuleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ResidencyRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ResidencyRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -583,6 +598,9 @@ func (r *ResidencyRuleResource) Create(ctx context.Context, req resource.CreateR
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -928,6 +946,13 @@ func (r *ResidencyRuleResource) Update(ctx context.Context, req resource.UpdateR
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "allowed_regions": !data.AllowedRegions.Equal(state.AllowedRegions),
+        "data_categories": !data.DataCategories.Equal(state.DataCategories),
+        "subject_countries": !data.SubjectCountries.Equal(state.SubjectCountries),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config ResidencyRuleResourceModel
@@ -1304,6 +1329,9 @@ func (r *ResidencyRuleResource) Update(ctx context.Context, req resource.UpdateR
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1340,6 +1368,9 @@ func (r *ResidencyRuleResource) Delete(ctx context.Context, req resource.DeleteR
 
 func (r *ResidencyRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"allowed_regions", "data_categories", "subject_countries"})...)
 }
 
 

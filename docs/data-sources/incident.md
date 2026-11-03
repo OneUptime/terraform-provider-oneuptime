@@ -68,8 +68,8 @@ data "oneuptime_incident" "by_id" {
 - `ceph_clusters` (Set of String) List of Ceph clusters affected by this incident. IDs of `oneuptime_ceph_cluster` resources.
 - `cloud_resources` (Set of String) List of cloud resources affected by this incident. IDs of `oneuptime_cloud_resource` resources.
 - `created_at` (String) Date and Time when the object was created.
-- `created_state_log` (String) A JSON value: write it with `jsonencode()`.
-- `custom_fields` (String) The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only. A JSON value: write it with `jsonencode()`.
+- `created_state_log` (String) A JSON value: read it with `jsondecode()`.
+- `custom_fields` (String) The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only. A JSON value: read it with `jsondecode()`.
 - `database_servers` (Set of String) List of databases affected by this incident. IDs of `oneuptime_database` resources.
 - `declared_at` (String) Date and time when this incident was declared.
 - `docker_hosts` (Set of String) List of Docker hosts affected by this incident. IDs of `oneuptime_docker_host` resources.
@@ -82,8 +82,8 @@ data "oneuptime_incident" "by_id" {
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters affected by this incident. IDs of `oneuptime_kubernetes_cluster` resources.
 - `kubernetes_containers` (Set of String) List of Kubernetes containers affected by this incident.
 - `kubernetes_resources` (Set of String) List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this incident.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
-- `monitor_summary` (String) The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `monitor_summary` (String) The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: read it with `jsondecode()`.
 - `monitors` (Set of String) List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.
 - `network_devices` (Set of String) List of network devices affected by this incident. IDs of `oneuptime_network_device` resources.
 - `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this incident? This is set automatically based on the reminder rules configured for this project.
@@ -95,12 +95,12 @@ data "oneuptime_incident" "by_id" {
 - `postmortem_posted_at` (String) Timestamp that will be shown alongside the published postmortem on the status page.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `proxmox_clusters` (Set of String) List of Proxmox clusters affected by this incident. IDs of `oneuptime_proxmox_cluster` resources.
-- `series_labels` (String) Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach. A JSON value: write it with `jsonencode()`.
+- `series_labels` (String) Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach. A JSON value: read it with `jsondecode()`.
 - `service_level_objectives` (Set of String) List of Service Level Objectives (SLOs) affected by this incident. IDs of `oneuptime_service_level_objective` resources.
 - `services` (Set of String) List of services affected by this incident. IDs of `oneuptime_service` resources.
 - `status_pages` (Set of String) Limit this incident to these status pages. When set, the incident is shown on, and notifies the subscribers of, only these pages among the status pages that list its monitors. Leave empty to reach every status page that lists its monitors. IDs of `oneuptime_status_page` resources.
-- `status_pages_notified_on_creation` (String) IDs of the status pages whose subscribers were sent the notification that this incident was created. A JSON value: write it with `jsonencode()`.
+- `status_pages_notified_on_creation` (String) IDs of the status pages whose subscribers were sent the notification that this incident was created. A JSON value: read it with `jsondecode()`.
 - `storage_arrays` (Set of String) List of storage arrays affected by this incident. IDs of `oneuptime_storage_array` resources.
-- `telemetry_query` (String) Telemetry query for this incident. A JSON value: write it with `jsonencode()`.
+- `telemetry_query` (String) Telemetry query for this incident. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.
 - `vmware_v_centers` (Set of String) List of vCenters affected by this incident. IDs of `oneuptime_vcenter` resources.

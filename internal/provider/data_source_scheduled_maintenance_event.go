@@ -119,6 +119,7 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors attached to this event. IDs of `oneuptime_monitor` resources.",
@@ -196,7 +197,7 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -204,11 +205,13 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "Scheduled Maintenance State ID. The state the event currently is in. The ID of a `oneuptime_scheduled_maintenance_state`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_state"),
             },
             "change_monitor_status_to_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor Status Object ID. The monitors attached to this event change to this status when the event starts, and back to operational when it ends. It can be changed until the event starts. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "starts_at": schema.StringAttribute{
                 MarkdownDescription: "When does this event start?",
@@ -244,7 +247,7 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
@@ -253,7 +256,7 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "send_subscriber_notifications_on_before_the_event": schema.StringAttribute{
-                MarkdownDescription: "Should subscribers be notified before the event? A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Should subscribers be notified before the event? A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "next_subscriber_notification_before_the_event_at": schema.StringAttribute{

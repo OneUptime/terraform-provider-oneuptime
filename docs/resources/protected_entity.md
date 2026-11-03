@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_protected_entity Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Users and hosts that security playbooks never contain, such as break-glass accounts, domain controllers and VPN gateways.
 ---
@@ -13,7 +13,7 @@ Users and hosts that security playbooks never contain, such as break-glass accou
 
 ```terraform
 resource "oneuptime_protected_entity" "example" {
-  entity_type = "Example short text"
+  entity_type = "User"
   value       = "This is an example of longer text content that might be stored in this field."
   description = "Managed by Terraform"
 }
@@ -23,7 +23,7 @@ resource "oneuptime_protected_entity" "example" {
 
 ### Required
 
-- `entity_type` (String) User or Host: what the value names.
+- `entity_type` (String) User or Host: what the value names. Allowed values: `User`, `Host`, `IP Address`, `Domain`, `URL`, `File Hash`, `Process`, `Data Store`, `Other`.
 - `value` (String) The user's sign-in name or the host's name, matched whatever the case. * stands for any run of characters: svc-* protects every service account.
 
 ### Optional

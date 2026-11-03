@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_host Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Hosts that are being monitored in this project. Each host is auto-discovered when an OTel Collector reports the host.name resource attribute, or can be manually registered.
 ---
@@ -51,6 +51,7 @@ data "oneuptime_host" "by_id" {
 - `deployment_environment` (String) Last-seen value of the deployment.environment.name (or deployment.environment) OpenTelemetry resource attribute, e.g. production, staging.
 - `description` (String) Friendly description for this host.
 - `docker_host_id` (String) Optional FK to the DockerHost record for this same host when it is also running the Docker runtime. The ID of a `oneuptime_docker_host`.
+- `failed_systemd_unit_count` (Number) How many systemd units were in the failed state in the host's last report. Linux only. Set by the server.
 - `host_arch` (String) CPU architecture from the OTel host.arch resource attribute.
 - `host_id` (String) Stable host identifier reported by the OTel host.id resource attribute.
 - `host_identifier` (String) Unique identifier for this host, sourced from the host.name OTel resource attribute.
@@ -62,6 +63,14 @@ data "oneuptime_host" "by_id" {
 - `is_collector_config_pinned` (Boolean) Whether the Collector Config was picked for this host on its page. When it is not, the host runs the first config in the list that applies to it.
 - `is_collector_healthy` (Boolean) Whether the collector OneUptime manages on this host last reported itself healthy. Set by the server.
 - `kubernetes_cluster_id` (String) Optional FK to the KubernetesCluster this host belongs to when k8s.cluster.name is reported. The ID of a `oneuptime_kubernetes_cluster`.
+- `latest_cpu_percent` (Number) CPU busy time (user and system) across all of the host's cores in its last report, as a percent. Set by the server.
+- `latest_disk_mountpoint` (String) The mount point of the host's fullest filesystem in its last report. Set by the server.
+- `latest_disk_percent` (Number) How full the host's fullest filesystem was in its last report, as a percent. Set by the server.
+- `latest_inodes_mountpoint` (String) The mount point of the filesystem that used the most of its inodes in the host's last report. Set by the server.
+- `latest_inodes_percent` (Number) The share of inodes in use on the filesystem that used the most of them in the host's last report. Set by the server.
+- `latest_load_average15m` (Number) The host's 15-minute load average in its last report. Set by the server.
+- `latest_memory_percent` (Number) Memory in use in the host's last report, buffers and page cache not counted, as a percent. Set by the server.
+- `latest_swap_percent` (Number) Swap space in use in the host's last report, as a percent. Empty on a host without swap. Set by the server.
 - `name` (String) Friendly name for this host.
 - `os_type` (String) Operating system type of the host.
 - `os_version` (String) Operating system version of the host.
@@ -78,13 +87,16 @@ data "oneuptime_host" "by_id" {
 
 - `ai_access_configured_at` (String) When OneUptime AI access to this host was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Host AI agent that registers later never overwrites a setting an operator chose.
 - `ai_access_last_verified_at` (String) When a command from OneUptime AI last succeeded on this host through its Host AI agent. Set by the server.
-- `ai_command_allowlist` (String) Optional JSON array of command patterns that Automatic mode may run on this host without approval even though they are riskier changes. Each pattern is one command line for this host's agent (systemctl, journalctl and the other host programs it may run) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this host is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the host can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.
+- `ai_command_allowlist` (String) Optional JSON array of command patterns that Automatic mode may run on this host without approval even though they are riskier changes. Each pattern is one command line for this host's agent (systemctl, journalctl and the other host programs it may run) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this host is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the host can remove patterns or clear the list. A JSON value: read it with `jsondecode()`.
 - `archived_at` (String) When was this host archived?
+- `booted_at` (String) When the host last started, from the system.uptime metric its collector reports. Set by the server.
 - `collector_last_contact_at` (String) When the collector OneUptime manages on this host last reported to OneUptime. Set by the server.
 - `collector_registered_at` (String) When the collector OneUptime manages on this host was installed, or installed again: when it first reported to OneUptime. Set by the server.
 - `created_at` (String) Date and Time when the object was created.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `failed_systemd_units` (String) The names of the first systemd units that were in the failed state in the host's last report. Set by the server. A JSON value: read it with `jsondecode()`.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When telemetry was last received from this host.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `telemetry_retention_config` (String) Per-pillar retention overrides for this host (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the host default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
+- `readings_updated_at` (String) When OneUptime last stored the readings the host reported. Set by the server.
+- `telemetry_retention_config` (String) Per-pillar retention overrides for this host (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the host default, then the project's retention settings. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

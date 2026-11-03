@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_llm_cost_budget Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   Daily USD spend budgets for LLM / GenAI telemetry. A worker sums the day's LLM span cost and publishes it as the oneuptime.llm.budget.* metrics, so Metrics monitors, dashboards and anomaly detection can act on spend.
 ---

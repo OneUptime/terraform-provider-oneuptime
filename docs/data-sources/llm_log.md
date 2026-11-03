@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_llm_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "AI"
 description: |-
   Logs of all the LLM API calls for AI features in this project.
 ---

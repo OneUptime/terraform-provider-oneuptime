@@ -29,6 +29,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AlertGroupingRuleResource{}
 var _ resource.ResourceWithImportState = &AlertGroupingRuleResource{}
+var _ resource.ResourceWithModifyPlan = &AlertGroupingRuleResource{}
 
 func NewAlertGroupingRuleResource() resource.Resource {
     return &AlertGroupingRuleResource{}
@@ -82,6 +83,8 @@ type AlertGroupingRuleResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    DefaultAssignToUserEmail types.String `tfsdk:"default_assign_to_user_email"`
+    EpisodeOwnerUserEmails types.Set `tfsdk:"episode_owner_user_emails"`
 }
 
 func (r *AlertGroupingRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -110,6 +113,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -140,6 +144,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -158,6 +163,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -172,6 +178,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "alert_severities": schema.SetAttribute{
                 MarkdownDescription: "Only group alerts with these severities. Leave empty to match alerts of any severity. IDs of `oneuptime_alert_severity` resources.",
@@ -181,6 +188,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_alert_severity"),
             },
             "alert_labels": schema.SetAttribute{
                 MarkdownDescription: "Only group alerts that have at least one of these labels. Leave empty to match alerts regardless of alert labels. IDs of `oneuptime_label` resources.",
@@ -190,6 +198,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "monitor_labels": schema.SetAttribute{
                 MarkdownDescription: "Only group alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels. IDs of `oneuptime_label` resources.",
@@ -199,6 +208,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "alert_title_pattern": schema.StringAttribute{
                 MarkdownDescription: "Regular expression pattern to match alert titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.",
@@ -292,6 +302,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -301,6 +312,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -338,6 +350,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -356,6 +369,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -374,6 +388,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -385,14 +400,13 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_on_call_policy"),
             },
             "default_assign_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `default_assign_to_user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDValidators("default_assign_to_user_email", false),
             },
             "default_assign_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "ID of defaultAssignToTeam. Kept for API compatibility: OneUptime does not show it anywhere. To make a team responsible for the episodes this rule opens, use episodeOwnerTeams. The ID of a `oneuptime_team`.",
@@ -401,6 +415,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "episode_labels": schema.SetAttribute{
                 MarkdownDescription: "Labels to automatically apply to episodes created by this rule. IDs of `oneuptime_label` resources.",
@@ -410,15 +425,14 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "episode_owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project. IDs of `oneuptime_user` records.",
+                MarkdownDescription: "Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project. IDs of `oneuptime_user` records. Or name them by email address, in `episode_owner_user_emails`.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
-                PlanModifiers: []planmodifier.Set{
-                    setplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDsValidators("episode_owner_user_emails", false),
             },
             "episode_owner_teams": schema.SetAttribute{
                 MarkdownDescription: "Teams added as owners of every episode this rule opens, and notified like any owner. Each must be a team of the project. IDs of `oneuptime_team` resources.",
@@ -428,6 +442,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_team"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -449,8 +464,48 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "default_assign_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `default_assign_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("default_assign_to_user_id"),
+                Validators: personEmailValidators(),
+            },
+            "episode_owner_user_emails": schema.SetAttribute{
+                MarkdownDescription: "The email addresses of the people in `episode_owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: personEmailsPlanModifiers("episode_owner_users"),
+                Validators: personEmailsValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this alert grouping rule names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AlertGroupingRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "default_assign_to_user_id",
+        email:    "default_assign_to_user_email",
+        invites:  false,
+        replaces: false,
+    })
+    planPeopleIDs(ctx, r.client, req, resp, personAttribute{
+        id:       "episode_owner_users",
+        email:    "episode_owner_user_emails",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AlertGroupingRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -492,6 +547,14 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.DefaultAssignToUserId, data.DefaultAssignToUserEmail, "default_assign_to_user_email", &resp.Diagnostics) {
+        return
+    }
+    if !personIDsForWrite(ctx, r.client, &data.EpisodeOwnerUsers, data.EpisodeOwnerUserEmails, "episode_owner_user_emails", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -639,6 +702,19 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.DefaultAssignToUserId.IsUnknown() {
+        created := alertGroupingRuleResponse
+        if wrapper, ok := alertGroupingRuleResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["defaultAssignToUserId"]); id != "" {
+            data.DefaultAssignToUserId = types.StringValue(id)
+        } else {
+            data.DefaultAssignToUserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -1579,10 +1655,16 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.DefaultAssignToUserEmail = personEmailAfterWrite(ctx, r.client, data.DefaultAssignToUserId, data.DefaultAssignToUserEmail)
+    data.EpisodeOwnerUserEmails = personEmailsAfterWrite(ctx, r.client, data.EpisodeOwnerUsers, data.EpisodeOwnerUserEmails)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1641,6 +1723,12 @@ func (r *AlertGroupingRuleResource) Read(ctx context.Context, req resource.ReadR
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorDefaultAssignToUserId := data.DefaultAssignToUserId
+    priorDefaultAssignToUserEmail := data.DefaultAssignToUserEmail
+    priorEpisodeOwnerUsers := data.EpisodeOwnerUsers
+    priorEpisodeOwnerUserEmails := data.EpisodeOwnerUserEmails
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/alert-grouping-rule/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -2519,6 +2607,9 @@ func (r *AlertGroupingRuleResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.DefaultAssignToUserEmail = personEmailAfterRead(ctx, r.client, priorDefaultAssignToUserId, data.DefaultAssignToUserId, priorDefaultAssignToUserEmail)
+    data.EpisodeOwnerUserEmails = personEmailsAfterRead(ctx, r.client, priorEpisodeOwnerUsers, data.EpisodeOwnerUsers, priorEpisodeOwnerUserEmails)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2543,6 +2634,13 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
     // Use the ID from the current state
     data.Id = state.Id
 
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "criteria": !data.Criteria.Equal(state.Criteria),
+        "group_by_fields": !data.GroupByFields.Equal(state.GroupByFields),
+        "match_criteria": !data.MatchCriteria.Equal(state.MatchCriteria),
+    }
+
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config AlertGroupingRuleResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -2550,6 +2648,14 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.DefaultAssignToUserId, data.DefaultAssignToUserEmail, "default_assign_to_user_email", &resp.Diagnostics) {
+        return
+    }
+    if !personIDsForWrite(ctx, r.client, &data.EpisodeOwnerUsers, data.EpisodeOwnerUserEmails, "episode_owner_user_emails", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     alertGroupingRuleRequest := map[string]interface{}{
@@ -3621,6 +3727,12 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.DefaultAssignToUserEmail = personEmailAfterWrite(ctx, r.client, data.DefaultAssignToUserId, data.DefaultAssignToUserEmail)
+    data.EpisodeOwnerUserEmails = personEmailsAfterWrite(ctx, r.client, data.EpisodeOwnerUsers, data.EpisodeOwnerUserEmails)
+
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -3658,6 +3770,9 @@ func (r *AlertGroupingRuleResource) Delete(ctx context.Context, req resource.Del
 
 func (r *AlertGroupingRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"criteria", "group_by_fields", "match_criteria"})...)
 }
 
 
@@ -3773,6 +3888,12 @@ func (r *AlertGroupingRuleResource) keepPlannedValues(data *AlertGroupingRuleRes
     }
     if config.EpisodeOwnerTeams.IsNull() && !plan.EpisodeOwnerTeams.IsUnknown() {
         data.EpisodeOwnerTeams = plan.EpisodeOwnerTeams
+    }
+    if config.DefaultAssignToUserEmail.IsNull() && !plan.DefaultAssignToUserEmail.IsUnknown() {
+        data.DefaultAssignToUserEmail = plan.DefaultAssignToUserEmail
+    }
+    if config.EpisodeOwnerUserEmails.IsNull() && !plan.EpisodeOwnerUserEmails.IsUnknown() {
+        data.EpisodeOwnerUserEmails = plan.EpisodeOwnerUserEmails
     }
 }
 

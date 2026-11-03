@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_residency_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Where data may live: the regions a category of data, or data about people in some countries, may be stored and copied to.
 ---

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_external_mcp_server Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   MCP servers outside OneUptime - such as AWS, Azure or GitHub - whose tools OneUptime AI may use while it investigates and fixes incidents and alerts.
 ---
@@ -52,5 +52,5 @@ data "oneuptime_external_mcp_server" "by_id" {
 - `last_checked_at` (String) When OneUptime last tried to connect to the server. Empty means never.
 - `last_connected_at` (String) When OneUptime last connected to the server and read its tools.
 - `project_id` (String) ID of the project this MCP server belongs to. The ID of a `oneuptime_project`.
-- `tools` (String) The tools the server offered when OneUptime last connected: each one's name, description and whether the server marks it read-only. A JSON value: write it with `jsonencode()`.
+- `tools` (String) The tools the server offered when OneUptime last connected: each one's name, description and whether the server marks it read-only. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

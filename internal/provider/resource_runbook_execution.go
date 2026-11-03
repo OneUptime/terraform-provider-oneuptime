@@ -22,6 +22,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &RunbookExecutionResource{}
 var _ resource.ResourceWithImportState = &RunbookExecutionResource{}
+var _ resource.ResourceWithModifyPlan = &RunbookExecutionResource{}
 
 func NewRunbookExecutionResource() resource.Resource {
     return &RunbookExecutionResource{}
@@ -80,6 +81,7 @@ func (r *RunbookExecutionResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_runbook"),
             },
             "runbook_name_snapshot": schema.StringAttribute{
                 MarkdownDescription: "Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted).",
@@ -94,6 +96,7 @@ func (r *RunbookExecutionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -109,6 +112,7 @@ func (r *RunbookExecutionResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the alert that triggered or hosts this runbook execution. The ID of a `oneuptime_alert`.",
@@ -118,6 +122,7 @@ func (r *RunbookExecutionResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "scheduled_maintenance_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the scheduled maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.",
@@ -127,6 +132,7 @@ func (r *RunbookExecutionResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),
             },
             "started_at": schema.StringAttribute{
                 MarkdownDescription: "Time at which this runbook execution started.",
@@ -134,6 +140,7 @@ func (r *RunbookExecutionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -143,6 +150,7 @@ func (r *RunbookExecutionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -187,17 +195,28 @@ func (r *RunbookExecutionResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "trigger_details": schema.StringAttribute{
-                MarkdownDescription: "More about what started this run: for a scheduled run, the time it was due (scheduledFor) and whether it made up for times OneUptime missed (isCatchUp) or waited for the run before it (waitedForPreviousRun); for a webhook call, the address it came from (callerIp). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "More about what started this run: for a scheduled run, the time it was due (scheduledFor) and whether it made up for times OneUptime missed (isCatchUp) or waited for the run before it (waitedForPreviousRun); for a webhook call, the address it came from (callerIp). A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "inputs": schema.StringAttribute{
-                MarkdownDescription: "The values this run was started with: the JSON body of the webhook call that started it. Steps read them as data - Bash as ONEUPTIME_INPUT_<NAME> environment variables, JavaScript as args.inputs - never as script text. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The values this run was started with: the JSON body of the webhook call that started it. Steps read them as data - Bash as ONEUPTIME_INPUT_<NAME> environment variables, JavaScript as args.inputs - never as script text. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *RunbookExecutionResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *RunbookExecutionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -874,6 +893,9 @@ func (r *RunbookExecutionResource) Create(ctx context.Context, req resource.Crea
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1467,6 +1489,11 @@ func (r *RunbookExecutionResource) Update(ctx context.Context, req resource.Upda
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "step_executions": !data.StepExecutions.Equal(state.StepExecutions),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config RunbookExecutionResourceModel
@@ -2067,6 +2094,9 @@ func (r *RunbookExecutionResource) Update(ctx context.Context, req resource.Upda
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2103,6 +2133,9 @@ func (r *RunbookExecutionResource) Delete(ctx context.Context, req resource.Dele
 
 func (r *RunbookExecutionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"step_executions"})...)
 }
 
 

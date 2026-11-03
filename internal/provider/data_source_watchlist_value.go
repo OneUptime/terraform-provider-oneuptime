@@ -66,6 +66,7 @@ func (d *WatchlistValueDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the watchlist this value is on. The ID of a `oneuptime_watchlist`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_watchlist"),
             },
             "value": schema.StringAttribute{
                 MarkdownDescription: "The value, at most 256 characters, matched whatever the case. * stands for any run of characters (svc-* is every service account), and an IP address list takes ranges such as 10.20.0.0/16.",
@@ -81,6 +82,7 @@ func (d *WatchlistValueDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the person who added the value. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

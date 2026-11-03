@@ -32,7 +32,7 @@ data "oneuptime_on_call_schedule_layer" "by_id" {
 - `description` (String) Description for this layer. This is optional and can be left blank.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `name` (String) Friendly name for this layer.
-- `on_call_duty_policy_schedule_id` (String) ID of your On-Call Policy Schedule where this escalation rule belongs. The ID of a `oneuptime_on_call_policy_schedule`.
+- `on_call_duty_policy_schedule_id` (String) ID of the on-call schedule the layer is in. The ID of a `oneuptime_on_call_policy_schedule`.
 - `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.
 
 ### Read-Only
@@ -40,7 +40,7 @@ data "oneuptime_on_call_schedule_layer" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `hand_off_time` (String) Hand off time. When would you like to hand off the duty to the next user in this layer?
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `restriction_times` (String) Restrict this layer to these times. A JSON value: write it with `jsonencode()`.
-- `rotation` (String) How often would you like to hand off the duty to the next user in this layer? A JSON value: write it with `jsonencode()`.
+- `restriction_times` (String) Restrict this layer to these times. A JSON value: read it with `jsondecode()`.
+- `rotation` (String) How often would you like to hand off the duty to the next user in this layer? A JSON value: read it with `jsondecode()`.
 - `starts_at` (String) Start date and time of this layer.
 - `updated_at` (String) Date and Time when the object was updated.

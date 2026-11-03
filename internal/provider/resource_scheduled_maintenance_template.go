@@ -27,6 +27,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ScheduledMaintenanceTemplateResource{}
 var _ resource.ResourceWithImportState = &ScheduledMaintenanceTemplateResource{}
+var _ resource.ResourceWithModifyPlan = &ScheduledMaintenanceTemplateResource{}
 
 func NewScheduledMaintenanceTemplateResource() resource.Resource {
     return &ScheduledMaintenanceTemplateResource{}
@@ -126,6 +127,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "hosts": schema.SetAttribute{
                 MarkdownDescription: "List of hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_host` resources.",
@@ -135,6 +137,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_host"),
             },
             "kubernetes_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Kubernetes clusters to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_kubernetes_cluster` resources.",
@@ -144,6 +147,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_kubernetes_cluster"),
             },
             "docker_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Docker hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_docker_host` resources.",
@@ -153,6 +157,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_docker_host"),
             },
             "podman_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Podman hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_podman_host` resources.",
@@ -162,6 +167,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_podman_host"),
             },
             "services": schema.SetAttribute{
                 MarkdownDescription: "List of services to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_service` resources.",
@@ -171,6 +177,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_service"),
             },
             "status_pages": schema.SetAttribute{
                 MarkdownDescription: "List of status pages to show this event on. IDs of `oneuptime_status_page` resources.",
@@ -180,15 +187,17 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_status_page"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "change_monitor_status_to_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the event is ongoing. The ID of a `oneuptime_monitor_status`.",
@@ -197,6 +206,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "first_event_scheduled_at": schema.StringAttribute{
                 MarkdownDescription: "When would you like to schedule the first event?",
@@ -204,6 +214,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -213,6 +224,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -222,6 +234,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -231,6 +244,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -278,6 +292,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -290,6 +305,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -312,6 +328,9 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -327,6 +346,17 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ScheduledMaintenanceTemplateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ScheduledMaintenanceTemplateResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1284,6 +1314,9 @@ func (r *ScheduledMaintenanceTemplateResource) Create(ctx context.Context, req r
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2107,6 +2140,13 @@ func (r *ScheduledMaintenanceTemplateResource) Update(ctx context.Context, req r
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "custom_fields": !data.CustomFields.Equal(state.CustomFields),
+        "recurring_interval": !data.RecurringInterval.Equal(state.RecurringInterval),
+        "send_subscriber_notifications_on_before_the_event": !data.SendSubscriberNotificationsOnBeforeTheEvent.Equal(state.SendSubscriberNotificationsOnBeforeTheEvent),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config ScheduledMaintenanceTemplateResourceModel
@@ -3012,6 +3052,9 @@ func (r *ScheduledMaintenanceTemplateResource) Update(ctx context.Context, req r
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3048,6 +3091,9 @@ func (r *ScheduledMaintenanceTemplateResource) Delete(ctx context.Context, req r
 
 func (r *ScheduledMaintenanceTemplateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "recurring_interval", "send_subscriber_notifications_on_before_the_event"})...)
 }
 
 

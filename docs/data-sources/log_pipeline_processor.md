@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_log_pipeline_processor Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Individual processors within a log pipeline that transform log data during ingestion.
 ---
@@ -38,7 +38,7 @@ data "oneuptime_log_pipeline_processor" "by_id" {
 
 ### Read-Only
 
-- `configuration` (String) Processor-specific configuration as JSON (e.g., grok pattern, source/target fields, mapping rules). A JSON value: write it with `jsonencode()`.
+- `configuration` (String) Processor-specific configuration as JSON (e.g., grok pattern, source/target fields, mapping rules). A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of the project this log pipeline processor belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

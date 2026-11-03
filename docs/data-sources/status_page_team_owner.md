@@ -31,8 +31,8 @@ data "oneuptime_status_page_team_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `status_page_id` (String) ID of your OneUptime StatusPage in which this object belongs. The ID of a `oneuptime_status_page`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `status_page_id` (String) ID of the status page the team owns. The ID of a `oneuptime_status_page`.
+- `team_id` (String) ID of the team that owns the status page. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

@@ -36,6 +36,6 @@ data "oneuptime_dashboard_playlist" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `dashboards` (String) The dashboards shown, in order: a list like [{"dashboardId": "<id>"}]. One may appear more than once. A JSON value: write it with `jsonencode()`.
+- `dashboards` (String) The dashboards shown, in order: a list like [{"dashboardId": "<id>"}]. One may appear more than once. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

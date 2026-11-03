@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_event_connection Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Managed connections to SIEM, EDR, cloud security and identity products. Records are polled on an interval and ingested as security events.
 ---
@@ -42,10 +42,10 @@ data "oneuptime_security_event_connection" "by_id" {
 
 ### Read-Only
 
-- `config` (String) Provider-specific, non-secret settings such as tenant, workspace, region or base URL. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.
+- `config` (String) Provider-specific, non-secret settings such as tenant, workspace, region or base URL. Keys are defined by the provider catalog. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `last_event_ingested_at` (String) When a new security event was last imported from this connection.
-- `last_poll_result` (String) The latest scheduled or on-demand poll result with counts and warnings. A JSON value: write it with `jsonencode()`.
+- `last_poll_result` (String) The latest scheduled or on-demand poll result with counts and warnings. A JSON value: read it with `jsondecode()`.
 - `last_polled_at` (String) When this connection was last polled. Null means it has never run.
 - `last_successful_poll_at` (String) When a complete poll last finished successfully, including an empty result.
 - `project_id` (String) ID of the project this connection belongs to. The ID of a `oneuptime_project`.

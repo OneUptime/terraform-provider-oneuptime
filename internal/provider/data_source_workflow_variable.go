@@ -78,6 +78,7 @@ func (d *WorkflowVariableDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of Workflow this variable belong to. If this is null then this variable will be a global variable. The ID of a `oneuptime_workflow`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_workflow"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Variable Name.",
@@ -120,7 +121,7 @@ func (d *WorkflowVariableDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "oauth_additional_parameters": schema.StringAttribute{
-                MarkdownDescription: "OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "oauth_client_authentication_method": schema.StringAttribute{
@@ -149,6 +150,7 @@ func (d *WorkflowVariableDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

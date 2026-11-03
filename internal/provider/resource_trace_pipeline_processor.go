@@ -20,11 +20,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &TracePipelineProcessorResource{}
 var _ resource.ResourceWithImportState = &TracePipelineProcessorResource{}
+var _ resource.ResourceWithModifyPlan = &TracePipelineProcessorResource{}
 
 func NewTracePipelineProcessorResource() resource.Resource {
     return &TracePipelineProcessorResource{}
@@ -83,6 +85,7 @@ func (r *TracePipelineProcessorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_trace_pipeline"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Friendly name for this processor.",
@@ -95,6 +98,9 @@ func (r *TracePipelineProcessorResource) schemaDefinition() schema.Schema {
             "processor_type": schema.StringAttribute{
                 MarkdownDescription: "The type of processor: AttributeRemapper, SpanNameRemapper, StatusRemapper, SpanKindRemapper, or CategoryProcessor.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("AttributeRemapper", "SpanNameRemapper", "StatusRemapper", "SpanKindRemapper", "CategoryProcessor"),
+                },
             },
             "configuration": schema.StringAttribute{
                 MarkdownDescription: "Processor-specific configuration as JSON (e.g., source/target fields, mapping rules). A JSON value: write it with `jsonencode()`.",
@@ -102,6 +108,7 @@ func (r *TracePipelineProcessorResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -122,6 +129,7 @@ func (r *TracePipelineProcessorResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -147,6 +155,17 @@ func (r *TracePipelineProcessorResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *TracePipelineProcessorResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *TracePipelineProcessorResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -539,6 +558,9 @@ func (r *TracePipelineProcessorResource) Create(ctx context.Context, req resourc
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -848,6 +870,11 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "configuration": !data.Configuration.Equal(state.Configuration),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config TracePipelineProcessorResourceModel
@@ -1180,6 +1207,9 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1216,6 +1246,9 @@ func (r *TracePipelineProcessorResource) Delete(ctx context.Context, req resourc
 
 func (r *TracePipelineProcessorResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"configuration"})...)
 }
 
 

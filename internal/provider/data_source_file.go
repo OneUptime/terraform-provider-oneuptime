@@ -49,6 +49,7 @@ func (d *FileDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "file": schema.StringAttribute{
+                MarkdownDescription: "The file's content.",
                 Optional: true,
                 Computed: true,
             },
@@ -58,10 +59,12 @@ func (d *FileDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "file_type": schema.StringAttribute{
+                MarkdownDescription: "The file's media type, such as image/png.",
                 Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
+                MarkdownDescription: "Friendly globally unique name for your object.",
                 Optional: true,
                 Computed: true,
             },
@@ -71,6 +74,7 @@ func (d *FileDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "image_access_token": schema.StringAttribute{
+                MarkdownDescription: "Addresses the file in a link (/file/image/access-token/<token>) without its ID. Opening it still takes the right to see the file. Set by OneUptime.",
                 Optional: true,
                 Computed: true,
             },

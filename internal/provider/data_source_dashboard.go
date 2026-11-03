@@ -98,6 +98,7 @@ func (d *DashboardDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Archived dashboards are hidden from the Dashboards list and their public link stops working. Unarchiving restores them as they were.",
@@ -112,14 +113,15 @@ func (d *DashboardDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "dashboard_view_config": schema.StringAttribute{
-                MarkdownDescription: "The dashboard's widgets and variables, and the time range (timeRange, such as Past 1 Day) and auto-refresh (refreshInterval, such as 1m) it opens on. See the DashboardViewConfig data type. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The dashboard's widgets and variables, and the time range (timeRange, such as Past 1 Day) and auto-refresh (refreshInterval, such as 1m) it opens on. See the DashboardViewConfig data type. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "page_title": schema.StringAttribute{
@@ -136,16 +138,19 @@ func (d *DashboardDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "Dashboard Logo File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "dark_theme_logo_file_id": schema.StringAttribute{
                 MarkdownDescription: "Dashboard Dark Theme Logo File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "favicon_file_id": schema.StringAttribute{
                 MarkdownDescription: "Dashboard Favicon File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "theme": schema.StringAttribute{
                 MarkdownDescription: "How the public dashboard looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). Visitors can switch between light and dark from its toolbar. A dashboard created without a theme starts with System.",

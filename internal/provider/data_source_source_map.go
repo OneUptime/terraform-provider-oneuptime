@@ -68,6 +68,7 @@ func (d *SourceMapDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "ID of the telemetry service this source map belongs to. The ID of a `oneuptime_service`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "service_version": schema.StringAttribute{
                 MarkdownDescription: "The release this source map belongs to. Must exactly match the service.version OpenTelemetry resource attribute sent with the telemetry.",
@@ -93,6 +94,7 @@ func (d *SourceMapDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

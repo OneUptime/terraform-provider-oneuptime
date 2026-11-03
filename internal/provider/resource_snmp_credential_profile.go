@@ -22,6 +22,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SnmpCredentialProfileResource{}
 var _ resource.ResourceWithImportState = &SnmpCredentialProfileResource{}
+var _ resource.ResourceWithModifyPlan = &SnmpCredentialProfileResource{}
 
 func NewSnmpCredentialProfileResource() resource.Resource {
     return &SnmpCredentialProfileResource{}
@@ -113,6 +114,7 @@ func (r *SnmpCredentialProfileResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -188,6 +190,17 @@ func (r *SnmpCredentialProfileResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SnmpCredentialProfileResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SnmpCredentialProfileResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -818,6 +831,7 @@ func (r *SnmpCredentialProfileResource) Create(ctx context.Context, req resource
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

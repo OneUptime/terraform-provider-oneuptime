@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_queue Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Message queues, topics and subscriptions this project's applications publish to and consume from. Each queue is discovered from the OpenTelemetry messaging spans of instrumented applications and from broker metrics sent by an OpenTelemetry Collector, or added manually.
 ---
@@ -14,9 +14,9 @@ Message queues, topics and subscriptions this project's applications publish to 
 ```terraform
 resource "oneuptime_queue" "example" {
   name             = "Example queue"
-  queue_identifier = "This is an example of longer text content that might be stored in this field."
-  messaging_system = "Example short text"
-  destination_name = "This is an example of longer text content that might be stored in this field."
+  queue_identifier = "kafka||orders.created"
+  messaging_system = "kafka"
+  destination_name = "orders.created"
   description      = "Managed by Terraform"
 }
 ```
@@ -36,14 +36,14 @@ resource "oneuptime_queue" "example" {
 - `description` (String) Friendly description for this queue.
 - `discovery_source` (String) How this queue was first discovered: traces (messaging spans of instrumented applications), broker-metrics (the broker's own metrics) or manual.
 - `is_archived` (Boolean) Is this queue archived? Archived queues are hidden from lists but their telemetry is still collected. Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 
 ### Read-Only
 
 - `archived_at` (String) When was this queue archived?
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `auto_archived_at` (String) When this queue was archived automatically because no discovery source had seen it for a while. Empty when it was archived by a person or is not archived.
-- `automatic_assignments` (String) Label and owner ids that label rules or owner rules attached automatically. Maintained by OneUptime. A JSON value: write it with `jsonencode()`.
+- `automatic_assignments` (String) Label and owner ids that label rules or owner rules attached automatically. Maintained by OneUptime. A JSON value: read it with `jsondecode()`.
 - `broker_address` (String) The broker address (host[:port]) last reported for this queue by its telemetry, with any credentials removed. Display only - it is not part of the queue's identity.
 - `broker_metrics_last_seen_at` (String) When the broker's own metrics for this queue (backlog, lag, dead letters, ...) were last received. Empty when they never were.
 - `created_at` (String) Date and Time when the object was created.

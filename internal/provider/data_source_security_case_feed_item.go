@@ -70,6 +70,7 @@ func (d *SecurityCaseFeedItemDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of the case this feed item is about. The ID of a `oneuptime_security_case`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "feed_info_in_markdown": schema.StringAttribute{
                 MarkdownDescription: "What happened, in Markdown.",
@@ -94,6 +95,7 @@ func (d *SecurityCaseFeedItemDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of the person who did it. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "posted_at": schema.StringAttribute{
                 MarkdownDescription: "When it happened.",
@@ -103,6 +105,7 @@ func (d *SecurityCaseFeedItemDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of the person whose action wrote the entry. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

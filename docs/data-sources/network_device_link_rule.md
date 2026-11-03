@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_device_link_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Draw uplinks on the network topology map from labels: every device carrying the child labels is linked to the single device carrying the parent labels.
 ---

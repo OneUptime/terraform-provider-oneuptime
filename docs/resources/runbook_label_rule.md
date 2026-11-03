@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_runbook_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Runbooks & Runners"
 description: |-
   Configure rules for automatically attaching labels to runbooks when matching runbooks are created
 ---

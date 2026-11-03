@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_workspace_notification_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Slack, Teams & Video Calls"
 description: |-
   Notification Rule for Third Party Workspaces
 ---
@@ -14,8 +14,8 @@ Notification Rule for Third Party Workspaces
 ```terraform
 resource "oneuptime_workspace_notification_rule" "example" {
   name           = "Example workspace notification rule"
-  event_type     = "Example short text"
-  workspace_type = "This is an example of longer text content that might be stored in this field."
+  event_type     = "Incident"
+  workspace_type = "Slack"
   description    = "Managed by Terraform"
 }
 ```
@@ -24,9 +24,9 @@ resource "oneuptime_workspace_notification_rule" "example" {
 
 ### Required
 
-- `event_type` (String) Event Type for the Workspace like Incident Created, Monitor Status Updated, etc.
+- `event_type` (String) Event Type for the Workspace like Incident Created, Monitor Status Updated, etc. Allowed values: `Incident`, `Monitor`, `Alert`, `Alert Episode`, `Incident Episode`, `Scheduled Maintenance`, `On-Call Duty Policy`, `Security Case`.
 - `name` (String) Name of the Notification Rule.
-- `workspace_type` (String) Type of Workspace - slack, microsoft teams etc.
+- `workspace_type` (String) Type of Workspace - slack, microsoft teams etc. Allowed values: `Slack`, `MicrosoftTeams`.
 
 ### Optional
 

@@ -109,6 +109,7 @@ func (d *CloudAccountDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "ID of the connection that reads this account, if one does. The ID of a `oneuptime_cloud_connection`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_cloud_connection"),
             },
             "resource_count": schema.NumberAttribute{
                 MarkdownDescription: "How many live resources the account has in OneUptime.",
@@ -121,7 +122,7 @@ func (d *CloudAccountDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "resource_summary": schema.StringAttribute{
-                MarkdownDescription: "The account's live resources counted by type and by region (CloudAccountSummary). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The account's live resources counted by type and by region (CloudAccountSummary). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -133,7 +134,7 @@ func (d *CloudAccountDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -141,6 +142,7 @@ func (d *CloudAccountDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "ID of the user who created this account. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
                 MarkdownDescription: "When on, OneUptime AI reads this account live while investigating incidents and alerts linked to its resources — a resource's settings and status, its recent events, load balancer target health and quota usage — through the account's read-only cloud connection, and uses what it read as evidence; it needs no Cloud AI agent for that. Nothing is ever changed by an investigation. On by default. Anyone who may edit the account can turn it on or off.",
@@ -158,7 +160,7 @@ func (d *CloudAccountDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "ai_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run in this account without approval even though they are riskier changes. Each pattern is one cloud catalog command (cloud <operation> RESOURCE [--flag value]) and is compared with the command word by word: * stands for exactly one word (a resource id, a count), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid change for this account's cloud is refused. Destructive operations (Denied tier) never run regardless, and an operation that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the account can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run in this account without approval even though they are riskier changes. Each pattern is one cloud catalog command (cloud <operation> RESOURCE [--flag value]) and is compared with the command word by word: * stands for exactly one word (a resource id, a count), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid change for this account's cloud is refused. Destructive operations (Denied tier) never run regardless, and an operation that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the account can remove patterns or clear the list. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{

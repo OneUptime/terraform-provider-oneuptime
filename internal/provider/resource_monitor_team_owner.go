@@ -14,15 +14,14 @@ import (
     "encoding/json"
     "net/url"
     "strings"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &MonitorTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &MonitorTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &MonitorTeamOwnerResource{}
 
 func NewMonitorTeamOwnerResource() resource.Resource {
     return &MonitorTeamOwnerResource{}
@@ -39,10 +38,10 @@ type MonitorTeamOwnerResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     TeamId types.String `tfsdk:"team_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
-    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
 }
 
 func (r *MonitorTeamOwnerResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -73,28 +72,20 @@ func (r *MonitorTeamOwnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the monitor. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "monitor_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Monitor in which this object belongs. The ID of a `oneuptime_monitor`.",
+                MarkdownDescription: "ID of the monitor the team owns. The ID of a `oneuptime_monitor`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
-            },
-            "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                    boolplanmodifier.RequiresReplace(),
-                },
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -116,8 +107,23 @@ func (r *MonitorTeamOwnerResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_owner_notified": schema.BoolAttribute{
+                MarkdownDescription: "Are owners notified of this resource ownership?",
+                Computed: true,
+            },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *MonitorTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *MonitorTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -151,14 +157,6 @@ func (r *MonitorTeamOwnerResource) Create(ctx context.Context, req resource.Crea
         return
     }
 
-    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
-    var config MonitorTeamOwnerResourceModel
-    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-    if resp.Diagnostics.HasError() {
-        return
-    }
-    plan := data
-
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -174,9 +172,6 @@ func (r *MonitorTeamOwnerResource) Create(ctx context.Context, req resource.Crea
     }
     if !data.MonitorId.IsNull() && !data.MonitorId.IsUnknown() {
         requestDataMap["monitorId"] = data.MonitorId.ValueString()
-    }
-    if !data.IsOwnerNotified.IsNull() && !data.IsOwnerNotified.IsUnknown() {
-        requestDataMap["isOwnerNotified"] = data.IsOwnerNotified.ValueBool()
     }
 
     // Make API call
@@ -226,10 +221,10 @@ func (r *MonitorTeamOwnerResource) Create(ctx context.Context, req resource.Crea
         "projectId": true,
         "teamId": true,
         "monitorId": true,
-        "isOwnerNotified": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -347,9 +342,6 @@ func (r *MonitorTeamOwnerResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.MonitorId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -409,6 +401,9 @@ func (r *MonitorTeamOwnerResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -417,11 +412,9 @@ func (r *MonitorTeamOwnerResource) Create(ctx context.Context, req resource.Crea
     // The read response is authoritative, but never let it clobber the id we just received.
     data.Id = types.StringValue(createdId)
 
-    // Unconfigured attributes keep their planned value; see keepPlannedValues.
-    r.keepPlannedValues(&data, &plan, &config)
-
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -442,10 +435,10 @@ func (r *MonitorTeamOwnerResource) Read(ctx context.Context, req resource.ReadRe
         "projectId": true,
         "teamId": true,
         "monitorId": true,
-        "isOwnerNotified": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -564,9 +557,6 @@ func (r *MonitorTeamOwnerResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.MonitorId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -626,6 +616,9 @@ func (r *MonitorTeamOwnerResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -654,14 +647,6 @@ func (r *MonitorTeamOwnerResource) Update(ctx context.Context, req resource.Upda
 
     // Use the ID from the current state
     data.Id = state.Id
-
-    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
-    var config MonitorTeamOwnerResourceModel
-    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-    if resp.Diagnostics.HasError() {
-        return
-    }
-    plan := data
 
     // Create API request body
     monitorTeamOwnerRequest := map[string]interface{}{
@@ -694,10 +679,10 @@ func (r *MonitorTeamOwnerResource) Update(ctx context.Context, req resource.Upda
         "projectId": true,
         "teamId": true,
         "monitorId": true,
-        "isOwnerNotified": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -810,9 +795,6 @@ func (r *MonitorTeamOwnerResource) Update(ctx context.Context, req resource.Upda
     } else {
         data.MonitorId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -872,15 +854,15 @@ func (r *MonitorTeamOwnerResource) Update(ctx context.Context, req resource.Upda
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
     data.Id = state.Id
-
-    // Unconfigured attributes keep their planned value; see keepPlannedValues.
-    r.keepPlannedValues(&data, &plan, &config)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -917,22 +899,24 @@ func (r *MonitorTeamOwnerResource) Delete(ctx context.Context, req resource.Dele
 
 
 func (r *MonitorTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-
-
-// keepPlannedValues puts back, after a create or an update, the planned value
-// of each optional attribute the configuration leaves out. The server keeps
-// some of these up to date on its own (when it last checked a heartbeat, the
-// status a probe last reported...), so the value read back after the write can
-// already differ from the plan, and Terraform would fail the apply with
-// "Provider produced inconsistent result after apply". The next refresh reads
-// the server's value, which is never a diff for an attribute nobody configured.
-func (r *MonitorTeamOwnerResource) keepPlannedValues(data *MonitorTeamOwnerResourceModel, plan *MonitorTeamOwnerResourceModel, config *MonitorTeamOwnerResourceModel) {
-    if config.IsOwnerNotified.IsNull() && !plan.IsOwnerNotified.IsUnknown() {
-        data.IsOwnerNotified = plan.IsOwnerNotified
+    // By its own ID, or by what it joins and who or what joins it: <monitor_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/monitor-owner-team/get-list",
+        parentField:     "monitorId",
+        parentAttribute: "monitor_id",
+        parentNoun:      "monitor",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
     }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
+
 
 // Helper method to convert Terraform map to Go interface{}
 func (r *MonitorTeamOwnerResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {

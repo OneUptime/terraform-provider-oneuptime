@@ -68,17 +68,17 @@ func (d *AiAgentDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]",
-                Optional: true,
+                MarkdownDescription: "The secret the AI agent connects with, its AI_AGENT_KEY. Leave it out and OneUptime generates one.",
                 Computed: true,
+                Sensitive: true,
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]",
+                MarkdownDescription: "Any friendly name of this object.",
                 Optional: true,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]",
+                MarkdownDescription: "Friendly description that will help you remember.",
                 Optional: true,
                 Computed: true,
             },
@@ -88,20 +88,21 @@ func (d *AiAgentDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "ai_agent_version": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent]",
+                MarkdownDescription: "A version label for the AI agent. Leave it out and it is 1.0.0.",
                 Computed: true,
             },
             "last_alive": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "When the AI agent last checked in. Set by OneUptime.",
                 Computed: true,
             },
             "icon_file_id": schema.StringAttribute{
                 MarkdownDescription: "AI Agent Icon File ID. The ID of a `oneuptime_file`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "project_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "ID of the project the AI agent belongs to. A global AI agent belongs to none.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -120,7 +121,7 @@ func (d *AiAgentDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -163,10 +164,6 @@ func (d *AiAgentDataSource) Read(ctx context.Context, req datasource.ReadRequest
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
-    if !data.Key.IsNull() && !data.Key.IsUnknown() {
-        filters["key"] = data.Key.ValueString()
-        filterNames = append(filterNames, "key = "+fmt.Sprintf("%q", data.Key.ValueString()))
-    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))

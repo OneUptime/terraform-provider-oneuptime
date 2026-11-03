@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_source Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Connect external systems — Prometheus, SQL databases, ClickHouse, Loki, Elasticsearch, or REST APIs — and build dashboards on their data.
 ---
@@ -14,7 +14,7 @@ Connect external systems — Prometheus, SQL databases, ClickHouse, Loki, Elasti
 ```terraform
 resource "oneuptime_data_source" "example" {
   name             = "Example data source"
-  data_source_type = "Example short text"
+  data_source_type = "Prometheus"
   description      = "Managed by Terraform"
 }
 ```
@@ -23,7 +23,7 @@ resource "oneuptime_data_source" "example" {
 
 ### Required
 
-- `data_source_type` (String) The kind of external system this data source connects to (Prometheus, PostgreSQL, MySQL, Microsoft SQL Server, ClickHouse, Loki, Elasticsearch, or REST API).
+- `data_source_type` (String) The kind of external system this data source connects to (Prometheus, PostgreSQL, MySQL, Microsoft SQL Server, ClickHouse, Loki, Elasticsearch, or REST API). Allowed values: `Prometheus`, `PostgreSQL`, `MySQL`, `Microsoft SQL Server`, `ClickHouse`, `Loki`, `Elasticsearch`, `REST API`.
 - `name` (String) Any friendly name of this object.
 
 ### Optional

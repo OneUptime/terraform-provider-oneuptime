@@ -1,25 +1,27 @@
 ---
-page_title: "oneuptime_probe_owner_team Data Source - oneuptime"
+page_title: "oneuptime_probe_team_owner Data Source - oneuptime"
 subcategory: "Probes"
 description: |-
   Add teams as owners to your probes.
 ---
 
-# oneuptime_probe_owner_team (Data Source)
+# oneuptime_probe_team_owner (Data Source)
 
 Add teams as owners to your probes.
 
-Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one probe owner team may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
+Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one probe team owner may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
+
+~> **Renamed:** this data source was called `oneuptime_probe_owner_team` before. The old name still works, but is deprecated.
 
 ## Example Usage
 
 ```terraform
-data "oneuptime_probe_owner_team" "example" {
+data "oneuptime_probe_team_owner" "example" {
   team_id = oneuptime_team.example.id
 }
 
 # Or by id:
-data "oneuptime_probe_owner_team" "by_id" {
+data "oneuptime_probe_team_owner" "by_id" {
   id = "<id>"
 }
 ```
@@ -31,8 +33,8 @@ data "oneuptime_probe_owner_team" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `probe_id` (String) ID of your OneUptime Probe in which this object belongs. The ID of a `oneuptime_probe`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `probe_id` (String) ID of the probe the team owns. The ID of a `oneuptime_probe`.
+- `team_id` (String) ID of the team that owns the probe. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_two_factor_backup_code Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Teams & Access"
 description: |-
   Single-use backup codes that let a user sign in when their two factor authentication device is unavailable
 ---

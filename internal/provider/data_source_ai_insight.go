@@ -142,7 +142,7 @@ func (d *AiInsightDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "evidence": schema.StringAttribute{
-                MarkdownDescription: "The deterministic evidence computed at detect time: counts, baselines, multipliers and (for latency insights) span-tree findings. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The deterministic evidence computed at detect time: counts, baselines, multipliers and (for latency insights) span-tree findings. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "first_seen_at": schema.StringAttribute{

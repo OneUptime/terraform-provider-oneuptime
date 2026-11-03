@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_entity_criticality Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   How much each user, host, IP address and data store matters: the risk of an entity an entry names counts less (Low) or more (High, Extreme).
 ---

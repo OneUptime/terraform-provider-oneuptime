@@ -72,21 +72,25 @@ func (d *NetworkSiteLinkDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the Network Site this link starts from. The ID of a `oneuptime_network_site`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "to_site_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Site this link ends at. The ID of a `oneuptime_network_site`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Monitor whose status colors this link on map views. The ID of a `oneuptime_monitor`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

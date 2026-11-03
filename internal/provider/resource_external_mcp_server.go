@@ -20,11 +20,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ExternalMcpServerResource{}
 var _ resource.ResourceWithImportState = &ExternalMcpServerResource{}
+var _ resource.ResourceWithModifyPlan = &ExternalMcpServerResource{}
 
 func NewExternalMcpServerResource() resource.Resource {
     return &ExternalMcpServerResource{}
@@ -120,6 +122,9 @@ func (r *ExternalMcpServerResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("None", "BearerToken", "Headers", "OAuthClientCredentials"),
+                },
             },
             "bearer_token": schema.StringAttribute{
                 MarkdownDescription: "For BearerToken: the API token, sent as Authorization: Bearer <token>. Encrypted at rest and never returned by the API.",
@@ -130,6 +135,9 @@ func (r *ExternalMcpServerResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "For Headers: the headers sent with every request, as a JSON object of names and values. Each value is encrypted at rest and never returned by the API. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                },
                 Validators: []validator.String{
                     JSONEnvelopeValidator(),
                 },
@@ -214,7 +222,7 @@ func (r *ExternalMcpServerResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "tools": schema.StringAttribute{
-                MarkdownDescription: "The tools the server offered when OneUptime last connected: each one's name, description and whether the server marks it read-only. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The tools the server offered when OneUptime last connected: each one's name, description and whether the server marks it read-only. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -241,6 +249,17 @@ func (r *ExternalMcpServerResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ExternalMcpServerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ExternalMcpServerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1091,6 +1110,9 @@ func (r *ExternalMcpServerResource) Create(ctx context.Context, req resource.Cre
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1840,6 +1862,11 @@ func (r *ExternalMcpServerResource) Update(ctx context.Context, req resource.Upd
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "headers": !data.Headers.Equal(state.Headers),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config ExternalMcpServerResourceModel
@@ -2633,6 +2660,9 @@ func (r *ExternalMcpServerResource) Update(ctx context.Context, req resource.Upd
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2669,6 +2699,9 @@ func (r *ExternalMcpServerResource) Delete(ctx context.Context, req resource.Del
 
 func (r *ExternalMcpServerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"headers"})...)
 }
 
 

@@ -13,9 +13,9 @@ Logs for on-call duty policy execution.
 
 ```terraform
 resource "oneuptime_on_call_duty_execution_log" "example" {
-  status                       = "Example short text"
-  status_message               = "This is an example of longer text content that might be stored in this field."
-  user_notification_event_type = "Example short text"
+  status                       = "Waiting"
+  status_message               = "On-call policy execution started. Notifying primary on-call team members."
+  user_notification_event_type = "Incident Created"
 }
 ```
 
@@ -23,9 +23,9 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 
 ### Required
 
-- `status` (String) Status of this execution.
+- `status` (String) Status of this execution. Allowed values: `Waiting`, `Scheduled`, `Started`, `Executing`, `Execution Completed`, `Execution Completed - No One Notified`, `Error`.
 - `status_message` (String) Status message of this execution.
-- `user_notification_event_type` (String) Type of event that triggered this on-call duty policy.
+- `user_notification_event_type` (String) Type of event that triggered this on-call duty policy. Allowed values: `Incident Created`, `Alert Created`, `Alert Episode Created`, `Incident Episode Created`.
 
 ### Optional
 

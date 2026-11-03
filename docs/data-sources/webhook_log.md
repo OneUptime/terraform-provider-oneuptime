@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_webhook_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Notification Logs"
 description: |-
   Logs of all the outbound Webhook requests sent for this project.
 ---

@@ -2,12 +2,12 @@
 page_title: "oneuptime Provider"
 subcategory: ""
 description: |-
-  Terraform provider for Oneuptime.
+  Manage a OneUptime project as code, with Terraform or OpenTofu: monitors, status pages, incidents, on-call policies, teams and everything else the OneUptime API manages.
 ---
 
-# Oneuptime Provider
+# OneUptime Provider
 
-OpenAPI specification for OneUptime. This document describes the API endpoints, request and response formats, and other details necessary for developers to interact with the OneUptime API.
+Manage a OneUptime project as code, with Terraform or OpenTofu: monitors, status pages, incidents, on-call policies, teams and everything else the OneUptime API manages.
 
 ## Example Usage
 
@@ -33,8 +33,8 @@ provider "oneuptime" {
 
 ### Optional
 
-- `api_key` (String, Sensitive) Project-scoped API key for authentication. Falls back to the `ONEUPTIME_API_KEY` environment variable; the provider fails at configure time when neither is set.
-- `oneuptime_url` (String) The oneuptime URL (without /api path). Defaults to 'oneuptime.com' if not specified. The provider automatically appends '/api' to the URL. Can also be set via the `ONEUPTIME_URL` environment variable.
+- `api_key` (String, Sensitive) An API key of the project to manage, from its **Settings** > **API Keys**. Falls back to the `ONEUPTIME_API_KEY` environment variable; the provider stops before any plan when neither is set.
+- `oneuptime_url` (String) The address of your OneUptime: https://oneuptime.com, or your own installation's. Leave out /api: the provider adds it. Falls back to the `ONEUPTIME_URL` environment variable, then to https://oneuptime.com.
 
 ## Start Here
 
@@ -68,17 +68,22 @@ Server-side ids that a resource carries inside it - the ids of a monitor's steps
 
 ## Renamed resources
 
-These resources were renamed: names like IoT and vCenter now read as one word, and auto remediation rules became AI rules. Each old name still works, as a deprecated alias, so no configuration breaks; plans that use one say so.
+These resources were renamed to read the way the product names them: IoT and vCenter are one word, auto remediation rules are AI rules, an escalation rule's users, teams and schedules are `escalation_rule_user`, `escalation_rule_team` and `escalation_rule_schedule`, and every team owner is `<thing>_team_owner`. Each old name still works, as a deprecated alias, so no configuration breaks; plans that use one say so.
 
 | Old name | New name |
 |----------|----------|
+| `oneuptime_ai_agent_owner_team` | [`oneuptime_ai_agent_team_owner`](./resources/ai_agent_team_owner) |
 | `oneuptime_auto_remediation_rule` | [`oneuptime_ai_rule`](./resources/ai_rule) |
+| `oneuptime_schedules_on_call_duty_escalation_rule` | [`oneuptime_escalation_rule_schedule`](./resources/escalation_rule_schedule) |
+| `oneuptime_team_on_call_duty_escalation_rule` | [`oneuptime_escalation_rule_team`](./resources/escalation_rule_team) |
+| `oneuptime_users_on_call_duty_escalation_rule` | [`oneuptime_escalation_rule_user`](./resources/escalation_rule_user) |
 | `oneuptime_io_t_device_credential` | [`oneuptime_iot_device_credential`](./resources/iot_device_credential) |
 | `oneuptime_io_t_fleet` | [`oneuptime_iot_fleet`](./resources/iot_fleet) |
 | `oneuptime_io_t_fleet_label_rule` | [`oneuptime_iot_fleet_label_rule`](./resources/iot_fleet_label_rule) |
 | `oneuptime_io_t_fleet_owner_rule` | [`oneuptime_iot_fleet_owner_rule`](./resources/iot_fleet_owner_rule) |
 | `oneuptime_io_t_fleet_team_owner` | [`oneuptime_iot_fleet_team_owner`](./resources/iot_fleet_team_owner) |
 | `oneuptime_io_t_fleet_user_owner` | [`oneuptime_iot_fleet_user_owner`](./resources/iot_fleet_user_owner) |
+| `oneuptime_probe_owner_team` | [`oneuptime_probe_team_owner`](./resources/probe_team_owner) |
 | `oneuptime_v_center` | [`oneuptime_vcenter`](./resources/vcenter) |
 | `oneuptime_v_center_feed` | [`oneuptime_vcenter_feed`](./resources/vcenter_feed) |
 | `oneuptime_v_center_label_rule` | [`oneuptime_vcenter_label_rule`](./resources/vcenter_label_rule) |
@@ -92,6 +97,32 @@ To switch, rename the resource in your configuration and add a `moved` block, an
 moved {
   from = oneuptime_auto_remediation_rule.example
   to   = oneuptime_ai_rule.example
+}
+```
+
+One old name is another resource's now, so no alias can keep it. A configuration that uses it for what it managed before stops planning until you rename the resource and add a `moved` block:
+
+| Old name, now another resource | What it managed is now |
+|----------|----------|
+| [`oneuptime_subscriber_notification_template`](./resources/subscriber_notification_template) | [`oneuptime_status_page_subscriber_notification_template`](./resources/status_page_subscriber_notification_template) |
+
+```terraform
+moved {
+  from = oneuptime_subscriber_notification_template.example
+  to   = oneuptime_status_page_subscriber_notification_template.example
+}
+```
+
+Where the engine cannot move a resource to another type (Terraform before 1.8), remove it from the state with `terraform state rm` and import it under its new name instead.
+
+## People by email address
+
+Every resource that names a person takes their email address as well as their user ID - `user_email` beside `user_id`, `owner_user_emails` beside `owner_users` - and a team member named by an address that is new to the project invites them. See [Managing people and teams](./guides/people) for onboarding and offboarding as code.
+
+```terraform
+resource "oneuptime_team_member" "alice" {
+  team_id    = oneuptime_team.sre.id
+  user_email = "alice@example.com"
 }
 ```
 

@@ -99,7 +99,7 @@ resource "oneuptime_monitor" "example" {
 - `iot_fleets` (Set of String) IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_iot_fleet` resources.
 - `is_archived` (Boolean) Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring. Defaults to `false`.
 - `kubernetes_clusters` (Set of String) Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_kubernetes_cluster` resources.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `minimum_probe_agreement` (Number) Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree.
 - `monitor_steps` (Attributes List) What would you like to monitor and what is the criteria? (see [below for nested schema](#nestedatt--monitor_steps))
 - `monitor_template_id` (String) ID of the Monitor Template this monitor was created from. Null for monitors not created from a template. The ID of a `oneuptime_monitor_template`.
@@ -127,15 +127,15 @@ resource "oneuptime_monitor" "example" {
 - `id` (String) Unique identifier for the resource.
 - `incoming_email_monitor_heartbeat_checked_at` (String) This field is for Incoming Email monitor only. When was the last time we checked the heartbeat?
 - `incoming_email_monitor_last_email_received_at` (String) This field is for Incoming Email Monitor only. When was the last email received?
-- `incoming_email_monitor_request` (String) This field is for Incoming Email Monitor only. Last email data received. A JSON value: write it with `jsonencode()`.
-- `incoming_email_secret_key` (String) This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.
-- `incoming_request_secret_key` (String) This field is for Incoming Request Monitor only. Secret Key to authenticate the request.
+- `incoming_email_monitor_request` (String) This field is for Incoming Email Monitor only. Last email data received. A JSON value: read it with `jsondecode()`.
+- `incoming_email_secret_key` (String, Sensitive) This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.
+- `incoming_request_secret_key` (String, Sensitive) This field is for Incoming Request Monitor only. Secret Key to authenticate the request.
 - `is_all_probes_disconnected_from_this_monitor` (Boolean) All Probes Disconnected From This Monitor. Is this monitor not being monitored?
 - `is_no_probe_enabled_on_this_monitor` (Boolean) No Probe Enabled On This Monitor. Is this monitor not being monitored?
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
 - `network_alert_policy_id` (String) ID of the Network Alert Policy that provisioned this monitor, when one did. The ID of a `oneuptime_network_alert_policy`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `server_monitor_secret_key` (String) This field is for Server Monitor only. Secret Key to authenticate the request.
+- `server_monitor_secret_key` (String, Sensitive) This field is for Server Monitor only. Secret Key to authenticate the request.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.
 

@@ -23,11 +23,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &DataStoreResource{}
 var _ resource.ResourceWithImportState = &DataStoreResource{}
+var _ resource.ResourceWithModifyPlan = &DataStoreResource{}
 
 func NewDataStoreResource() resource.Resource {
     return &DataStoreResource{}
@@ -141,6 +143,9 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("AWS S3 Bucket", "AWS RDS Instance", "AWS Aurora Cluster", "AWS RDS Snapshot", "AWS DynamoDB Table", "AWS Redshift Cluster", "AWS DocumentDB Cluster", "AWS OpenSearch Domain", "AWS ElastiCache Cluster", "AWS EFS File System", "Azure Storage Account", "Azure SQL Database", "Azure Cosmos DB Account", "Azure PostgreSQL Server", "Azure MySQL Server", "Google Cloud Storage Bucket", "Google Cloud SQL Instance", "Google BigQuery Dataset", "Google Firestore Database", "Google Spanner Instance", "Google Bigtable Instance", "PostgreSQL", "MySQL", "MongoDB", "SQL Server", "Oracle", "Redis", "Elasticsearch", "Logs", "Traces", "Exceptions", "Session Replays", "AI Conversations"),
+                },
             },
             "environment": schema.StringAttribute{
                 MarkdownDescription: "Which environment the store serves: Production, Staging, Development, Test or Unknown. Read from its tags and name; people may set it.",
@@ -150,6 +155,9 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Production", "Staging", "Development", "Test", "Unknown"),
+                },
             },
             "sensitivity_override": schema.StringAttribute{
                 MarkdownDescription: "A sensitivity people set by hand, which the store is treated as instead of what the scans found.",
@@ -157,6 +165,9 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Restricted", "Confidential", "Internal", "Public"),
                 },
             },
             "is_public_by_design": schema.BoolAttribute{
@@ -193,6 +204,7 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "probe_connection_variable": schema.StringAttribute{
                 MarkdownDescription: "For a database scanned from a probe: the environment variable on that probe that holds its connection string. The connection string itself never reaches OneUptime.",
@@ -213,6 +225,7 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -236,13 +249,14 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -310,17 +324,17 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "data_type_ids": schema.StringAttribute{
-                MarkdownDescription: "The data types found in the store with at least Medium confidence. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The data types found in the store with at least Medium confidence. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "data_categories": schema.StringAttribute{
-                MarkdownDescription: "The categories of those data types. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The categories of those data types. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "subject_countries": schema.StringAttribute{
-                MarkdownDescription: "Countries whose people's data the store holds, from country-bound data types (ISO 3166-1 alpha-2). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Countries whose people's data the store holds, from country-bound data types (ISO 3166-1 alpha-2). A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -329,12 +343,12 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "posture": schema.StringAttribute{
-                MarkdownDescription: "What the store's configuration says about its safety: public access, encryption, backups, logging and the rest. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the store's configuration says about its safety: public access, encryption, backups, logging and the rest. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "cloud_tags": schema.StringAttribute{
-                MarkdownDescription: "The store's tags or labels in its cloud. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The store's tags or labels in its cloud. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -413,6 +427,17 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *DataStoreResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *DataStoreResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1985,6 +2010,9 @@ func (r *DataStoreResource) Create(ctx context.Context, req resource.CreateReque
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3447,6 +3475,11 @@ func (r *DataStoreResource) Update(ctx context.Context, req resource.UpdateReque
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "scan_exclusions": !data.ScanExclusions.Equal(state.ScanExclusions),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config DataStoreResourceModel
@@ -4954,6 +4987,9 @@ func (r *DataStoreResource) Update(ctx context.Context, req resource.UpdateReque
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -4990,6 +5026,9 @@ func (r *DataStoreResource) Delete(ctx context.Context, req resource.DeleteReque
 
 func (r *DataStoreResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"scan_exclusions"})...)
 }
 
 

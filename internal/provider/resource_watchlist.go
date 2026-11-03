@@ -17,11 +17,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &WatchlistResource{}
 var _ resource.ResourceWithImportState = &WatchlistResource{}
+var _ resource.ResourceWithModifyPlan = &WatchlistResource{}
 
 func NewWatchlistResource() resource.Resource {
     return &WatchlistResource{}
@@ -92,6 +95,9 @@ func (r *WatchlistResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("User", "Host", "IP Address", "Domain", "URL", "File Hash", "Process", "Data Store", "Other"),
+                },
             },
             "source": schema.StringAttribute{
                 MarkdownDescription: "Where the values come from: Values (added by hand or imported) or Threat Intel Feed (the feed's active indicators of the list's kind).",
@@ -102,6 +108,9 @@ func (r *WatchlistResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Values", "Threat Intel Feed"),
+                },
             },
             "threat_intel_feed_id": schema.StringAttribute{
                 MarkdownDescription: "For a list that follows a feed: the ID of the feed whose active indicators are the list's values. The ID of a `oneuptime_threat_intel_feed`.",
@@ -110,6 +119,7 @@ func (r *WatchlistResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_threat_intel_feed"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -137,6 +147,17 @@ func (r *WatchlistResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *WatchlistResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *WatchlistResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -559,6 +580,7 @@ func (r *WatchlistResource) Create(ctx context.Context, req resource.CreateReque
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

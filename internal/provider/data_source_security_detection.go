@@ -82,6 +82,7 @@ func (d *SecurityDetectionDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the case this detection belongs to. The ID of a `oneuptime_security_case`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "What fired, about what: the rule's name and the value it grouped on.",
@@ -117,16 +118,19 @@ func (d *SecurityDetectionDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the detection rule that fired. The ID of a `oneuptime_detection_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_detection_rule"),
             },
             "threat_intel_feed_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the feed whose indicator matched. The ID of a `oneuptime_threat_intel_feed`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_threat_intel_feed"),
             },
             "security_event_connection_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the connection the alert was imported through. The ID of a `oneuptime_security_event_connection`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_event_connection"),
             },
             "group_value": schema.StringAttribute{
                 MarkdownDescription: "The value the rule grouped its matches by, such as the host or IP address they share.",
@@ -134,15 +138,15 @@ func (d *SecurityDetectionDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "entities": schema.StringAttribute{
-                MarkdownDescription: "The users, hosts, IP addresses, domains and files the detection names, each as { type, value }. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The users, hosts, IP addresses, domains and files the detection names, each as { type, value }. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "mitre_tactics": schema.StringAttribute{
-                MarkdownDescription: "ATT&CK tactic ids the detection is tagged with. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "ATT&CK tactic ids the detection is tagged with. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "mitre_techniques": schema.StringAttribute{
-                MarkdownDescription: "ATT&CK technique ids the detection is tagged with. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "ATT&CK technique ids the detection is tagged with. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "event_count": schema.NumberAttribute{

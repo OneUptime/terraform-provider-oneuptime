@@ -117,7 +117,7 @@ func (d *MonitorTemplateDataSource) Schema(ctx context.Context, req datasource.S
                 ElementType: types.StringType,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "minimum_probe_agreement": schema.NumberAttribute{
@@ -129,6 +129,7 @@ func (d *MonitorTemplateDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

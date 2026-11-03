@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_custom_role_permission Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Teams & Access"
 description: |-
   The permissions in a custom role, each with the scope and labels a team's own permission takes.
 ---
@@ -37,6 +37,6 @@ data "oneuptime_custom_role_permission" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `labels` (Set of String) With the scope Labels: the labels this permission is limited to. A resource carrying at least one of them is reached. IDs of `oneuptime_label` resources.
-- `permission` (String) A built-in role, such as IncidentMember, or a single permission, such as ReadProjectIncident. You can find the list of permissions in the Permission Reference. ProjectOwner cannot be part of a custom role. A JSON value: write it with `jsonencode()`.
+- `permission` (String) A built-in role, such as IncidentMember, or a single permission, such as ReadProjectIncident. You can find the list of permissions in the Permission Reference. ProjectOwner cannot be part of a custom role. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

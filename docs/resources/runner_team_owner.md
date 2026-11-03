@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_runner_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Runbooks & Runners"
 description: |-
   Add teams as owners to your runbook agents.
 ---
@@ -22,8 +22,8 @@ resource "oneuptime_runner_team_owner" "example" {
 
 ### Required
 
-- `runner_id` (String) ID of your OneUptime Runner in which this object belongs. The ID of a `oneuptime_runner`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `runner_id` (String) ID of the runner the team owns. The ID of a `oneuptime_runner`.
+- `team_id` (String) ID of the team that owns the runner. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_runner_team_owner" "example" {
 
 ## Import
 
-Import an existing runner team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing runner team owner by its runner and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_runner_team_owner.example
-  id = "<id>"
+  id = "<runner_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_runner_team_owner.example <id>
+terraform import oneuptime_runner_team_owner.example <runner_id>/<team_id>
 ```
+
+Its own ID works too.

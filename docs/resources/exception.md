@@ -26,7 +26,8 @@ resource "oneuptime_exception" "example" {
 ### Optional
 
 - `assign_to_team_id` (String) Team ID who this exception is assigned to. The ID of a `oneuptime_team`.
-- `assign_to_user_id` (String) User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source).
+- `assign_to_user_email` (String) The email address of the person in `assign_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `assign_to_user_id` (String) User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assign_to_user_email`.
 - `environment` (String) Deployment environment from deployment.environment resource attribute.
 - `exception_type` (String) Type of the exception that was thrown by the telemetry service.
 - `fingerprint` (String) Finger print of the exception that was thrown by the telemetry service.
@@ -38,7 +39,7 @@ resource "oneuptime_exception" "example" {
 - `last_seen_in_release` (String) The most recent service version / release in which this exception was observed.
 - `message` (String) Exception message that was thrown by the telemetry service.
 - `occurance_count` (Number) Number of times this exception has occurred. Defaults to `1`.
-- `primary_entity_type` (String) Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry).
+- `primary_entity_type` (String) Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry). Allowed values: `OpenTelemetry`, `Monitor`, `NetworkDevice`, `Alert`, `Incident`, `ScheduledMaintenance`, `ServiceLevelObjective`, `Host`, `DockerHost`, `PodmanHost`, `KubernetesCluster`, `ProxmoxCluster`, `CephCluster`, `StorageArray`, `DockerSwarmCluster`, `VMwareVCenter`, `IoTDevice`, `ServerlessFunction`, `CloudResource`, `RealUserMonitor`, `DatabaseServer`, `Unknown`.
 - `regressed_at` (String) When this exception last came back after it was resolved. Empty when it has not come back since someone last resolved or reopened it.
 - `resolved_in_release_after` (String) Set when the exception was resolved in the next release: the release it was resolved after. Occurrences from this release do not reopen the exception; an occurrence from any other release does.
 - `stack_trace` (String) Stack trace of the exception that was thrown by the telemetry service.
@@ -46,7 +47,7 @@ resource "oneuptime_exception" "example" {
 ### Read-Only
 
 - `ai_classification` (String) AI triage verdict for this exception group (code-fault, user-error, expected-denial, infrastructure).
-- `ai_explanation` (String) OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: write it with `jsonencode()`.
+- `ai_explanation` (String) OneUptime AI's explanation of this exception: a summary, the likely root cause, a suggested fix, how confident it is, the suspect stack frames and next steps. A JSON value: read it with `jsondecode()`.
 - `ai_explanation_generated_at` (String) When OneUptime AI last wrote its explanation of this exception.
 - `ai_fix_declined_at` (String) Set when an AI-authored fix pull request for this exception was closed without merging; suppresses further automatic fix attempts.
 - `created_at` (String) Date and Time when the object was created.

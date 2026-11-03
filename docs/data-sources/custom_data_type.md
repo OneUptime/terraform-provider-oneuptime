@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_custom_data_type Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Your own kinds of sensitive data, such as employee IDs or policy numbers: a pattern, the words and field names that confirm it, and an optional checksum.
 ---
@@ -43,7 +43,7 @@ data "oneuptime_custom_data_type" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `keywords` (String) Words that, near a value, confirm it is this type. A JSON value: write it with `jsonencode()`.
-- `name_hints` (String) Field, column and attribute names that hold this type, such as employee id. A JSON value: write it with `jsonencode()`.
+- `keywords` (String) Words that, near a value, confirm it is this type. A JSON value: read it with `jsondecode()`.
+- `name_hints` (String) Field, column and attribute names that hold this type, such as employee id. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this custom data type belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

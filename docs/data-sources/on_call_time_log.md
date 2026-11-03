@@ -15,7 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_on_call_time_log" "example" {
-  on_call_duty_policy_id = "example-on-call-duty-policy-id"
+  created_by_user_id = data.oneuptime_user.example.id
+  user_email         = "alice@example.com"
 }
 
 # Or by id:
@@ -35,7 +36,8 @@ data "oneuptime_on_call_time_log" "by_id" {
 - `on_call_duty_policy_id` (String) ID of your On-Call Policy where this escalation rule belongs.
 - `on_call_duty_policy_schedule_id` (String) ID of your On-Call Policy Schedule where this escalation rule belongs.
 - `team_id` (String) ID of your On-Call Policy Team ID where this escalation rule belongs.
-- `user_id` (String) User ID for which this log belongs. The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User ID for which this log belongs. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

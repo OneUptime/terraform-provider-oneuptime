@@ -23,11 +23,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &TeamPermissionResource{}
 var _ resource.ResourceWithImportState = &TeamPermissionResource{}
+var _ resource.ResourceWithModifyPlan = &TeamPermissionResource{}
 
 func NewTeamPermissionResource() resource.Resource {
     return &TeamPermissionResource{}
@@ -90,6 +92,7 @@ func (r *TeamPermissionResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "permission": schema.StringAttribute{
                 MarkdownDescription: "Permission. You can find list of permissions on the Permissions page. A JSON value: write it with `jsonencode()`.",
@@ -97,6 +100,7 @@ func (r *TeamPermissionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -104,15 +108,17 @@ func (r *TeamPermissionResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this permission is scoped at. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels that limit the permission to the resources carrying one of them. Empty means every resource. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "is_block_permission": schema.BoolAttribute{
+                MarkdownDescription: "When on, the permission is taken away from the team's members instead of given. A block permission always wins over one that gives it.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -127,6 +133,9 @@ func (r *TeamPermissionResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("All"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("All", "Owned", "Labels"),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -163,6 +172,17 @@ func (r *TeamPermissionResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *TeamPermissionResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *TeamPermissionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -659,6 +679,9 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1075,6 +1098,11 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "permission": !data.Permission.Equal(state.Permission),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config TeamPermissionResourceModel
@@ -1506,6 +1534,9 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1542,6 +1573,9 @@ func (r *TeamPermissionResource) Delete(ctx context.Context, req resource.Delete
 
 func (r *TeamPermissionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"permission"})...)
 }
 
 

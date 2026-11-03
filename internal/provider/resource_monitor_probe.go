@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &MonitorProbeResource{}
 var _ resource.ResourceWithImportState = &MonitorProbeResource{}
+var _ resource.ResourceWithModifyPlan = &MonitorProbeResource{}
 
 func NewMonitorProbeResource() resource.Resource {
     return &MonitorProbeResource{}
@@ -81,6 +82,7 @@ func (r *MonitorProbeResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Monitor in which this object belongs. The ID of a `oneuptime_monitor`.",
@@ -88,26 +90,32 @@ func (r *MonitorProbeResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "last_ping_at": schema.StringAttribute{
+                MarkdownDescription: "When the probe last checked the monitor. Set by OneUptime.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "next_ping_at": schema.StringAttribute{
+                MarkdownDescription: "When the probe checks the monitor next. Set by OneUptime: right away for a new one, then on the monitor's interval.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
             },
             "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When on, the probe checks the monitor.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -136,12 +144,23 @@ func (r *MonitorProbeResource) schemaDefinition() schema.Schema {
                 },
             },
             "last_monitoring_log": schema.StringAttribute{
-                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *MonitorProbeResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *MonitorProbeResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -514,6 +533,7 @@ func (r *MonitorProbeResource) Create(ctx context.Context, req resource.CreateRe
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

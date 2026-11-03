@@ -105,7 +105,7 @@ func (d *AiRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 Computed: true,
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -168,7 +168,7 @@ func (d *AiRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 Computed: true,
             },
             "command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Glob patterns for commands the AI may execute WITHOUT human approval under FullAuto (for example: systemctl restart *). Commands that do not match are proposed for one-click approval instead. Destructive commands are always refused by the built-in policy. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Glob patterns for commands the AI may execute WITHOUT human approval under FullAuto (for example: systemctl restart *). Commands that do not match are proposed for one-click approval instead. Destructive commands are always refused by the built-in policy. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "command_runners": schema.SetAttribute{
@@ -240,6 +240,7 @@ func (d *AiRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 MarkdownDescription: "ID of the Runner OneUptime AI runs this rule's Bash commands on: one of the project's own Runners. Empty means none: OneUptime AI runs no commands of its own for the rule. Commands on the affected Kubernetes cluster or host always go through its AI agent. The ID of a `oneuptime_runner`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_runner"),
             },
             "code_repositories": schema.SetAttribute{
                 MarkdownDescription: "The code repositories OneUptime AI may read while it investigates and fixes what this rule matches, and open the rule's pull requests in. Leave empty to let it use every repository the project has connected. IDs of `oneuptime_code_repository` resources.",
@@ -250,6 +251,7 @@ func (d *AiRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 MarkdownDescription: "ID of the LLM provider OneUptime AI uses for everything this rule starts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_llm_provider"),
             },
             "ai_context": schema.StringAttribute{
                 MarkdownDescription: "Notes OneUptime AI reads after the project's AI context when it investigates or fixes what this rule matches. Markdown, at most 5,000 characters.",
@@ -280,6 +282,7 @@ func (d *AiRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 MarkdownDescription: "User ID who created this object. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

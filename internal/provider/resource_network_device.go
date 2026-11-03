@@ -28,6 +28,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkDeviceResource{}
 var _ resource.ResourceWithImportState = &NetworkDeviceResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkDeviceResource{}
 
 func NewNetworkDeviceResource() resource.Resource {
     return &NetworkDeviceResource{}
@@ -197,6 +198,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -228,6 +230,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "site_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Site this network device belongs to. The ID of a `oneuptime_network_site`.",
@@ -236,6 +239,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "oid_template_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the OID Collection Template this device collects. The ID of a `oneuptime_oid_collection_template`.",
@@ -244,6 +248,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_oid_collection_template"),
             },
             "snmp_credential_profile_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the SNMP Credential Profile this device is walked with. The ID of a `oneuptime_snmp_credential_profile`.",
@@ -252,6 +257,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_snmp_credential_profile"),
             },
             "monitoring_method": schema.StringAttribute{
                 MarkdownDescription: "How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP.",
@@ -276,6 +282,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_network_device_role"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the monitor that reports this device's health when its monitoring method is Monitor. The ID of a `oneuptime_monitor`.",
@@ -284,6 +291,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "snmp_version": schema.StringAttribute{
                 MarkdownDescription: "SNMP version to use when polling this device (V1, V2c, V3).",
@@ -297,6 +305,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Community string used for SNMP v1/v2c polling.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -306,6 +315,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -314,7 +324,9 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -349,6 +361,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "SNMP v3 authentication passphrase.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -365,6 +378,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "SNMP v3 privacy (encryption) passphrase.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
@@ -383,6 +397,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -410,6 +425,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -422,6 +438,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -447,13 +464,14 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "current_monitor_status_id": schema.StringAttribute{
                 MarkdownDescription: "Whats the current status ID of this network device? Stamped from the monitor that polls it. The ID of a `oneuptime_monitor_status`.",
@@ -462,6 +480,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "next_poll_at": schema.StringAttribute{
                 MarkdownDescription: "When the assigned probe should next poll this device. Advanced by the claim cycle; a device created now is due immediately.",
@@ -469,6 +488,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -558,6 +578,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -567,6 +588,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -579,6 +601,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -591,6 +614,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -603,6 +627,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -615,6 +640,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -624,6 +650,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -649,6 +676,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -657,6 +685,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -665,6 +694,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -673,6 +703,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -692,9 +723,12 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "last_walk_log": schema.StringAttribute{
-                MarkdownDescription: "The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -721,6 +755,17 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkDeviceResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkDeviceResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -2959,6 +3004,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -5021,6 +5069,18 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "cdp_neighbors": !data.CdpNeighbors.Equal(state.CdpNeighbors),
+        "discovered_details": !data.DiscoveredDetails.Equal(state.DiscoveredDetails),
+        "lldp_neighbors": !data.LldpNeighbors.Equal(state.LldpNeighbors),
+        "snmp_oids": !data.SnmpOids.Equal(state.SnmpOids),
+        "snmp_table_snapshot": !data.SnmpTableSnapshot.Equal(state.SnmpTableSnapshot),
+        "snmp_tables": !data.SnmpTables.Equal(state.SnmpTables),
+        "snmp_v3_auth": !data.SnmpV3Auth.Equal(state.SnmpV3Auth),
+        "transceiver_snapshot": !data.TransceiverSnapshot.Equal(state.TransceiverSnapshot),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config NetworkDeviceResourceModel
@@ -7293,6 +7353,9 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -7329,6 +7392,9 @@ func (r *NetworkDeviceResource) Delete(ctx context.Context, req resource.DeleteR
 
 func (r *NetworkDeviceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"cdp_neighbors", "discovered_details", "lldp_neighbors", "snmp_oids", "snmp_table_snapshot", "snmp_tables", "snmp_v3_auth", "transceiver_snapshot"})...)
 }
 
 

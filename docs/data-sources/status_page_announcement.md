@@ -33,7 +33,7 @@ data "oneuptime_status_page_announcement" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this announcement?
 - `should_status_page_subscribers_be_notified` (Boolean) Should subscribers be notified about this announcement?
-- `subscriber_notification_status` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]
+- `subscriber_notification_status` (String) Whether the status page's subscribers were told about the announcement: Pending until they are, then Success or Failed. Set by OneUptime.
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.
 - `subscriber_notification_status_message_on_announcement_updated` (String) Status message for the notification sent to subscribers when this announcement was last updated - includes success messages, failure reasons, or skip reasons.
 - `subscriber_notification_status_on_announcement_updated` (String) Status of the notification sent to subscribers when this announcement was last updated. Empty until an update notification is requested.

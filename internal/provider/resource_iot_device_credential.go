@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IotDeviceCredentialResource{}
 var _ resource.ResourceWithImportState = &IotDeviceCredentialResource{}
+var _ resource.ResourceWithModifyPlan = &IotDeviceCredentialResource{}
 var _ resource.ResourceWithMoveState = &IotDeviceCredentialResource{}
 
 func NewIotDeviceCredentialResource() resource.Resource {
@@ -99,6 +100,7 @@ func (r *IotDeviceCredentialResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_iot_fleet"),
             },
             "external_id": schema.StringAttribute{
                 MarkdownDescription: "The device id — must match the device.id label the device stamps on its datapoints. It is also the <device> segment of the device's MQTT topics, so a device that reports directly over MQTT cannot use an id containing '/', '+', or '#' (such devices can still report through a gateway).",
@@ -152,6 +154,7 @@ func (r *IotDeviceCredentialResource) schemaDefinition() schema.Schema {
             "secret_key": schema.StringAttribute{
                 MarkdownDescription: "Secret this device presents as the MQTT password (with this credential's ID as the username).",
                 Computed: true,
+                Sensitive: true,
             },
         },
     }
@@ -171,6 +174,17 @@ func (r *IotDeviceCredentialResource) MoveState(ctx context.Context) []resource.
     return []resource.StateMover{
         legacyNameStateMover("oneuptime_io_t_device_credential", r.schemaDefinition()),
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IotDeviceCredentialResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IotDeviceCredentialResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -566,6 +580,7 @@ func (r *IotDeviceCredentialResource) Create(ctx context.Context, req resource.C
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

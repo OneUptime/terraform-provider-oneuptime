@@ -71,6 +71,7 @@ func (d *WorkflowLogDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "ID of Workflow this logs belong to. The ID of a `oneuptime_workflow`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_workflow"),
             },
             "logs": schema.StringAttribute{
                 MarkdownDescription: "Logs.",
@@ -95,7 +96,7 @@ func (d *WorkflowLogDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "step_trace": schema.StringAttribute{
-                MarkdownDescription: "Structured per-step record of this run: arguments, return values, the port taken and timing. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Structured per-step record of this run: arguments, return values, the port taken and timing. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_test_run": schema.BoolAttribute{
@@ -107,6 +108,7 @@ func (d *WorkflowLogDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "ID of the person who started this run by hand from the Builder. Empty for a run its trigger or another workflow started. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

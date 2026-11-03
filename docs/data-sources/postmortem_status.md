@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_postmortem_status Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Incidents"
 description: |-
   Manage the statuses an incident's postmortem moves through (Not Started, Draft, Completed for example). Add, edit, reorder or archive them.
 ---

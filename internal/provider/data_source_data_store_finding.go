@@ -89,6 +89,7 @@ func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "The store the finding is in. The ID of a `oneuptime_data_store`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_data_store"),
             },
             "finding_key": schema.StringAttribute{
                 MarkdownDescription: "The data type and location, which identify the finding within its store.",
@@ -156,7 +157,7 @@ func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "masked_samples": schema.StringAttribute{
-                MarkdownDescription: "At most three masked samples, such as j***@e******.com. Never a raw value. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "At most three masked samples, such as j***@e******.com. Never a raw value. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_free_text": schema.BoolAttribute{
@@ -208,6 +209,7 @@ func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "The scan that last saw the finding. The ID of a `oneuptime_data_security_scan` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_data_security_scan"),
             },
             "first_seen_at": schema.StringAttribute{
                 MarkdownDescription: "When a scan first found it.",

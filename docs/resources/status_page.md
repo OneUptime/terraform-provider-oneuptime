@@ -40,7 +40,7 @@ resource "oneuptime_status_page" "example" {
 - `default_bar_color` (String) Default color of the bar on the overview page.
 - `default_language` (String) Default language that the status page is shown in when a visitor arrives for the first time. Defaults to `en`.
 - `description` (String) Friendly description that will help you remember.
-- `embedded_overall_status_token` (String) Security token required to access the embedded overall status badge. This token must be provided in the URL.
+- `embedded_overall_status_token` (String, Sensitive) Security token required to access the embedded overall status badge. This token must be provided in the URL.
 - `enable_custom_subscriber_email_notification_footer_text` (Boolean) Enable custom footer text in subscriber email notifications. Defaults to `false`.
 - `enable_email_subscribers` (Boolean) Can email subscribers subscribe to this Status Page? Defaults to `true`.
 - `enable_embedded_overall_status` (Boolean) Enable embedded overall status badge that can be displayed on external websites? Defaults to `false`.
@@ -60,19 +60,19 @@ resource "oneuptime_status_page" "example" {
 - `is_archived` (Boolean) Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online. Defaults to `false`.
 - `is_public_status_page` (Boolean) Is this status page public? Defaults to `true`.
 - `is_report_enabled` (Boolean) Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it. Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `limit_subscribers_to_private_users` (Boolean) Only people who can sign in to this status page can be its subscribers, each with the email address they sign in with: no other address, and no phone, Slack, Microsoft Teams or webhook. A subscriber whose address is not a private user of this page - one removed since, by SCIM or by hand - is sent nothing. Defaults to `false`.
 - `logo_alt_text` (String) Alternative text for the logo image, read by screen readers for accessibility.
 - `logo_file_id` (String) Status Page Logo File ID. The ID of a `oneuptime_file`.
 - `master_password` (String, Sensitive) Password required to unlock a private status page. This value is stored as a secure hash.
 - `only_show_scoped_incidents` (Boolean) When on, this status page shows and notifies its subscribers about only the incidents limited to it. Incidents that are not limited to any status page never reach it. Defaults to `false`.
-- `overall_uptime_percent_precision` (String) Overall Precision of uptime percent for this status page. Defaults to `99.99% (Two Decimal)`.
+- `overall_uptime_percent_precision` (String) Overall Precision of uptime percent for this status page. Allowed values: `99% (No Decimal)`, `99.9% (One Decimal)`, `99.99% (Two Decimal)`, `99.999% (Three Decimal)`. Defaults to `99.99% (Two Decimal)`.
 - `overview_page_description` (String) Overview Page description for your status page. This is a markdown field.
 - `page_description` (String) Description of your Status Page. This is used for SEO.
 - `page_title` (String) Title of your Status Page. This is used for SEO.
 - `private_user_session_length_in_hours` (Number) How long, in hours, a private user stays signed in to this private status page after signing in, however active they are - with a password, SSO or OIDC. When the time is up they sign in again. Applies to readers signed in now too. A whole number from 1 to 8760; empty for no limit, where a reader stays signed in while they open the page at least once every 30 days.
 - `report_data_in_days` (Number) How many days of data should be included in the report? Defaults to `30`.
-- `report_period_type` (String) Should the report cover a rolling number of days, or the previous whole calendar period? Defaults to `Rolling`.
+- `report_period_type` (String) Should the report cover a rolling number of days, or the previous whole calendar period? Allowed values: `Rolling`, `Previous Calendar Period`. Defaults to `Rolling`.
 - `report_recurring_interval` (String) How often a report goes out. Left out when reports are turned on, it is every month. A JSON value: write it with `jsonencode()`.
 - `report_start_date_time` (String) When the first report goes out. Every later one follows it by the recurring interval, at the same time of day. Left out when reports are turned on, it is 09:00 in the report timezone at the start of the next period of the interval: the next 1st of the month for a monthly schedule (the default), the next Monday for a weekly one, the next day for a daily one and the next 1 January for a yearly one. An hourly schedule starts at the next full hour.
 - `report_timezone` (String) The timezone report periods and send times are resolved in. A monthly report in this timezone runs from the 1st at 00:00 to the last day at 23:59. Defaults to `UTC`.
@@ -96,7 +96,7 @@ resource "oneuptime_status_page" "example" {
 - `smtp_config_id` (String) ID of your SMTP Config Resource which is used to send email to subscribers.
 - `subscriber_email_notification_footer_text` (String) Text to send to subscribers in the footer of the email.
 - `subscriber_timezones` (String) Timezones of subscribers to this status page. A JSON value: write it with `jsonencode()`.
-- `theme` (String) How the status page looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). A status page created without a theme starts with System. Defaults to `Light`.
+- `theme` (String) How the status page looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). A status page created without a theme starts with System. Allowed values: `Light`, `Dark`, `System`. Defaults to `Light`.
 
 ### Read-Only
 

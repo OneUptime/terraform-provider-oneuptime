@@ -72,11 +72,13 @@ func (d *StatusPageScimLogDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the Status Page. The ID of a `oneuptime_status_page`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "status_page_scim_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your Status Page SCIM configuration. The ID of a `oneuptime_status_page_scim`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page_scim"),
             },
             "operation_type": schema.StringAttribute{
                 MarkdownDescription: "Type of SCIM operation (e.g., CreateUser, UpdateUser, DeleteUser, ListUsers, GetUser, BulkOperation).",

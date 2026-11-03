@@ -68,6 +68,7 @@ func (d *DatabaseEndpointDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the database this endpoint belongs to. The ID of a `oneuptime_database`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_database"),
             },
             "endpoint": schema.StringAttribute{
                 MarkdownDescription: "Canonical endpoint of the database: host:port, with an @cluster qualifier for Kubernetes-internal names and private IPs (e.g. orders-db.data.svc.cluster.local:5432@prod-cluster). What you type is canonicalized; the default port of the engine is filled in.",
@@ -92,6 +93,7 @@ func (d *DatabaseEndpointDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

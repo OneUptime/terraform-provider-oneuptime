@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_log_pipeline_processor Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Individual processors within a log pipeline that transform log data during ingestion.
 ---
@@ -15,7 +15,7 @@ Individual processors within a log pipeline that transform log data during inges
 resource "oneuptime_log_pipeline_processor" "example" {
   log_pipeline_id = oneuptime_log_pipeline.example.id
   name            = "Example log pipeline processor"
-  processor_type  = "Example short text"
+  processor_type  = "GrokParser"
 }
 ```
 
@@ -25,7 +25,7 @@ resource "oneuptime_log_pipeline_processor" "example" {
 
 - `log_pipeline_id` (String) ID of the log pipeline this processor belongs to. The ID of a `oneuptime_log_pipeline`.
 - `name` (String) Friendly name for this processor.
-- `processor_type` (String) The type of processor: GrokParser, KeyValueParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor.
+- `processor_type` (String) The type of processor: GrokParser, KeyValueParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor. Allowed values: `GrokParser`, `KeyValueParser`, `AttributeRemapper`, `SeverityRemapper`, `CategoryProcessor`.
 
 ### Optional
 

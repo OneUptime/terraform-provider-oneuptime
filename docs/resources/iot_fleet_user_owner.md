@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_iot_fleet_user_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "IoT"
 description: |-
   Add users as owners to your IoT fleets.
 ---
@@ -22,8 +22,8 @@ moved {
 
 ```terraform
 resource "oneuptime_iot_fleet_user_owner" "example" {
-  user_id      = data.oneuptime_user.example.id
   iot_fleet_id = oneuptime_iot_fleet.example.id
+  user_email   = "alice@example.com"
 }
 ```
 
@@ -31,8 +31,12 @@ resource "oneuptime_iot_fleet_user_owner" "example" {
 
 ### Required
 
-- `iot_fleet_id` (String) ID of your OneUptime IoT Fleet in which this object belongs. The ID of a `oneuptime_iot_fleet`.
-- `user_id` (String) ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).
+- `iot_fleet_id` (String) ID of the IoT fleet the user owns. The ID of a `oneuptime_iot_fleet`.
+
+### Optional
+
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of the user who owns the IoT fleet. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 
@@ -45,17 +49,19 @@ resource "oneuptime_iot_fleet_user_owner" "example" {
 
 ## Import
 
-Import an existing iot fleet user owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing iot fleet user owner by its iot fleet and the person's email address (or user ID), with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_iot_fleet_user_owner.example
-  id = "<id>"
+  id = "<iot_fleet_id>/alice@example.com"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_iot_fleet_user_owner.example <id>
+terraform import oneuptime_iot_fleet_user_owner.example <iot_fleet_id>/alice@example.com
 ```
+
+Imported by an address, the person's `user_email` stays as you wrote it. Its own ID works too.

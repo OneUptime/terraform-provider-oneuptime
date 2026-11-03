@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_vcenter_owner_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically assigning owner users and teams when matching vCenters are created
 ---
@@ -40,7 +40,8 @@ resource "oneuptime_vcenter_owner_rule" "example" {
 - `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
 - `notify_owners` (Boolean) Send notifications to owner users and teams when they are added by this rule. Defaults to `true`.
 - `owner_teams` (Set of String) Teams to add as owners on the vCenter when this rule matches. IDs of `oneuptime_team` resources.
-- `owner_users` (Set of String) Users to add as owners on the vCenter when this rule matches. IDs of `oneuptime_user` records.
+- `owner_user_emails` (Set of String) The email addresses of the people in `owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `owner_users` (Set of String) Users to add as owners on the vCenter when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.
 - `vmware_v_center_description_pattern` (String) Regex (case-insensitive) matched against the vCenter description. Leave empty to match any description.
 - `vmware_v_center_labels` (Set of String) Only trigger for vCenters that have at least one of these labels. Leave empty to match regardless of labels. IDs of `oneuptime_label` resources.
 - `vmware_v_center_name_pattern` (String) Regex (case-insensitive) matched against the vCenter name. Leave empty to match any name.

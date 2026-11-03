@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AlertEpisodeStateTimelineResource{}
 var _ resource.ResourceWithImportState = &AlertEpisodeStateTimelineResource{}
+var _ resource.ResourceWithModifyPlan = &AlertEpisodeStateTimelineResource{}
 
 func NewAlertEpisodeStateTimelineResource() resource.Resource {
     return &AlertEpisodeStateTimelineResource{}
@@ -80,10 +81,12 @@ func (r *AlertEpisodeStateTimelineResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_episode"),
             },
             "alert_state_id": schema.StringAttribute{
                 MarkdownDescription: "Alert State ID Relation. Which alert state does this episode change to? The ID of a `oneuptime_alert_state`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_alert_state"),
             },
             "root_cause": schema.StringAttribute{
                 MarkdownDescription: "What is the root cause of this status change?",
@@ -100,6 +103,7 @@ func (r *AlertEpisodeStateTimelineResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -110,6 +114,7 @@ func (r *AlertEpisodeStateTimelineResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -139,12 +144,23 @@ func (r *AlertEpisodeStateTimelineResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "state_change_log": schema.StringAttribute{
-                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AlertEpisodeStateTimelineResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AlertEpisodeStateTimelineResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -555,6 +571,7 @@ func (r *AlertEpisodeStateTimelineResource) Create(ctx context.Context, req reso
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

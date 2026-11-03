@@ -13,8 +13,8 @@ Manage announcement templates for your status page
 
 ```terraform
 resource "oneuptime_status_page_announcement_template" "example" {
-  template_name = "Example short text"
-  title         = "Example short text"
+  template_name = "Planned Upgrade Announcement"
+  title         = "Scheduled System Upgrade - January 15, 2025"
   description   = "Managed by Terraform"
 }
 ```

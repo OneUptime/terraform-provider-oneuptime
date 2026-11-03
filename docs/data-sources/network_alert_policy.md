@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_alert_policy Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Alert on a set of network devices at once: every device matching the policy's sites, roles and labels gets a Network Device monitor provisioned from the policy's monitor template, and kept as devices come and go.
 ---
@@ -42,6 +42,6 @@ data "oneuptime_network_alert_policy" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `last_sync_at` (String) When the engine last reconciled this policy's monitors against its matching devices. Managed by the engine.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `scope` (String) Which devices this policy covers: site ids, device role ids and label ids. A device must match every kind that is listed (AND) and any id within a kind (OR); a kind left empty matches every device. Empty altogether means every device in the project. A JSON value: write it with `jsonencode()`.
+- `scope` (String) Which devices this policy covers: site ids, device role ids and label ids. A device must match every kind that is listed (AND) and any id within a kind (OR); a kind left empty matches every device. Empty altogether means every device in the project. A JSON value: read it with `jsondecode()`.
 - `template_synced_at` (String) When this policy's provisioned monitors were last re-synced from the monitor template. Managed by the engine.
 - `updated_at` (String) Date and Time when the object was updated.

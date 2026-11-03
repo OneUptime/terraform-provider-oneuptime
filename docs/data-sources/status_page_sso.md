@@ -29,16 +29,16 @@ data "oneuptime_status_page_sso" "by_id" {
 ### Optional
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
-- `description` (String) Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]
-- `digest_method` (String) Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]
+- `description` (String) What this sign-in is for, such as which identity provider it uses.
+- `digest_method` (String) The digest algorithm your identity provider's SAML signatures use.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `is_enabled` (Boolean) Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]
-- `is_tested` (Boolean) Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [No access - you don't have permission for this operation]
-- `issuer_url` (String) Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]
+- `is_enabled` (Boolean) When on, visitors of a private status page can sign in with this provider.
+- `is_tested` (Boolean) Whether a sign-in with this provider has been tested. It does not turn the provider on.
+- `issuer_url` (String) Your identity provider's issuer (entity ID), as its SAML responses name it.
 - `name` (String) Any friendly name of this object.
-- `public_certificate` (String) Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]
-- `sign_on_url` (String) Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]
-- `signature_method` (String) Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]
+- `public_certificate` (String) Your identity provider's signing certificate, in PEM, to check its SAML responses with.
+- `sign_on_url` (String) Your identity provider's single sign-on URL, where visitors are sent to sign in.
+- `signature_method` (String) The algorithm your identity provider signs SAML responses with.
 - `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
 
 ### Read-Only

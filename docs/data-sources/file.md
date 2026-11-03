@@ -28,10 +28,10 @@ data "oneuptime_file" "by_id" {
 
 ### Optional
 
-- `file` (String)
-- `file_type` (String)
+- `file` (String) The file's content.
+- `file_type` (String) The file's media type, such as image/png.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `image_access_token` (String)
+- `image_access_token` (String) Addresses the file in a link (/file/image/access-token/<token>) without its ID. Opening it still takes the right to see the file. Set by OneUptime.
 - `is_public` (Boolean) Whether anyone may read the file without signing in. Set by OneUptime: every upload starts private, and a file becomes public only when a record that shows it to everyone, such as a public note or a probe's icon, is published.
 - `name` (String) Any friendly name of this object.
-- `slug` (String)
+- `slug` (String) Friendly globally unique name for your object.

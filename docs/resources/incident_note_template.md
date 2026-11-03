@@ -13,8 +13,8 @@ Manage incident note templates for your project
 
 ```terraform
 resource "oneuptime_incident_note_template" "example" {
-  template_name        = "Example short text"
-  template_description = "This is an example of longer text content that might be stored in this field."
+  template_name        = "Root Cause Analysis Template"
+  template_description = "This template is designed for documenting the root cause analysis of an incident. It helps teams identify the underlying cause, assess impact, document resolution steps, and establish preventive measures to avoid future occurrences."
 }
 ```
 

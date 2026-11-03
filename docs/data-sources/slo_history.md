@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_slo_history Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   API endpoints for SLO History
 ---

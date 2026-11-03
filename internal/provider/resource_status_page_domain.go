@@ -22,6 +22,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageDomainResource{}
 var _ resource.ResourceWithImportState = &StatusPageDomainResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageDomainResource{}
 
 func NewStatusPageDomainResource() resource.Resource {
     return &StatusPageDomainResource{}
@@ -85,6 +86,7 @@ func (r *StatusPageDomainResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_domain"),
             },
             "status_page_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
@@ -92,6 +94,7 @@ func (r *StatusPageDomainResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "subdomain": schema.StringAttribute{
                 MarkdownDescription: "Subdomain label for your status page such as 'status'. Leave blank or enter @ to use the root domain.",
@@ -102,6 +105,7 @@ func (r *StatusPageDomainResource) schemaDefinition() schema.Schema {
                 },
             },
             "custom_certificate": schema.StringAttribute{
+                MarkdownDescription: "Your certificate for the domain, in PEM, with its chain. Used when Is Custom Certificate is on.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -109,13 +113,16 @@ func (r *StatusPageDomainResource) schemaDefinition() schema.Schema {
                 },
             },
             "custom_certificate_key": schema.StringAttribute{
+                MarkdownDescription: "The private key of your certificate, in PEM. Used when Is Custom Certificate is on.",
                 Optional: true,
                 Computed: true,
+                Sensitive: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "is_custom_certificate": schema.BoolAttribute{
+                MarkdownDescription: "When on, the domain is served with your own certificate (custom_certificate and its key) instead of one OneUptime gets from Let's Encrypt.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -165,6 +172,17 @@ func (r *StatusPageDomainResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageDomainResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageDomainResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -656,6 +674,7 @@ func (r *StatusPageDomainResource) Create(ctx context.Context, req resource.Crea
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

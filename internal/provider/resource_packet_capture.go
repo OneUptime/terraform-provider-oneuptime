@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &PacketCaptureResource{}
 var _ resource.ResourceWithImportState = &PacketCaptureResource{}
+var _ resource.ResourceWithModifyPlan = &PacketCaptureResource{}
 
 func NewPacketCaptureResource() resource.Resource {
     return &PacketCaptureResource{}
@@ -88,6 +89,7 @@ func (r *PacketCaptureResource) schemaDefinition() schema.Schema {
             "probe_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the probe that runs the capture: one of the project's own probes, with packet capture turned on. The ID of a `oneuptime_probe`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "network_device_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the network device the capture was started from, if it was started from a device's page. The ID of a `oneuptime_network_device`.",
@@ -96,6 +98,7 @@ func (r *PacketCaptureResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_network_device"),
             },
             "interface_name": schema.StringAttribute{
                 MarkdownDescription: "The network interface the probe captures on, as the probe reported it: \"eth0\", or \"any\" for every interface at once.",
@@ -115,6 +118,7 @@ func (r *PacketCaptureResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -124,6 +128,7 @@ func (r *PacketCaptureResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(100000)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -133,6 +138,7 @@ func (r *PacketCaptureResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(10)),
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -197,6 +203,17 @@ func (r *PacketCaptureResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *PacketCaptureResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *PacketCaptureResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -783,6 +800,7 @@ func (r *PacketCaptureResource) Create(ctx context.Context, req resource.CreateR
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

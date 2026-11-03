@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ApiKeyResource{}
 var _ resource.ResourceWithImportState = &ApiKeyResource{}
+var _ resource.ResourceWithModifyPlan = &ApiKeyResource{}
 
 func NewApiKeyResource() resource.Resource {
     return &ApiKeyResource{}
@@ -88,6 +89,9 @@ func (r *ApiKeyResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Date and Time when this API Key expires.",
                 CustomType: RFC3339Type{},
                 Required: true,
+                PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
+                },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -105,6 +109,9 @@ func (r *ApiKeyResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -116,9 +123,21 @@ func (r *ApiKeyResource) schemaDefinition() schema.Schema {
             "api_key": schema.StringAttribute{
                 MarkdownDescription: "Secret API Key.",
                 Computed: true,
+                Sensitive: true,
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ApiKeyResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ApiKeyResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -507,6 +526,7 @@ func (r *ApiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

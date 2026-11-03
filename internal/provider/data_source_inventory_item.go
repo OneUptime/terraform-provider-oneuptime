@@ -102,15 +102,15 @@ func (d *InventoryItemDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "identifying_attributes": schema.StringAttribute{
-                MarkdownDescription: "The immutable identifying attribute set (the entity's identity). Descriptive attributes are deliberately excluded so they can change without changing the entity key. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The immutable identifying attribute set (the entity's identity). Descriptive attributes are deliberately excluded so they can change without changing the entity key. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "descriptive_attributes": schema.StringAttribute{
-                MarkdownDescription: "Mutable descriptive metadata (image tag, version, IP, ...) merged last-writer-wins. Never part of the identity. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Mutable descriptive metadata (image tag, version, IP, ...) merged last-writer-wins. Never part of the identity. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "labels": schema.StringAttribute{
-                MarkdownDescription: "Labels observed on this entity's telemetry (e.g. promoted from oneuptime.label.* resource attributes), merged as a set union. Simple string array in v1 — a relation to the Label table is a follow-up. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Labels observed on this entity's telemetry (e.g. promoted from oneuptime.label.* resource attributes), merged as a set union. Simple string array in v1 — a relation to the Label table is a follow-up. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "resource_type": schema.StringAttribute{
@@ -149,15 +149,17 @@ func (d *InventoryItemDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom fields on this item. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Custom fields on this item. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

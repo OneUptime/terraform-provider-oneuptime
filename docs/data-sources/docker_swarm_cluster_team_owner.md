@@ -1,13 +1,13 @@
 ---
 page_title: "oneuptime_docker_swarm_cluster_team_owner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
-  Add teams as owners to your DockerSwarm clusters.
+  Add teams as owners to your Docker Swarm clusters.
 ---
 
 # oneuptime_docker_swarm_cluster_team_owner (Data Source)
 
-Add teams as owners to your DockerSwarm clusters.
+Add teams as owners to your Docker Swarm clusters.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one docker swarm cluster team owner may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -29,10 +29,10 @@ data "oneuptime_docker_swarm_cluster_team_owner" "by_id" {
 ### Optional
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
-- `docker_swarm_cluster_id` (String) ID of your OneUptime DockerSwarm Cluster in which this object belongs. The ID of a `oneuptime_docker_swarm_cluster`.
+- `docker_swarm_cluster_id` (String) ID of the Docker Swarm cluster the team owns. The ID of a `oneuptime_docker_swarm_cluster`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `team_id` (String) ID of the team that owns the Docker Swarm cluster. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

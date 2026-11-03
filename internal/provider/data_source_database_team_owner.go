@@ -63,19 +63,22 @@ func (d *DatabaseTeamOwnerDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the database. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "database_server_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Database in which this object belongs. The ID of a `oneuptime_database`.",
+                MarkdownDescription: "ID of the database the team owns. The ID of a `oneuptime_database`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_database"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",

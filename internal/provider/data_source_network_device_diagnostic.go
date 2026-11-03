@@ -76,11 +76,13 @@ func (d *NetworkDeviceDiagnosticDataSource) Schema(ctx context.Context, req data
                 MarkdownDescription: "ID of the Network Device this diagnostic runs against. The ID of a `oneuptime_network_device`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_device"),
             },
             "probe_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Probe that runs this diagnostic. Defaults to the device's assigned probe. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "diagnostic_type": schema.StringAttribute{
                 MarkdownDescription: "What to run against the device: \"Ping\" (ICMP echo: reachability, round-trip time, jitter, packet loss), \"Traceroute\" (the hop-by-hop path from the probe to the device) or \"SNMP Walk\" (every OID the device answers under a starting OID, read with its SNMP credentials).",
@@ -103,11 +105,11 @@ func (d *NetworkDeviceDiagnosticDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "ping_result": schema.StringAttribute{
-                MarkdownDescription: "For a Ping diagnostic: whether the device answered, the failure cause when it did not, and the packet statistics (min/avg/max round-trip time, jitter, packet loss). Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For a Ping diagnostic: whether the device answered, the failure cause when it did not, and the packet statistics (min/avg/max round-trip time, jitter, packet loss). Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "trace_route_result": schema.StringAttribute{
-                MarkdownDescription: "For a Traceroute diagnostic: the DNS lookup and the hop-by-hop path from the probe to the device, in the same shape the Network monitor records. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For a Traceroute diagnostic: the DNS lookup and the hop-by-hop path from the probe to the device, in the same shape the Network monitor records. Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "snmp_walk_root_oid": schema.StringAttribute{
@@ -121,7 +123,7 @@ func (d *NetworkDeviceDiagnosticDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "snmp_walk_result": schema.StringAttribute{
-                MarkdownDescription: "For an SNMP Walk: each OID the device answered with its type and value, why the walk stopped, where to continue from, and, when the device refused or did not answer, why. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For an SNMP Walk: each OID the device answered with its type and value, why the walk stopped, where to continue from, and, when the device refused or did not answer, why. Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
@@ -136,6 +138,7 @@ func (d *NetworkDeviceDiagnosticDataSource) Schema(ctx context.Context, req data
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

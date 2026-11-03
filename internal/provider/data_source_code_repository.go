@@ -137,6 +137,7 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means the project's default Runner when it has one, and otherwise a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_runner"),
             },
             "is_global_runner_picked": schema.BoolAttribute{
                 MarkdownDescription: "Whether this repository runs on a global Runner, one OneUptime runs for every project, even when the project has a default Runner. Read only when the repository picks no Runner of its own. Unset, a repository that picks no Runner follows the project's default Runner, and runs on a global Runner while there is none.",
@@ -172,6 +173,7 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the LLM provider OneUptime AI reads this repository's pull requests with in its production reviews. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_llm_provider"),
             },
             "repository_url": schema.StringAttribute{
                 MarkdownDescription: "The repository's address: its page on GitHub, GitLab or Forgejo, or the HTTPS address a Git repository is cloned with.",
@@ -192,9 +194,10 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

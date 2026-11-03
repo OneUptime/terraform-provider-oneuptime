@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_flow Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   API endpoints for Network Flow
 ---

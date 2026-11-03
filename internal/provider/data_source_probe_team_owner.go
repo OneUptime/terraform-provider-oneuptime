@@ -13,19 +13,28 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &ProbeOwnerTeamDataSource{}
+var _ datasource.DataSource = &ProbeTeamOwnerDataSource{}
 
-func NewProbeOwnerTeamDataSource() datasource.DataSource {
-    return &ProbeOwnerTeamDataSource{}
+func NewProbeTeamOwnerDataSource() datasource.DataSource {
+    return &ProbeTeamOwnerDataSource{}
 }
 
-// ProbeOwnerTeamDataSource defines the data source implementation.
-type ProbeOwnerTeamDataSource struct {
+// NewProbeTeamOwnerLegacyDataSource registers this data source under the
+// name it had before type names kept mixed-case words whole,
+// oneuptime_probe_owner_team. Deprecated.
+func NewProbeTeamOwnerLegacyDataSource() datasource.DataSource {
+    return &ProbeTeamOwnerDataSource{isLegacyAlias: true}
+}
+
+// ProbeTeamOwnerDataSource defines the data source implementation.
+type ProbeTeamOwnerDataSource struct {
     client *Client
+    // Registered under the name this data source had before.
+    isLegacyAlias bool
 }
 
-// ProbeOwnerTeamDataSourceModel describes the data source data model.
-type ProbeOwnerTeamDataSourceModel struct {
+// ProbeTeamOwnerDataSourceModel describes the data source data model.
+type ProbeTeamOwnerDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
@@ -36,13 +45,17 @@ type ProbeOwnerTeamDataSourceModel struct {
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
 }
 
-func (d *ProbeOwnerTeamDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_probe_owner_team"
+func (d *ProbeTeamOwnerDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    if d.isLegacyAlias {
+        resp.TypeName = req.ProviderTypeName + "_probe_owner_team"
+        return
+    }
+    resp.TypeName = req.ProviderTypeName + "_probe_team_owner"
 }
 
-func (d *ProbeOwnerTeamDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *ProbeTeamOwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add teams as owners to your probes. Look up an existing probe owner team by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `probe_id`, ...): each one set must match, and exactly one probe owner team may match them all.",
+        MarkdownDescription: "Add teams as owners to your probes. Look up an existing probe team owner by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `probe_id`, ...): each one set must match, and exactly one probe team owner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -63,19 +76,22 @@ func (d *ProbeOwnerTeamDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the probe. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "probe_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Probe in which this object belongs. The ID of a `oneuptime_probe`.",
+                MarkdownDescription: "ID of the probe the team owns. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",
@@ -84,9 +100,12 @@ func (d *ProbeOwnerTeamDataSource) Schema(ctx context.Context, req datasource.Sc
             },
         },
     }
+    if d.isLegacyAlias {
+        resp.Schema.DeprecationMessage = "oneuptime_probe_owner_team has been renamed to oneuptime_probe_team_owner. Use the new name; the old one keeps working until then."
+    }
 }
 
-func (d *ProbeOwnerTeamDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *ProbeTeamOwnerDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -106,8 +125,8 @@ func (d *ProbeOwnerTeamDataSource) Configure(ctx context.Context, req datasource
     d.client = client
 }
 
-func (d *ProbeOwnerTeamDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data ProbeOwnerTeamDataSourceModel
+func (d *ProbeTeamOwnerDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data ProbeTeamOwnerDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -141,14 +160,14 @@ func (d *ProbeOwnerTeamDataSource) Read(ctx context.Context, req datasource.Read
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Look the probe owner team up either by `id` or by its other arguments, not both.",
+            "Look the probe team owner up either by `id` or by its other arguments, not both.",
         )
         return
     }
     if !hasId && len(filters) == 0 {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Set `id`, or at least one other argument to look the probe owner team up by.",
+            "Set `id`, or at least one other argument to look the probe team owner up by.",
         )
         return
     }
@@ -169,16 +188,16 @@ func (d *ProbeOwnerTeamDataSource) Read(ctx context.Context, req datasource.Read
         readPath := "/probe-owner-team/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read probe_owner_team, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read probe_team_owner, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No probe owner team found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No probe team owner found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read probe_owner_team: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read probe_team_owner: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -196,26 +215,26 @@ func (d *ProbeOwnerTeamDataSource) Read(ctx context.Context, req datasource.Read
         }
         httpResp, err := d.client.PostBodyWithSelect(ctx, "/probe-owner-team/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list probe_owner_team, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list probe_team_owner, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list probe_owner_team: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list probe_team_owner: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No probe owner team matches %s.", describeLookup(filterNames)))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No probe team owner matches %s.", describeLookup(filterNames)))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one probe owner team matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one probe team owner matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", describeLookup(filterNames)))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for probe_owner_team.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for probe_team_owner.")
             return
         }
         item = first

@@ -20,6 +20,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
@@ -27,6 +28,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AlertResource{}
 var _ resource.ResourceWithImportState = &AlertResource{}
+var _ resource.ResourceWithModifyPlan = &AlertResource{}
 
 func NewAlertResource() resource.Resource {
     return &AlertResource{}
@@ -139,6 +141,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -149,6 +152,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.",
@@ -158,6 +162,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_on_call_policy"),
             },
             "hosts": schema.SetAttribute{
                 MarkdownDescription: "List of hosts affected by this alert. IDs of `oneuptime_host` resources.",
@@ -167,6 +172,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_host"),
             },
             "network_devices": schema.SetAttribute{
                 MarkdownDescription: "List of network devices affected by this alert. IDs of `oneuptime_network_device` resources.",
@@ -176,6 +182,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_network_device"),
             },
             "kubernetes_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Kubernetes clusters affected by this alert. IDs of `oneuptime_kubernetes_cluster` resources.",
@@ -185,6 +192,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_kubernetes_cluster"),
             },
             "kubernetes_resources": schema.SetAttribute{
                 MarkdownDescription: "List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this alert.",
@@ -212,6 +220,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_docker_host"),
             },
             "podman_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Podman hosts affected by this alert. IDs of `oneuptime_podman_host` resources.",
@@ -221,6 +230,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_podman_host"),
             },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Proxmox clusters affected by this alert. IDs of `oneuptime_proxmox_cluster` resources.",
@@ -230,6 +240,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_proxmox_cluster"),
             },
             "vmware_v_centers": schema.SetAttribute{
                 MarkdownDescription: "List of vCenters affected by this alert. IDs of `oneuptime_vcenter` resources.",
@@ -239,6 +250,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_vcenter"),
             },
             "iot_fleets": schema.SetAttribute{
                 MarkdownDescription: "List of IoT fleets affected by this alert. IDs of `oneuptime_iot_fleet` resources.",
@@ -248,6 +260,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_iot_fleet"),
             },
             "docker_swarm_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Docker Swarm clusters affected by this alert. IDs of `oneuptime_docker_swarm_cluster` resources.",
@@ -257,6 +270,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_docker_swarm_cluster"),
             },
             "ceph_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Ceph clusters affected by this alert. IDs of `oneuptime_ceph_cluster` resources.",
@@ -266,6 +280,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_ceph_cluster"),
             },
             "storage_arrays": schema.SetAttribute{
                 MarkdownDescription: "List of storage arrays affected by this alert. IDs of `oneuptime_storage_array` resources.",
@@ -275,6 +290,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_storage_array"),
             },
             "cloud_resources": schema.SetAttribute{
                 MarkdownDescription: "List of cloud resources affected by this alert. IDs of `oneuptime_cloud_resource` resources.",
@@ -284,6 +300,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_cloud_resource"),
             },
             "database_servers": schema.SetAttribute{
                 MarkdownDescription: "List of databases affected by this alert. IDs of `oneuptime_database` resources.",
@@ -293,6 +310,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_database"),
             },
             "docker_resources": schema.SetAttribute{
                 MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this alert.",
@@ -320,6 +338,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_service"),
             },
             "service_level_objectives": schema.SetAttribute{
                 MarkdownDescription: "List of Service Level Objectives (SLOs) affected by this alert. IDs of `oneuptime_service_level_objective` resources.",
@@ -329,15 +348,17 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_service_level_objective"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "current_alert_state_id": schema.StringAttribute{
                 MarkdownDescription: "Current Alert State ID. The ID of a `oneuptime_alert_state`.",
@@ -346,10 +367,12 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_alert_state"),
             },
             "alert_severity_id": schema.StringAttribute{
                 MarkdownDescription: "Alert Severity ID. The ID of a `oneuptime_alert_severity`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "monitor_status_when_this_alert_was_created_id": schema.StringAttribute{
                 MarkdownDescription: "Monitor Status ID when this alert was created. The ID of a `oneuptime_monitor_status`.",
@@ -358,6 +381,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "custom_fields": schema.StringAttribute{
                 MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
@@ -365,6 +389,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -393,6 +418,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -447,7 +473,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "created_state_log": schema.StringAttribute{
-                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -460,12 +486,12 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "series_labels": schema.StringAttribute{
-                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "monitor_summary": schema.StringAttribute{
-                MarkdownDescription: "The monitor summary captured at the moment this alert was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The monitor summary captured at the moment this alert was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -480,10 +506,16 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
             "alert_number": schema.NumberAttribute{
                 MarkdownDescription: "Alert Number.",
                 Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
             },
             "alert_number_with_prefix": schema.StringAttribute{
                 MarkdownDescription: "Alert number with prefix (e.g., 'ALT-42' or '#42').",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "alert_episode_id": schema.StringAttribute{
                 MarkdownDescription: "The ID of the latest episode this alert is a member of, if any. Read-only: set by OneUptime when the alert is added to or removed from an episode's members (Alert Episode Member). The ID of a `oneuptime_alert_episode`.",
@@ -500,6 +532,17 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AlertResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AlertResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -2251,6 +2294,9 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3835,6 +3881,12 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "custom_fields": !data.CustomFields.Equal(state.CustomFields),
+        "telemetry_query": !data.TelemetryQuery.Equal(state.TelemetryQuery),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config AlertResourceModel
@@ -5529,6 +5581,9 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -5565,6 +5620,9 @@ func (r *AlertResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 
 func (r *AlertResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "telemetry_query"})...)
 }
 
 

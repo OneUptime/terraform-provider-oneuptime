@@ -68,9 +68,10 @@ func (d *OnCallScheduleLayerDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Schedule where this escalation rule belongs. The ID of a `oneuptime_on_call_policy_schedule`.",
+                MarkdownDescription: "ID of the on-call schedule the layer is in. The ID of a `oneuptime_on_call_policy_schedule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Friendly name for this layer.",
@@ -86,6 +87,7 @@ func (d *OnCallScheduleLayerDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Order / Priority of this layer. Lower the number, higher the priority.",
@@ -97,7 +99,7 @@ func (d *OnCallScheduleLayerDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "rotation": schema.StringAttribute{
-                MarkdownDescription: "How often would you like to hand off the duty to the next user in this layer? A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "How often would you like to hand off the duty to the next user in this layer? A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "hand_off_time": schema.StringAttribute{
@@ -105,7 +107,7 @@ func (d *OnCallScheduleLayerDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "restriction_times": schema.StringAttribute{
-                MarkdownDescription: "Restrict this layer to these times. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Restrict this layer to these times. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

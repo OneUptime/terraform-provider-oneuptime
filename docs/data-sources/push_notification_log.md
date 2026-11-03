@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_push_notification_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Notification Logs"
 description: |-
   Logs of all the Push Notifications sent out to all users and subscribers for this project.
 ---

@@ -1,6 +1,6 @@
-# Terraform Provider for Oneuptime
+# Terraform Provider for OneUptime
 
-OpenAPI specification for OneUptime. This document describes the API endpoints, request and response formats, and other details necessary for developers to interact with the OneUptime API.
+Manage a OneUptime project as code, with Terraform or OpenTofu: monitors, status pages, incidents, on-call policies, teams and everything else the OneUptime API manages.
 
 ## Requirements
 
@@ -48,7 +48,7 @@ The source address carries no registry hostname on purpose: OpenTofu resolves it
 
 ```terraform
 module "storefront" {
-  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v14.0.101"
+  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v14.0.102"
 
   service_name = "storefront"
   monitors     = { homepage = { url = "https://example.com" } }

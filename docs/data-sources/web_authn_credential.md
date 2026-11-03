@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_web_authn_credential Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Teams & Access"
 description: |-
   WebAuthn credentials for users (security keys)
 ---

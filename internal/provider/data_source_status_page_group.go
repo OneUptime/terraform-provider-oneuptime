@@ -78,11 +78,13 @@ func (d *StatusPageGroupDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "parent_status_page_group_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Status Page Group this group is nested under. Empty for top level groups. The ID of a `oneuptime_status_page_group`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page_group"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Name of the Group.",
@@ -103,6 +105,7 @@ func (d *StatusPageGroupDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Order / Priority of this resource.",

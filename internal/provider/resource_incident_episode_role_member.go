@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentEpisodeRoleMemberResource{}
 var _ resource.ResourceWithImportState = &IncidentEpisodeRoleMemberResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentEpisodeRoleMemberResource{}
 
 func NewIncidentEpisodeRoleMemberResource() resource.Resource {
     return &IncidentEpisodeRoleMemberResource{}
@@ -42,6 +43,7 @@ type IncidentEpisodeRoleMemberResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *IncidentEpisodeRoleMemberResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -72,11 +74,10 @@ func (r *IncidentEpisodeRoleMemberResource) schemaDefinition() schema.Schema {
                 },
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime User assigned to this episode. The ID of a `oneuptime_user` (see the data source).",
-                Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
+                MarkdownDescription: "ID of your OneUptime User assigned to this episode. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
+                Optional: true,
+                Computed: true,
+                Validators: personIDValidators("user_email", true),
             },
             "incident_episode_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Incident Episode in which this object belongs. The ID of a `oneuptime_incident_episode`.",
@@ -84,10 +85,12 @@ func (r *IncidentEpisodeRoleMemberResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_episode"),
             },
             "incident_role_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Incident Role assigned to this user. The ID of a `oneuptime_incident_role`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_incident_role"),
             },
             "notes": schema.StringAttribute{
                 MarkdownDescription: "Assignment context or notes.",
@@ -117,8 +120,34 @@ func (r *IncidentEpisodeRoleMemberResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this incident episode role member names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentEpisodeRoleMemberResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: true,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentEpisodeRoleMemberResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -160,6 +189,11 @@ func (r *IncidentEpisodeRoleMemberResource) Create(ctx context.Context, req reso
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -211,6 +245,19 @@ func (r *IncidentEpisodeRoleMemberResource) Create(ctx context.Context, req reso
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := incidentEpisodeRoleMemberResponse
+        if wrapper, ok := incidentEpisodeRoleMemberResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -495,9 +542,12 @@ func (r *IncidentEpisodeRoleMemberResource) Create(ctx context.Context, req reso
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -525,6 +575,10 @@ func (r *IncidentEpisodeRoleMemberResource) Read(ctx context.Context, req resour
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/incident-episode-role-member/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -779,6 +833,8 @@ func (r *IncidentEpisodeRoleMemberResource) Read(ctx context.Context, req resour
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -810,6 +866,11 @@ func (r *IncidentEpisodeRoleMemberResource) Update(ctx context.Context, req reso
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     incidentEpisodeRoleMemberRequest := map[string]interface{}{
@@ -1108,6 +1169,8 @@ func (r *IncidentEpisodeRoleMemberResource) Update(ctx context.Context, req reso
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1156,8 +1219,14 @@ func (r *IncidentEpisodeRoleMemberResource) ImportState(ctx context.Context, req
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
 func (r *IncidentEpisodeRoleMemberResource) keepPlannedValues(data *IncidentEpisodeRoleMemberResourceModel, plan *IncidentEpisodeRoleMemberResourceModel, config *IncidentEpisodeRoleMemberResourceModel) {
+    if config.UserId.IsNull() && !plan.UserId.IsUnknown() {
+        data.UserId = plan.UserId
+    }
     if config.Notes.IsNull() && !plan.Notes.IsUnknown() {
         data.Notes = plan.Notes
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 

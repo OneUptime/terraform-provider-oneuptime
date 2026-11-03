@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_trace_drop_filter Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Configure rules to drop or sample spans before storage to reduce volume and cost.
 ---
@@ -15,7 +15,7 @@ Configure rules to drop or sample spans before storage to reduce volume and cost
 resource "oneuptime_trace_drop_filter" "example" {
   name         = "Example trace drop filter"
   filter_query = "This is an example of longer text content that might be stored in this field."
-  action       = "Example short text"
+  action       = "drop"
   description  = "Managed by Terraform"
 }
 ```
@@ -24,7 +24,7 @@ resource "oneuptime_trace_drop_filter" "example" {
 
 ### Required
 
-- `action` (String) What to do with matching spans: 'drop' to discard entirely, 'sample' to keep a percentage.
+- `action` (String) What to do with matching spans: 'drop' to discard entirely, 'sample' to keep a percentage. Allowed values: `drop`, `sample`.
 - `filter_query` (String) Filter expression that identifies which spans to drop or sample.
 - `name` (String) Friendly name for this drop filter.
 

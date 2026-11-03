@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_vcenter Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   vSphere endpoints (a vCenter Server, or a standalone ESXi host) that are being monitored in this project. A vCenter is collected by one of your OneUptime probes with a read-only account saved on it (no agent to run), or auto-discovered when the OneUptime VMware Agent sends its metrics.
 ---
@@ -37,10 +37,10 @@ resource "oneuptime_vcenter" "example" {
 
 - `agent_version` (String) Version of the OneUptime VMware Agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute.
 - `ai_command_allowlist` (String) Optional JSON array of command patterns that Automatic mode may run on this vCenter without approval even though they are riskier changes. Each pattern is one command line for this vCenter's agent (govc) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this vCenter is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the vCenter can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.
-- `ai_remediation_mode` (String) Disabled: AI never proposes or runs a change on this vCenter. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the vCenter's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the vCenter can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule. Defaults to `Disabled`.
+- `ai_remediation_mode` (String) Disabled: AI never proposes or runs a change on this vCenter. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the vCenter's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the vCenter can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule. Allowed values: `Disabled`, `RequireApproval`, `Automatic`, `BypassApproval`. Defaults to `Disabled`.
 - `cluster_count` (Number) Cached count of vSphere clusters reported through this vCenter. Written by the ingest snapshot scan; only updated when a batch carries cluster metrics.
 - `collection_interval_in_minutes` (Number) How often the probe collects this vCenter, in whole minutes from 1 to 60. Two minutes is the VMware agent's own default; collect large vCenters less often to go easier on vCenter. Defaults to `2`.
-- `collection_method` (String) How this vCenter's data reaches OneUptime. Probe: one of your OneUptime probes logs in to vCenter with the read-only account saved here and collects it - no agent to install. Agent: the OneUptime VMware Agent you run sends it. Switching to Agent forgets the saved password. Defaults to `Agent`.
+- `collection_method` (String) How this vCenter's data reaches OneUptime. Probe: one of your OneUptime probes logs in to vCenter with the read-only account saved here and collects it - no agent to install. Agent: the OneUptime VMware Agent you run sends it. Switching to Agent forgets the saved password. Allowed values: `Agent`, `Probe`. Defaults to `Agent`.
 - `collection_probe_id` (String) ID of the OneUptime probe that collects this vCenter. Changing it asks for the password again. The ID of a `oneuptime_probe`.
 - `datacenter_count` (Number) Cached count of vSphere datacenters reported through this vCenter. Written by the ingest snapshot scan; only updated when a batch carries datacenter metrics.
 - `datastore_capacity_bytes` (Number) Cached total capacity in bytes summed over every datastore reported through this vCenter (used + available vcenter.datastore.disk.usage). The denominator for the storage-used bar on the overview page. Stored as bigint.
@@ -50,7 +50,7 @@ resource "oneuptime_vcenter" "example" {
 - `host_count` (Number) Cached count of ESXi hosts reported through this vCenter. Written by the ingest snapshot scan; only updated when a batch carries host metrics.
 - `is_ai_investigation_enabled` (Boolean) When on, OneUptime AI runs read-only commands (govc about, ls, vm.info, host.info, events) on this vCenter, through its VMware AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the vCenter can turn it on or off. Defaults to `true`.
 - `is_archived` (Boolean) Is this vCenter archived? Archived vCenters are hidden from lists but keep collecting telemetry. Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When metrics were last received from this vCenter.
 - `otel_collector_status` (String) Connection status of the OTel Collector agent (connected or disconnected).
 - `powered_on_vm_count` (Number) Cached count of virtual machines inferred to be powered on (the vcenter receiver emits CPU metrics only for powered-on VMs). Rendered as 'VMs X/Y powered on' next to vmCount.
@@ -74,7 +74,7 @@ resource "oneuptime_vcenter" "example" {
 - `collection_error_code` (String) Why the last collection failed, as a code the dashboard turns into a next step (InvalidLogin, UntrustedCertificate, ConnectionTimedOut, ...). Written by the probe.
 - `collection_settings_version` (Number) Counts changes to the probe collection settings, so a report from a collection that started before a change is not shown as the current status. Written by the server.
 - `collection_status` (String) Where probe collection stands: Pending (the probe has not tried the current settings yet), Succeeded or Failed. Written by the server and the probe.
-- `collection_summary` (String) What the last successful collection found: vCenter's product and version, and how many datacenters, clusters, hosts, virtual machines, datastores and resource pools it reported. Written by the probe. A JSON value: write it with `jsonencode()`.
+- `collection_summary` (String) What the last successful collection found: vCenter's product and version, and how many datacenters, clusters, hosts, virtual machines, datastores and resource pools it reported. Written by the probe. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
@@ -82,7 +82,7 @@ resource "oneuptime_vcenter" "example" {
 - `last_collection_at` (String) When the probe last tried to collect this vCenter, whether it worked or not. Written by the server.
 - `last_successful_collection_at` (String) When the probe last collected this vCenter successfully. Written by the server.
 - `next_collection_at` (String) When the probe collects this vCenter next. Written by the server.
-- `presented_certificate` (String) The certificate vCenter presented when the last collection did not trust it: its SHA-256 fingerprint, subject, issuer and validity, so a person can check it and trust exactly that certificate. Written by the probe. A JSON value: write it with `jsonencode()`.
+- `presented_certificate` (String) The certificate vCenter presented when the last collection did not trust it: its SHA-256 fingerprint, subject, issuer and validity, so a person can check it and trust exactly that certificate. Written by the probe. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.

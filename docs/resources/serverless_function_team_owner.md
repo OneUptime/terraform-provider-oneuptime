@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_serverless_function_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your serverless functions.
 ---
@@ -22,8 +22,8 @@ resource "oneuptime_serverless_function_team_owner" "example" {
 
 ### Required
 
-- `serverless_function_id` (String) ID of your OneUptime Serverless Function in which this object belongs. The ID of a `oneuptime_serverless_function`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `serverless_function_id` (String) ID of the serverless function the team owns. The ID of a `oneuptime_serverless_function`.
+- `team_id` (String) ID of the team that owns the serverless function. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_serverless_function_team_owner" "example" {
 
 ## Import
 
-Import an existing serverless function team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing serverless function team owner by its serverless function and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_serverless_function_team_owner.example
-  id = "<id>"
+  id = "<serverless_function_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_serverless_function_team_owner.example <id>
+terraform import oneuptime_serverless_function_team_owner.example <serverless_function_id>/<team_id>
 ```
+
+Its own ID works too.

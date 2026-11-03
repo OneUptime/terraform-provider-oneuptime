@@ -19,41 +19,60 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &AiAgentOwnerTeamResource{}
-var _ resource.ResourceWithImportState = &AiAgentOwnerTeamResource{}
+var _ resource.Resource = &ProbeTeamOwnerResource{}
+var _ resource.ResourceWithImportState = &ProbeTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &ProbeTeamOwnerResource{}
+var _ resource.ResourceWithMoveState = &ProbeTeamOwnerResource{}
 
-func NewAiAgentOwnerTeamResource() resource.Resource {
-    return &AiAgentOwnerTeamResource{}
+func NewProbeTeamOwnerResource() resource.Resource {
+    return &ProbeTeamOwnerResource{}
 }
 
-// AiAgentOwnerTeamResource defines the resource implementation.
-type AiAgentOwnerTeamResource struct {
+// NewProbeTeamOwnerLegacyResource registers this resource under the name it
+// had before resource type names kept mixed-case words whole,
+// oneuptime_probe_owner_team, so configurations that use it keep
+// working. Deprecated: plans that use it say so.
+func NewProbeTeamOwnerLegacyResource() resource.Resource {
+    return &ProbeTeamOwnerResource{isLegacyAlias: true}
+}
+
+// ProbeTeamOwnerResource defines the resource implementation.
+type ProbeTeamOwnerResource struct {
     client *Client
+    // Registered under the name this resource had before (see NewProbeTeamOwnerLegacyResource).
+    isLegacyAlias bool
 }
 
-// AiAgentOwnerTeamResourceModel describes the resource data model.
-type AiAgentOwnerTeamResourceModel struct {
+// ProbeTeamOwnerResourceModel describes the resource data model.
+type ProbeTeamOwnerResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     TeamId types.String `tfsdk:"team_id"`
-    AiAgentId types.String `tfsdk:"ai_agent_id"`
+    ProbeId types.String `tfsdk:"probe_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
 }
 
-func (r *AiAgentOwnerTeamResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_ai_agent_owner_team"
+func (r *ProbeTeamOwnerResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    if r.isLegacyAlias {
+        resp.TypeName = req.ProviderTypeName + "_probe_owner_team"
+        return
+    }
+    resp.TypeName = req.ProviderTypeName + "_probe_team_owner"
 }
 
-func (r *AiAgentOwnerTeamResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *ProbeTeamOwnerResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = r.schemaDefinition()
+    if r.isLegacyAlias {
+        resp.Schema.DeprecationMessage = "oneuptime_probe_owner_team has been renamed to oneuptime_probe_team_owner. Rename the resource in your configuration and add a moved block (from = oneuptime_probe_owner_team.<name>, to = oneuptime_probe_team_owner.<name>) to keep the existing probe team owner; the old name keeps working until then."
+    }
 }
 
-func (r *AiAgentOwnerTeamResource) schemaDefinition() schema.Schema {
+func (r *ProbeTeamOwnerResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Add teams as owners to your AI agents.",
+        MarkdownDescription: "Add teams as owners to your probes.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -71,18 +90,20 @@ func (r *AiAgentOwnerTeamResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the probe. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
-            "ai_agent_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime AI Agent in which this object belongs. The ID of a `oneuptime_ai_agent`.",
+            "probe_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the probe the team owns. The ID of a `oneuptime_probe`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -112,7 +133,34 @@ func (r *AiAgentOwnerTeamResource) schemaDefinition() schema.Schema {
     }
 }
 
-func (r *AiAgentOwnerTeamResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+// MoveState lets a moved block bring state over from the old name:
+//
+//     moved {
+//       from = oneuptime_probe_owner_team.example
+//       to   = oneuptime_probe_team_owner.example
+//     }
+func (r *ProbeTeamOwnerResource) MoveState(ctx context.Context) []resource.StateMover {
+    if r.isLegacyAlias {
+        return nil
+    }
+
+    return []resource.StateMover{
+        legacyNameStateMover("oneuptime_probe_owner_team", r.schemaDefinition()),
+    }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ProbeTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
+}
+
+func (r *ProbeTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -133,8 +181,8 @@ func (r *AiAgentOwnerTeamResource) Configure(ctx context.Context, req resource.C
 }
 
 
-func (r *AiAgentOwnerTeamResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data AiAgentOwnerTeamResourceModel
+func (r *ProbeTeamOwnerResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data ProbeTeamOwnerResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -148,43 +196,43 @@ func (r *AiAgentOwnerTeamResource) Create(ctx context.Context, req resource.Crea
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    aiAgentOwnerTeamRequest := map[string]interface{}{
+    probeTeamOwnerRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := aiAgentOwnerTeamRequest["data"].(map[string]interface{})
+    requestDataMap := probeTeamOwnerRequest["data"].(map[string]interface{})
 
     if !data.TeamId.IsNull() && !data.TeamId.IsUnknown() {
         requestDataMap["teamId"] = data.TeamId.ValueString()
     }
-    if !data.AiAgentId.IsNull() && !data.AiAgentId.IsUnknown() {
-        requestDataMap["aiAgentId"] = data.AiAgentId.ValueString()
+    if !data.ProbeId.IsNull() && !data.ProbeId.IsUnknown() {
+        requestDataMap["probeId"] = data.ProbeId.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/ai-agent-owner-team", aiAgentOwnerTeamRequest)
+    httpResp, err := r.client.Post(ctx, "/probe-owner-team", probeTeamOwnerRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create ai_agent_owner_team, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create probe_team_owner, got error: %s", err))
         return
     }
 
-    var aiAgentOwnerTeamResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &aiAgentOwnerTeamResponse)
+    var probeTeamOwnerResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &probeTeamOwnerResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create ai_agent_owner_team: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create probe_team_owner: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := aiAgentOwnerTeamResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := probeTeamOwnerResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := aiAgentOwnerTeamResponse["_id"].(string); ok {
+    } else if val, ok := probeTeamOwnerResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for ai_agent_owner_team did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for probe_team_owner did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -193,7 +241,7 @@ func (r *AiAgentOwnerTeamResource) Create(ctx context.Context, req resource.Crea
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * ai_agent_owner_team is orphaned server-side — never refreshed, never
+     * probe_team_owner is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -206,7 +254,7 @@ func (r *AiAgentOwnerTeamResource) Create(ctx context.Context, req resource.Crea
     selectParam := map[string]interface{}{
         "projectId": true,
         "teamId": true,
-        "aiAgentId": true,
+        "probeId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -214,21 +262,21 @@ func (r *AiAgentOwnerTeamResource) Create(ctx context.Context, req resource.Crea
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/ai-agent-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/probe-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created ai_agent_owner_team but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created probe_team_owner but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created ai_agent_owner_team but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created probe_team_owner but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -291,42 +339,42 @@ func (r *AiAgentOwnerTeamResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.TeamId = types.StringNull()
     }
-    if obj, ok := dataMap["aiAgentId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["probeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiAgentId = types.StringValue(val)
+            data.ProbeId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AiAgentId = types.StringValue(val)
+            data.ProbeId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.AiAgentId = types.StringValue(fmt.Sprintf("%v", val))
+            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AiAgentId = types.StringValue(string(jsonBytes))
+                data.ProbeId = types.StringValue(string(jsonBytes))
             } else {
-                data.AiAgentId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AiAgentId = types.StringValue(string(jsonBytes))
+                data.ProbeId = types.StringValue(string(jsonBytes))
             } else {
-                data.AiAgentId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.AiAgentId = types.StringValue(string(jsonBytes))
+            data.ProbeId = types.StringValue(string(jsonBytes))
         } else {
-            data.AiAgentId = types.StringNull()
+            data.ProbeId = types.StringNull()
         }
-    } else if val, ok := dataMap["aiAgentId"].(string); ok {
-        data.AiAgentId = types.StringValue(val)
+    } else if val, ok := dataMap["probeId"].(string); ok {
+        data.ProbeId = types.StringValue(val)
     } else {
-        data.AiAgentId = types.StringNull()
+        data.ProbeId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -401,12 +449,13 @@ func (r *AiAgentOwnerTeamResource) Create(ctx context.Context, req resource.Crea
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *AiAgentOwnerTeamResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data AiAgentOwnerTeamResourceModel
+func (r *ProbeTeamOwnerResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data ProbeTeamOwnerResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -419,7 +468,7 @@ func (r *AiAgentOwnerTeamResource) Read(ctx context.Context, req resource.ReadRe
     selectParam := map[string]interface{}{
         "projectId": true,
         "teamId": true,
-        "aiAgentId": true,
+        "probeId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -428,9 +477,9 @@ func (r *AiAgentOwnerTeamResource) Read(ctx context.Context, req resource.ReadRe
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/ai-agent-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/probe-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_agent_owner_team, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read probe_team_owner, got error: %s", err))
         return
     }
 
@@ -439,22 +488,22 @@ func (r *AiAgentOwnerTeamResource) Read(ctx context.Context, req resource.ReadRe
         return
     }
 
-    var aiAgentOwnerTeamResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &aiAgentOwnerTeamResponse)
+    var probeTeamOwnerResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &probeTeamOwnerResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse ai_agent_owner_team response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse probe_team_owner response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := aiAgentOwnerTeamResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := probeTeamOwnerResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = aiAgentOwnerTeamResponse
+        dataMap = probeTeamOwnerResponse
     }
 
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
@@ -505,42 +554,42 @@ func (r *AiAgentOwnerTeamResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.TeamId = types.StringNull()
     }
-    if obj, ok := dataMap["aiAgentId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["probeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiAgentId = types.StringValue(val)
+            data.ProbeId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AiAgentId = types.StringValue(val)
+            data.ProbeId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.AiAgentId = types.StringValue(fmt.Sprintf("%v", val))
+            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AiAgentId = types.StringValue(string(jsonBytes))
+                data.ProbeId = types.StringValue(string(jsonBytes))
             } else {
-                data.AiAgentId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AiAgentId = types.StringValue(string(jsonBytes))
+                data.ProbeId = types.StringValue(string(jsonBytes))
             } else {
-                data.AiAgentId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.AiAgentId = types.StringValue(string(jsonBytes))
+            data.ProbeId = types.StringValue(string(jsonBytes))
         } else {
-            data.AiAgentId = types.StringNull()
+            data.ProbeId = types.StringNull()
         }
-    } else if val, ok := dataMap["aiAgentId"].(string); ok {
-        data.AiAgentId = types.StringValue(val)
+    } else if val, ok := dataMap["probeId"].(string); ok {
+        data.ProbeId = types.StringValue(val)
     } else {
-        data.AiAgentId = types.StringNull()
+        data.ProbeId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -614,9 +663,9 @@ func (r *AiAgentOwnerTeamResource) Read(ctx context.Context, req resource.ReadRe
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *AiAgentOwnerTeamResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data AiAgentOwnerTeamResourceModel
-    var state AiAgentOwnerTeamResourceModel
+func (r *ProbeTeamOwnerResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data ProbeTeamOwnerResourceModel
+    var state ProbeTeamOwnerResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -634,7 +683,7 @@ func (r *AiAgentOwnerTeamResource) Update(ctx context.Context, req resource.Upda
     data.Id = state.Id
 
     // Create API request body
-    aiAgentOwnerTeamRequest := map[string]interface{}{
+    probeTeamOwnerRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
 
@@ -642,28 +691,28 @@ func (r *AiAgentOwnerTeamResource) Update(ctx context.Context, req resource.Upda
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(aiAgentOwnerTeamRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/ai-agent-owner-team/" + data.Id.ValueString() + "", aiAgentOwnerTeamRequest)
+    if len(probeTeamOwnerRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/probe-owner-team/" + data.Id.ValueString() + "", probeTeamOwnerRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update ai_agent_owner_team, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update probe_team_owner, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var aiAgentOwnerTeamResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &aiAgentOwnerTeamResponse)
+        var probeTeamOwnerResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &probeTeamOwnerResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update ai_agent_owner_team: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update probe_team_owner: %s", err))
             return
         }
-        _ = aiAgentOwnerTeamResponse
+        _ = probeTeamOwnerResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
     selectParam := map[string]interface{}{
         "projectId": true,
         "teamId": true,
-        "aiAgentId": true,
+        "probeId": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -671,16 +720,16 @@ func (r *AiAgentOwnerTeamResource) Update(ctx context.Context, req resource.Upda
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/ai-agent-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/probe-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_agent_owner_team after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read probe_team_owner after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read ai_agent_owner_team after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read probe_team_owner after update: %s", err))
         return
     }
 
@@ -743,42 +792,42 @@ func (r *AiAgentOwnerTeamResource) Update(ctx context.Context, req resource.Upda
     } else {
         data.TeamId = types.StringNull()
     }
-    if obj, ok := dataMap["aiAgentId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["probeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiAgentId = types.StringValue(val)
+            data.ProbeId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AiAgentId = types.StringValue(val)
+            data.ProbeId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.AiAgentId = types.StringValue(fmt.Sprintf("%v", val))
+            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AiAgentId = types.StringValue(string(jsonBytes))
+                data.ProbeId = types.StringValue(string(jsonBytes))
             } else {
-                data.AiAgentId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AiAgentId = types.StringValue(string(jsonBytes))
+                data.ProbeId = types.StringValue(string(jsonBytes))
             } else {
-                data.AiAgentId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.AiAgentId = types.StringValue(string(jsonBytes))
+            data.ProbeId = types.StringValue(string(jsonBytes))
         } else {
-            data.AiAgentId = types.StringNull()
+            data.ProbeId = types.StringNull()
         }
-    } else if val, ok := dataMap["aiAgentId"].(string); ok {
-        data.AiAgentId = types.StringValue(val)
+    } else if val, ok := dataMap["probeId"].(string); ok {
+        data.ProbeId = types.StringValue(val)
     } else {
-        data.AiAgentId = types.StringNull()
+        data.ProbeId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -853,8 +902,8 @@ func (r *AiAgentOwnerTeamResource) Update(ctx context.Context, req resource.Upda
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *AiAgentOwnerTeamResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data AiAgentOwnerTeamResourceModel
+func (r *ProbeTeamOwnerResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data ProbeTeamOwnerResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -864,9 +913,9 @@ func (r *AiAgentOwnerTeamResource) Delete(ctx context.Context, req resource.Dele
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/ai-agent-owner-team/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/probe-owner-team/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete ai_agent_owner_team, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete probe_team_owner, got error: %s", err))
         return
     }
 
@@ -874,7 +923,7 @@ func (r *AiAgentOwnerTeamResource) Delete(ctx context.Context, req resource.Dele
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete ai_agent_owner_team: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete probe_team_owner: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -883,13 +932,28 @@ func (r *AiAgentOwnerTeamResource) Delete(ctx context.Context, req resource.Dele
 }
 
 
-func (r *AiAgentOwnerTeamResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+func (r *ProbeTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+    // By its own ID, or by what it joins and who or what joins it: <probe_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/probe-owner-team/get-list",
+        parentField:     "probeId",
+        parentAttribute: "probe_id",
+        parentNoun:      "probe",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *AiAgentOwnerTeamResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *ProbeTeamOwnerResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -907,7 +971,7 @@ func (r *AiAgentOwnerTeamResource) convertTerraformMapToInterface(terraformMap t
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *AiAgentOwnerTeamResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *ProbeTeamOwnerResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -928,7 +992,7 @@ func (r *AiAgentOwnerTeamResource) convertTerraformListToInterface(terraformList
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *AiAgentOwnerTeamResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *ProbeTeamOwnerResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -950,7 +1014,7 @@ func (r *AiAgentOwnerTeamResource) convertTerraformSetToInterface(terraformSet t
 
 
 // Helper method to parse JSON field for complex objects
-func (r *AiAgentOwnerTeamResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *ProbeTeamOwnerResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -966,7 +1030,7 @@ func (r *AiAgentOwnerTeamResource) parseJSONField(terraformString basetypes.Stri
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *AiAgentOwnerTeamResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *ProbeTeamOwnerResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -988,7 +1052,7 @@ func (r *AiAgentOwnerTeamResource) normalizeURLWrappers(value interface{}) inter
     }
 }
 
-func (r *AiAgentOwnerTeamResource) normalizeURLString(value string) string {
+func (r *ProbeTeamOwnerResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -1000,7 +1064,7 @@ func (r *AiAgentOwnerTeamResource) normalizeURLString(value string) string {
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *AiAgentOwnerTeamResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *ProbeTeamOwnerResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -1010,6 +1074,6 @@ func (r *AiAgentOwnerTeamResource) bigFloatToFloat64(bf *big.Float) interface{} 
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *AiAgentOwnerTeamResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *ProbeTeamOwnerResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

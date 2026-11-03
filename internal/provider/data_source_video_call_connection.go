@@ -100,7 +100,7 @@ func (d *VideoCallConnectionDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "config": schema.StringAttribute{
-                MarkdownDescription: "Provider-specific, non-secret settings such as the Zoom account and meeting host, the Google Workspace user or the Microsoft Entra tenant and organizer. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Provider-specific, non-secret settings such as the Zoom account and meeting host, the Google Workspace user or the Microsoft Entra tenant and organizer. Keys are defined by the provider catalog. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_call_started_at": schema.StringAttribute{
@@ -120,6 +120,7 @@ func (d *VideoCallConnectionDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "ID of the user who created this connection. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

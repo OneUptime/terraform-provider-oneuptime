@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_security_setting Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   How Data Security runs in a project: what it scans, how much it reads, and what it does when it finds a Critical issue.
 ---

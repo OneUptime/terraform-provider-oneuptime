@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_topology_suppression Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Nodes hidden from the Network Topology map for the whole project. Display only — the device and its monitoring are untouched.
 ---

@@ -42,7 +42,7 @@ func (d *DockerSwarmClusterTeamOwnerDataSource) Metadata(ctx context.Context, re
 
 func (d *DockerSwarmClusterTeamOwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add teams as owners to your DockerSwarm clusters. Look up an existing docker swarm cluster team owner by `id`, or by any of its other arguments (`created_by_user_id`, `docker_swarm_cluster_id`, `is_owner_notified`, ...): each one set must match, and exactly one docker swarm cluster team owner may match them all.",
+        MarkdownDescription: "Add teams as owners to your Docker Swarm clusters. Look up an existing docker swarm cluster team owner by `id`, or by any of its other arguments (`created_by_user_id`, `docker_swarm_cluster_id`, `is_owner_notified`, ...): each one set must match, and exactly one docker swarm cluster team owner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -63,19 +63,22 @@ func (d *DockerSwarmClusterTeamOwnerDataSource) Schema(ctx context.Context, req 
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the Docker Swarm cluster. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "docker_swarm_cluster_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime DockerSwarm Cluster in which this object belongs. The ID of a `oneuptime_docker_swarm_cluster`.",
+                MarkdownDescription: "ID of the Docker Swarm cluster the team owns. The ID of a `oneuptime_docker_swarm_cluster`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_docker_swarm_cluster"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",

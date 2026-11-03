@@ -81,7 +81,7 @@ func (d *LogRecordingRuleDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "definition": schema.StringAttribute{
-                MarkdownDescription: "Which logs count (filter: telemetryServiceIds, severityTexts, body, attributeFilters), how they are aggregated (aggregationType: Count, or Sum / Avg / Min / Max / P50 / P75 / P90 / P95 / P99 of the numeric valueAttribute), the optional groupByAttributes (up to 5 attribute keys) and the output metric's unit. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Which logs count (filter: telemetryServiceIds, severityTexts, body, attributeFilters), how they are aggregated (aggregationType: Count, or Sum / Avg / Min / Max / P50 / P75 / P90 / P95 / P99 of the numeric valueAttribute), the optional groupByAttributes (up to 5 attribute keys) and the output metric's unit. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
@@ -97,6 +97,7 @@ func (d *LogRecordingRuleDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the user who created this rule. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

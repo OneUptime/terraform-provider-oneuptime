@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_workspace_notification_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Slack, Teams & Video Calls"
 description: |-
   Notification Rule for Third Party Workspaces
 ---
@@ -38,6 +38,6 @@ data "oneuptime_workspace_notification_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `notification_rule` (String) Notification Rules for the Workspace. A JSON value: write it with `jsonencode()`.
+- `notification_rule` (String) Notification Rules for the Workspace. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

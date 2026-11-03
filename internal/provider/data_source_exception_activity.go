@@ -72,6 +72,7 @@ func (d *ExceptionActivityDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the exception this entry is about. The ID of a `oneuptime_exception`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_exception"),
             },
             "activity_type": schema.StringAttribute{
                 MarkdownDescription: "What happened: Resolved, ResolvedInNextRelease, Reopened, Regressed, Archived, Unarchived, Assigned, Unassigned, Merged, MergedInto, Unmerged or UnmergedFrom.",
@@ -82,6 +83,7 @@ func (d *ExceptionActivityDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the person who did it, when a person did. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "api_key_name": schema.StringAttribute{
                 MarkdownDescription: "The name the API key that made the change had at the time, when an API key did.",
@@ -92,16 +94,19 @@ func (d *ExceptionActivityDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "For Assigned, ID of the person it was assigned to; for Unassigned, of the person it was taken from. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "assignee_team_id": schema.StringAttribute{
                 MarkdownDescription: "For Assigned, ID of the team it was assigned to; for Unassigned, of the team it was taken from. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "related_telemetry_exception_id": schema.StringAttribute{
                 MarkdownDescription: "For a merge or an unmerge, ID of the other exception. The ID of a `oneuptime_exception`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_exception"),
             },
             "release": schema.StringAttribute{
                 MarkdownDescription: "For ResolvedInNextRelease, the release it waits out; for Regressed, the release of the occurrence that brought it back, when it names one.",
@@ -117,6 +122,7 @@ func (d *ExceptionActivityDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the person whose action wrote the entry. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

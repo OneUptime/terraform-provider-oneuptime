@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_trace_pipeline_processor Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Individual processors within a trace pipeline that transform span data during ingestion.
 ---
@@ -15,7 +15,7 @@ Individual processors within a trace pipeline that transform span data during in
 resource "oneuptime_trace_pipeline_processor" "example" {
   trace_pipeline_id = oneuptime_trace_pipeline.example.id
   name              = "Example trace pipeline processor"
-  processor_type    = "Example short text"
+  processor_type    = "AttributeRemapper"
 }
 ```
 
@@ -24,7 +24,7 @@ resource "oneuptime_trace_pipeline_processor" "example" {
 ### Required
 
 - `name` (String) Friendly name for this processor.
-- `processor_type` (String) The type of processor: AttributeRemapper, SpanNameRemapper, StatusRemapper, SpanKindRemapper, or CategoryProcessor.
+- `processor_type` (String) The type of processor: AttributeRemapper, SpanNameRemapper, StatusRemapper, SpanKindRemapper, or CategoryProcessor. Allowed values: `AttributeRemapper`, `SpanNameRemapper`, `StatusRemapper`, `SpanKindRemapper`, `CategoryProcessor`.
 - `trace_pipeline_id` (String) ID of the trace pipeline this processor belongs to. The ID of a `oneuptime_trace_pipeline`.
 
 ### Optional

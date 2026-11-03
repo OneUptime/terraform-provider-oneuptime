@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_detection_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Sigma detection rules evaluated against security events. Matches create alerts and detection findings.
 ---

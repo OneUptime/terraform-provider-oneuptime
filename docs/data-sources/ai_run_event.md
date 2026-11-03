@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ai_run_event Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   An event in an AI run: LLM calls, tool calls with validated arguments, and lifecycle transitions.
 ---
@@ -40,6 +40,6 @@ data "oneuptime_ai_run_event" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of the project this event belongs to. The ID of a `oneuptime_project`.
-- `result_summary` (String) Summary of the result: row count, duration, truncation and bytes sent to the LLM. A JSON value: write it with `jsonencode()`.
-- `tool_arguments` (String) Validated tool arguments as executed. A JSON value: write it with `jsonencode()`.
+- `result_summary` (String) Summary of the result: row count, duration, truncation and bytes sent to the LLM. A JSON value: read it with `jsondecode()`.
+- `tool_arguments` (String) Validated tool arguments as executed. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

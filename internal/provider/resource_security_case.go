@@ -18,13 +18,16 @@ import (
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SecurityCaseResource{}
 var _ resource.ResourceWithImportState = &SecurityCaseResource{}
+var _ resource.ResourceWithModifyPlan = &SecurityCaseResource{}
 
 func NewSecurityCaseResource() resource.Resource {
     return &SecurityCaseResource{}
@@ -81,6 +84,7 @@ type SecurityCaseResourceModel struct {
     AiTriagedAt RFC3339Value `tfsdk:"ai_triaged_at"`
     AiTriagePromptInjectionSuspected types.Bool `tfsdk:"ai_triage_prompt_injection_suspected"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    AssignedToUserEmail types.String `tfsdk:"assigned_to_user_email"`
 }
 
 func (r *SecurityCaseResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -129,6 +133,7 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_security_case_status"),
             },
             "security_case_priority_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the case's priority. Optional on create: a case opened by hand starts at the project's medium priority. The ID of a `oneuptime_security_case_priority`.",
@@ -137,6 +142,7 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_security_case_priority"),
             },
             "verdict": schema.StringAttribute{
                 MarkdownDescription: "What the case turned out to be, set when it is closed: True Positive, Benign Positive, False Positive or Undetermined.",
@@ -144,6 +150,9 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("True Positive", "Benign Positive", "False Positive", "Undetermined"),
                 },
             },
             "closing_note": schema.StringAttribute{
@@ -155,12 +164,10 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                 },
             },
             "assigned_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the person working the case. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the person working the case. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assigned_to_user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDValidators("assigned_to_user_email", false),
             },
             "assigned_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the team whose queue the case is in. The ID of a `oneuptime_team`.",
@@ -169,6 +176,7 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "entities": schema.StringAttribute{
                 MarkdownDescription: "The users, hosts, IP addresses, domains and files the case is about, each as { type, value }. Detections add theirs as they join the case. A JSON value: write it with `jsonencode()`.",
@@ -176,6 +184,7 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -188,6 +197,7 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -200,6 +210,7 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -214,6 +225,7 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -231,10 +243,16 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
             "case_number": schema.NumberAttribute{
                 MarkdownDescription: "The case's number in this project, counting up from 1 as cases are opened.",
                 Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
             },
             "case_number_with_prefix": schema.StringAttribute{
                 MarkdownDescription: "The case number with the project's case number prefix in front of it, like CASE-42.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "source": schema.StringAttribute{
                 MarkdownDescription: "What opened the case: a Detection Rule, Threat Intel, a Connected Product, Entity Risk, or a person (Manual).",
@@ -357,8 +375,34 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "assigned_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("assigned_to_user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this security case names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SecurityCaseResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "assigned_to_user_id",
+        email:    "assigned_to_user_email",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SecurityCaseResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -400,6 +444,11 @@ func (r *SecurityCaseResource) Create(ctx context.Context, req resource.CreateRe
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.AssignedToUserId, data.AssignedToUserEmail, "assigned_to_user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -475,6 +524,19 @@ func (r *SecurityCaseResource) Create(ctx context.Context, req resource.CreateRe
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.AssignedToUserId.IsUnknown() {
+        created := securityCaseResponse
+        if wrapper, ok := securityCaseResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["assignedToUserId"]); id != "" {
+            data.AssignedToUserId = types.StringValue(id)
+        } else {
+            data.AssignedToUserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -1616,10 +1678,15 @@ func (r *SecurityCaseResource) Create(ctx context.Context, req resource.CreateRe
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.AssignedToUserEmail = personEmailAfterWrite(ctx, r.client, data.AssignedToUserId, data.AssignedToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1681,6 +1748,10 @@ func (r *SecurityCaseResource) Read(ctx context.Context, req resource.ReadReques
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorAssignedToUserId := data.AssignedToUserId
+    priorAssignedToUserEmail := data.AssignedToUserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/security-case/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -2757,6 +2828,8 @@ func (r *SecurityCaseResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.AssignedToUserEmail = personEmailAfterRead(ctx, r.client, priorAssignedToUserId, data.AssignedToUserId, priorAssignedToUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2781,6 +2854,13 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
     // Use the ID from the current state
     data.Id = state.Id
 
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "entities": !data.Entities.Equal(state.Entities),
+        "mitre_tactics": !data.MitreTactics.Equal(state.MitreTactics),
+        "mitre_techniques": !data.MitreTechniques.Equal(state.MitreTechniques),
+    }
+
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config SecurityCaseResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -2788,6 +2868,11 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.AssignedToUserId, data.AssignedToUserEmail, "assigned_to_user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     securityCaseRequest := map[string]interface{}{
@@ -3988,6 +4073,11 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.AssignedToUserEmail = personEmailAfterWrite(ctx, r.client, data.AssignedToUserId, data.AssignedToUserEmail)
+
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -4025,6 +4115,9 @@ func (r *SecurityCaseResource) Delete(ctx context.Context, req resource.DeleteRe
 
 func (r *SecurityCaseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"entities", "mitre_tactics", "mitre_techniques"})...)
 }
 
 
@@ -4068,6 +4161,9 @@ func (r *SecurityCaseResource) keepPlannedValues(data *SecurityCaseResourceModel
     }
     if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
         data.Labels = plan.Labels
+    }
+    if config.AssignedToUserEmail.IsNull() && !plan.AssignedToUserEmail.IsUnknown() {
+        data.AssignedToUserEmail = plan.AssignedToUserEmail
     }
 }
 

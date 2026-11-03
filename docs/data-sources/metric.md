@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_metric Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   API endpoints for Metric
 ---

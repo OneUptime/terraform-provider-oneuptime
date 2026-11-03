@@ -89,6 +89,7 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "ID of the AI rule that produced this suggestion. The ID of a `oneuptime_ai_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_ai_rule"),
             },
             "rule_name_snapshot": schema.StringAttribute{
                 MarkdownDescription: "Name of the rule when this suggestion was created — survives rule deletion.",
@@ -99,6 +100,7 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "ID of the cluster whose AI remediation mode produced this suggestion. The ID of a `oneuptime_kubernetes_cluster`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_kubernetes_cluster"),
             },
             "resource_type": schema.StringAttribute{
                 MarkdownDescription: "The kind of resource whose AI remediation mode produced this suggestion (DockerHost, PodmanHost, DockerSwarmCluster, ProxmoxCluster, VMwareVCenter, CephCluster, DatabaseServer or Host; resource-level remediation, no rule).",
@@ -114,16 +116,19 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "ID of the incident this suggestion remediates. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the alert this suggestion remediates. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "runbook_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the proposed runbook. The ID of a `oneuptime_runbook`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_runbook"),
             },
             "runbook_name_snapshot": schema.StringAttribute{
                 MarkdownDescription: "Name of the proposed runbook when this suggestion was created — survives runbook deletion.",
@@ -146,11 +151,11 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "command_plan": schema.StringAttribute{
-                MarkdownDescription: "The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "mcp_tool_call_plan": schema.StringAttribute{
-                MarkdownDescription: "For McpToolCalls suggestions: the tool calls OneUptime AI made, or proposes, through the project's external MCP servers, with what each server answered once called. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For McpToolCalls suggestions: the tool calls OneUptime AI made, or proposes, through the project's external MCP servers, with what each server answered once called. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "rationale_markdown": schema.StringAttribute{
@@ -172,6 +177,7 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "ID of the user who approved this suggestion. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "approved_at": schema.StringAttribute{
                 MarkdownDescription: "When this suggestion was approved.",
@@ -181,6 +187,7 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "ID of the user who dismissed this suggestion. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "dismissed_at": schema.StringAttribute{
                 MarkdownDescription: "When this suggestion was dismissed.",

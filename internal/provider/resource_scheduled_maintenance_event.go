@@ -20,6 +20,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
@@ -27,6 +28,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ScheduledMaintenanceEventResource{}
 var _ resource.ResourceWithImportState = &ScheduledMaintenanceEventResource{}
+var _ resource.ResourceWithModifyPlan = &ScheduledMaintenanceEventResource{}
 
 func NewScheduledMaintenanceEventResource() resource.Resource {
     return &ScheduledMaintenanceEventResource{}
@@ -132,6 +134,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "hosts": schema.SetAttribute{
                 MarkdownDescription: "List of hosts affected by this event. IDs of `oneuptime_host` resources.",
@@ -141,6 +144,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_host"),
             },
             "kubernetes_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Kubernetes clusters affected by this event. IDs of `oneuptime_kubernetes_cluster` resources.",
@@ -150,6 +154,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_kubernetes_cluster"),
             },
             "docker_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Docker hosts affected by this event. IDs of `oneuptime_docker_host` resources.",
@@ -159,6 +164,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_docker_host"),
             },
             "podman_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Podman hosts affected by this event. IDs of `oneuptime_podman_host` resources.",
@@ -168,6 +174,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_podman_host"),
             },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Proxmox clusters affected by this event. IDs of `oneuptime_proxmox_cluster` resources.",
@@ -177,6 +184,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_proxmox_cluster"),
             },
             "vmware_v_centers": schema.SetAttribute{
                 MarkdownDescription: "List of vCenters affected by this event. IDs of `oneuptime_vcenter` resources.",
@@ -186,6 +194,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_vcenter"),
             },
             "iot_fleets": schema.SetAttribute{
                 MarkdownDescription: "List of IoT fleets affected by this event. IDs of `oneuptime_iot_fleet` resources.",
@@ -195,6 +204,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_iot_fleet"),
             },
             "network_sites": schema.SetAttribute{
                 MarkdownDescription: "List of network sites affected by this event. Their descendants are covered too. IDs of `oneuptime_network_site` resources.",
@@ -204,6 +214,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_network_site"),
             },
             "docker_swarm_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Docker Swarm clusters affected by this event. IDs of `oneuptime_docker_swarm_cluster` resources.",
@@ -213,6 +224,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_docker_swarm_cluster"),
             },
             "ceph_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Ceph clusters affected by this event. IDs of `oneuptime_ceph_cluster` resources.",
@@ -222,6 +234,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_ceph_cluster"),
             },
             "storage_arrays": schema.SetAttribute{
                 MarkdownDescription: "List of storage arrays affected by this event. IDs of `oneuptime_storage_array` resources.",
@@ -231,6 +244,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_storage_array"),
             },
             "database_servers": schema.SetAttribute{
                 MarkdownDescription: "List of databases affected by this event. IDs of `oneuptime_database` resources.",
@@ -240,6 +254,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_database"),
             },
             "services": schema.SetAttribute{
                 MarkdownDescription: "List of services affected by this event. IDs of `oneuptime_service` resources.",
@@ -249,6 +264,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_service"),
             },
             "status_pages": schema.SetAttribute{
                 MarkdownDescription: "List of status pages to show this event on. IDs of `oneuptime_status_page` resources.",
@@ -258,15 +274,17 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_status_page"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "current_scheduled_maintenance_state_id": schema.StringAttribute{
                 MarkdownDescription: "Scheduled Maintenance State ID. The state the event currently is in. The ID of a `oneuptime_scheduled_maintenance_state`.",
@@ -275,6 +293,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_state"),
             },
             "change_monitor_status_to_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor Status Object ID. The monitors attached to this event change to this status when the event starts, and back to operational when it ends. It can be changed until the event starts. The ID of a `oneuptime_monitor_status`.",
@@ -283,16 +302,23 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "starts_at": schema.StringAttribute{
                 MarkdownDescription: "When does this event start?",
                 CustomType: RFC3339Type{},
                 Required: true,
+                PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
+                },
             },
             "ends_at": schema.StringAttribute{
                 MarkdownDescription: "When does this event end?",
                 CustomType: RFC3339Type{},
                 Required: true,
+                PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
+                },
             },
             "should_status_page_subscribers_be_notified_on_event_created": schema.BoolAttribute{
                 MarkdownDescription: "Should subscribers be notified about this event creation?",
@@ -330,6 +356,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -342,6 +369,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -354,6 +382,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -372,6 +401,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -400,6 +430,9 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -423,10 +456,16 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
             "scheduled_maintenance_number": schema.NumberAttribute{
                 MarkdownDescription: "Scheduled Maintenance Number.",
                 Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
             },
             "scheduled_maintenance_number_with_prefix": schema.StringAttribute{
                 MarkdownDescription: "Scheduled maintenance number with prefix (e.g., 'SM-42' or '#42').",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "next_reminder_notification_at": schema.StringAttribute{
                 MarkdownDescription: "When will the next reminder notification be sent to owners of this scheduled maintenance event? This is set automatically based on the reminder rules configured for this project.",
@@ -439,6 +478,17 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ScheduledMaintenanceEventResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ScheduledMaintenanceEventResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1744,6 +1794,9 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2891,6 +2944,12 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "custom_fields": !data.CustomFields.Equal(state.CustomFields),
+        "send_subscriber_notifications_on_before_the_event": !data.SendSubscriberNotificationsOnBeforeTheEvent.Equal(state.SendSubscriberNotificationsOnBeforeTheEvent),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config ScheduledMaintenanceEventResourceModel
@@ -4130,6 +4189,9 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -4166,6 +4228,9 @@ func (r *ScheduledMaintenanceEventResource) Delete(ctx context.Context, req reso
 
 func (r *ScheduledMaintenanceEventResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "send_subscriber_notifications_on_before_the_event"})...)
 }
 
 

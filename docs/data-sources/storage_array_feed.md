@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_storage_array_feed Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Log of everything that happened to this storage array - creation, updates, owner changes and the rules that made them.
 ---
@@ -16,6 +16,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 ```terraform
 data "oneuptime_storage_array_feed" "example" {
   storage_array_id = oneuptime_storage_array.example.id
+  user_email       = "alice@example.com"
 }
 
 # Or by id:
@@ -34,7 +35,8 @@ data "oneuptime_storage_array_feed" "by_id" {
 - `more_information_in_markdown` (String) More information in Markdown.
 - `storage_array_feed_event_type` (String) Storage Array Feed Event.
 - `storage_array_id` (String) Relation to Storage Array ID in which this resource belongs. The ID of a `oneuptime_storage_array`.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

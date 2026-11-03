@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentStateTimelineResource{}
 var _ resource.ResourceWithImportState = &IncidentStateTimelineResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentStateTimelineResource{}
 
 func NewIncidentStateTimelineResource() resource.Resource {
     return &IncidentStateTimelineResource{}
@@ -85,10 +86,12 @@ func (r *IncidentStateTimelineResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "incident_state_id": schema.StringAttribute{
                 MarkdownDescription: "Incident State ID Relation. Which incident state does this incident change to? The ID of a `oneuptime_incident_state`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_incident_state"),
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
                 MarkdownDescription: "Should subscribers be notified about this state change?",
@@ -115,6 +118,7 @@ func (r *IncidentStateTimelineResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -125,6 +129,7 @@ func (r *IncidentStateTimelineResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -161,12 +166,23 @@ func (r *IncidentStateTimelineResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "state_change_log": schema.StringAttribute{
-                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentStateTimelineResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentStateTimelineResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -660,6 +676,7 @@ func (r *IncidentStateTimelineResource) Create(ctx context.Context, req resource
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

@@ -29,7 +29,8 @@ resource "oneuptime_alert_episode" "example" {
 - `alert_grouping_rule_id` (String) Alert Grouping Rule ID that created this episode. The ID of a `oneuptime_alert_grouping_rule`.
 - `alert_severity_id` (String) Alert Severity ID. The ID of a `oneuptime_alert_severity`.
 - `assigned_to_team_id` (String) Team ID that is assigned to this episode. The ID of a `oneuptime_team`.
-- `assigned_to_user_id` (String) User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source).
+- `assigned_to_user_email` (String) The email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `assigned_to_user_id` (String) User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assigned_to_user_email`.
 - `current_alert_state_id` (String) Current Alert State ID. The ID of a `oneuptime_alert_state`.
 - `description` (String) Description of this alert episode. This is in markdown format.
 - `description_template` (String) Template used to generate the episode description. Stored for dynamic variable updates.
@@ -37,7 +38,7 @@ resource "oneuptime_alert_episode" "example" {
 - `grouping_key` (String) Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule. When a private alert opened the episode, its title is in the key only as a keyed hash.
 - `is_manually_created` (Boolean) Whether this episode was manually created vs auto-created by a rule. Defaults to `false`.
 - `is_private` (Boolean) If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_alert_added_at` (String) When the last alert was added to this episode.
 - `on_call_duty_policies` (Set of String) List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.
 - `post_updates_to_workspace_channels` (String) Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: write it with `jsonencode()`.

@@ -27,7 +27,7 @@ resource "oneuptime_on_call_policy_schedule" "example" {
 ### Optional
 
 - `description` (String) Friendly description that will help you remember.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `timezone` (String) IANA timezone this schedule's restriction and hand-off wall-clock times are interpreted in. When empty, times are interpreted in the server's local timezone (legacy behavior).
 
 ### Read-Only

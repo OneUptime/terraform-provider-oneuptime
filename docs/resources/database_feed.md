@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_database_feed Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Log of everything that happened to this database - creation, updates, owner changes and the rules that made them.
 ---
@@ -15,7 +15,7 @@ Log of everything that happened to this database - creation, updates, owner chan
 resource "oneuptime_database_feed" "example" {
   database_server_id              = oneuptime_database.example.id
   feed_info_in_markdown           = "# Heading\n\nThis is **markdown** content"
-  database_server_feed_event_type = "Example short text"
+  database_server_feed_event_type = "DatabaseServerCreated"
   display_color                   = "#ff0000"
 }
 ```
@@ -24,7 +24,7 @@ resource "oneuptime_database_feed" "example" {
 
 ### Required
 
-- `database_server_feed_event_type` (String) Database Feed Event.
+- `database_server_feed_event_type` (String) Database Feed Event. Allowed values: `DatabaseServerCreated`, `DatabaseServerUpdated`, `DatabaseServerArchived`, `DatabaseServerRestored`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `OwnerRuleExecuted`, `LabelRuleExecuted`.
 - `database_server_id` (String) Relation to Database ID in which this resource belongs. The ID of a `oneuptime_database`.
 - `display_color` (String) Display color for this feed item.
 - `feed_info_in_markdown` (String) Log of the database change in Markdown.
@@ -33,7 +33,8 @@ resource "oneuptime_database_feed" "example" {
 
 - `more_information_in_markdown` (String) More information in Markdown.
 - `posted_at` (String) Date and time when the feed was posted.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

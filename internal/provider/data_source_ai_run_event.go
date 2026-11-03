@@ -70,11 +70,13 @@ func (d *AiRunEventDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "ID of the run this event belongs to. The ID of a `oneuptime_ai_run` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_ai_run"),
             },
             "user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the user whose run this event belongs to. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "sequence": schema.NumberAttribute{
                 MarkdownDescription: "Order of this event within the run.",
@@ -92,11 +94,11 @@ func (d *AiRunEventDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "tool_arguments": schema.StringAttribute{
-                MarkdownDescription: "Validated tool arguments as executed. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Validated tool arguments as executed. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "result_summary": schema.StringAttribute{
-                MarkdownDescription: "Summary of the result: row count, duration, truncation and bytes sent to the LLM. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Summary of the result: row count, duration, truncation and bytes sent to the LLM. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "citation_id": schema.StringAttribute{

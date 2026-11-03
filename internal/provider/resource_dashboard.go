@@ -23,11 +23,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &DashboardResource{}
 var _ resource.ResourceWithImportState = &DashboardResource{}
+var _ resource.ResourceWithModifyPlan = &DashboardResource{}
 
 func NewDashboardResource() resource.Resource {
     return &DashboardResource{}
@@ -114,13 +116,14 @@ func (r *DashboardResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "dashboard_view_config": schema.StringAttribute{
                 MarkdownDescription: "The dashboard's widgets and variables, and the time range (timeRange, such as Past 1 Day) and auto-refresh (refreshInterval, such as 1m) it opens on. See the DashboardViewConfig data type. A JSON value: write it with `jsonencode()`.",
@@ -128,6 +131,7 @@ func (r *DashboardResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -157,6 +161,7 @@ func (r *DashboardResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "dark_theme_logo_file_id": schema.StringAttribute{
                 MarkdownDescription: "Dashboard Dark Theme Logo File ID. The ID of a `oneuptime_file`.",
@@ -165,6 +170,7 @@ func (r *DashboardResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "favicon_file_id": schema.StringAttribute{
                 MarkdownDescription: "Dashboard Favicon File ID. The ID of a `oneuptime_file`.",
@@ -173,6 +179,7 @@ func (r *DashboardResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "theme": schema.StringAttribute{
                 MarkdownDescription: "How the public dashboard looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). Visitors can switch between light and dark from its toolbar. A dashboard created without a theme starts with System.",
@@ -181,6 +188,9 @@ func (r *DashboardResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("Light"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Light", "Dark", "System"),
                 },
             },
             "is_public_dashboard": schema.BoolAttribute{
@@ -234,6 +244,9 @@ func (r *DashboardResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -253,6 +266,17 @@ func (r *DashboardResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *DashboardResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *DashboardResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1065,6 +1089,9 @@ func (r *DashboardResource) Create(ctx context.Context, req resource.CreateReque
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1767,6 +1794,11 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "dashboard_view_config": !data.DashboardViewConfig.Equal(state.DashboardViewConfig),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config DashboardResourceModel
@@ -2517,6 +2549,9 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2553,6 +2588,9 @@ func (r *DashboardResource) Delete(ctx context.Context, req resource.DeleteReque
 
 func (r *DashboardResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"dashboard_view_config"})...)
 }
 
 

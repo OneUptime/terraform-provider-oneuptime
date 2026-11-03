@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_podman_host_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically attaching labels to Podman hosts when matching Podman hosts are created
 ---

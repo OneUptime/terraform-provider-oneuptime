@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_alert_policy Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Alert on a set of network devices at once: every device matching the policy's sites, roles and labels gets a Network Device monitor provisioned from the policy's monitor template, and kept as devices come and go.
 ---

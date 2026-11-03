@@ -86,13 +86,14 @@ func (d *TableViewDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "query": schema.StringAttribute{
-                MarkdownDescription: "Filters for this table view. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Filters for this table view. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "sort": schema.StringAttribute{
-                MarkdownDescription: "Sort for this table view. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Sort for this table view. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "items_on_page": schema.NumberAttribute{
@@ -101,11 +102,11 @@ func (d *TableViewDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "facets": schema.StringAttribute{
-                MarkdownDescription: "Facet selections (owner, labels, status, etc.) for this table view. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Facet selections (owner, labels, status, etc.) for this table view. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "columns": schema.StringAttribute{
-                MarkdownDescription: "Which columns are shown, and in what order, for this table view. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Which columns are shown, and in what order, for this table view. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

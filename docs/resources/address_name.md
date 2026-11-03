@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_address_name Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Names for IP addresses and subnets that your inventory and DNS do not name. The Traffic pages show an address by its name, with the address beside it.
 ---
@@ -14,7 +14,7 @@ Names for IP addresses and subnets that your inventory and DNS do not name. The 
 ```terraform
 resource "oneuptime_address_name" "example" {
   name    = "Example address name"
-  address = "Example short text"
+  address = "10.18.167.0/24"
 }
 ```
 

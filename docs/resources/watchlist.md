@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_watchlist Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Lists a team keeps that detection rules match against, such as VIP users, critical hosts, known-bad file hashes and allowed admin addresses.
 ---
@@ -14,7 +14,7 @@ Lists a team keeps that detection rules match against, such as VIP users, critic
 ```terraform
 resource "oneuptime_watchlist" "example" {
   name        = "Example watchlist"
-  entity_type = "Example short text"
+  entity_type = "User"
   description = "Managed by Terraform"
 }
 ```
@@ -23,13 +23,13 @@ resource "oneuptime_watchlist" "example" {
 
 ### Required
 
-- `entity_type` (String) What the list holds: User, Host, IP Address, File Hash, Domain, URL, Process or Other. It decides which values the list takes - an IP address list takes addresses and ranges such as 10.20.0.0/16 - and which indicators a threat intel feed gives it.
+- `entity_type` (String) What the list holds: User, Host, IP Address, File Hash, Domain, URL, Process or Other. It decides which values the list takes - an IP address list takes addresses and ranges such as 10.20.0.0/16 - and which indicators a threat intel feed gives it. Allowed values: `User`, `Host`, `IP Address`, `Domain`, `URL`, `File Hash`, `Process`, `Data Store`, `Other`.
 - `name` (String) What rules call the list, between % signs: a rule reads vip_users as principalUser|expand: '%vip_users%'. Letters, digits and underscores, starting with a letter; unique in the project whatever the case.
 
 ### Optional
 
 - `description` (String) What the list is for, for whoever reads it later.
-- `source` (String) Where the values come from: Values (added by hand or imported) or Threat Intel Feed (the feed's active indicators of the list's kind). Defaults to `Values`.
+- `source` (String) Where the values come from: Values (added by hand or imported) or Threat Intel Feed (the feed's active indicators of the list's kind). Allowed values: `Values`, `Threat Intel Feed`. Defaults to `Values`.
 - `threat_intel_feed_id` (String) For a list that follows a feed: the ID of the feed whose active indicators are the list's values. The ID of a `oneuptime_threat_intel_feed`.
 
 ### Read-Only

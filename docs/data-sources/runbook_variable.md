@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_runbook_variable Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Runbooks & Runners"
 description: |-
   A value runbook steps use: a host, a namespace or a URL, or a secret such as an SSH key, a password, a kubeconfig or an API token. It belongs to the project, which every runbook can use, or to one runbook. A secret value is encrypted and can never be read back through the API; it reaches only the Runners it lets use it, when they take a step that names it.
 ---

@@ -20,11 +20,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &CustomDataTypeResource{}
 var _ resource.ResourceWithImportState = &CustomDataTypeResource{}
+var _ resource.ResourceWithModifyPlan = &CustomDataTypeResource{}
 
 func NewCustomDataTypeResource() resource.Resource {
     return &CustomDataTypeResource{}
@@ -97,10 +99,16 @@ func (r *CustomDataTypeResource) schemaDefinition() schema.Schema {
             "category": schema.StringAttribute{
                 MarkdownDescription: "The category it belongs to.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Contact and identity", "Government ID", "Financial", "Health", "Secrets and credentials", "Special category", "Business confidential"),
+                },
             },
             "sensitivity": schema.StringAttribute{
                 MarkdownDescription: "How sensitive it is: Restricted, Confidential, Internal or Public.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Restricted", "Confidential", "Internal", "Public"),
+                },
             },
             "pattern": schema.StringAttribute{
                 MarkdownDescription: "A JavaScript regular expression for one value. Leave empty to find it from field names alone.",
@@ -125,6 +133,7 @@ func (r *CustomDataTypeResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -146,6 +155,7 @@ func (r *CustomDataTypeResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -192,6 +202,17 @@ func (r *CustomDataTypeResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *CustomDataTypeResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *CustomDataTypeResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -757,6 +778,9 @@ func (r *CustomDataTypeResource) Create(ctx context.Context, req resource.Create
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1224,6 +1248,12 @@ func (r *CustomDataTypeResource) Update(ctx context.Context, req resource.Update
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "keywords": !data.Keywords.Equal(state.Keywords),
+        "name_hints": !data.NameHints.Equal(state.NameHints),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config CustomDataTypeResourceModel
@@ -1732,6 +1762,9 @@ func (r *CustomDataTypeResource) Update(ctx context.Context, req resource.Update
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1768,6 +1801,9 @@ func (r *CustomDataTypeResource) Delete(ctx context.Context, req resource.Delete
 
 func (r *CustomDataTypeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"keywords", "name_hints"})...)
 }
 
 

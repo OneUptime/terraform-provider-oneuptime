@@ -18,11 +18,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SecurityTelemetrySourceResource{}
 var _ resource.ResourceWithImportState = &SecurityTelemetrySourceResource{}
+var _ resource.ResourceWithModifyPlan = &SecurityTelemetrySourceResource{}
 
 func NewSecurityTelemetrySourceResource() resource.Resource {
     return &SecurityTelemetrySourceResource{}
@@ -82,6 +85,9 @@ func (r *SecurityTelemetrySourceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("traces", "network-flows", "audit-log", "rum-sessions"),
+                },
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether OneUptime looks for security events in this kind of the project's telemetry.",
@@ -120,7 +126,7 @@ func (r *SecurityTelemetrySourceResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "last_scan_result": schema.StringAttribute{
-                MarkdownDescription: "What the last scan read and found: the records read, the security events found, and how many of each signal. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the last scan read and found: the records read, the security events found, and how many of each signal. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -137,6 +143,17 @@ func (r *SecurityTelemetrySourceResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SecurityTelemetrySourceResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SecurityTelemetrySourceResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -538,6 +555,7 @@ func (r *SecurityTelemetrySourceResource) Create(ctx context.Context, req resour
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

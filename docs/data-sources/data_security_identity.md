@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_security_identity Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Every identity that can reach the project's data stores, with what it reaches, how sensitive that is, and how much harm it could do.
 ---
@@ -50,7 +50,7 @@ data "oneuptime_data_security_identity" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `data_type_ids` (String) The data types found in the sensitive stores it reaches, by their ids. A JSON value: write it with `jsonencode()`.
+- `data_type_ids` (String) The data types found in the sensitive stores it reaches, by their ids. A JSON value: read it with `jsondecode()`.
 - `first_seen_at` (String) When the identity was first found reaching a store.
 - `last_seen_at` (String) When the identity was last found reaching a store.
 - `last_used_at` (String) When the identity was last used, where OneUptime can tell.

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_vcenter_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your vCenters.
 ---
@@ -31,8 +31,8 @@ resource "oneuptime_vcenter_team_owner" "example" {
 
 ### Required
 
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
-- `vmware_v_center_id` (String) ID of your OneUptime vCenter in which this object belongs. The ID of a `oneuptime_vcenter`.
+- `team_id` (String) ID of the team that owns the vCenter. The ID of a `oneuptime_team`.
+- `vmware_v_center_id` (String) ID of the vCenter the team owns. The ID of a `oneuptime_vcenter`.
 
 ### Read-Only
 
@@ -45,17 +45,19 @@ resource "oneuptime_vcenter_team_owner" "example" {
 
 ## Import
 
-Import an existing vcenter team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing vcenter team owner by its vcenter and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_vcenter_team_owner.example
-  id = "<id>"
+  id = "<vmware_v_center_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_vcenter_team_owner.example <id>
+terraform import oneuptime_vcenter_team_owner.example <vmware_v_center_id>/<team_id>
 ```
+
+Its own ID works too.

@@ -65,16 +65,19 @@ func (d *IncidentAlertDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the Incident this alert is linked to. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Alert that is linked to the incident. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the User who linked the alert to the incident (if it was linked by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

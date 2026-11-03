@@ -13,9 +13,9 @@ Manage scheduled maintenance templates for your project
 
 ```terraform
 resource "oneuptime_scheduled_maintenance_template" "example" {
-  template_name        = "Example short text"
-  template_description = "This is an example of longer text content that might be stored in this field."
-  title                = "Example short text"
+  template_name        = "Database Upgrade Template"
+  template_description = "Use this template for scheduled database upgrades and migrations. Includes pre-maintenance notifications, maintenance window updates, and post-maintenance completion notifications."
+  title                = "Scheduled Database Maintenance - PostgreSQL Upgrade"
   description          = "Managed by Terraform"
 }
 ```
@@ -40,7 +40,7 @@ resource "oneuptime_scheduled_maintenance_template" "example" {
 - `hosts` (Set of String) List of hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_host` resources.
 - `is_recurring_event` (Boolean) Is this a recurring event?
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_kubernetes_cluster` resources.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) List of monitors attached to this event. IDs of `oneuptime_monitor` resources.
 - `podman_hosts` (Set of String) List of Podman hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_podman_host` resources.
 - `recurring_interval` (String) How often should this event recur? A JSON value: write it with `jsonencode()`.

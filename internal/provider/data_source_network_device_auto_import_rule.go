@@ -69,7 +69,7 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Schema(ctx context.Context, req 
                 Computed: true,
             },
             "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -130,16 +130,19 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Schema(ctx context.Context, req 
                 MarkdownDescription: "ID of the optional Network Device monitor template to apply to devices imported by this rule. The ID of a `oneuptime_monitor_template`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_template"),
             },
             "oid_template_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the optional OID Collection Template to link to devices imported by this rule. The ID of a `oneuptime_oid_collection_template`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_oid_collection_template"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

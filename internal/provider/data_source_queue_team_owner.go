@@ -63,19 +63,22 @@ func (d *QueueTeamOwnerDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the queue. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "message_queue_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Queue in which this object belongs. The ID of a `oneuptime_queue`.",
+                MarkdownDescription: "ID of the queue the team owns. The ID of a `oneuptime_queue`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_queue"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",

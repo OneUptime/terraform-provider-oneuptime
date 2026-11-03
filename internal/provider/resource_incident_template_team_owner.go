@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentTemplateTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &IncidentTemplateTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentTemplateTeamOwnerResource{}
 
 func NewIncidentTemplateTeamOwnerResource() resource.Resource {
     return &IncidentTemplateTeamOwnerResource{}
@@ -53,7 +54,7 @@ func (r *IncidentTemplateTeamOwnerResource) Schema(ctx context.Context, req reso
 
 func (r *IncidentTemplateTeamOwnerResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Add teams as owners to your incidents.",
+        MarkdownDescription: "Add teams as owners to your incident templates.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -71,18 +72,20 @@ func (r *IncidentTemplateTeamOwnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the incident template. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "incident_template_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime IncidentTemplate in which this object belongs. The ID of a `oneuptime_incident_template`.",
+                MarkdownDescription: "ID of the incident template the team owns. The ID of a `oneuptime_incident_template`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_template"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -110,6 +113,17 @@ func (r *IncidentTemplateTeamOwnerResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentTemplateTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentTemplateTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -400,6 +414,7 @@ func (r *IncidentTemplateTeamOwnerResource) Create(ctx context.Context, req reso
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -884,7 +899,22 @@ func (r *IncidentTemplateTeamOwnerResource) Delete(ctx context.Context, req reso
 
 
 func (r *IncidentTemplateTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <incident_template_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/incident-template-owner-team/get-list",
+        parentField:     "incidentTemplateId",
+        parentAttribute: "incident_template_id",
+        parentNoun:      "incident template",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 

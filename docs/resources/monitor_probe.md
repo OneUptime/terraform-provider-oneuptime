@@ -27,16 +27,16 @@ resource "oneuptime_monitor_probe" "example" {
 
 ### Optional
 
-- `is_enabled` (Boolean) Defaults to `true`.
-- `last_ping_at` (String)
-- `next_ping_at` (String)
+- `is_enabled` (Boolean) When on, the probe checks the monitor. Defaults to `true`.
+- `last_ping_at` (String) When the probe last checked the monitor. Set by OneUptime.
+- `next_ping_at` (String) When the probe checks the monitor next. Set by OneUptime: right away for a new one, then on the monitor's interval.
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
-- `last_monitoring_log` (String) A JSON value: write it with `jsonencode()`.
+- `last_monitoring_log` (String) A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
 

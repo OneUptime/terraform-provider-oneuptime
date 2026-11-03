@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AiConversationResource{}
 var _ resource.ResourceWithImportState = &AiConversationResource{}
+var _ resource.ResourceWithModifyPlan = &AiConversationResource{}
 
 func NewAiConversationResource() resource.Resource {
     return &AiConversationResource{}
@@ -105,7 +106,7 @@ func (r *AiConversationResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "page_context": schema.StringAttribute{
-                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -126,6 +127,17 @@ func (r *AiConversationResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AiConversationResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AiConversationResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -569,6 +581,7 @@ func (r *AiConversationResource) Create(ctx context.Context, req resource.Create
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

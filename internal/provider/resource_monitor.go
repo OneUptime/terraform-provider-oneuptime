@@ -29,6 +29,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &MonitorResource{}
 var _ resource.ResourceWithImportState = &MonitorResource{}
+var _ resource.ResourceWithModifyPlan = &MonitorResource{}
 
 func NewMonitorResource() resource.Resource {
     return &MonitorResource{}
@@ -147,13 +148,14 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "depends_on_monitors": schema.SetAttribute{
                 MarkdownDescription: "Parent monitors this monitor depends on. When a parent is offline (or in one of the configured suppression statuses), alerts and incidents from this monitor are suppressed at creation time — the monitor keeps evaluating and its status timeline still updates. IDs of `oneuptime_monitor` resources.",
@@ -163,6 +165,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "suppress_alerts_when_parent_monitor_statuses": schema.SetAttribute{
                 MarkdownDescription: "Parent monitor statuses that suppress this monitor's alerts and incidents. When empty, statuses flagged as offline suppress (the default). Only used when Depends On Monitors is set. IDs of `oneuptime_monitor_status` resources.",
@@ -172,6 +175,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor_status"),
             },
             "hosts": schema.SetAttribute{
                 MarkdownDescription: "Hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_host` resources.",
@@ -181,6 +185,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_host"),
             },
             "kubernetes_clusters": schema.SetAttribute{
                 MarkdownDescription: "Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_kubernetes_cluster` resources.",
@@ -190,6 +195,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_kubernetes_cluster"),
             },
             "docker_hosts": schema.SetAttribute{
                 MarkdownDescription: "Docker hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_docker_host` resources.",
@@ -199,6 +205,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_docker_host"),
             },
             "podman_hosts": schema.SetAttribute{
                 MarkdownDescription: "Podman hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_podman_host` resources.",
@@ -208,6 +215,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_podman_host"),
             },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "Proxmox clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_proxmox_cluster` resources.",
@@ -217,6 +225,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_proxmox_cluster"),
             },
             "vmware_v_centers": schema.SetAttribute{
                 MarkdownDescription: "VMware vCenters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_vcenter` resources.",
@@ -226,6 +235,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_vcenter"),
             },
             "ceph_clusters": schema.SetAttribute{
                 MarkdownDescription: "Ceph clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_ceph_cluster` resources.",
@@ -235,6 +245,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_ceph_cluster"),
             },
             "storage_arrays": schema.SetAttribute{
                 MarkdownDescription: "Storage arrays this monitor watches. Incidents and alerts it creates are linked to them. IDs of `oneuptime_storage_array` resources.",
@@ -244,6 +255,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_storage_array"),
             },
             "cloud_resources": schema.SetAttribute{
                 MarkdownDescription: "Cloud resources this monitor watches. Incidents and alerts it creates are linked to them. IDs of `oneuptime_cloud_resource` resources.",
@@ -253,6 +265,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_cloud_resource"),
             },
             "docker_swarm_clusters": schema.SetAttribute{
                 MarkdownDescription: "Docker Swarm clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_docker_swarm_cluster` resources.",
@@ -262,6 +275,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_docker_swarm_cluster"),
             },
             "iot_fleets": schema.SetAttribute{
                 MarkdownDescription: "IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_iot_fleet` resources.",
@@ -271,6 +285,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_iot_fleet"),
             },
             "database_servers": schema.SetAttribute{
                 MarkdownDescription: "Databases this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_database` resources.",
@@ -280,6 +295,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_database"),
             },
             "services": schema.SetAttribute{
                 MarkdownDescription: "Services this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_service` resources.",
@@ -289,6 +305,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_service"),
             },
             "monitor_template_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Monitor Template this monitor was created from. Null for monitors not created from a template. The ID of a `oneuptime_monitor_template`.",
@@ -297,6 +314,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor_template"),
             },
             "monitor_type": schema.StringAttribute{
                 MarkdownDescription: "What is the type of this monitor? Website? API? etc.",
@@ -315,6 +333,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "monitor_steps": MonitorStepsSchemaAttribute("What would you like to monitor and what is the criteria?"),
             "monitoring_interval": schema.StringAttribute{
@@ -331,6 +350,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -352,6 +372,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -362,6 +383,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -372,6 +394,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -382,6 +405,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -392,6 +416,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -405,6 +430,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -417,6 +443,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -444,6 +471,9 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -484,14 +514,17 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
             "server_monitor_secret_key": schema.StringAttribute{
                 MarkdownDescription: "This field is for Server Monitor only. Secret Key to authenticate the request.",
                 Computed: true,
+                Sensitive: true,
             },
             "incoming_request_secret_key": schema.StringAttribute{
                 MarkdownDescription: "This field is for Incoming Request Monitor only. Secret Key to authenticate the request.",
                 Computed: true,
+                Sensitive: true,
             },
             "incoming_email_secret_key": schema.StringAttribute{
                 MarkdownDescription: "This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.",
                 Computed: true,
+                Sensitive: true,
             },
             "incoming_email_monitor_last_email_received_at": schema.StringAttribute{
                 MarkdownDescription: "This field is for Incoming Email Monitor only. When was the last email received?",
@@ -499,7 +532,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "incoming_email_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "This field is for Incoming Email Monitor only. Last email data received. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "This field is for Incoming Email Monitor only. Last email data received. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -518,6 +551,17 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *MonitorResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *MonitorResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -2170,6 +2214,9 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -3653,6 +3700,14 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "custom_fields": !data.CustomFields.Equal(state.CustomFields),
+        "incoming_monitor_request": !data.IncomingMonitorRequest.Equal(state.IncomingMonitorRequest),
+        "monitor_steps": !data.MonitorSteps.Equal(state.MonitorSteps),
+        "server_monitor_response": !data.ServerMonitorResponse.Equal(state.ServerMonitorResponse),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config MonitorResourceModel
@@ -5225,6 +5280,9 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -5261,6 +5319,9 @@ func (r *MonitorResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 func (r *MonitorResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "incoming_monitor_request", "monitor_steps", "server_monitor_response"})...)
 }
 
 

@@ -130,6 +130,7 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring.",
@@ -144,9 +145,10 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -229,16 +231,19 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "ID of the Monitor Template this monitor was created from. Null for monitors not created from a template. The ID of a `oneuptime_monitor_template`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_template"),
             },
             "auto_provisioned_network_device_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Device that caused this monitor to be provisioned automatically. The ID of a `oneuptime_network_device`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_device"),
             },
             "network_alert_policy_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Alert Policy that provisioned this monitor, when one did. The ID of a `oneuptime_network_alert_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_alert_policy"),
             },
             "monitor_type": schema.StringAttribute{
                 MarkdownDescription: "What is the type of this monitor? Website? API? etc.",
@@ -249,6 +254,7 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "Whats the current status ID of this monitor? The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "monitor_steps": schema.StringAttribute{
                 MarkdownDescription: "What would you like to monitor and what is the criteria?",
@@ -260,7 +266,7 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
@@ -301,22 +307,22 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "server_monitor_secret_key": schema.StringAttribute{
                 MarkdownDescription: "This field is for Server Monitor only. Secret Key to authenticate the request.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "incoming_request_secret_key": schema.StringAttribute{
                 MarkdownDescription: "This field is for Incoming Request Monitor only. Secret Key to authenticate the request.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "incoming_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "Incoming Monitor Request for Incoming Request Monitor. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Incoming Monitor Request for Incoming Request Monitor. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "incoming_email_secret_key": schema.StringAttribute{
                 MarkdownDescription: "This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "incoming_email_custom_local_part": schema.StringAttribute{
                 MarkdownDescription: "This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address.",
@@ -328,7 +334,7 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "incoming_email_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "This field is for Incoming Email Monitor only. Last email data received. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "This field is for Incoming Email Monitor only. Last email data received. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "incoming_email_monitor_heartbeat_checked_at": schema.StringAttribute{
@@ -336,7 +342,7 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "server_monitor_response": schema.StringAttribute{
-                MarkdownDescription: "Server Monitor Response for Server Monitor. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Server Monitor Response for Server Monitor. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_all_probes_disconnected_from_this_monitor": schema.BoolAttribute{
@@ -456,18 +462,6 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if !data.DisableActiveMonitoringBecauseOfManualIncident.IsNull() && !data.DisableActiveMonitoringBecauseOfManualIncident.IsUnknown() {
         filters["disableActiveMonitoringBecauseOfManualIncident"] = data.DisableActiveMonitoringBecauseOfManualIncident.ValueBool()
         filterNames = append(filterNames, "disable_active_monitoring_because_of_manual_incident = "+fmt.Sprintf("%t", data.DisableActiveMonitoringBecauseOfManualIncident.ValueBool()))
-    }
-    if !data.ServerMonitorSecretKey.IsNull() && !data.ServerMonitorSecretKey.IsUnknown() {
-        filters["serverMonitorSecretKey"] = data.ServerMonitorSecretKey.ValueString()
-        filterNames = append(filterNames, "server_monitor_secret_key = "+fmt.Sprintf("%q", data.ServerMonitorSecretKey.ValueString()))
-    }
-    if !data.IncomingRequestSecretKey.IsNull() && !data.IncomingRequestSecretKey.IsUnknown() {
-        filters["incomingRequestSecretKey"] = data.IncomingRequestSecretKey.ValueString()
-        filterNames = append(filterNames, "incoming_request_secret_key = "+fmt.Sprintf("%q", data.IncomingRequestSecretKey.ValueString()))
-    }
-    if !data.IncomingEmailSecretKey.IsNull() && !data.IncomingEmailSecretKey.IsUnknown() {
-        filters["incomingEmailSecretKey"] = data.IncomingEmailSecretKey.ValueString()
-        filterNames = append(filterNames, "incoming_email_secret_key = "+fmt.Sprintf("%q", data.IncomingEmailSecretKey.ValueString()))
     }
     if !data.IncomingEmailCustomLocalPart.IsNull() && !data.IncomingEmailCustomLocalPart.IsUnknown() {
         filters["incomingEmailCustomLocalPart"] = data.IncomingEmailCustomLocalPart.ValueString()

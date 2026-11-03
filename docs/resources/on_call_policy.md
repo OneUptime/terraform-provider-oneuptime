@@ -30,7 +30,7 @@ resource "oneuptime_on_call_policy" "example" {
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Friendly description that will help you remember.
 - `is_archived` (Boolean) Archived on-call policies are hidden from the On-Call Policies list and page no one: incidents and alerts that use them skip them. Unarchiving puts them back in service. Defaults to `false`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `repeat_policy_if_no_one_acknowledges` (Boolean) Repeat the policy if no one acknowledges the alert. Defaults to `false`.
 - `repeat_policy_if_no_one_acknowledges_no_of_times` (Number) How many more times the policy starts again from its first escalation rule when nobody acknowledges: a whole number of 1 or more while Repeat Policy If No One Acknowledges is on. Defaults to `0`.
 

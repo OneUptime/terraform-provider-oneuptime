@@ -16,11 +16,14 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SecurityCaseEvidenceResource{}
 var _ resource.ResourceWithImportState = &SecurityCaseEvidenceResource{}
+var _ resource.ResourceWithModifyPlan = &SecurityCaseEvidenceResource{}
 
 func NewSecurityCaseEvidenceResource() resource.Resource {
     return &SecurityCaseEvidenceResource{}
@@ -86,12 +89,16 @@ func (r *SecurityCaseEvidenceResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "kind": schema.StringAttribute{
                 MarkdownDescription: "What the evidence is: a File uploaded to OneUptime, a Link to evidence kept somewhere else, or an Event bookmarked from Security Events. It can't be changed.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("File", "Link", "Event"),
                 },
             },
             "name": schema.StringAttribute{
@@ -114,6 +121,7 @@ func (r *SecurityCaseEvidenceResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "url": schema.StringAttribute{
                 MarkdownDescription: "Where the evidence is kept, for Link evidence: an http or https address.",
@@ -163,7 +171,7 @@ func (r *SecurityCaseEvidenceResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "event_snapshot": schema.StringAttribute{
-                MarkdownDescription: "For Event evidence: the security event as OneUptime read it when it was kept - its severity, class, message, who and where - and the hunt that found it. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For Event evidence: the security event as OneUptime read it when it was kept - its severity, class, message, who and where - and the hunt that found it. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -176,6 +184,17 @@ func (r *SecurityCaseEvidenceResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SecurityCaseEvidenceResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SecurityCaseEvidenceResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -841,6 +860,7 @@ func (r *SecurityCaseEvidenceResource) Create(ctx context.Context, req resource.
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

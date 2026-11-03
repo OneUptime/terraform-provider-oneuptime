@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_site Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Self-nesting sites (Account Type -> Region / Franchisee -> Market -> Unit) that group Network Devices into a drill-down hierarchy with a persisted health rollup.
 ---
@@ -31,7 +31,7 @@ resource "oneuptime_network_site" "example" {
 - `current_monitor_status_id` (String) Whats the current rolled-up status ID of this site? Computed from the devices and child sites below it. The ID of a `oneuptime_monitor_status`.
 - `depth` (Number) Number of ancestors above this site (0 for root sites). Managed by the server on parent changes.
 - `description` (String) Friendly description for this network site.
-- `health_rollup_policy` (String) How this site's status is derived from the devices beneath it: WorstStatus (any device offline makes the site offline) or PercentThreshold (the share of devices that are down decides).
+- `health_rollup_policy` (String) How this site's status is derived from the devices beneath it: WorstStatus (any device offline makes the site offline) or PercentThreshold (the share of devices that are down decides). Allowed values: `WorstStatus`, `PercentThreshold`.
 - `last_rollup_at` (String) When the health rollup for this site was last computed.
 - `latitude` (Number) Latitude of this site, for US and world map views.
 - `longitude` (Number) Longitude of this site, for US and world map views.

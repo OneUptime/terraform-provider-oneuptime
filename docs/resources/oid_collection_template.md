@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_oid_collection_template Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   A reusable set of SNMP health OIDs. Every network device linked to a template collects its OIDs, and editing the template changes what every linked device collects on its next poll.
 ---

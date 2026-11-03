@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_playbook Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Automated responses to security cases: steps that assign, investigate, notify, escalate and contain, run when a matching case opens or by hand.
 ---
@@ -41,8 +41,8 @@ data "oneuptime_security_playbook" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `detection_rule_ids` (String) Run only on cases with a detection from one of these detection rules. Empty runs on cases from any rule. A JSON value: write it with `jsonencode()`.
+- `detection_rule_ids` (String) Run only on cases with a detection from one of these detection rules. Empty runs on cases from any rule. A JSON value: read it with `jsondecode()`.
 - `last_run_at` (String) When the playbook last started a run.
 - `project_id` (String) ID of the project this playbook belongs to. The ID of a `oneuptime_project`.
-- `steps` (String) The steps the playbook takes, in order. Each has an action, its settings, and whether it needs approval, may fail without stopping the run, or runs only when threat intel matched. A JSON value: write it with `jsonencode()`.
+- `steps` (String) The steps the playbook takes, in order. Each has an action, its settings, and whether it needs approval, may fail without stopping the run, or runs only when threat intel matched. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

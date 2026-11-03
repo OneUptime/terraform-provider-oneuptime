@@ -65,16 +65,19 @@ func (d *ApiKeyCustomRoleDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the API key given the role. The ID of a `oneuptime_api_key`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_api_key"),
             },
             "custom_role_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the custom role given to the API key. The ID of a `oneuptime_custom_role`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_custom_role"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

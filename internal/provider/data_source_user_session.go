@@ -68,6 +68,7 @@ func (d *UserSessionDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Identifier for the user that owns this session. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "last_active_at": schema.StringAttribute{
                 MarkdownDescription: "Last time this session was used.",
@@ -118,7 +119,7 @@ func (d *UserSessionDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "additional_info": schema.StringAttribute{
-                MarkdownDescription: "Flexible JSON payload for storing structured session metadata. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Flexible JSON payload for storing structured session metadata. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

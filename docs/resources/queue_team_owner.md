@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_queue_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your queues.
 ---
@@ -22,8 +22,8 @@ resource "oneuptime_queue_team_owner" "example" {
 
 ### Required
 
-- `message_queue_id` (String) ID of your OneUptime Queue in which this object belongs. The ID of a `oneuptime_queue`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `message_queue_id` (String) ID of the queue the team owns. The ID of a `oneuptime_queue`.
+- `team_id` (String) ID of the team that owns the queue. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_queue_team_owner" "example" {
 
 ## Import
 
-Import an existing queue team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing queue team owner by its queue and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_queue_team_owner.example
-  id = "<id>"
+  id = "<message_queue_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_queue_team_owner.example <id>
+terraform import oneuptime_queue_team_owner.example <message_queue_id>/<team_id>
 ```
+
+Its own ID works too.

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_incoming_call_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "On-Call & Escalation"
 description: |-
   Parent log for each incoming call instance. Groups all escalation attempts together.
 ---

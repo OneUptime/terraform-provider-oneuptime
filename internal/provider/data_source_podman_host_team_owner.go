@@ -63,19 +63,22 @@ func (d *PodmanHostTeamOwnerDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the Podman host. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "podman_host_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Podman Host in which this object belongs. The ID of a `oneuptime_podman_host`.",
+                MarkdownDescription: "ID of the Podman host the team owns. The ID of a `oneuptime_podman_host`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_podman_host"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",

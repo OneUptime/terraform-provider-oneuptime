@@ -84,6 +84,7 @@ func (d *NetworkSiteTypeDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the Network Site Type directly above this type. Empty for top-level types. The ID of a `oneuptime_network_site_type`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_network_site_type"),
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Display order among site types that have the same parent.",
@@ -99,6 +100,7 @@ func (d *NetworkSiteTypeDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

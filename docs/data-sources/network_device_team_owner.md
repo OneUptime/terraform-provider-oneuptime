@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_device_team_owner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Add teams as owners to your network devices.
 ---
@@ -31,8 +31,8 @@ data "oneuptime_network_device_team_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `network_device_id` (String) ID of your OneUptime Network Device in which this object belongs. The ID of a `oneuptime_network_device`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `network_device_id` (String) ID of the network device the team owns. The ID of a `oneuptime_network_device`.
+- `team_id` (String) ID of the team that owns the network device. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

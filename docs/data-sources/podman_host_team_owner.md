@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_podman_host_team_owner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your Podman hosts.
 ---
@@ -31,8 +31,8 @@ data "oneuptime_podman_host_team_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `podman_host_id` (String) ID of your OneUptime Podman Host in which this object belongs. The ID of a `oneuptime_podman_host`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `podman_host_id` (String) ID of the Podman host the team owns. The ID of a `oneuptime_podman_host`.
+- `team_id` (String) ID of the team that owns the Podman host. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_incoming_call_policy_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "On-Call & Escalation"
 description: |-
   Configure rules for automatically attaching labels to incoming call policies when matching policies are created
 ---

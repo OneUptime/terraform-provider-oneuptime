@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ai_agent_task_pull_request Resource - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   Pull requests created by AI agents during task execution.
 ---
@@ -14,7 +14,7 @@ Pull requests created by AI agents during task execution.
 ```terraform
 resource "oneuptime_ai_agent_task_pull_request" "example" {
   title              = "Example short text"
-  pull_request_state = "Example short text"
+  pull_request_state = "open"
   description        = "Managed by Terraform"
 }
 ```
@@ -23,7 +23,7 @@ resource "oneuptime_ai_agent_task_pull_request" "example" {
 
 ### Required
 
-- `pull_request_state` (String) Current state of the pull request (open, closed, merged).
+- `pull_request_state` (String) Current state of the pull request (open, closed, merged). Allowed values: `open`, `closed`, `merged`.
 - `title` (String) Title of the pull request.
 
 ### Optional

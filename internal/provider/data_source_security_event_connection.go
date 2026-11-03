@@ -89,7 +89,7 @@ func (d *SecurityEventConnectionDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "config": schema.StringAttribute{
-                MarkdownDescription: "Provider-specific, non-secret settings such as tenant, workspace, region or base URL. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Provider-specific, non-secret settings such as tenant, workspace, region or base URL. Keys are defined by the provider catalog. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
@@ -121,7 +121,7 @@ func (d *SecurityEventConnectionDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "last_poll_result": schema.StringAttribute{
-                MarkdownDescription: "The latest scheduled or on-demand poll result with counts and warnings. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The latest scheduled or on-demand poll result with counts and warnings. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_polled_at": schema.StringAttribute{
@@ -142,6 +142,7 @@ func (d *SecurityEventConnectionDataSource) Schema(ctx context.Context, req data
                 MarkdownDescription: "ID of the user who created this connection. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

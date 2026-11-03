@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_iot_device_credential Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "IoT"
 description: |-
   Registered IoT devices and their per-device MQTT credentials. Registered devices get individual authentication, topic isolation, revocation, and silent-death offline detection.
 ---
@@ -36,11 +36,11 @@ data "oneuptime_iot_device_credential" "by_id" {
 - `iot_fleet_id` (String) ID of the IoT Fleet this device belongs to. The ID of a `oneuptime_iot_fleet`.
 - `is_enabled` (Boolean) Disabled credentials are rejected at MQTT CONNECT and stop the device's silent-death offline detection.
 - `name` (String) Any friendly name of this device.
-- `secret_key` (String) Secret this device presents as the MQTT password (with this credential's ID as the username).
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
 - `last_connected_at` (String) When this credential last authenticated an MQTT connection.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `secret_key` (String, Sensitive) Secret this device presents as the MQTT password (with this credential's ID as the username).
 - `updated_at` (String) Date and Time when the object was updated.

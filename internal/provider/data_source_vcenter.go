@@ -196,6 +196,7 @@ func (d *VcenterDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this vCenter archived? Archived vCenters are hidden from lists but keep collecting telemetry.",
@@ -210,9 +211,10 @@ func (d *VcenterDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -222,7 +224,7 @@ func (d *VcenterDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this vCenter (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the vCenter default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-pillar retention overrides for this vCenter (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the vCenter default, then the project's retention settings. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
@@ -236,7 +238,7 @@ func (d *VcenterDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "ai_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this vCenter without approval even though they are riskier changes. Each pattern is one command line for this vCenter's agent (govc) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this vCenter is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the vCenter can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this vCenter without approval even though they are riskier changes. Each pattern is one command line for this vCenter's agent (govc) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this vCenter is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the vCenter can remove patterns or clear the list. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{
@@ -280,6 +282,7 @@ func (d *VcenterDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "ID of the OneUptime probe that collects this vCenter. Changing it asks for the password again. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "trusted_certificate_fingerprint": schema.StringAttribute{
                 MarkdownDescription: "The SHA-256 fingerprint of the one certificate the probe accepts from this vCenter, for a vCenter whose certificate is not from a public authority (vCenter's own VMCA certificate, by default). Empty: the certificate must be signed by an authority the probe's machine trusts. Verification is never skipped. Trusting a different certificate asks for the password again.",
@@ -307,11 +310,11 @@ func (d *VcenterDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "presented_certificate": schema.StringAttribute{
-                MarkdownDescription: "The certificate vCenter presented when the last collection did not trust it: its SHA-256 fingerprint, subject, issuer and validity, so a person can check it and trust exactly that certificate. Written by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The certificate vCenter presented when the last collection did not trust it: its SHA-256 fingerprint, subject, issuer and validity, so a person can check it and trust exactly that certificate. Written by the probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "collection_summary": schema.StringAttribute{
-                MarkdownDescription: "What the last successful collection found: vCenter's product and version, and how many datacenters, clusters, hosts, virtual machines, datastores and resource pools it reported. Written by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the last successful collection found: vCenter's product and version, and how many datacenters, clusters, hosts, virtual machines, datastores and resource pools it reported. Written by the probe. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "next_collection_at": schema.StringAttribute{

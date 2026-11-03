@@ -14,7 +14,7 @@ Add resources like monitors to your status page
 ```terraform
 resource "oneuptime_status_page_resource" "example" {
   status_page_id = oneuptime_status_page.example.id
-  display_name   = "Example short text"
+  display_name   = "API Server"
 }
 ```
 
@@ -38,7 +38,7 @@ resource "oneuptime_status_page_resource" "example" {
 - `show_status_history_chart` (Boolean) Show a 90 day uptime history of this monitor. Defaults to `true`.
 - `show_uptime_percent` (Boolean) Show uptime percent of this monitor for the last 90 days. Defaults to `false`.
 - `status_page_group_id` (String) Does this monitor belong to a status page group? The ID of a `oneuptime_status_page_group`.
-- `uptime_percent_precision` (String) Precision of uptime percent of this monitor for the last 90 days.
+- `uptime_percent_precision` (String) Precision of uptime percent of this monitor for the last 90 days. Allowed values: `99% (No Decimal)`, `99.9% (One Decimal)`, `99.99% (Two Decimal)`, `99.999% (Three Decimal)`.
 
 ### Read-Only
 

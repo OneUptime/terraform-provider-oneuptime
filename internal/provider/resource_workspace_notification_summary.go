@@ -17,11 +17,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &WorkspaceNotificationSummaryResource{}
 var _ resource.ResourceWithImportState = &WorkspaceNotificationSummaryResource{}
+var _ resource.ResourceWithModifyPlan = &WorkspaceNotificationSummaryResource{}
 
 func NewWorkspaceNotificationSummaryResource() resource.Resource {
     return &WorkspaceNotificationSummaryResource{}
@@ -99,10 +101,16 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
             "workspace_type": schema.StringAttribute{
                 MarkdownDescription: "Type of Workspace - Slack, Microsoft Teams, etc.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Slack", "MicrosoftTeams"),
+                },
             },
             "summary_type": schema.StringAttribute{
                 MarkdownDescription: "Type of summary - Incident, Alert, Incident Episode, or Alert Episode.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Incident", "Alert", "Incident Episode", "Alert Episode"),
+                },
             },
             "recurring_interval": schema.StringAttribute{
                 MarkdownDescription: "How often should the summary be sent? A JSON value: write it with `jsonencode()`.",
@@ -110,6 +118,7 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -119,6 +128,9 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
             "number_of_days_of_data": schema.NumberAttribute{
                 MarkdownDescription: "How many days of data to include in the summary.",
                 Required: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "send_first_report_at": schema.StringAttribute{
                 MarkdownDescription: "When should the first summary report be sent? Subsequent reports will follow the recurring interval from this date.",
@@ -126,6 +138,7 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -143,6 +156,7 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -163,6 +177,7 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -175,6 +190,7 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -188,6 +204,9 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("All", "Any"),
+                },
             },
             "next_send_at": schema.StringAttribute{
                 MarkdownDescription: "When the next summary should be sent.",
@@ -195,6 +214,7 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -204,6 +224,7 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -233,6 +254,17 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *WorkspaceNotificationSummaryResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *WorkspaceNotificationSummaryResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -959,6 +991,9 @@ func (r *WorkspaceNotificationSummaryResource) Create(ctx context.Context, req r
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1572,6 +1607,14 @@ func (r *WorkspaceNotificationSummaryResource) Update(ctx context.Context, req r
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "channel_names": !data.ChannelNames.Equal(state.ChannelNames),
+        "filters": !data.Filters.Equal(state.Filters),
+        "recurring_interval": !data.RecurringInterval.Equal(state.RecurringInterval),
+        "summary_items": !data.SummaryItems.Equal(state.SummaryItems),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config WorkspaceNotificationSummaryResourceModel
@@ -2251,6 +2294,9 @@ func (r *WorkspaceNotificationSummaryResource) Update(ctx context.Context, req r
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2287,6 +2333,9 @@ func (r *WorkspaceNotificationSummaryResource) Delete(ctx context.Context, req r
 
 func (r *WorkspaceNotificationSummaryResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"channel_names", "filters", "recurring_interval", "summary_items"})...)
 }
 
 

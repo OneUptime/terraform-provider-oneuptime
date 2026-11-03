@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_threat_intel_indicator Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   API endpoints for Threat Intel Indicator
 ---

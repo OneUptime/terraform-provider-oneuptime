@@ -75,7 +75,7 @@ func (d *WorkspaceNotificationRuleDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "notification_rule": schema.StringAttribute{
-                MarkdownDescription: "Notification Rules for the Workspace. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Notification Rules for the Workspace. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "event_type": schema.StringAttribute{
@@ -92,6 +92,7 @@ func (d *WorkspaceNotificationRuleDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

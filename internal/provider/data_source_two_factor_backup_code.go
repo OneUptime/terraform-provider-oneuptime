@@ -62,6 +62,7 @@ func (d *TwoFactorBackupCodeDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "User ID who owns this backup code. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

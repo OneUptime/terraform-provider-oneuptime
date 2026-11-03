@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkEndpointResource{}
 var _ resource.ResourceWithImportState = &NetworkEndpointResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkEndpointResource{}
 
 func NewNetworkEndpointResource() resource.Resource {
     return &NetworkEndpointResource{}
@@ -102,6 +103,7 @@ func (r *NetworkEndpointResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_network_site"),
             },
             "ip_address": schema.StringAttribute{
                 MarkdownDescription: "Last IP address seen for this endpoint in ARP tables. Managed by the server.",
@@ -175,6 +177,17 @@ func (r *NetworkEndpointResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkEndpointResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkEndpointResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -769,6 +782,7 @@ func (r *NetworkEndpointResource) Create(ctx context.Context, req resource.Creat
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

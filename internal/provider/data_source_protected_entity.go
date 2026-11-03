@@ -81,6 +81,7 @@ func (d *ProtectedEntityDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the person who protected it. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

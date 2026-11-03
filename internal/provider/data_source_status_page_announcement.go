@@ -111,9 +111,10 @@ func (d *StatusPageAnnouncementDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "subscriber_notification_status": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
+                MarkdownDescription: "Whether the status page's subscribers were told about the announcement: Pending until they are, then Success or Failed. Set by OneUptime.",
                 Optional: true,
                 Computed: true,
             },

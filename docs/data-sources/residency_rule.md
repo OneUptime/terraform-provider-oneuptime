@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_residency_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Where data may live: the regions a category of data, or data about people in some countries, may be stored and copied to.
 ---
@@ -36,9 +36,9 @@ data "oneuptime_residency_rule" "by_id" {
 
 ### Read-Only
 
-- `allowed_regions` (String) The regions the data may live in. A * matches any characters: eu-*, europe-*, westeurope. A JSON value: write it with `jsonencode()`.
+- `allowed_regions` (String) The regions the data may live in. A * matches any characters: eu-*, europe-*, westeurope. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
-- `data_categories` (String) The categories of data the rule covers. Empty means every kind of personal data. A JSON value: write it with `jsonencode()`.
+- `data_categories` (String) The categories of data the rule covers. Empty means every kind of personal data. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this residency rule belongs to. The ID of a `oneuptime_project`.
-- `subject_countries` (String) Only data about people in these countries (ISO 3166-1 alpha-2). Empty means data about anyone. A JSON value: write it with `jsonencode()`.
+- `subject_countries` (String) Only data about people in these countries (ISO 3166-1 alpha-2). Empty means data about anyone. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

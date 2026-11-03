@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_recommendation_dismissal Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Organization"
 description: |-
   Recommendations your team has dismissed. Dismissing hides a recommendation for everyone on the project until it is restored; it never deletes anything that was already created from it.
 ---
@@ -13,8 +13,8 @@ Recommendations your team has dismissed. Dismissing hides a recommendation for e
 
 ```terraform
 resource "oneuptime_recommendation_dismissal" "example" {
-  recommendation_type = "Example short text"
-  recommendation_id   = "Example short text"
+  recommendation_type = "Monitor"
+  recommendation_id   = "Kubernetes:k8s-hpa-at-max-replicas"
 }
 ```
 

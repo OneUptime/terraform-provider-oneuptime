@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPageOidcResource{}
 var _ resource.ResourceWithImportState = &StatusPageOidcResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPageOidcResource{}
 
 func NewStatusPageOidcResource() resource.Resource {
     return &StatusPageOidcResource{}
@@ -87,12 +88,14 @@ func (r *StatusPageOidcResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Any friendly name of this object.",
                 Required: true,
             },
             "description": schema.StringAttribute{
+                MarkdownDescription: "What this sign-in is for, such as which identity provider it uses.",
                 Required: true,
             },
             "discovery_url": schema.StringAttribute{
@@ -129,6 +132,7 @@ func (r *StatusPageOidcResource) schemaDefinition() schema.Schema {
                 },
             },
             "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When on, visitors of a private status page can sign in with this provider.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -137,6 +141,7 @@ func (r *StatusPageOidcResource) schemaDefinition() schema.Schema {
                 },
             },
             "is_tested": schema.BoolAttribute{
+                MarkdownDescription: "Whether a sign-in with this provider has been tested. It does not turn the provider on.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -167,6 +172,17 @@ func (r *StatusPageOidcResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPageOidcResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPageOidcResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -806,6 +822,7 @@ func (r *StatusPageOidcResource) Create(ctx context.Context, req resource.Create
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

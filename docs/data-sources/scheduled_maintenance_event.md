@@ -51,7 +51,7 @@ data "oneuptime_scheduled_maintenance_event" "by_id" {
 
 - `ceph_clusters` (Set of String) List of Ceph clusters affected by this event. IDs of `oneuptime_ceph_cluster` resources.
 - `created_at` (String) Date and Time when the object was created.
-- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `custom_fields` (String) Custom Fields on this resource. A JSON value: read it with `jsondecode()`.
 - `database_servers` (Set of String) List of databases affected by this event. IDs of `oneuptime_database` resources.
 - `docker_hosts` (Set of String) List of Docker hosts affected by this event. IDs of `oneuptime_docker_host` resources.
 - `docker_swarm_clusters` (Set of String) List of Docker Swarm clusters affected by this event. IDs of `oneuptime_docker_swarm_cluster` resources.
@@ -59,7 +59,7 @@ data "oneuptime_scheduled_maintenance_event" "by_id" {
 - `hosts` (Set of String) List of hosts affected by this event. IDs of `oneuptime_host` resources.
 - `iot_fleets` (Set of String) List of IoT fleets affected by this event. IDs of `oneuptime_iot_fleet` resources.
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters affected by this event. IDs of `oneuptime_kubernetes_cluster` resources.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) List of monitors attached to this event. IDs of `oneuptime_monitor` resources.
 - `network_sites` (Set of String) List of network sites affected by this event. Their descendants are covered too. IDs of `oneuptime_network_site` resources.
 - `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this scheduled maintenance event? This is set automatically based on the reminder rules configured for this project.
@@ -68,7 +68,7 @@ data "oneuptime_scheduled_maintenance_event" "by_id" {
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `proxmox_clusters` (Set of String) List of Proxmox clusters affected by this event. IDs of `oneuptime_proxmox_cluster` resources.
 - `publish_on_status_page_at` (String) When this event first shows on its status pages and their subscribers hear about it. Left empty, it shows as soon as it is created.
-- `send_subscriber_notifications_on_before_the_event` (String) Should subscribers be notified before the event? A JSON value: write it with `jsonencode()`.
+- `send_subscriber_notifications_on_before_the_event` (String) Should subscribers be notified before the event? A JSON value: read it with `jsondecode()`.
 - `services` (Set of String) List of services affected by this event. IDs of `oneuptime_service` resources.
 - `starts_at` (String) When does this event start?
 - `status_pages` (Set of String) List of status pages to show this event on. IDs of `oneuptime_status_page` resources.

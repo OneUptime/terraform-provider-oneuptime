@@ -125,11 +125,13 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 MarkdownDescription: "ID of the user who triggered this run. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "conversation_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the conversation this run belongs to. The ID of a `oneuptime_ai_conversation`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_ai_conversation"),
             },
             "triggered_by_incident_id": schema.StringAttribute{
                 MarkdownDescription: "The incident that triggered this run (for autonomous investigations).",
@@ -229,13 +231,14 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "egress_manifest": schema.StringAttribute{
-                MarkdownDescription: "What data was sent to which LLM during this run: provider, model, and per-tool row/byte/redaction counts. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What data was sent to which LLM during this run: provider, model, and per-tool row/byte/redaction counts. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "code_repository_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the repository this code task works in. The ID of a `oneuptime_code_repository`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_code_repository"),
             },
             "code_task_id": schema.StringAttribute{
                 MarkdownDescription: "For a reply in a code task's conversation: the task it continues (the id of the task's first run).",

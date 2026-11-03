@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ScheduledMaintenanceTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &ScheduledMaintenanceTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &ScheduledMaintenanceTeamOwnerResource{}
 
 func NewScheduledMaintenanceTeamOwnerResource() resource.Resource {
     return &ScheduledMaintenanceTeamOwnerResource{}
@@ -71,18 +72,20 @@ func (r *ScheduledMaintenanceTeamOwnerResource) schemaDefinition() schema.Schema
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the scheduled maintenance event. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "scheduled_maintenance_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime ScheduledMaintenance in which this object belongs. The ID of a `oneuptime_scheduled_maintenance_event`.",
+                MarkdownDescription: "ID of the scheduled maintenance event the team owns. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -110,6 +113,17 @@ func (r *ScheduledMaintenanceTeamOwnerResource) schemaDefinition() schema.Schema
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ScheduledMaintenanceTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ScheduledMaintenanceTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -400,6 +414,7 @@ func (r *ScheduledMaintenanceTeamOwnerResource) Create(ctx context.Context, req 
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -884,7 +899,22 @@ func (r *ScheduledMaintenanceTeamOwnerResource) Delete(ctx context.Context, req 
 
 
 func (r *ScheduledMaintenanceTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <scheduled_maintenance_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/scheduled-maintenance-owner-team/get-list",
+        parentField:     "scheduledMaintenanceId",
+        parentAttribute: "scheduled_maintenance_id",
+        parentNoun:      "scheduled maintenance event",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 

@@ -70,11 +70,13 @@ func (d *IncidentEpisodeMemberDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "ID of the Incident Episode that this incident belongs to. The ID of a `oneuptime_incident_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_episode"),
             },
             "incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Incident that is a member of this episode. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "added_at": schema.StringAttribute{
                 MarkdownDescription: "When this incident was added to the episode.",
@@ -89,16 +91,19 @@ func (d *IncidentEpisodeMemberDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "User ID who manually added this incident to the episode. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "matched_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the grouping rule that matched this incident. The ID of a `oneuptime_incident_grouping_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_grouping_rule"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified_of_incident_added": schema.BoolAttribute{
                 MarkdownDescription: "Has the owner been notified that this incident was added to the episode?",

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_detection Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   A signal inside a security case: a detection rule's match, a threat intelligence hit, or an alert from a connected security product, with how often it fired.
 ---
@@ -48,10 +48,10 @@ data "oneuptime_security_detection" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `entities` (String) The users, hosts, IP addresses, domains and files the detection names, each as { type, value }. A JSON value: write it with `jsonencode()`.
+- `entities` (String) The users, hosts, IP addresses, domains and files the detection names, each as { type, value }. A JSON value: read it with `jsondecode()`.
 - `first_seen_at` (String) When the detection first fired.
 - `last_seen_at` (String) When the detection last fired.
-- `mitre_tactics` (String) ATT&CK tactic ids the detection is tagged with. A JSON value: write it with `jsonencode()`.
-- `mitre_techniques` (String) ATT&CK technique ids the detection is tagged with. A JSON value: write it with `jsonencode()`.
+- `mitre_tactics` (String) ATT&CK tactic ids the detection is tagged with. A JSON value: read it with `jsondecode()`.
+- `mitre_techniques` (String) ATT&CK technique ids the detection is tagged with. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this detection belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

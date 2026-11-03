@@ -142,7 +142,7 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -152,7 +152,7 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this application. Unset fields fall back to the application default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-pillar retention overrides for this application. Unset fields fall back to the application default, then the project's retention settings. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_session_replay_enabled": schema.BoolAttribute{
@@ -166,19 +166,19 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "session_replay_mask_selectors": schema.StringAttribute{
-                MarkdownDescription: "CSS selectors whose text content the recorder masks, in addition to whatever the masking mode already covers. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "CSS selectors whose text content the recorder masks, in addition to whatever the masking mode already covers. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "session_replay_block_selectors": schema.StringAttribute{
-                MarkdownDescription: "CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "session_replay_ignore_error_patterns": schema.StringAttribute{
-                MarkdownDescription: "Regex patterns matched against an uncaught error's message and source URL. Matching errors are still recorded in the session but no longer trigger an upload — the remedy for a chronically-throwing third-party tag that would otherwise convert error-triggered capture into always-on recording. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Regex patterns matched against an uncaught error's message and source URL. Matching errors are still recorded in the session but no longer trigger an upload — the remedy for a chronically-throwing third-party tag that would otherwise convert error-triggered capture into always-on recording. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "session_replay_trace_propagation_origins": schema.StringAttribute{
-                MarkdownDescription: "APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "session_replay_same_origin_trace_propagation": schema.BoolAttribute{
@@ -202,7 +202,7 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "session_replay_allowed_origins": schema.StringAttribute{
-                MarkdownDescription: "Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "session_replay_consent_mode": schema.StringAttribute{
@@ -257,6 +257,7 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry.",
@@ -271,6 +272,7 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

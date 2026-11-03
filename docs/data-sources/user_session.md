@@ -41,7 +41,7 @@ data "oneuptime_user_session" "by_id" {
 
 ### Read-Only
 
-- `additional_info` (String) Flexible JSON payload for storing structured session metadata. A JSON value: write it with `jsonencode()`.
+- `additional_info` (String) Flexible JSON payload for storing structured session metadata. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `last_active_at` (String) Last time this session was used.
 - `revoked_at` (String) Timestamp when the session was revoked, if applicable.

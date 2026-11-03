@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_interface Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Interfaces discovered on Network Devices via SNMP walks. Rows are upserted by the server; users can toggle per-interface monitoring.
 ---

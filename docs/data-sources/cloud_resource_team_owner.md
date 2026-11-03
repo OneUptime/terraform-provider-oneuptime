@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_cloud_resource_team_owner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Cloud"
 description: |-
   Add teams as owners to your cloud resources.
 ---
@@ -28,11 +28,11 @@ data "oneuptime_cloud_resource_team_owner" "by_id" {
 
 ### Optional
 
-- `cloud_resource_id` (String) ID of your OneUptime Cloud Resource in which this object belongs. The ID of a `oneuptime_cloud_resource`.
+- `cloud_resource_id` (String) ID of the cloud resource the team owns. The ID of a `oneuptime_cloud_resource`.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `team_id` (String) ID of the team that owns the cloud resource. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

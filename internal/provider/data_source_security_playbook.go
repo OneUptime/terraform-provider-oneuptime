@@ -93,6 +93,7 @@ func (d *SecurityPlaybookDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the lowest case priority the playbook runs on by itself. Empty runs on every priority. The ID of a `oneuptime_security_case_priority`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_security_case_priority"),
             },
             "detection_source": schema.StringAttribute{
                 MarkdownDescription: "Run only on cases raised by this source: a Detection Rule, Threat Intel, a Connected Product or Entity Risk. Empty runs on every source.",
@@ -100,11 +101,11 @@ func (d *SecurityPlaybookDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "detection_rule_ids": schema.StringAttribute{
-                MarkdownDescription: "Run only on cases with a detection from one of these detection rules. Empty runs on cases from any rule. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Run only on cases with a detection from one of these detection rules. Empty runs on cases from any rule. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "steps": schema.StringAttribute{
-                MarkdownDescription: "The steps the playbook takes, in order. Each has an action, its settings, and whether it needs approval, may fail without stopping the run, or runs only when threat intel matched. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The steps the playbook takes, in order. Each has an action, its settings, and whether it needs approval, may fail without stopping the run, or runs only when threat intel matched. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "run_count": schema.NumberAttribute{
@@ -120,6 +121,7 @@ func (d *SecurityPlaybookDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the person who created the playbook. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

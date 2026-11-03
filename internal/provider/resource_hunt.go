@@ -21,11 +21,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &HuntResource{}
 var _ resource.ResourceWithImportState = &HuntResource{}
+var _ resource.ResourceWithModifyPlan = &HuntResource{}
 
 func NewHuntResource() resource.Resource {
     return &HuntResource{}
@@ -60,6 +62,7 @@ type HuntResourceModel struct {
     LastFoundSinceAt RFC3339Value `tfsdk:"last_found_since_at"`
     LastFoundEventCount types.Number `tfsdk:"last_found_event_count"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    NotifyUserEmails types.Set `tfsdk:"notify_user_emails"`
 }
 
 func (r *HuntResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -115,6 +118,7 @@ func (r *HuntResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -129,6 +133,9 @@ func (r *HuntResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Past 5 Mins", "Past 15 Mins", "Past 30 Mins", "Past 1 Hour", "Past 2 Hours", "Past 3 Hours", "Past 1 Day", "Past 2 Days", "Past 1 Week", "Past 2 Weeks", "Past 1 Month", "Past 3 Months", "Custom"),
+                },
             },
             "schedule": schema.StringAttribute{
                 MarkdownDescription: "How often the hunt runs on its own and tells people what it found: Not Scheduled, Every Hour, Every 6 Hours, Every Day or Every Week. Each run searches the events that arrived since the run before.",
@@ -138,15 +145,16 @@ func (r *HuntResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Not Scheduled", "Every Hour", "Every 6 Hours", "Every Day", "Every Week"),
+                },
             },
             "notify_users": schema.SetAttribute{
-                MarkdownDescription: "The people told when a scheduled run finds events, each as their notification settings say. Only people who can read security events are told. IDs of `oneuptime_user` records.",
+                MarkdownDescription: "The people told when a scheduled run finds events, each as their notification settings say. Only people who can read security events are told. IDs of `oneuptime_user` records. Or name them by email address, in `notify_user_emails`.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
-                PlanModifiers: []planmodifier.Set{
-                    setplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDsValidators("notify_user_emails", false),
             },
             "notify_teams": schema.SetAttribute{
                 MarkdownDescription: "The teams whose members are told when a scheduled run finds events, each as their notification settings say. Only members who can read security events are told. IDs of `oneuptime_team` resources.",
@@ -156,6 +164,7 @@ func (r *HuntResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_team"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -218,8 +227,35 @@ func (r *HuntResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "notify_user_emails": schema.SetAttribute{
+                MarkdownDescription: "The email addresses of the people in `notify_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: personEmailsPlanModifiers("notify_users"),
+                Validators: personEmailsValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this hunt names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *HuntResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPeopleIDs(ctx, r.client, req, resp, personAttribute{
+        id:       "notify_users",
+        email:    "notify_user_emails",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *HuntResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -261,6 +297,11 @@ func (r *HuntResource) Create(ctx context.Context, req resource.CreateRequest, r
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDsForWrite(ctx, r.client, &data.NotifyUsers, data.NotifyUserEmails, "notify_user_emails", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -890,10 +931,15 @@ func (r *HuntResource) Create(ctx context.Context, req resource.CreateRequest, r
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.NotifyUserEmails = personEmailsAfterWrite(ctx, r.client, data.NotifyUsers, data.NotifyUserEmails)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -933,6 +979,10 @@ func (r *HuntResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorNotifyUsers := data.NotifyUsers
+    priorNotifyUserEmails := data.NotifyUserEmails
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/security-hunt/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -1456,6 +1506,8 @@ func (r *HuntResource) Read(ctx context.Context, req resource.ReadRequest, resp 
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.NotifyUserEmails = personEmailsAfterRead(ctx, r.client, priorNotifyUsers, data.NotifyUsers, priorNotifyUserEmails)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1480,6 +1532,11 @@ func (r *HuntResource) Update(ctx context.Context, req resource.UpdateRequest, r
     // Use the ID from the current state
     data.Id = state.Id
 
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "filters": !data.Filters.Equal(state.Filters),
+    }
+
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config HuntResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -1487,6 +1544,11 @@ func (r *HuntResource) Update(ctx context.Context, req resource.UpdateRequest, r
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDsForWrite(ctx, r.client, &data.NotifyUsers, data.NotifyUserEmails, "notify_user_emails", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     huntRequest := map[string]interface{}{
@@ -2090,6 +2152,11 @@ func (r *HuntResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.NotifyUserEmails = personEmailsAfterWrite(ctx, r.client, data.NotifyUsers, data.NotifyUserEmails)
+
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2127,6 +2194,9 @@ func (r *HuntResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 
 func (r *HuntResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"filters"})...)
 }
 
 
@@ -2158,6 +2228,9 @@ func (r *HuntResource) keepPlannedValues(data *HuntResourceModel, plan *HuntReso
     }
     if config.NotifyTeams.IsNull() && !plan.NotifyTeams.IsUnknown() {
         data.NotifyTeams = plan.NotifyTeams
+    }
+    if config.NotifyUserEmails.IsNull() && !plan.NotifyUserEmails.IsUnknown() {
+        data.NotifyUserEmails = plan.NotifyUserEmails
     }
 }
 

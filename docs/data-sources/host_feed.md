@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_host_feed Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Log of everything that happened to this host - creation, updates, owner changes and the rules that made them.
 ---
@@ -15,7 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_host_feed" "example" {
-  host_id = oneuptime_host.example.id
+  host_id    = oneuptime_host.example.id
+  user_email = "alice@example.com"
 }
 
 # Or by id:
@@ -34,7 +35,8 @@ data "oneuptime_host_feed" "by_id" {
 - `host_id` (String) Relation to Host ID in which this resource belongs. The ID of a `oneuptime_host`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `more_information_in_markdown` (String) More information in Markdown.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

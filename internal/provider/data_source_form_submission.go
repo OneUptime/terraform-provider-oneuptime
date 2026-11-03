@@ -69,9 +69,10 @@ func (d *FormSubmissionDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the form this submission was made through. The ID of a `oneuptime_form`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_form"),
             },
             "answers": schema.StringAttribute{
-                MarkdownDescription: "Every question the submitter answered, in the form's order: the question's id (fieldId), its label when the form was submitted, the stored value, and the value as a person reads it (displayValue). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Every question the submitter answered, in the form's order: the question's id (fieldId), its label when the form was submitted, the stored value, and the value as a person reads it (displayValue). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "submitter_name": schema.StringAttribute{
@@ -92,11 +93,13 @@ func (d *FormSubmissionDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the incident this submission created. Empty for a form that schedules maintenance, and once that incident is deleted. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "scheduled_maintenance_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the scheduled maintenance event this submission created. Empty for a form that creates incidents, and once that event is deleted. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),
             },
         },
     }

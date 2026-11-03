@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &CustomRoleResource{}
 var _ resource.ResourceWithImportState = &CustomRoleResource{}
+var _ resource.ResourceWithModifyPlan = &CustomRoleResource{}
 
 func NewCustomRoleResource() resource.Resource {
     return &CustomRoleResource{}
@@ -99,6 +100,9 @@ func (r *CustomRoleResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "permission_count": schema.NumberAttribute{
                 MarkdownDescription: "How many permissions the role holds. OneUptime keeps it as permissions are added to the role and taken out of it.",
@@ -113,6 +117,17 @@ func (r *CustomRoleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *CustomRoleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *CustomRoleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -450,6 +465,7 @@ func (r *CustomRoleResource) Create(ctx context.Context, req resource.CreateRequ
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

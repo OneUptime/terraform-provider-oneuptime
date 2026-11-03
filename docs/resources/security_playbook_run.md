@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_playbook_run Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   One run of a security playbook on a case: the steps it took, what each did, and who approved the steps that asked.
 ---
@@ -37,8 +37,8 @@ resource "oneuptime_security_playbook_run" "example" {
 - `project_id` (String) ID of the project this run belongs to. The ID of a `oneuptime_project`.
 - `started_at` (String) When the run started its first step.
 - `status` (String) Queued, Running, Waiting for Approval, Succeeded, Failed or Cancelled. Set it to Cancelled to stop a run that has not finished.
-- `step_results` (String) What each step did: its status, when it started and finished, what it reported, and who decided on its approval. A JSON value: write it with `jsonencode()`.
-- `steps` (String) The playbook's steps as they were when the run started. A JSON value: write it with `jsonencode()`.
+- `step_results` (String) What each step did: its status, when it started and finished, what it reported, and who decided on its approval. A JSON value: read it with `jsondecode()`.
+- `steps` (String) The playbook's steps as they were when the run started. A JSON value: read it with `jsondecode()`.
 - `threat_intel_matched` (Boolean) Whether a Check Threat Intel step of this run found a known-bad entity. Steps set to run only on a match read it.
 - `trigger` (String) What started the run: Case Opened, Detection Added, or Manual for a person.
 - `triggered_by_user_id` (String) ID of the person who ran the playbook. The ID of a `oneuptime_user` (see the data source).

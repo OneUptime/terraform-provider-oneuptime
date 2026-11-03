@@ -27,6 +27,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IotFleetOwnerRuleResource{}
 var _ resource.ResourceWithImportState = &IotFleetOwnerRuleResource{}
+var _ resource.ResourceWithModifyPlan = &IotFleetOwnerRuleResource{}
 var _ resource.ResourceWithMoveState = &IotFleetOwnerRuleResource{}
 
 func NewIotFleetOwnerRuleResource() resource.Resource {
@@ -65,6 +66,7 @@ type IotFleetOwnerRuleResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    OwnerUserEmails types.Set `tfsdk:"owner_user_emails"`
 }
 
 func (r *IotFleetOwnerRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -100,6 +102,7 @@ func (r *IotFleetOwnerRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -151,6 +154,7 @@ func (r *IotFleetOwnerRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "iot_fleet_name_pattern": schema.StringAttribute{
                 MarkdownDescription: "Regex (case-insensitive) matched against the IoT fleet name. Leave empty to match any name.",
@@ -169,13 +173,11 @@ func (r *IotFleetOwnerRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the IoT fleet when this rule matches. IDs of `oneuptime_user` records.",
+                MarkdownDescription: "Users to add as owners on the IoT fleet when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
-                PlanModifiers: []planmodifier.Set{
-                    setplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDsValidators("owner_user_emails", false),
             },
             "owner_teams": schema.SetAttribute{
                 MarkdownDescription: "Teams to add as owners on the IoT fleet when this rule matches. IDs of `oneuptime_team` resources.",
@@ -185,6 +187,7 @@ func (r *IotFleetOwnerRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_team"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -206,6 +209,14 @@ func (r *IotFleetOwnerRuleResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "owner_user_emails": schema.SetAttribute{
+                MarkdownDescription: "The email addresses of the people in `owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: personEmailsPlanModifiers("owner_users"),
+                Validators: personEmailsValidators(),
+            },
         },
     }
 }
@@ -224,6 +235,25 @@ func (r *IotFleetOwnerRuleResource) MoveState(ctx context.Context) []resource.St
     return []resource.StateMover{
         legacyNameStateMover("oneuptime_io_t_fleet_owner_rule", r.schemaDefinition()),
     }
+}
+
+// ModifyPlan finds, by email address, the people this iot fleet owner rule names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IotFleetOwnerRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPeopleIDs(ctx, r.client, req, resp, personAttribute{
+        id:       "owner_users",
+        email:    "owner_user_emails",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IotFleetOwnerRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -265,6 +295,11 @@ func (r *IotFleetOwnerRuleResource) Create(ctx context.Context, req resource.Cre
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDsForWrite(ctx, r.client, &data.OwnerUsers, data.OwnerUserEmails, "owner_user_emails", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -763,10 +798,15 @@ func (r *IotFleetOwnerRuleResource) Create(ctx context.Context, req resource.Cre
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.OwnerUserEmails = personEmailsAfterWrite(ctx, r.client, data.OwnerUsers, data.OwnerUserEmails)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -799,6 +839,10 @@ func (r *IotFleetOwnerRuleResource) Read(ctx context.Context, req resource.ReadR
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorOwnerUsers := data.OwnerUsers
+    priorOwnerUserEmails := data.OwnerUserEmails
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/iot-fleet-owner-rule/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -1192,6 +1236,8 @@ func (r *IotFleetOwnerRuleResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.OwnerUserEmails = personEmailsAfterRead(ctx, r.client, priorOwnerUsers, data.OwnerUsers, priorOwnerUserEmails)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1216,6 +1262,11 @@ func (r *IotFleetOwnerRuleResource) Update(ctx context.Context, req resource.Upd
     // Use the ID from the current state
     data.Id = state.Id
 
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "criteria": !data.Criteria.Equal(state.Criteria),
+    }
+
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config IotFleetOwnerRuleResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -1223,6 +1274,11 @@ func (r *IotFleetOwnerRuleResource) Update(ctx context.Context, req resource.Upd
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDsForWrite(ctx, r.client, &data.OwnerUsers, data.OwnerUserEmails, "owner_user_emails", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     iotFleetOwnerRuleRequest := map[string]interface{}{
@@ -1695,6 +1751,11 @@ func (r *IotFleetOwnerRuleResource) Update(ctx context.Context, req resource.Upd
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.OwnerUserEmails = personEmailsAfterWrite(ctx, r.client, data.OwnerUsers, data.OwnerUserEmails)
+
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1732,6 +1793,9 @@ func (r *IotFleetOwnerRuleResource) Delete(ctx context.Context, req resource.Del
 
 func (r *IotFleetOwnerRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"criteria"})...)
 }
 
 
@@ -1769,6 +1833,9 @@ func (r *IotFleetOwnerRuleResource) keepPlannedValues(data *IotFleetOwnerRuleRes
     }
     if config.OwnerTeams.IsNull() && !plan.OwnerTeams.IsUnknown() {
         data.OwnerTeams = plan.OwnerTeams
+    }
+    if config.OwnerUserEmails.IsNull() && !plan.OwnerUserEmails.IsUnknown() {
+        data.OwnerUserEmails = plan.OwnerUserEmails
     }
 }
 

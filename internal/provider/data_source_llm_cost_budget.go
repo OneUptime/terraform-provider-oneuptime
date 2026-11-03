@@ -93,6 +93,7 @@ func (d *LlmCostBudgetDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "Optional telemetry service ID scoping this budget. Null means the budget is project-wide. The ID of a `oneuptime_service`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "llm_system": schema.StringAttribute{
                 MarkdownDescription: "Optional provider filter, e.g. openai, anthropic, aws.bedrock (matches the span's gen_ai provider). Leave empty to count every provider.",
@@ -122,6 +123,7 @@ func (d *LlmCostBudgetDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the user who created this budget. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

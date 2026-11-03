@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ScheduledMaintenanceTemplateTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &ScheduledMaintenanceTemplateTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &ScheduledMaintenanceTemplateTeamOwnerResource{}
 
 func NewScheduledMaintenanceTemplateTeamOwnerResource() resource.Resource {
     return &ScheduledMaintenanceTemplateTeamOwnerResource{}
@@ -70,18 +71,20 @@ func (r *ScheduledMaintenanceTemplateTeamOwnerResource) schemaDefinition() schem
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the scheduled maintenance template. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "scheduled_maintenance_template_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Scheduled Maintenance Template in which this object belongs. The ID of a `oneuptime_scheduled_maintenance_template`.",
+                MarkdownDescription: "ID of the scheduled maintenance template the team owns. The ID of a `oneuptime_scheduled_maintenance_template`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_template"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -105,6 +108,17 @@ func (r *ScheduledMaintenanceTemplateTeamOwnerResource) schemaDefinition() schem
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ScheduledMaintenanceTemplateTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ScheduledMaintenanceTemplateTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -391,6 +405,7 @@ func (r *ScheduledMaintenanceTemplateTeamOwnerResource) Create(ctx context.Conte
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -867,7 +882,22 @@ func (r *ScheduledMaintenanceTemplateTeamOwnerResource) Delete(ctx context.Conte
 
 
 func (r *ScheduledMaintenanceTemplateTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <scheduled_maintenance_template_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/scheduled-maintenance-template-owner-team/get-list",
+        parentField:     "scheduledMaintenanceTemplateId",
+        parentAttribute: "scheduled_maintenance_template_id",
+        parentNoun:      "scheduled maintenance template",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 

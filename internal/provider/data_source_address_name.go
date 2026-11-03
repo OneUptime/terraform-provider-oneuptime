@@ -75,6 +75,7 @@ func (d *AddressNameDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

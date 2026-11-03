@@ -42,6 +42,7 @@ type IncomingCallLogItemDataSourceModel struct {
     StartedAt types.String `tfsdk:"started_at"`
     EndedAt types.String `tfsdk:"ended_at"`
     IsAnswered types.Bool `tfsdk:"is_answered"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (d *IncomingCallLogItemDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -74,21 +75,25 @@ func (d *IncomingCallLogItemDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "ID of the parent Incoming Call Log. The ID of a `oneuptime_incoming_call_log` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_incoming_call_log"),
             },
             "incoming_call_policy_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incoming call policy whose number took the call this attempt is part of. The ID of a `oneuptime_incoming_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incoming_call_policy"),
             },
             "incoming_call_policy_escalation_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the escalation rule used. The ID of a `oneuptime_incoming_call_policy_escalation_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incoming_call_policy_escalation_rule"),
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "User ID who was called. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User ID who was called. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("user_email", false),
             },
             "user_phone_number": schema.StringAttribute{
                 MarkdownDescription: "Phone number that was dialed.",
@@ -126,6 +131,12 @@ func (d *IncomingCallLogItemDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "Whether this user answered the call.",
                 Optional: true,
                 Computed: true,
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -201,6 +212,14 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
     if !data.IsAnswered.IsNull() && !data.IsAnswered.IsUnknown() {
         filters["isAnswered"] = data.IsAnswered.ValueBool()
         filterNames = append(filterNames, "is_answered = "+fmt.Sprintf("%t", data.IsAnswered.ValueBool()))
+    }
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["userId"] = personID
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -523,6 +542,7 @@ func (d *IncomingCallLogItemDataSource) Read(ctx context.Context, req datasource
     } else {
         data.IsAnswered = types.BoolNull()
     }
+    data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

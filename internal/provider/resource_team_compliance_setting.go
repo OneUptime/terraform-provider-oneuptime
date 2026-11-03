@@ -22,11 +22,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &TeamComplianceSettingResource{}
 var _ resource.ResourceWithImportState = &TeamComplianceSettingResource{}
+var _ resource.ResourceWithModifyPlan = &TeamComplianceSettingResource{}
 
 func NewTeamComplianceSettingResource() resource.Resource {
     return &TeamComplianceSettingResource{}
@@ -87,10 +89,14 @@ func (r *TeamComplianceSettingResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "rule_type": schema.StringAttribute{
                 MarkdownDescription: "Type of compliance rule.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("HasNotificationEmailMethod", "HasNotificationSMSMethod", "HasNotificationCallMethod", "HasNotificationPushMethod", "HasNotificationWhatsAppMethod", "HasNotificationTelegramMethod", "HasNotificationSlackMethod", "HasNotificationMicrosoftTeamsMethod", "HasNotificationWebhookMethod", "HasIncidentOnCallRules", "HasAlertOnCallRules", "HasIncidentEpisodeOnCallRules", "HasAlertEpisodeOnCallRules"),
+                },
             },
             "enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether this compliance rule is enabled.",
@@ -107,6 +113,7 @@ func (r *TeamComplianceSettingResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -120,6 +127,9 @@ func (r *TeamComplianceSettingResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Call", "SMS", "Push", "Email", "WhatsApp", "Telegram", "Slack", "MicrosoftTeams", "Webhook", "CustomChannel"),
+                },
             },
             "notification_channels": schema.StringAttribute{
                 MarkdownDescription: "On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Webhook or CustomChannel, which any custom channel that is on meets). Leave empty to accept any channel. A JSON value: write it with `jsonencode()`.",
@@ -127,6 +137,7 @@ func (r *TeamComplianceSettingResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -141,6 +152,7 @@ func (r *TeamComplianceSettingResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_incident_severity"),
             },
             "alert_severities": schema.SetAttribute{
                 MarkdownDescription: "Alert and alert episode on-call rules only: the severities members must have a rule for. Leave empty to require every alert severity. IDs of `oneuptime_alert_severity` resources.",
@@ -150,6 +162,7 @@ func (r *TeamComplianceSettingResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_alert_severity"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -173,6 +186,17 @@ func (r *TeamComplianceSettingResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *TeamComplianceSettingResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *TeamComplianceSettingResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -673,6 +697,9 @@ func (r *TeamComplianceSettingResource) Create(ctx context.Context, req resource
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1084,6 +1111,12 @@ func (r *TeamComplianceSettingResource) Update(ctx context.Context, req resource
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "notification_channels": !data.NotificationChannels.Equal(state.NotificationChannels),
+        "options": !data.Options.Equal(state.Options),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config TeamComplianceSettingResourceModel
@@ -1524,6 +1557,9 @@ func (r *TeamComplianceSettingResource) Update(ctx context.Context, req resource
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1560,6 +1596,9 @@ func (r *TeamComplianceSettingResource) Delete(ctx context.Context, req resource
 
 func (r *TeamComplianceSettingResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"notification_channels", "options"})...)
 }
 
 

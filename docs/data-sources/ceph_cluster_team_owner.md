@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ceph_cluster_team_owner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your Ceph clusters.
 ---
@@ -28,11 +28,11 @@ data "oneuptime_ceph_cluster_team_owner" "by_id" {
 
 ### Optional
 
-- `ceph_cluster_id` (String) ID of your OneUptime Ceph Cluster in which this object belongs. The ID of a `oneuptime_ceph_cluster`.
+- `ceph_cluster_id` (String) ID of the Ceph cluster the team owns. The ID of a `oneuptime_ceph_cluster`.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `team_id` (String) ID of the team that owns the Ceph cluster. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

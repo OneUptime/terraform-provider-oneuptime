@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_metric_type Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   List of all the metrics ingested with OpenTelemetry
 ---

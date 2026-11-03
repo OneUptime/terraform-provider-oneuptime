@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_source_map Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Source maps uploaded for telemetry services. Used to resolve minified browser exception stack traces back to the original source code. Maps are matched to exceptions by service and release (the service.version OpenTelemetry resource attribute).
 ---
@@ -14,8 +14,8 @@ Source maps uploaded for telemetry services. Used to resolve minified browser ex
 ```terraform
 resource "oneuptime_source_map" "example" {
   service_id      = oneuptime_service.example.id
-  service_version = "Example short text"
-  bundle_path     = "This is an example of longer text content that might be stored in this field."
+  service_version = "1.4.2"
+  bundle_path     = "main.a8f1b2.js"
   content         = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
 }
 ```

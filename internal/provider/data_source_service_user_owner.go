@@ -33,6 +33,7 @@ type ServiceUserOwnerDataSourceModel struct {
     UserId types.String `tfsdk:"user_id"`
     ServiceId types.String `tfsdk:"service_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (d *ServiceUserOwnerDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -41,7 +42,7 @@ func (d *ServiceUserOwnerDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *ServiceUserOwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add users as owners to your Service. Look up an existing service user owner by `id`, or by any of its other arguments (`created_by_user_id`, `service_id`, `user_id`): each one set must match, and exactly one service user owner may match them all.",
+        MarkdownDescription: "Add users as owners to your Service. Look up an existing service user owner by `id`, or by any of its other arguments (`created_by_user_id`, `service_id`, `user_email`, ...): each one set must match, and exactly one service user owner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -62,19 +63,28 @@ func (d *ServiceUserOwnerDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime User in which this object belongs. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the user who owns the service. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
+                Validators: personIDValidators("user_email", false),
             },
             "service_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Service in which this object belongs. The ID of a `oneuptime_service`.",
+                MarkdownDescription: "ID of the service the user owns. The ID of a `oneuptime_service`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
+            },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                Validators: personEmailValidators(),
             },
         },
     }
@@ -126,6 +136,14 @@ func (d *ServiceUserOwnerDataSource) Read(ctx context.Context, req datasource.Re
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+    if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
+        personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
+        if !ok {
+            return
+        }
+        filters["userId"] = personID
+        filterNames = append(filterNames, "user_email = "+fmt.Sprintf("%q", data.UserEmail.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -330,6 +348,7 @@ func (d *ServiceUserOwnerDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_cloud_resource_owner_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Cloud"
 description: |-
   Rules for automatically assigning owners to cloud resources (Cloud) or cloud environments (App Platforms) when matching ones are created.
 ---
@@ -26,7 +26,7 @@ resource "oneuptime_cloud_resource_owner_rule" "example" {
 
 ### Optional
 
-- `cloud_resource_kind` (String) environment: App Platforms' environments. resource: the resources of Cloud's accounts. Empty: both, as rules made before the two products split.
+- `cloud_resource_kind` (String) environment: App Platforms' environments. resource: the resources of Cloud's accounts. Empty: both, as rules made before the two products split. Allowed values: `environment`, `resource`.
 - `cloud_tag_pattern` (String) Regex (case-insensitive) matched against each of the resource's cloud tags, written key=value: ^team=payments$ matches every resource tagged team=payments, ^env= every resource with an env tag. Leave empty to match any tags.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of this rule.
@@ -36,7 +36,8 @@ resource "oneuptime_cloud_resource_owner_rule" "example" {
 - `name_regex_pattern` (String) Regex (case-insensitive) matched against the resource name. Leave empty to match any name.
 - `notify_owners` (Boolean) Send notifications to owner users and teams when they are added by this rule. Defaults to `true`.
 - `owner_teams` (Set of String) Teams to add as owners on the resource when this rule matches. IDs of `oneuptime_team` resources.
-- `owner_users` (Set of String) Users to add as owners on the resource when this rule matches. IDs of `oneuptime_user` records.
+- `owner_user_emails` (Set of String) The email addresses of the people in `owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `owner_users` (Set of String) Users to add as owners on the resource when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.
 
 ### Read-Only
 

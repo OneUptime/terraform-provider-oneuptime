@@ -13,8 +13,8 @@ Manage scheduled maintenance note templates for your project
 
 ```terraform
 resource "oneuptime_scheduled_maintenance_note_template" "example" {
-  template_name        = "Example short text"
-  template_description = "This is an example of longer text content that might be stored in this field."
+  template_name        = "Maintenance Completion Summary"
+  template_description = "This template is used to document the completion of scheduled maintenance activities. It provides a structured format for summarizing the work performed, verifying system health, and communicating the maintenance outcome to stakeholders."
 }
 ```
 

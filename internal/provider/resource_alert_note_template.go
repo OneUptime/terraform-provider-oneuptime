@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AlertNoteTemplateResource{}
 var _ resource.ResourceWithImportState = &AlertNoteTemplateResource{}
+var _ resource.ResourceWithModifyPlan = &AlertNoteTemplateResource{}
 
 func NewAlertNoteTemplateResource() resource.Resource {
     return &AlertNoteTemplateResource{}
@@ -108,6 +109,17 @@ func (r *AlertNoteTemplateResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AlertNoteTemplateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AlertNoteTemplateResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -446,6 +458,7 @@ func (r *AlertNoteTemplateResource) Create(ctx context.Context, req resource.Cre
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

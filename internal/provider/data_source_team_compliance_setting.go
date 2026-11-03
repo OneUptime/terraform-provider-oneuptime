@@ -73,11 +73,13 @@ func (d *TeamComplianceSettingDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "ID of Team this compliance setting belongs to. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "rule_type": schema.StringAttribute{
                 MarkdownDescription: "Type of compliance rule.",
@@ -90,7 +92,7 @@ func (d *TeamComplianceSettingDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "options": schema.StringAttribute{
-                MarkdownDescription: "Additional options for this compliance rule. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Additional options for this compliance rule. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "notification_channel": schema.StringAttribute{
@@ -99,7 +101,7 @@ func (d *TeamComplianceSettingDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "notification_channels": schema.StringAttribute{
-                MarkdownDescription: "On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Webhook or CustomChannel, which any custom channel that is on meets). Leave empty to accept any channel. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Webhook or CustomChannel, which any custom channel that is on meets). Leave empty to accept any channel. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "incident_severities": schema.SetAttribute{

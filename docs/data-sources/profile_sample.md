@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_profile_sample Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   API endpoints for ProfileSample
 ---

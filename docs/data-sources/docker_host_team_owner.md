@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_docker_host_team_owner Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Add teams as owners to your Docker hosts.
 ---
@@ -29,10 +29,10 @@ data "oneuptime_docker_host_team_owner" "by_id" {
 ### Optional
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
-- `docker_host_id` (String) ID of your OneUptime Docker Host in which this object belongs. The ID of a `oneuptime_docker_host`.
+- `docker_host_id` (String) ID of the Docker host the team owns. The ID of a `oneuptime_docker_host`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `team_id` (String) ID of the team that owns the Docker host. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

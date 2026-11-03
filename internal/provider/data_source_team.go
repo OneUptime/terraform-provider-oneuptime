@@ -86,6 +86,7 @@ func (d *TeamDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_permissions_editable": schema.BoolAttribute{
                 MarkdownDescription: "Can you edit team permissions? Teams auto-created for you are uneditable but you should be able to edit permissions on the team you create.",
@@ -108,7 +109,7 @@ func (d *TeamDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

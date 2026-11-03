@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_security_setting Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   How Data Security runs in a project: what it scans, how much it reads, and what it does when it finds a Critical issue.
 ---
@@ -50,8 +50,8 @@ data "oneuptime_data_security_setting" "by_id" {
 
 ### Read-Only
 
-- `allowed_values` (String) Values that are never findings, such as your own support address. A JSON value: write it with `jsonencode()`.
+- `allowed_values` (String) Values that are never findings, such as your own support address. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
-- `disabled_data_type_ids` (String) Built-in data types the project's scans do not look for. A JSON value: write it with `jsonencode()`.
+- `disabled_data_type_ids` (String) Built-in data types the project's scans do not look for. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this settings belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

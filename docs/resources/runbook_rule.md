@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_runbook_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Runbooks & Runners"
 description: |-
   Auto-attach runbooks to incidents, alerts, or scheduled maintenance events when they are created.
 ---
@@ -14,7 +14,7 @@ Auto-attach runbooks to incidents, alerts, or scheduled maintenance events when 
 ```terraform
 resource "oneuptime_runbook_rule" "example" {
   name                = "Example runbook rule"
-  trigger_entity_type = "Example short text"
+  trigger_entity_type = "Incident"
   description         = "Managed by Terraform"
 }
 ```
@@ -24,7 +24,7 @@ resource "oneuptime_runbook_rule" "example" {
 ### Required
 
 - `name` (String) Name of this runbook rule.
-- `trigger_entity_type` (String) Entity type that triggers this rule on creation: Incident, Alert, or ScheduledMaintenance.
+- `trigger_entity_type` (String) Entity type that triggers this rule on creation: Incident, Alert, or ScheduledMaintenance. Allowed values: `Incident`, `Alert`, `ScheduledMaintenance`.
 
 ### Optional
 

@@ -13,8 +13,8 @@ Manage alert note templates for your project
 
 ```terraform
 resource "oneuptime_alert_note_template" "example" {
-  template_name        = "Example short text"
-  template_description = "This is an example of longer text content that might be stored in this field."
+  template_name        = "Initial Investigation Template"
+  template_description = "This template is used for documenting the initial investigation phase of an alert. It includes sections for analyzing the issue, documenting findings, and outlining next steps for resolution."
 }
 ```
 

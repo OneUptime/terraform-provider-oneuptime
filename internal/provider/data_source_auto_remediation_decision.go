@@ -66,11 +66,13 @@ func (d *AutoRemediationDecisionDataSource) Schema(ctx context.Context, req data
                 MarkdownDescription: "ID of the incident this decision is about. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the alert this decision is about. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "stage": schema.StringAttribute{
                 MarkdownDescription: "WaitingForInvestigation while remediation waits for the signal's AI investigation to finish, Evaluated once every fix path was evaluated.",
@@ -78,7 +80,7 @@ func (d *AutoRemediationDecisionDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "entries": schema.StringAttribute{
-                MarkdownDescription: "One entry per fix path - a Kubernetes cluster, an infrastructure resource, an AI rule, or the project - with a reason code saying what it did or why it did nothing. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "One entry per fix path - a Kubernetes cluster, an infrastructure resource, an AI rule, or the project - with a reason code saying what it did or why it did nothing. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

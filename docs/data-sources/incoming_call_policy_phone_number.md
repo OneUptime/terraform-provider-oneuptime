@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_incoming_call_policy_phone_number Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "On-Call & Escalation"
 description: |-
   Phone numbers that route incoming calls to an incoming call policy.
 ---

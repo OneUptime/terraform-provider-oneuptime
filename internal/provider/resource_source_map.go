@@ -22,6 +22,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SourceMapResource{}
 var _ resource.ResourceWithImportState = &SourceMapResource{}
+var _ resource.ResourceWithModifyPlan = &SourceMapResource{}
 
 func NewSourceMapResource() resource.Resource {
     return &SourceMapResource{}
@@ -79,6 +80,7 @@ func (r *SourceMapResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "service_version": schema.StringAttribute{
                 MarkdownDescription: "The release this source map belongs to. Must exactly match the service.version OpenTelemetry resource attribute sent with the telemetry.",
@@ -106,6 +108,7 @@ func (r *SourceMapResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                     numberplanmodifier.RequiresReplace(),
                 },
@@ -132,6 +135,17 @@ func (r *SourceMapResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SourceMapResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SourceMapResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -516,6 +530,7 @@ func (r *SourceMapResource) Create(ctx context.Context, req resource.CreateReque
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

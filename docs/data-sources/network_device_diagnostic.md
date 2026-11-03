@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_device_diagnostic Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   An on-demand ping, traceroute or SNMP walk run against a Network Device from its probe. Transient: rows are deleted after two days.
 ---
@@ -43,9 +43,9 @@ data "oneuptime_network_device_diagnostic" "by_id" {
 
 - `completed_at` (String) When the probe reported a result (or a failure) for this diagnostic. Managed by the server.
 - `created_at` (String) Date and Time when the object was created.
-- `ping_result` (String) For a Ping diagnostic: whether the device answered, the failure cause when it did not, and the packet statistics (min/avg/max round-trip time, jitter, packet loss). Managed by the probe. A JSON value: write it with `jsonencode()`.
+- `ping_result` (String) For a Ping diagnostic: whether the device answered, the failure cause when it did not, and the packet statistics (min/avg/max round-trip time, jitter, packet loss). Managed by the probe. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `snmp_walk_result` (String) For an SNMP Walk: each OID the device answered with its type and value, why the walk stopped, where to continue from, and, when the device refused or did not answer, why. Managed by the probe. A JSON value: write it with `jsonencode()`.
+- `snmp_walk_result` (String) For an SNMP Walk: each OID the device answered with its type and value, why the walk stopped, where to continue from, and, when the device refused or did not answer, why. Managed by the probe. A JSON value: read it with `jsondecode()`.
 - `started_at` (String) When the probe claimed this diagnostic. Managed by the server.
-- `trace_route_result` (String) For a Traceroute diagnostic: the DNS lookup and the hop-by-hop path from the probe to the device, in the same shape the Network monitor records. Managed by the probe. A JSON value: write it with `jsonencode()`.
+- `trace_route_result` (String) For a Traceroute diagnostic: the DNS lookup and the hop-by-hop path from the probe to the device, in the same shape the Network monitor records. Managed by the probe. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

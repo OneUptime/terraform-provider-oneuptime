@@ -148,26 +148,31 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "The cloud account the store belongs to, for a cloud store. The ID of a `oneuptime_cloud_account`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_cloud_account"),
             },
             "cloud_resource_id": schema.StringAttribute{
                 MarkdownDescription: "The cloud resource the store was discovered from, if any. The ID of a `oneuptime_cloud_resource`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_cloud_resource"),
             },
             "cloud_connection_id": schema.StringAttribute{
                 MarkdownDescription: "The cloud connection that reads the store's configuration, if any. The ID of a `oneuptime_cloud_connection`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_cloud_connection"),
             },
             "database_server_id": schema.StringAttribute{
                 MarkdownDescription: "The Database product server the store is, for a self-managed database. The ID of a `oneuptime_database`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_database"),
             },
             "service_id": schema.StringAttribute{
                 MarkdownDescription: "The telemetry service whose logs, traces, exceptions, replays or AI conversations the store is. The ID of a `oneuptime_service`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "provider_resource_id": schema.StringAttribute{
                 MarkdownDescription: "The store's id in its cloud: an ARN, an Azure resource id or a Google Cloud resource name.",
@@ -200,15 +205,15 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "data_type_ids": schema.StringAttribute{
-                MarkdownDescription: "The data types found in the store with at least Medium confidence. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The data types found in the store with at least Medium confidence. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "data_categories": schema.StringAttribute{
-                MarkdownDescription: "The categories of those data types. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The categories of those data types. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "subject_countries": schema.StringAttribute{
-                MarkdownDescription: "Countries whose people's data the store holds, from country-bound data types (ISO 3166-1 alpha-2). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Countries whose people's data the store holds, from country-bound data types (ISO 3166-1 alpha-2). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "exposure": schema.StringAttribute{
@@ -217,11 +222,11 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "posture": schema.StringAttribute{
-                MarkdownDescription: "What the store's configuration says about its safety: public access, encryption, backups, logging and the rest. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the store's configuration says about its safety: public access, encryption, backups, logging and the rest. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "cloud_tags": schema.StringAttribute{
-                MarkdownDescription: "The store's tags or labels in its cloud. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The store's tags or labels in its cloud. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "size_in_bytes": schema.NumberAttribute{
@@ -262,6 +267,7 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "A probe that scans the store's content from inside your network instead of OneUptime's workers. The ID of a `oneuptime_probe`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "probe_connection_variable": schema.StringAttribute{
                 MarkdownDescription: "For a database scanned from a probe: the environment variable on that probe that holds its connection string. The connection string itself never reaches OneUptime.",
@@ -269,7 +275,7 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "scan_exclusions": schema.StringAttribute{
-                MarkdownDescription: "Path prefixes, tables or attribute keys the content scan skips. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Path prefixes, tables or attribute keys the content scan skips. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "purpose": schema.StringAttribute{
@@ -333,7 +339,7 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -341,6 +347,7 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "ID of the user who created this data store. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

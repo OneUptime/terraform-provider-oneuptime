@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_kubernetes_cluster_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically attaching labels to Kubernetes clusters when matching Kubernetes clusters are created
 ---

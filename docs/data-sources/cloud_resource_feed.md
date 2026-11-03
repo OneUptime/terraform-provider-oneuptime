@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_cloud_resource_feed Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Cloud"
 description: |-
   Log of everything that happened to this cloud resource - creation, updates, owner changes and the rules that made them.
 ---
@@ -16,6 +16,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 ```terraform
 data "oneuptime_cloud_resource_feed" "example" {
   cloud_resource_id = oneuptime_cloud_resource.example.id
+  user_email        = "alice@example.com"
 }
 
 # Or by id:
@@ -34,7 +35,8 @@ data "oneuptime_cloud_resource_feed" "by_id" {
 - `feed_info_in_markdown` (String) Log of the cloud resource change in Markdown.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `more_information_in_markdown` (String) More information in Markdown.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

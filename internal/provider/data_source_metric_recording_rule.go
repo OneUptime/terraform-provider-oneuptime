@@ -81,7 +81,7 @@ func (d *MetricRecordingRuleDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "definition": schema.StringAttribute{
-                MarkdownDescription: "Sources (aliased input metrics), arithmetic expression, and optional group-by attribute. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Sources (aliased input metrics), arithmetic expression, and optional group-by attribute. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
@@ -98,6 +98,7 @@ func (d *MetricRecordingRuleDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "ID of the user who created this rule. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

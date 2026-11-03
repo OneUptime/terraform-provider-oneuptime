@@ -154,6 +154,7 @@ func (d *DatabaseDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "ID of the Kubernetes cluster this database runs on, when it was discovered as a workload on a monitored cluster. The ID of a `oneuptime_kubernetes_cluster`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_kubernetes_cluster"),
             },
             "kubernetes_namespace": schema.StringAttribute{
                 MarkdownDescription: "Kubernetes namespace of the workload this database runs as.",
@@ -174,14 +175,16 @@ func (d *DatabaseDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "ID of the Docker host this database runs on, when it was discovered as a container on a monitored host. The ID of a `oneuptime_docker_host`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_docker_host"),
             },
             "podman_host_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Podman host this database runs on, when it was discovered as a container on a monitored host. The ID of a `oneuptime_podman_host`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_podman_host"),
             },
             "member_entity_keys": schema.StringAttribute{
-                MarkdownDescription: "Telemetry entity keys of the pods / containers this database runs as, each with the time it was last seen. Maintained by discovery. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Telemetry entity keys of the pods / containers this database runs as, each with the time it was last seen. Maintained by discovery. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "instance_count": schema.NumberAttribute{
@@ -225,13 +228,14 @@ func (d *DatabaseDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "automatic_assignments": schema.StringAttribute{
-                MarkdownDescription: "Label and owner ids that label rules, owner rules or telemetry attached automatically. Maintained by OneUptime. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Label and owner ids that label rules, owner rules or telemetry attached automatically. Maintained by OneUptime. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this database archived? Archived databases are hidden from lists but keep collecting telemetry.",
@@ -246,9 +250,10 @@ func (d *DatabaseDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -258,7 +263,7 @@ func (d *DatabaseDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for telemetry collected from this database by a collector / agent (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the database default, then the project's retention settings. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-pillar retention overrides for telemetry collected from this database by a collector / agent (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the database default, then the project's retention settings. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
@@ -272,7 +277,7 @@ func (d *DatabaseDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "ai_command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this database server without approval even though they are riskier changes. Each pattern is one command line for this database server's agent (db, a fixed catalog of diagnostics, never free-form SQL) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this database server is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the database server can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this database server without approval even though they are riskier changes. Each pattern is one command line for this database server's agent (db, a fixed catalog of diagnostics, never free-form SQL) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this database server is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the database server can remove patterns or clear the list. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "ai_access_last_verified_at": schema.StringAttribute{

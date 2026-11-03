@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &VcenterTeamOwnerResource{}
 var _ resource.ResourceWithImportState = &VcenterTeamOwnerResource{}
+var _ resource.ResourceWithModifyPlan = &VcenterTeamOwnerResource{}
 var _ resource.ResourceWithMoveState = &VcenterTeamOwnerResource{}
 
 func NewVcenterTeamOwnerResource() resource.Resource {
@@ -89,18 +90,20 @@ func (r *VcenterTeamOwnerResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the vCenter. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "vmware_v_center_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime vCenter in which this object belongs. The ID of a `oneuptime_vcenter`.",
+                MarkdownDescription: "ID of the vCenter the team owns. The ID of a `oneuptime_vcenter`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_vcenter"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -144,6 +147,17 @@ func (r *VcenterTeamOwnerResource) MoveState(ctx context.Context) []resource.Sta
     return []resource.StateMover{
         legacyNameStateMover("oneuptime_v_center_team_owner", r.schemaDefinition()),
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *VcenterTeamOwnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *VcenterTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -434,6 +448,7 @@ func (r *VcenterTeamOwnerResource) Create(ctx context.Context, req resource.Crea
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -918,7 +933,22 @@ func (r *VcenterTeamOwnerResource) Delete(ctx context.Context, req resource.Dele
 
 
 func (r *VcenterTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <vmware_v_center_id>/<team_id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/vmware-vcenter-owner-team/get-list",
+        parentField:     "vmwareVCenterId",
+        parentAttribute: "vmware_v_center_id",
+        parentNoun:      "vcenter",
+        personField:     "teamId",
+        personAttribute: "team_id",
+        byEmail:         false,
+        kind:            "owner",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    _ = email
 }
 
 

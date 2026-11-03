@@ -68,7 +68,7 @@ func (d *DashboardPlaylistDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "dashboards": schema.StringAttribute{
-                MarkdownDescription: "The dashboards shown, in order: a list like [{\"dashboardId\": \"<id>\"}]. One may appear more than once. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The dashboards shown, in order: a list like [{\"dashboardId\": \"<id>\"}]. One may appear more than once. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "interval_in_seconds": schema.NumberAttribute{
@@ -80,6 +80,7 @@ func (d *DashboardPlaylistDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

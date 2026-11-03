@@ -23,6 +23,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SecurityCaseTaskResource{}
 var _ resource.ResourceWithImportState = &SecurityCaseTaskResource{}
+var _ resource.ResourceWithModifyPlan = &SecurityCaseTaskResource{}
 
 func NewSecurityCaseTaskResource() resource.Resource {
     return &SecurityCaseTaskResource{}
@@ -46,6 +47,7 @@ type SecurityCaseTaskResourceModel struct {
     DoneAt RFC3339Value `tfsdk:"done_at"`
     DoneByUserId types.String `tfsdk:"done_by_user_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    AssignedToUserEmail types.String `tfsdk:"assigned_to_user_email"`
 }
 
 func (r *SecurityCaseTaskResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -81,18 +83,17 @@ func (r *SecurityCaseTaskResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "What has to be done, in a line.",
                 Required: true,
             },
             "assigned_to_user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the person doing the task. Empty while nobody is. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "ID of the person doing the task. Empty while nobody is. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assigned_to_user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDValidators("assigned_to_user_email", false),
             },
             "is_done": schema.BoolAttribute{
                 MarkdownDescription: "Whether the task is done. Setting it records who did it and when; clearing it opens the task again.",
@@ -132,8 +133,34 @@ func (r *SecurityCaseTaskResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "assigned_to_user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("assigned_to_user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this security case task names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SecurityCaseTaskResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "assigned_to_user_id",
+        email:    "assigned_to_user_email",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SecurityCaseTaskResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -175,6 +202,11 @@ func (r *SecurityCaseTaskResource) Create(ctx context.Context, req resource.Crea
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.AssignedToUserId, data.AssignedToUserEmail, "assigned_to_user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -226,6 +258,19 @@ func (r *SecurityCaseTaskResource) Create(ctx context.Context, req resource.Crea
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.AssignedToUserId.IsUnknown() {
+        created := securityCaseTaskResponse
+        if wrapper, ok := securityCaseTaskResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["assignedToUserId"]); id != "" {
+            data.AssignedToUserId = types.StringValue(id)
+        } else {
+            data.AssignedToUserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -526,9 +571,12 @@ func (r *SecurityCaseTaskResource) Create(ctx context.Context, req resource.Crea
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.AssignedToUserEmail = personEmailAfterWrite(ctx, r.client, data.AssignedToUserId, data.AssignedToUserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -558,6 +606,10 @@ func (r *SecurityCaseTaskResource) Read(ctx context.Context, req resource.ReadRe
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorAssignedToUserId := data.AssignedToUserId
+    priorAssignedToUserEmail := data.AssignedToUserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/security-case-task/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -826,6 +878,8 @@ func (r *SecurityCaseTaskResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.AssignedToUserEmail = personEmailAfterRead(ctx, r.client, priorAssignedToUserId, data.AssignedToUserId, priorAssignedToUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -857,6 +911,11 @@ func (r *SecurityCaseTaskResource) Update(ctx context.Context, req resource.Upda
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.AssignedToUserId, data.AssignedToUserEmail, "assigned_to_user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     securityCaseTaskRequest := map[string]interface{}{
@@ -1174,6 +1233,8 @@ func (r *SecurityCaseTaskResource) Update(ctx context.Context, req resource.Upda
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.AssignedToUserEmail = personEmailAfterWrite(ctx, r.client, data.AssignedToUserId, data.AssignedToUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1227,6 +1288,9 @@ func (r *SecurityCaseTaskResource) keepPlannedValues(data *SecurityCaseTaskResou
     }
     if config.IsDone.IsNull() && !plan.IsDone.IsUnknown() {
         data.IsDone = plan.IsDone
+    }
+    if config.AssignedToUserEmail.IsNull() && !plan.AssignedToUserEmail.IsUnknown() {
+        data.AssignedToUserEmail = plan.AssignedToUserEmail
     }
 }
 

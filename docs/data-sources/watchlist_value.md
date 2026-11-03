@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_watchlist_value Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   The values on a watchlist the team keeps, each with an optional note, matched by the detection rules that read the list.
 ---

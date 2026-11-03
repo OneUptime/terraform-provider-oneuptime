@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_auto_remediation_suggestion Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   A proposed or executed remediation runbook attached to an incident or alert by an auto-remediation rule.
 ---
@@ -54,10 +54,10 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 ### Read-Only
 
 - `approved_at` (String) When this suggestion was approved.
-- `command_plan` (String) The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run. A JSON value: write it with `jsonencode()`.
+- `command_plan` (String) The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `dismissed_at` (String) When this suggestion was dismissed.
-- `mcp_tool_call_plan` (String) For McpToolCalls suggestions: the tool calls OneUptime AI made, or proposes, through the project's external MCP servers, with what each server answered once called. A JSON value: write it with `jsonencode()`.
+- `mcp_tool_call_plan` (String) For McpToolCalls suggestions: the tool calls OneUptime AI made, or proposes, through the project's external MCP servers, with what each server answered once called. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
 - `verification_completed_at` (String) When verification reached a terminal outcome.

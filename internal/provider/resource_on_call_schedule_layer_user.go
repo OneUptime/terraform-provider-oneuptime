@@ -22,6 +22,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &OnCallScheduleLayerUserResource{}
 var _ resource.ResourceWithImportState = &OnCallScheduleLayerUserResource{}
+var _ resource.ResourceWithModifyPlan = &OnCallScheduleLayerUserResource{}
 
 func NewOnCallScheduleLayerUserResource() resource.Resource {
     return &OnCallScheduleLayerUserResource{}
@@ -43,6 +44,7 @@ type OnCallScheduleLayerUserResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *OnCallScheduleLayerUserResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -55,7 +57,7 @@ func (r *OnCallScheduleLayerUserResource) Schema(ctx context.Context, req resour
 
 func (r *OnCallScheduleLayerUserResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "On-Call Schedule Layer Users",
+        MarkdownDescription: "Add users to the layers of your on-call schedules.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -73,30 +75,35 @@ func (r *OnCallScheduleLayerUserResource) schemaDefinition() schema.Schema {
                 },
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Schedule where this escalation rule belongs. The ID of a `oneuptime_on_call_policy_schedule`.",
+                MarkdownDescription: "ID of the on-call schedule the layer is in. The ID of a `oneuptime_on_call_policy_schedule`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
             "on_call_duty_policy_schedule_layer_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Schedule Layer where this escalation rule belongs. The ID of a `oneuptime_on_call_schedule_layer`.",
+                MarkdownDescription: "ID of the layer the person takes turns on call in. The ID of a `oneuptime_on_call_schedule_layer`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_on_call_schedule_layer"),
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Order / Priority of this layer. Lower the number, higher the priority.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of User who belongs to this team. The ID of a `oneuptime_user` (see the data source).",
-                Required: true,
+                MarkdownDescription: "ID of the person who takes turns on call in this layer. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
+                Optional: true,
+                Computed: true,
+                Validators: personIDValidators("user_email", true),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -118,8 +125,34 @@ func (r *OnCallScheduleLayerUserResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this on call schedule layer user names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *OnCallScheduleLayerUserResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *OnCallScheduleLayerUserResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -161,6 +194,11 @@ func (r *OnCallScheduleLayerUserResource) Create(ctx context.Context, req resour
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -212,6 +250,19 @@ func (r *OnCallScheduleLayerUserResource) Create(ctx context.Context, req resour
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := onCallScheduleLayerUserResponse
+        if wrapper, ok := onCallScheduleLayerUserResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -460,9 +511,12 @@ func (r *OnCallScheduleLayerUserResource) Create(ctx context.Context, req resour
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -490,6 +544,10 @@ func (r *OnCallScheduleLayerUserResource) Read(ctx context.Context, req resource
         "createdByUserId": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/on-call-duty-schedule-layer-user/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -708,6 +766,8 @@ func (r *OnCallScheduleLayerUserResource) Read(ctx context.Context, req resource
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -739,6 +799,11 @@ func (r *OnCallScheduleLayerUserResource) Update(ctx context.Context, req resour
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     onCallScheduleLayerUserRequest := map[string]interface{}{
@@ -1001,6 +1066,8 @@ func (r *OnCallScheduleLayerUserResource) Update(ctx context.Context, req resour
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1037,7 +1104,25 @@ func (r *OnCallScheduleLayerUserResource) Delete(ctx context.Context, req resour
 
 
 func (r *OnCallScheduleLayerUserResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // By its own ID, or by what it joins and who or what joins it: <on_call_duty_policy_schedule_layer_id>/<email address or user id> (see people.go).
+    id, email, ok := importIDOfMembership(ctx, r.client, req.ID, membershipImport{
+        listPath:        "/on-call-duty-schedule-layer-user/get-list",
+        parentField:     "onCallDutyPolicyScheduleLayerId",
+        parentAttribute: "on_call_duty_policy_schedule_layer_id",
+        parentNoun:      "on call schedule layer",
+        personField:     "userId",
+        personAttribute: "user_id",
+        byEmail:         true,
+        kind:            "on-call",
+    }, &resp.Diagnostics)
+    if !ok {
+        return
+    }
+    resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+    // The address it was imported by, as written: the refresh keeps it.
+    if email != "" {
+        resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("user_email"), email)...)
+    }
 }
 
 
@@ -1051,6 +1136,12 @@ func (r *OnCallScheduleLayerUserResource) ImportState(ctx context.Context, req r
 func (r *OnCallScheduleLayerUserResource) keepPlannedValues(data *OnCallScheduleLayerUserResourceModel, plan *OnCallScheduleLayerUserResourceModel, config *OnCallScheduleLayerUserResourceModel) {
     if config.Order.IsNull() && !plan.Order.IsUnknown() {
         data.Order = plan.Order
+    }
+    if config.UserId.IsNull() && !plan.UserId.IsUnknown() {
+        data.UserId = plan.UserId
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 

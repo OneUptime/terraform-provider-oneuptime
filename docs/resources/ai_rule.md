@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ai_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   Which new incidents or alerts OneUptime AI investigates and fixes, and how. A rule investigates what it matches (right away, or only if still open after a wait), and fixes it or not, asking first or not. A fix may run the project's runbooks (only the rule's, when it names some), Bash commands on a Runner the rule picks, the tools of the project's external MCP servers (only the rule's, when it names some), and open fix and telemetry pull requests in the project's code repositories (only the rule's, when it names some). With no rule, OneUptime AI investigates every one, and fixes every one while automatic fixing is on. These were auto remediation rules, and investigation rules are AI rules now too. A rule whose Trigger Entity Type is Profile, Trace, Exception, Log or Metric decides the same about the problems OneUptime finds in a service's profiles, traces, exceptions, logs or metrics, matched by their service; their fix is a pull request in one of the project's code repositories.
 ---
@@ -23,7 +23,7 @@ moved {
 ```terraform
 resource "oneuptime_ai_rule" "example" {
   name                = "Example ai rule"
-  trigger_entity_type = "Example short text"
+  trigger_entity_type = "Incident"
   description         = "Managed by Terraform"
 }
 ```
@@ -33,7 +33,7 @@ resource "oneuptime_ai_rule" "example" {
 ### Required
 
 - `name` (String) Name of this AI rule.
-- `trigger_entity_type` (String) Which kind of signal this rule decides about: Incident or Alert - or Profile, the slow code OneUptime finds in a service's profiles, or Trace, the slow and failing operations OneUptime finds in a service's traces, or Exception, the new and rising exceptions OneUptime finds in a service, or Log, the error, missing and noisy logs OneUptime finds in a service's logs, or Metric, the problems OneUptime finds in a service's metrics.
+- `trigger_entity_type` (String) Which kind of signal this rule decides about: Incident or Alert - or Profile, the slow code OneUptime finds in a service's profiles, or Trace, the slow and failing operations OneUptime finds in a service's traces, or Exception, the new and rising exceptions OneUptime finds in a service, or Log, the error, missing and noisy logs OneUptime finds in a service's logs, or Metric, the problems OneUptime finds in a service's metrics. Allowed values: `Incident`, `Alert`, `Profile`, `Trace`, `Exception`, `Log`, `Metric`.
 
 ### Optional
 
@@ -48,7 +48,7 @@ resource "oneuptime_ai_rule" "example" {
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of this AI rule.
 - `description_pattern` (String) Case-insensitive regex matched against the entity's description. Leave empty to match any description.
-- `execution_mode` (String) How a rule that fixes asks. Suggest asks before fixing: every fix the rule starts waits for one-click human approval. FullAuto fixes without asking: OneUptime AI fixes on its own where the cluster's or resource's AI agent page allows, a runbook it picks from the ones the rule names starts right away (one it picks from all of the project's runbooks still waits for approval), a change through an MCP server the rule names is made right away (through any of the project's MCP servers, it still waits for approval), and a rule that runs its runbooks every time starts them immediately. Defaults to `Suggest`.
+- `execution_mode` (String) How a rule that fixes asks. Suggest asks before fixing: every fix the rule starts waits for one-click human approval. FullAuto fixes without asking: OneUptime AI fixes on its own where the cluster's or resource's AI agent page allows, a runbook it picks from the ones the rule names starts right away (one it picks from all of the project's runbooks still waits for approval), a change through an MCP server the rule names is made right away (through any of the project's MCP servers, it still waits for approval), and a rule that runs its runbooks every time starts them immediately. Allowed values: `Suggest`, `FullAuto`. Defaults to `Suggest`.
 - `external_mcp_servers` (Set of String) The external MCP servers OneUptime AI may use while it investigates and fixes what this rule matches (an investigation uses only their tools that read). Leave empty to let it use all of the project's MCP servers; changes through them are then always proposed for approval first. IDs of `oneuptime_external_mcp_server` resources.
 - `fixes` (Boolean) Whether OneUptime AI fixes the incidents or alerts this rule matches, the way its Execution Mode says. Off, the rule only investigates them. With enabled rules, an incident is fixed only when a rule that fixes matches it. On by default. Defaults to `true`.
 - `incident_severities` (Set of String) Only trigger for incidents with these severities (incident rules only). Leave empty to match any severity. IDs of `oneuptime_incident_severity` resources.
@@ -61,7 +61,7 @@ resource "oneuptime_ai_rule" "example" {
 - `only_if_open_after_minutes` (Number) Investigate only incidents or alerts still open this many minutes after they were created: OneUptime AI waits that long, then investigates if it is still open. Leave empty to investigate right away. When several rules match, the shortest wait decides. At most 1440 minutes (a day).
 - `open_code_fix_pull_requests` (Boolean) When an investigation of an incident or alert this rule matches finds the cause in your code, OneUptime AI opens a pull request with the fix, for review. Nothing is merged. Acts only while fixing new incidents (or alerts) automatically is on. On by default. Defaults to `true`.
 - `open_telemetry_pull_requests` (Boolean) When missing logs, traces or metrics stop an investigation of an incident or alert this rule matches, OneUptime AI opens a pull request that adds them, for review. Nothing is merged. Acts only while fixing new incidents (or alerts) automatically is on. On by default. Defaults to `true`.
-- `remediation_action` (String) OneUptimeAI (the default): OneUptime AI fixes the matched incident or alert - on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, with the project's runbooks (only the rule's Runbooks when it names some) and with commands on the rule's Runner when it picks one. Runbooks: the rule starts every one of its Runbooks for every match, without OneUptime AI deciding. Whether a person approves first is the rule's Execution Mode. Defaults to `OneUptimeAI`.
+- `remediation_action` (String) OneUptimeAI (the default): OneUptime AI fixes the matched incident or alert - on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, with the project's runbooks (only the rule's Runbooks when it names some) and with commands on the rule's Runner when it picks one. Runbooks: the rule starts every one of its Runbooks for every match, without OneUptime AI deciding. Whether a person approves first is the rule's Execution Mode. Allowed values: `OneUptimeAI`, `Runbooks`. Defaults to `OneUptimeAI`.
 - `runbooks` (Set of String) The runbooks OneUptime AI may pick and run for this rule. Leave empty to let it pick any of the project's runbooks. A rule whose Fix With is Runbooks starts every one of them for every match instead. IDs of `oneuptime_runbook` resources.
 - `runner_id` (String) ID of the Runner OneUptime AI runs this rule's Bash commands on: one of the project's own Runners. Empty means none: OneUptime AI runs no commands of its own for the rule. Commands on the affected Kubernetes cluster or host always go through its AI agent. The ID of a `oneuptime_runner`.
 - `service_labels` (Set of String) Profile, Trace, Exception, Log and Metric AI rules only: match what OneUptime found in a service that carries at least one of these labels. Leave empty to match any label. IDs of `oneuptime_label` resources.

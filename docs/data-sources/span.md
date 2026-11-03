@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_span Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   API endpoints for Span
 ---
@@ -78,6 +78,6 @@ data "oneuptime_span" "by_id" {
 - `attribute_keys` (Set of String) Attribute Keys.
 - `entity_keys` (Set of String) Entity Keys.
 - `events` (Set of String) Events.
-- `links` (String) Links. A JSON value: write it with `jsonencode()`.
+- `links` (String) Links. A JSON value: read it with `jsondecode()`.
 - `llm_issues` (Set of String) LLM Answer Issues.
 - `project_id` (String) Project ID.

@@ -86,18 +86,20 @@ func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "page_context": schema.StringAttribute{
-                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident whose investigation box this shared conversation belongs to. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the alert whose investigation box this shared conversation belongs to. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this conversation.",

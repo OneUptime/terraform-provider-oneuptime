@@ -94,11 +94,13 @@ func (d *AiAgentTaskPullRequestDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "ID of the AI Agent that created this pull request. Null when it was proposed from an AI chat conversation. The ID of a `oneuptime_ai_agent`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_ai_agent"),
             },
             "code_repository_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Code Repository this pull request was created in. The ID of a `oneuptime_code_repository`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_code_repository"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "Title of the pull request.",

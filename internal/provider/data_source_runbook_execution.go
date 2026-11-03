@@ -76,6 +76,7 @@ func (d *RunbookExecutionDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "ID of the Runbook this execution belongs to. The ID of a `oneuptime_runbook`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_runbook"),
             },
             "runbook_name_snapshot": schema.StringAttribute{
                 MarkdownDescription: "Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted).",
@@ -88,28 +89,32 @@ func (d *RunbookExecutionDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "step_executions": schema.StringAttribute{
-                MarkdownDescription: "Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident that triggered or hosts this runbook execution. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the alert that triggered or hosts this runbook execution. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "scheduled_maintenance_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the scheduled maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),
             },
             "triggered_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the User who triggered this runbook execution. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "trigger_type": schema.StringAttribute{
                 MarkdownDescription: "What started this run: \"Manual\" (a person, or the API), \"Rule\" (a runbook rule), \"AutoRemediation\", \"AI\" (OneUptime AI), \"Schedule\" (the runbook's schedule) or \"Webhook\" (a call to the runbook's webhook URL). Empty for runs started before it was recorded.",
@@ -117,11 +122,11 @@ func (d *RunbookExecutionDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "trigger_details": schema.StringAttribute{
-                MarkdownDescription: "More about what started this run: for a scheduled run, the time it was due (scheduledFor) and whether it made up for times OneUptime missed (isCatchUp) or waited for the run before it (waitedForPreviousRun); for a webhook call, the address it came from (callerIp). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "More about what started this run: for a scheduled run, the time it was due (scheduledFor) and whether it made up for times OneUptime missed (isCatchUp) or waited for the run before it (waitedForPreviousRun); for a webhook call, the address it came from (callerIp). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "inputs": schema.StringAttribute{
-                MarkdownDescription: "The values this run was started with: the JSON body of the webhook call that started it. Steps read them as data - Bash as ONEUPTIME_INPUT_<NAME> environment variables, JavaScript as args.inputs - never as script text. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The values this run was started with: the JSON body of the webhook call that started it. Steps read them as data - Bash as ONEUPTIME_INPUT_<NAME> environment variables, JavaScript as args.inputs - never as script text. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{

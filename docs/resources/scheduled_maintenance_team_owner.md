@@ -22,8 +22,8 @@ resource "oneuptime_scheduled_maintenance_team_owner" "example" {
 
 ### Required
 
-- `scheduled_maintenance_id` (String) ID of your OneUptime ScheduledMaintenance in which this object belongs. The ID of a `oneuptime_scheduled_maintenance_event`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `scheduled_maintenance_id` (String) ID of the scheduled maintenance event the team owns. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `team_id` (String) ID of the team that owns the scheduled maintenance event. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_scheduled_maintenance_team_owner" "example" {
 
 ## Import
 
-Import an existing scheduled maintenance team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing scheduled maintenance team owner by its scheduled maintenance event and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_scheduled_maintenance_team_owner.example
-  id = "<id>"
+  id = "<scheduled_maintenance_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_scheduled_maintenance_team_owner.example <id>
+terraform import oneuptime_scheduled_maintenance_team_owner.example <scheduled_maintenance_id>/<team_id>
 ```
+
+Its own ID works too.

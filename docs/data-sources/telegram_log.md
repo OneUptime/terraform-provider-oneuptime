@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_telegram_log Data Source - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Notification Logs"
 description: |-
   Logs of all the Telegram messages sent out to all users and subscribers for this project.
 ---

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_runbook_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Runbooks & Runners"
 description: |-
   Auto-attach runbooks to incidents, alerts, or scheduled maintenance events when they are created.
 ---
@@ -43,7 +43,7 @@ data "oneuptime_runbook_rule" "by_id" {
 
 - `alert_severities` (Set of String) Only match alerts with one of these severities. Alert rules only. Leave empty to match any severity. IDs of `oneuptime_alert_severity` resources.
 - `created_at` (String) Date and Time when the object was created.
-- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
 - `incident_severities` (Set of String) Only match incidents with one of these severities. Incident rules only. Leave empty to match any severity. IDs of `oneuptime_incident_severity` resources.
 - `labels` (Set of String) Only match incidents, alerts or scheduled maintenance events that carry at least one of these labels. Leave empty to match regardless of their labels. IDs of `oneuptime_label` resources.
 - `monitor_labels` (Set of String) Only match when a monitor of the incident, alert or scheduled maintenance event carries at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.

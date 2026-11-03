@@ -27,6 +27,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ApiKeyPermissionResource{}
 var _ resource.ResourceWithImportState = &ApiKeyPermissionResource{}
+var _ resource.ResourceWithModifyPlan = &ApiKeyPermissionResource{}
 
 func NewApiKeyPermissionResource() resource.Resource {
     return &ApiKeyPermissionResource{}
@@ -79,6 +80,7 @@ func (r *ApiKeyPermissionResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_api_key"),
             },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
@@ -93,6 +95,7 @@ func (r *ApiKeyPermissionResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -100,15 +103,17 @@ func (r *ApiKeyPermissionResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this permission is scoped at. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels that limit the permission to the resources carrying one of them. Empty means every resource. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "is_block_permission": schema.BoolAttribute{
+                MarkdownDescription: "When on, the permission is taken away instead of given. A block permission always wins over one that gives it.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -150,6 +155,17 @@ func (r *ApiKeyPermissionResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ApiKeyPermissionResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ApiKeyPermissionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -605,6 +621,9 @@ func (r *ApiKeyPermissionResource) Create(ctx context.Context, req resource.Crea
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -983,6 +1002,11 @@ func (r *ApiKeyPermissionResource) Update(ctx context.Context, req resource.Upda
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "permission": !data.Permission.Equal(state.Permission),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config ApiKeyPermissionResourceModel
@@ -1373,6 +1397,9 @@ func (r *ApiKeyPermissionResource) Update(ctx context.Context, req resource.Upda
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1409,6 +1436,9 @@ func (r *ApiKeyPermissionResource) Delete(ctx context.Context, req resource.Dele
 
 func (r *ApiKeyPermissionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"permission"})...)
 }
 
 

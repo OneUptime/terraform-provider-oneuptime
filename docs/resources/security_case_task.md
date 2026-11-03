@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_case_task Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   What has to be done on a security case, who is doing it, and whether it is done.
 ---
@@ -14,7 +14,7 @@ What has to be done on a security case, who is doing it, and whether it is done.
 ```terraform
 resource "oneuptime_security_case_task" "example" {
   security_case_id = oneuptime_security_case.example.id
-  title            = "This is an example of longer text content that might be stored in this field."
+  title            = "Reset the user's password and end their sessions"
 }
 ```
 
@@ -27,7 +27,8 @@ resource "oneuptime_security_case_task" "example" {
 
 ### Optional
 
-- `assigned_to_user_id` (String) ID of the person doing the task. Empty while nobody is. The ID of a `oneuptime_user` (see the data source).
+- `assigned_to_user_email` (String) The email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `assigned_to_user_id` (String) ID of the person doing the task. Empty while nobody is. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assigned_to_user_email`.
 - `is_done` (Boolean) Whether the task is done. Setting it records who did it and when; clearing it opens the task again. Defaults to `false`.
 
 ### Read-Only

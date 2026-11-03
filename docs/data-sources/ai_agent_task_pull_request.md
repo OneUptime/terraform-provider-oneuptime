@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ai_agent_task_pull_request Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   Pull requests created by AI agents during task execution.
 ---

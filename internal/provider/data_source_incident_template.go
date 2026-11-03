@@ -110,6 +110,7 @@ func (d *IncidentTemplateDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.",
@@ -157,7 +158,7 @@ func (d *IncidentTemplateDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -165,23 +166,26 @@ func (d *IncidentTemplateDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "Incident Severity ID. The ID of a `oneuptime_incident_severity`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "change_monitor_status_to_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the incident is created. The ID of a `oneuptime_monitor_status`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "initial_incident_state_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Incident State Object ID. Incidents created from this template will start in this state. The ID of a `oneuptime_incident_state`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_state"),
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "custom_field_settings": schema.StringAttribute{
-                MarkdownDescription: "How the Declare Incident form treats each incident custom field when an incident is declared from this template, keyed by the field's template variable key (variableKey). Each value is Required (asked, must be filled in), Optional (asked, may be left empty), Hidden (not asked; the field keeps this template's value) or Default. A field that is not listed, or is Default, follows its own Show on Create and Required on Create settings. Only the dashboard's Declare Incident form applies these settings: incidents created through the API are not checked against them. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "How the Declare Incident form treats each incident custom field when an incident is declared from this template, keyed by the field's template variable key (variableKey). Each value is Required (asked, must be filled in), Optional (asked, may be left empty), Hidden (not asked; the field keeps this template's value) or Default. A field that is not listed, or is Default, follows its own Show on Create and Required on Create settings. Only the dashboard's Declare Incident form applies these settings: incidents created through the API are not checked against them. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

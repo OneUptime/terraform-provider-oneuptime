@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_case_feed_item Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   The timeline of a security case: detections joining, changes of status, priority and assignee, notes, and every step a playbook took.
 ---

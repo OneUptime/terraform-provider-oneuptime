@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &SecurityCaseNoteResource{}
 var _ resource.ResourceWithImportState = &SecurityCaseNoteResource{}
+var _ resource.ResourceWithModifyPlan = &SecurityCaseNoteResource{}
 
 func NewSecurityCaseNoteResource() resource.Resource {
     return &SecurityCaseNoteResource{}
@@ -75,6 +76,7 @@ func (r *SecurityCaseNoteResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_security_case"),
             },
             "note": schema.StringAttribute{
                 MarkdownDescription: "The note, in Markdown.",
@@ -102,6 +104,17 @@ func (r *SecurityCaseNoteResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *SecurityCaseNoteResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *SecurityCaseNoteResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -388,6 +401,7 @@ func (r *SecurityCaseNoteResource) Create(ctx context.Context, req resource.Crea
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_proxmox_cluster_owner_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Configure rules for automatically assigning owner users and teams when matching Proxmox clusters are created
 ---
@@ -31,7 +31,8 @@ resource "oneuptime_proxmox_cluster_owner_rule" "example" {
 - `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
 - `notify_owners` (Boolean) Send notifications to owner users and teams when they are added by this rule. Defaults to `true`.
 - `owner_teams` (Set of String) Teams to add as owners on the Proxmox cluster when this rule matches. IDs of `oneuptime_team` resources.
-- `owner_users` (Set of String) Users to add as owners on the Proxmox cluster when this rule matches. IDs of `oneuptime_user` records.
+- `owner_user_emails` (Set of String) The email addresses of the people in `owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `owner_users` (Set of String) Users to add as owners on the Proxmox cluster when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.
 - `proxmox_cluster_description_pattern` (String) Regex (case-insensitive) matched against the Proxmox cluster description. Leave empty to match any description.
 - `proxmox_cluster_labels` (Set of String) Only trigger for Proxmox clusters that have at least one of these labels. Leave empty to match regardless of labels. IDs of `oneuptime_label` resources.
 - `proxmox_cluster_name_pattern` (String) Regex (case-insensitive) matched against the Proxmox cluster name. Leave empty to match any name.

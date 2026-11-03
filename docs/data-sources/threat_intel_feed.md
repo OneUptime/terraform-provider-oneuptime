@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_threat_intel_feed Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Threat-intelligence feeds: TAXII 2.1 collections, lists of indicators and Google SecOps. Indicators are polled and matched against security events.
 ---

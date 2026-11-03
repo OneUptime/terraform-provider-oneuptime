@@ -16,11 +16,14 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AlertVideoCallResource{}
 var _ resource.ResourceWithImportState = &AlertVideoCallResource{}
+var _ resource.ResourceWithModifyPlan = &AlertVideoCallResource{}
 
 func NewAlertVideoCallResource() resource.Resource {
     return &AlertVideoCallResource{}
@@ -77,6 +80,7 @@ func (r *AlertVideoCallResource) schemaDefinition() schema.Schema {
             "alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the alert this call is for. The ID of a `oneuptime_alert`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "provider_value": schema.StringAttribute{
                 MarkdownDescription: "Where the call is held: Zoom, GoogleMeet, MicrosoftTeams, SlackHuddle, or CustomLink for a link a person provided. Taken from the connection when one is given.",
@@ -84,6 +88,9 @@ func (r *AlertVideoCallResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Zoom", "GoogleMeet", "MicrosoftTeams", "SlackHuddle", "CustomLink"),
                 },
             },
             "video_call_connection_id": schema.StringAttribute{
@@ -93,6 +100,7 @@ func (r *AlertVideoCallResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_video_call_connection"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "What the call is called. A meeting a provider creates is named for the alert.",
@@ -140,6 +148,17 @@ func (r *AlertVideoCallResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AlertVideoCallResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AlertVideoCallResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -636,6 +655,7 @@ func (r *AlertVideoCallResource) Create(ctx context.Context, req resource.Create
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

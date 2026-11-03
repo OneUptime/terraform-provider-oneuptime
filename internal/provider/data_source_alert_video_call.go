@@ -70,6 +70,7 @@ func (d *AlertVideoCallDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the alert this call is for. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "provider_value": schema.StringAttribute{
                 MarkdownDescription: "Where the call is held: Zoom, GoogleMeet, MicrosoftTeams, SlackHuddle, or CustomLink for a link a person provided. Taken from the connection when one is given.",
@@ -80,6 +81,7 @@ func (d *AlertVideoCallDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the Zoom, Google Meet, Microsoft Teams or meeting link connection to start the call with. Leave it out to add a link of your own, or to start the huddle of the alert's Slack channel. The ID of a `oneuptime_video_call_connection`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_video_call_connection"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "What the call is called. A meeting a provider creates is named for the alert.",
@@ -100,11 +102,13 @@ func (d *AlertVideoCallDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the Slack or Microsoft Teams notification rule that started this call. The ID of a `oneuptime_workspace_notification_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_workspace_notification_rule"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

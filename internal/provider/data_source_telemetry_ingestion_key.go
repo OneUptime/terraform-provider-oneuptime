@@ -83,11 +83,12 @@ func (d *TelemetryIngestionKeyDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "secret_key": schema.StringAttribute{
                 MarkdownDescription: "Secret Telemetry Ingestion Key.",
-                Optional: true,
                 Computed: true,
+                Sensitive: true,
             },
             "key_type": schema.StringAttribute{
                 MarkdownDescription: "Server keys are for backend services and OpenTelemetry collectors: full ingest, no origin checks. Browser keys are write-only client keys: listed web origins may send traces, logs, metrics and session replay, while listed app:// identities currently authorize React Native session replay only. This cannot be changed after the key is created - create a new key instead.",
@@ -95,7 +96,7 @@ func (d *TelemetryIngestionKeyDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "allowed_origins": schema.StringAttribute{
-                MarkdownDescription: "Web origins (for example https://app.example.com or https://*.example.com) and exact React Native identities (for example app://com.example.mobile) that may use this key. Required on a Browser key. Web requests need a listed Origin; mobile replay requests without Origin need a listed app identity. app:// entries cannot use wildcards and are self-asserted identifiers, not platform attestation. Ignored on a Server key. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Web origins (for example https://app.example.com or https://*.example.com) and exact React Native identities (for example app://com.example.mobile) that may use this key. Required on a Browser key. Web requests need a listed Origin; mobile replay requests without Origin need a listed app identity. app:// entries cannot use wildcards and are self-asserted identifiers, not platform attestation. Ignored on a Server key. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "pinned_service_name": schema.StringAttribute{
@@ -171,10 +172,6 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
-    }
-    if !data.SecretKey.IsNull() && !data.SecretKey.IsUnknown() {
-        filters["secretKey"] = data.SecretKey.ValueString()
-        filterNames = append(filterNames, "secret_key = "+fmt.Sprintf("%q", data.SecretKey.ValueString()))
     }
     if !data.KeyType.IsNull() && !data.KeyType.IsUnknown() {
         filters["keyType"] = data.KeyType.ValueString()

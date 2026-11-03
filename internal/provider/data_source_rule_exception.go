@@ -72,6 +72,7 @@ func (d *RuleExceptionDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the detection rule that skips what this names. The ID of a `oneuptime_detection_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_detection_rule"),
             },
             "kind": schema.StringAttribute{
                 MarkdownDescription: "What the rule skips: Entity (a user, host or IP address), Value (one event field's value) or Time Window (every event between two times).",
@@ -114,6 +115,7 @@ func (d *RuleExceptionDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "ID of the person who added the exception. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

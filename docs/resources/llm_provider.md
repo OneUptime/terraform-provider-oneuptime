@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_llm_provider Resource - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   Manage LLM Provider configurations. Connect to OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAI-compatible servers (e.g. vLLM, LocalAI), or other LLM providers to enable AI features.
 ---
@@ -14,7 +14,7 @@ Manage LLM Provider configurations. Connect to OpenAI, Azure OpenAI, Anthropic, 
 ```terraform
 resource "oneuptime_llm_provider" "example" {
   name        = "Example llm provider"
-  llm_type    = "Example short text"
+  llm_type    = "OpenAI"
   description = "Managed by Terraform"
 }
 ```
@@ -23,7 +23,7 @@ resource "oneuptime_llm_provider" "example" {
 
 ### Required
 
-- `llm_type` (String) The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAICompatible, etc.).
+- `llm_type` (String) The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAICompatible, etc.). Allowed values: `OpenAI`, `AzureOpenAI`, `Anthropic`, `Groq`, `Mistral`, `Ollama`, `OpenAICompatible`.
 - `name` (String) A friendly name for this LLM configuration.
 
 ### Optional

@@ -22,8 +22,8 @@ resource "oneuptime_status_page_team_owner" "example" {
 
 ### Required
 
-- `status_page_id` (String) ID of your OneUptime StatusPage in which this object belongs. The ID of a `oneuptime_status_page`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `status_page_id` (String) ID of the status page the team owns. The ID of a `oneuptime_status_page`.
+- `team_id` (String) ID of the team that owns the status page. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_status_page_team_owner" "example" {
 
 ## Import
 
-Import an existing status page team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing status page team owner by its status page and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_status_page_team_owner.example
-  id = "<id>"
+  id = "<status_page_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_status_page_team_owner.example <id>
+terraform import oneuptime_status_page_team_owner.example <status_page_id>/<team_id>
 ```
+
+Its own ID works too.

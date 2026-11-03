@@ -80,36 +80,43 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, r
                 MarkdownDescription: "ID of your OneUptime on-call duty policy in which this object belongs. Empty for a step of a direct page, which has no on-call policy. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "triggered_by_incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Incident in which this object belongs. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "triggered_by_alert_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Alert in which this object belongs. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "triggered_by_alert_episode_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Alert Episode in which this object belongs. The ID of a `oneuptime_alert_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_episode"),
             },
             "triggered_by_incident_episode_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your OneUptime Incident Episode in which this object belongs. The ID of a `oneuptime_incident_episode`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_episode"),
             },
             "on_call_duty_policy_execution_log_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your On-Call Policy Execution Log where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_duty_execution_log"),
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of your On-Call Policy Escalation Rule where this timeline event belongs. Empty for a step of a direct page, which has no escalation rules. The ID of a `oneuptime_escalation_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_escalation_rule"),
             },
             "user_notification_event_type": schema.StringAttribute{
                 MarkdownDescription: "Type of event that triggered this on-call duty policy.",
@@ -120,16 +127,19 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, r
                 MarkdownDescription: "ID of the user who we sent alert to. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "user_belongs_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "Which team ID did the user belong to when the alert was sent? The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "on_call_duty_schedule_id": schema.StringAttribute{
                 MarkdownDescription: "Which schedule ID did the user belong to when the alert was sent? The ID of a `oneuptime_on_call_policy_schedule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
             "is_next_in_rotation": schema.BoolAttribute{
                 MarkdownDescription: "True when this step paged the person because they are next in the schedule's rotation - after whoever is on call - rather than on call themselves. Paired with the step's schedule. A step with this set and nobody paged means nobody was next in the rotation.",
@@ -150,6 +160,7 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, r
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_acknowledged": schema.BoolAttribute{
                 MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]",
@@ -164,6 +175,7 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, r
                 MarkdownDescription: "ID of the user this alert would have paged, when a user override sent it to the user in Alert Sent To User ID instead because they were away. Empty when no override applied. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

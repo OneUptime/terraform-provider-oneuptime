@@ -24,11 +24,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentReminderRuleResource{}
 var _ resource.ResourceWithImportState = &IncidentReminderRuleResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentReminderRuleResource{}
 
 func NewIncidentReminderRuleResource() resource.Resource {
     return &IncidentReminderRuleResource{}
@@ -83,6 +85,7 @@ func (r *IncidentReminderRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -113,6 +116,7 @@ func (r *IncidentReminderRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -128,6 +132,9 @@ func (r *IncidentReminderRuleResource) schemaDefinition() schema.Schema {
             "reminder_interval_in_minutes": schema.NumberAttribute{
                 MarkdownDescription: "How often (in minutes) to remind incident owners while the incident is still open. For example, set to 30 to remind owners every 30 minutes.",
                 Required: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                },
             },
             "stop_reminders_on_state": schema.StringAttribute{
                 MarkdownDescription: "Stop sending reminders once the incident reaches this state. Select Acknowledged to stop reminders when the incident is acknowledged, or Resolved to keep reminding until the incident is resolved.",
@@ -136,6 +143,9 @@ func (r *IncidentReminderRuleResource) schemaDefinition() schema.Schema {
                 Default: stringdefault.StaticString("Resolved"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Acknowledged", "Resolved"),
                 },
             },
             "incident_severities": schema.SetAttribute{
@@ -146,6 +156,7 @@ func (r *IncidentReminderRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_incident_severity"),
             },
             "labels": schema.SetAttribute{
                 MarkdownDescription: "Only apply this reminder rule to incidents with these labels. Leave empty to match incidents with any labels. IDs of `oneuptime_label` resources.",
@@ -155,6 +166,7 @@ func (r *IncidentReminderRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -178,6 +190,17 @@ func (r *IncidentReminderRuleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentReminderRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentReminderRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -647,6 +670,9 @@ func (r *IncidentReminderRuleResource) Create(ctx context.Context, req resource.
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1024,6 +1050,11 @@ func (r *IncidentReminderRuleResource) Update(ctx context.Context, req resource.
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "criteria": !data.Criteria.Equal(state.Criteria),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config IncidentReminderRuleResourceModel
@@ -1431,6 +1462,9 @@ func (r *IncidentReminderRuleResource) Update(ctx context.Context, req resource.
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1467,6 +1501,9 @@ func (r *IncidentReminderRuleResource) Delete(ctx context.Context, req resource.
 
 func (r *IncidentReminderRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"criteria"})...)
 }
 
 

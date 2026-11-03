@@ -148,7 +148,7 @@ func (d *ExternalMcpServerDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "tools": schema.StringAttribute{
-                MarkdownDescription: "The tools the server offered when OneUptime last connected: each one's name, description and whether the server marks it read-only. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The tools the server offered when OneUptime last connected: each one's name, description and whether the server marks it read-only. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_checked_at": schema.StringAttribute{
@@ -168,6 +168,7 @@ func (d *ExternalMcpServerDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "ID of the user who added this MCP server. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

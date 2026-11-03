@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkTopologySuppressionResource{}
 var _ resource.ResourceWithImportState = &NetworkTopologySuppressionResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkTopologySuppressionResource{}
 
 func NewNetworkTopologySuppressionResource() resource.Resource {
     return &NetworkTopologySuppressionResource{}
@@ -115,6 +116,17 @@ func (r *NetworkTopologySuppressionResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkTopologySuppressionResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkTopologySuppressionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -453,6 +465,7 @@ func (r *NetworkTopologySuppressionResource) Create(ctx context.Context, req res
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

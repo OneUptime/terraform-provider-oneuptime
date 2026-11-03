@@ -72,11 +72,13 @@ func (d *ScheduledMaintenanceMeasurementValueDataSource) Schema(ctx context.Cont
                 MarkdownDescription: "ID of the Scheduled Maintenance Event this measurement value was computed for. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),
             },
             "scheduled_maintenance_measurement_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Scheduled Maintenance Measurement definition this value was computed from. The ID of a `oneuptime_scheduled_maintenance_measurement`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_scheduled_maintenance_measurement"),
             },
             "started_at": schema.StringAttribute{
                 MarkdownDescription: "When the start anchor of this measurement resolved.",

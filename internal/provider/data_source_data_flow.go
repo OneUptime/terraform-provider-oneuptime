@@ -85,16 +85,19 @@ func (d *DataFlowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "The store the data comes from. The ID of a `oneuptime_data_store`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_data_store"),
             },
             "service_id": schema.StringAttribute{
                 MarkdownDescription: "The service the data passes through. The ID of a `oneuptime_service`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_service"),
             },
             "destination_data_store_id": schema.StringAttribute{
                 MarkdownDescription: "The store the data reaches, for a write or a copy. The ID of a `oneuptime_data_store`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_data_store"),
             },
             "destination": schema.StringAttribute{
                 MarkdownDescription: "Where the data goes, when it is not a store: a host or an AI provider.",
@@ -102,7 +105,7 @@ func (d *DataFlowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "data_type_ids": schema.StringAttribute{
-                MarkdownDescription: "The sensitive data types that can travel along the flow. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The sensitive data types that can travel along the flow. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "sensitivity": schema.StringAttribute{

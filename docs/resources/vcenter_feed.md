@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_vcenter_feed Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Log of everything that happened to this vCenter - creation, updates, owner changes and the rules that made them.
 ---
@@ -24,7 +24,7 @@ moved {
 resource "oneuptime_vcenter_feed" "example" {
   vmware_v_center_id              = oneuptime_vcenter.example.id
   feed_info_in_markdown           = "# Heading\n\nThis is **markdown** content"
-  vmware_v_center_feed_event_type = "Example short text"
+  vmware_v_center_feed_event_type = "VMwareVCenterCreated"
   display_color                   = "#ff0000"
 }
 ```
@@ -35,14 +35,15 @@ resource "oneuptime_vcenter_feed" "example" {
 
 - `display_color` (String) Display color for this feed item.
 - `feed_info_in_markdown` (String) Log of the vCenter change in Markdown.
-- `vmware_v_center_feed_event_type` (String) vCenter Feed Event.
+- `vmware_v_center_feed_event_type` (String) vCenter Feed Event. Allowed values: `VMwareVCenterCreated`, `VMwareVCenterUpdated`, `VMwareVCenterArchived`, `VMwareVCenterRestored`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `OwnerRuleExecuted`, `LabelRuleExecuted`.
 - `vmware_v_center_id` (String) Relation to vCenter ID in which this resource belongs. The ID of a `oneuptime_vcenter`.
 
 ### Optional
 
 - `more_information_in_markdown` (String) More information in Markdown.
 - `posted_at` (String) Date and time when the feed was posted.
-- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_inventory_item_relationship Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Directed relationships between telemetry entities (runs-on, member-of, hosted-on, part-of, instance-of), inferred from resource co-occurrence.
 ---
@@ -13,10 +13,10 @@ Directed relationships between telemetry entities (runs-on, member-of, hosted-on
 
 ```terraform
 resource "oneuptime_inventory_item_relationship" "example" {
-  from_entity_key   = "Example short text"
-  to_entity_key     = "Example short text"
-  relationship_type = "Example short text"
-  source            = "Example short text"
+  from_entity_key   = "de68fe62220ce1d5"
+  to_entity_key     = "8a238f41aaf2c179"
+  relationship_type = "runs-on"
+  source            = "discovered"
 }
 ```
 
@@ -25,8 +25,8 @@ resource "oneuptime_inventory_item_relationship" "example" {
 ### Required
 
 - `from_entity_key` (String) Stable identity key of the source entity of this edge.
-- `relationship_type` (String) The inferred relationship (runs-on, member-of, hosted-on, part-of, instance-of).
-- `source` (String) Whether this edge was derived from telemetry or drawn manually by a user. Determines whether stale-edge pruning applies.
+- `relationship_type` (String) The inferred relationship (runs-on, member-of, hosted-on, part-of, instance-of). Allowed values: `runs-on`, `member-of`, `hosted-on`, `part-of`, `instance-of`, `depends-on`.
+- `source` (String) Whether this edge was derived from telemetry or drawn manually by a user. Determines whether stale-edge pruning applies. Allowed values: `discovered`, `inventory`, `manual`.
 - `to_entity_key` (String) Stable identity key of the target entity of this edge.
 
 ### Optional

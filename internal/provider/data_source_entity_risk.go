@@ -103,15 +103,15 @@ func (d *EntityRiskDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "contributions": schema.StringAttribute{
-                MarkdownDescription: "What adds to its risk: each source with its severity, its points, how often it fired and when. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What adds to its risk: each source with its severity, its points, how often it fired and when. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "mitre_tactics": schema.StringAttribute{
-                MarkdownDescription: "ATT&CK tactic ids (TA0006) its sources are tagged with. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "ATT&CK tactic ids (TA0006) its sources are tagged with. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "mitre_techniques": schema.StringAttribute{
-                MarkdownDescription: "ATT&CK technique ids (T1110) its sources are tagged with. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "ATT&CK technique ids (T1110) its sources are tagged with. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "first_risk_at": schema.StringAttribute{
@@ -131,7 +131,7 @@ func (d *EntityRiskDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "risk_history": schema.StringAttribute{
-                MarkdownDescription: "Its risk score at the end of each of the last 30 days. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Its risk score at the end of each of the last 30 days. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

@@ -27,7 +27,7 @@ resource "oneuptime_monitor_group" "example" {
 ### Optional
 
 - `description` (String) Friendly description that will help you remember.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 
 ### Read-Only
 

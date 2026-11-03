@@ -17,11 +17,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentEpisodeFeedResource{}
 var _ resource.ResourceWithImportState = &IncidentEpisodeFeedResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentEpisodeFeedResource{}
 
 func NewIncidentEpisodeFeedResource() resource.Resource {
     return &IncidentEpisodeFeedResource{}
@@ -47,6 +49,7 @@ type IncidentEpisodeFeedResourceModel struct {
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     SavedFromChatMessage JSONSubsetValue `tfsdk:"saved_from_chat_message"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *IncidentEpisodeFeedResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -79,6 +82,7 @@ func (r *IncidentEpisodeFeedResource) schemaDefinition() schema.Schema {
             "incident_episode_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Incident Episode ID in which this resource belongs. The ID of a `oneuptime_incident_episode`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_incident_episode"),
             },
             "feed_info_in_markdown": schema.StringAttribute{
                 MarkdownDescription: "Log of the entire incident episode activity in Markdown.",
@@ -95,6 +99,9 @@ func (r *IncidentEpisodeFeedResource) schemaDefinition() schema.Schema {
             "incident_episode_feed_event_type": schema.StringAttribute{
                 MarkdownDescription: "Incident Episode Feed Event Type.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("EpisodeCreated", "EpisodeStateChanged", "EpisodeUpdated", "IncidentAdded", "IncidentRemoved", "OwnerUserAdded", "OwnerTeamAdded", "OwnerUserRemoved", "OwnerTeamRemoved", "OwnerNotificationSent", "PrivateNote", "PublicNote", "RootCause", "RemediationNotes", "PostmortemNote", "OnCallPolicy", "OnCallNotification", "SeverityChanged", "SubscriberNotificationSent", "LabelRuleExecuted", "OwnerRuleExecuted", "PrivacyRuleExecuted", "OnCallRuleExecuted", "ChannelMemberAdded"),
+                },
             },
             "display_color": schema.StringAttribute{
                 MarkdownDescription: "Display color for the incident episode log.",
@@ -105,12 +112,10 @@ func (r *IncidentEpisodeFeedResource) schemaDefinition() schema.Schema {
                 },
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User who this feed belongs to (if this feed belongs to a User). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
+                Validators: personIDValidators("user_email", false),
             },
             "posted_at": schema.StringAttribute{
                 MarkdownDescription: "Date and time when the feed was posted.",
@@ -118,6 +123,7 @@ func (r *IncidentEpisodeFeedResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -142,12 +148,38 @@ func (r *IncidentEpisodeFeedResource) schemaDefinition() schema.Schema {
                 },
             },
             "saved_from_chat_message": schema.StringAttribute{
-                MarkdownDescription: "For a note saved from a Slack or Microsoft Teams message: the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). The feed item's user is whoever saved it. Written by OneUptime. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For a note saved from a Slack or Microsoft Teams message: the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). The feed item's user is whoever saved it. Written by OneUptime. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this incident episode feed names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentEpisodeFeedResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: false,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentEpisodeFeedResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -189,6 +221,11 @@ func (r *IncidentEpisodeFeedResource) Create(ctx context.Context, req resource.C
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -249,6 +286,19 @@ func (r *IncidentEpisodeFeedResource) Create(ctx context.Context, req resource.C
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := incidentEpisodeFeedResponse
+        if wrapper, ok := incidentEpisodeFeedResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -659,9 +709,12 @@ func (r *IncidentEpisodeFeedResource) Create(ctx context.Context, req resource.C
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -693,6 +746,10 @@ func (r *IncidentEpisodeFeedResource) Read(ctx context.Context, req resource.Rea
         "savedFromChatMessage": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/incident-episode-feed/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -1069,6 +1126,8 @@ func (r *IncidentEpisodeFeedResource) Read(ctx context.Context, req resource.Rea
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1120,6 +1179,9 @@ func (r *IncidentEpisodeFeedResource) keepPlannedValues(data *IncidentEpisodeFee
     }
     if config.PostedAt.IsNull() && !plan.PostedAt.IsUnknown() {
         data.PostedAt = plan.PostedAt
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 

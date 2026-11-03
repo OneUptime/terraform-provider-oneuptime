@@ -63,19 +63,22 @@ func (d *RumApplicationTeamOwnerDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the RUM application. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "rum_application_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime RUM Application in which this object belongs. The ID of a `oneuptime_rum_application`.",
+                MarkdownDescription: "ID of the RUM application the team owns. The ID of a `oneuptime_rum_application`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_rum_application"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",

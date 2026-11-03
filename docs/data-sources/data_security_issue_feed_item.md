@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_security_issue_feed_item Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   The timeline of a data security issue: when it opened, changes of severity, status and assignee, and the cases, alerts and notifications it caused.
 ---

@@ -73,23 +73,25 @@ func (d *TeamPermissionDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of Team this permission belongs in. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "permission": schema.StringAttribute{
-                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this permission is scoped at. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels that limit the permission to the resources carrying one of them. Empty means every resource. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "is_block_permission": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Edit Team Permissions]",
+                MarkdownDescription: "When on, the permission is taken away from the team's members instead of given. A block permission always wins over one that gives it.",
                 Optional: true,
                 Computed: true,
             },
@@ -102,16 +104,19 @@ func (d *TeamPermissionDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "ID of the custom role this permission comes from. Empty when the permission was given to the team directly. The ID of a `oneuptime_custom_role`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_custom_role"),
             },
             "team_custom_role_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the custom role given to the team that brought this permission. Empty when the permission was given to the team directly. The ID of a `oneuptime_team_custom_role`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team_custom_role"),
             },
             "custom_role_permission_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the custom role's own permission this one copies. Empty when the permission was given to the team directly. The ID of a `oneuptime_custom_role_permission`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_custom_role_permission"),
             },
         },
     }

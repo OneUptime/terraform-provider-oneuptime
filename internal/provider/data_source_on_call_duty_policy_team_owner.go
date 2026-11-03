@@ -42,7 +42,7 @@ func (d *OnCallDutyPolicyTeamOwnerDataSource) Metadata(ctx context.Context, req 
 
 func (d *OnCallDutyPolicyTeamOwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add teams as owners to your onCallDutyPolicys. Look up an existing on call duty policy team owner by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `on_call_duty_policy_id`, ...): each one set must match, and exactly one on call duty policy team owner may match them all.",
+        MarkdownDescription: "Add teams as owners to your on-call policies. Look up an existing on call duty policy team owner by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `on_call_duty_policy_id`, ...): each one set must match, and exactly one on call duty policy team owner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -63,19 +63,22 @@ func (d *OnCallDutyPolicyTeamOwnerDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the on-call policy. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_team"),
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime OnCallDutyPolicy in which this object belongs. The ID of a `oneuptime_on_call_policy`.",
+                MarkdownDescription: "ID of the on-call policy the team owns. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of this resource ownership?",

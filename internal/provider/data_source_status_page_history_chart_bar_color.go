@@ -67,6 +67,7 @@ func (d *StatusPageHistoryChartBarColorDataSource) Schema(ctx context.Context, r
                 MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "uptime_percent_greater_than_or_equal_to": schema.NumberAttribute{
                 MarkdownDescription: "Uptime percent, from 0 to 100, that a day must reach for this rule to color its bar (99.65 for example).",
@@ -81,6 +82,7 @@ func (d *StatusPageHistoryChartBarColorDataSource) Schema(ctx context.Context, r
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",

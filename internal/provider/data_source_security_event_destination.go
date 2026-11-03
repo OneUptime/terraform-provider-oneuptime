@@ -86,7 +86,7 @@ func (d *SecurityEventDestinationDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "config": schema.StringAttribute{
-                MarkdownDescription: "Provider-specific settings that are not secret, such as the region and the instance. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Provider-specific settings that are not secret, such as the region and the instance. Keys are defined by the provider catalog. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
@@ -113,7 +113,7 @@ func (d *SecurityEventDestinationDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "last_send_result": schema.StringAttribute{
-                MarkdownDescription: "What the last attempt sent: events delivered, events the SIEM refused, and the window they came from. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What the last attempt sent: events delivered, events the SIEM refused, and the window they came from. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_error": schema.StringAttribute{
@@ -125,6 +125,7 @@ func (d *SecurityEventDestinationDataSource) Schema(ctx context.Context, req dat
                 MarkdownDescription: "ID of the user who created this destination. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

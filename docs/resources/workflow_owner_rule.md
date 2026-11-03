@@ -31,7 +31,8 @@ resource "oneuptime_workflow_owner_rule" "example" {
 - `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
 - `notify_owners` (Boolean) Send notifications to owner users and teams when they are added by this rule. Defaults to `true`.
 - `owner_teams` (Set of String) Teams to add as owners on the workflow when this rule matches. IDs of `oneuptime_team` resources.
-- `owner_users` (Set of String) Users to add as owners on the workflow when this rule matches. IDs of `oneuptime_user` records.
+- `owner_user_emails` (Set of String) The email addresses of the people in `owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `owner_users` (Set of String) Users to add as owners on the workflow when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.
 - `workflow_description_pattern` (String) Regex (case-insensitive) matched against the workflow description. Leave empty to match any description.
 - `workflow_labels` (Set of String) Only trigger for workflows that have at least one of these labels. Leave empty to match regardless of labels. IDs of `oneuptime_label` resources.
 - `workflow_name_pattern` (String) Regex (case-insensitive) matched against the workflow name. Leave empty to match any name.

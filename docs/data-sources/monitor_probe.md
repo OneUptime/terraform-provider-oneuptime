@@ -30,15 +30,15 @@ data "oneuptime_monitor_probe" "by_id" {
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `is_enabled` (Boolean) Permissions - Create: [Project Owner, Project Admin, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Probe], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Probe]
+- `is_enabled` (Boolean) When on, the probe checks the monitor.
 - `monitor_id` (String) ID of your OneUptime Monitor in which this object belongs. The ID of a `oneuptime_monitor`.
 - `probe_id` (String) ID of your OneUptime Probe in which this object belongs. The ID of a `oneuptime_probe`.
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `last_monitoring_log` (String) A JSON value: write it with `jsonencode()`.
-- `last_ping_at` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Probe], Update: [No access - you don't have permission for this operation]
-- `next_ping_at` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Probe], Update: [No access - you don't have permission for this operation]
+- `last_monitoring_log` (String) A JSON value: read it with `jsondecode()`.
+- `last_ping_at` (String) When the probe last checked the monitor. Set by OneUptime.
+- `next_ping_at` (String) When the probe checks the monitor next. Set by OneUptime: right away for a new one, then on the monitor's interval.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

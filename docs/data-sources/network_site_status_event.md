@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_site_status_event Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   History of the rolled-up health status of a Network Site (Operational to Offline for example)
 ---

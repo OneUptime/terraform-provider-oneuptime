@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_log_drop_filter Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Configure rules to drop or sample logs before storage to reduce volume and cost.
 ---

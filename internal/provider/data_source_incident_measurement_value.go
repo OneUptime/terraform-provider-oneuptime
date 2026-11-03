@@ -72,11 +72,13 @@ func (d *IncidentMeasurementValueDataSource) Schema(ctx context.Context, req dat
                 MarkdownDescription: "ID of the incident this measurement value was computed for. The ID of a `oneuptime_incident`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "incident_measurement_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the measurement definition this value was computed from. The ID of a `oneuptime_incident_measurement`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_incident_measurement"),
             },
             "started_at": schema.StringAttribute{
                 MarkdownDescription: "When this measurement's start anchor resolved to. Blank while the start anchor has not resolved.",

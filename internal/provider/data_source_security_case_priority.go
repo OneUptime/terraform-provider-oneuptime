@@ -146,11 +146,13 @@ func (d *SecurityCasePriorityDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "ID of the person who archived this priority. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the person who added this priority. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

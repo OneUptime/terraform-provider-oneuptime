@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_packet_capture Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Probes"
 description: |-
   A packet capture run on one of the project's probes, and the pcap file it produced. Captures and their files are deleted 7 days after they start.
 ---
@@ -14,7 +14,7 @@ A packet capture run on one of the project's probes, and the pcap file it produc
 ```terraform
 resource "oneuptime_packet_capture" "example" {
   probe_id       = oneuptime_probe.example.id
-  interface_name = "Example short text"
+  interface_name = "eth0"
 }
 ```
 

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_inventory_item Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Catalog of everything OneUptime knows about your estate (service, host, k8s.pod, container, network device, ...), discovered from telemetry resource attributes, mirrored from inventory tables, or registered by hand.
 ---
@@ -13,9 +13,9 @@ Catalog of everything OneUptime knows about your estate (service, host, k8s.pod,
 
 ```terraform
 resource "oneuptime_inventory_item" "example" {
-  entity_type = "Example short text"
-  entity_key  = "Example short text"
-  source      = "Example short text"
+  entity_type = "service"
+  entity_key  = "210dac24142f1baa"
+  source      = "discovered"
   description = "Managed by Terraform"
 }
 ```
@@ -25,8 +25,8 @@ resource "oneuptime_inventory_item" "example" {
 ### Required
 
 - `entity_key` (String) Stable identity hash derived from the entity's identifying attributes (matches the keys stamped into signal entityKeys columns).
-- `entity_type` (String) The OpenTelemetry entity type (service, host, k8s.pod, container, ...).
-- `source` (String) How this row came to exist: discovered from telemetry, mirrored from a OneUptime inventory table, or created manually by a user. Determines whether stale-entity pruning applies.
+- `entity_type` (String) The OpenTelemetry entity type (service, host, k8s.pod, container, ...). Allowed values: `service`, `service.instance`, `host`, `container`, `process`, `k8s.cluster`, `k8s.namespace`, `k8s.node`, `k8s.pod`, `k8s.deployment`, `proxmox.cluster`, `proxmox.node`, `proxmox.guest`, `ceph.cluster`, `storage.array`, `vmware.vcenter`, `vmware.cluster`, `vmware.host`, `vmware.vm`, `vmware.datastore`, `docker.swarm.cluster`, `docker.swarm.node`, `docker.swarm.service`, `docker.swarm.task`, `telemetry.sdk`, `database`, `remote.service`, `database.server`, `message.queue`, `network.device`, `cloud.resource`, `serverless.function`, `rum.application`, `iot.device`, `docker.host`, `podman.host`, `external.service`, `external.database`, `appliance`.
+- `source` (String) How this row came to exist: discovered from telemetry, mirrored from a OneUptime inventory table, or created manually by a user. Determines whether stale-entity pruning applies. Allowed values: `discovered`, `inventory`, `manual`.
 
 ### Optional
 

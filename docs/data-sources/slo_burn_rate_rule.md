@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_slo_burn_rate_rule Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Telemetry & Dashboards"
 description: |-
   Configure multi-window burn rate rules that raise alerts and/or declare incidents when a Service Level Objective consumes its error budget too quickly
 ---

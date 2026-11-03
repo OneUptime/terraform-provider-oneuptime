@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_hunt Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   Searches over security events saved with a name, to open again or to run on a schedule that tells people when it finds something.
 ---
@@ -43,7 +43,7 @@ data "oneuptime_hunt" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `filters` (String) The Events sidebar's filters kept beside the search: each field's values, or with ! before the field the values it leaves out. At most 50 values. A JSON value: write it with `jsonencode()`.
+- `filters` (String) The Events sidebar's filters kept beside the search: each field's values, or with ! before the field the values it leaves out. At most 50 values. A JSON value: read it with `jsondecode()`.
 - `last_found_at` (String) The end of the events the last run that found something searched: what it found arrived before this.
 - `last_found_since_at` (String) The start of the events the last run that found something searched: what it found arrived after this.
 - `last_run_at` (String) When the hunt last ran on its schedule, whether it found anything or not.

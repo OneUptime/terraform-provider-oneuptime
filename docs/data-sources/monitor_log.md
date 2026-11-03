@@ -34,5 +34,5 @@ data "oneuptime_monitor_log" "by_id" {
 
 ### Read-Only
 
-- `log_body` (String) Log Body. A JSON value: write it with `jsonencode()`.
+- `log_body` (String) Log Body. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) Project ID.

@@ -27,6 +27,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ScheduledMaintenanceLabelRuleResource{}
 var _ resource.ResourceWithImportState = &ScheduledMaintenanceLabelRuleResource{}
+var _ resource.ResourceWithModifyPlan = &ScheduledMaintenanceLabelRuleResource{}
 
 func NewScheduledMaintenanceLabelRuleResource() resource.Resource {
     return &ScheduledMaintenanceLabelRuleResource{}
@@ -90,6 +91,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) schemaDefinition() schema.Schema
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -132,6 +134,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) schemaDefinition() schema.Schema
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "scheduled_maintenance_labels": schema.SetAttribute{
                 MarkdownDescription: "Only trigger for events that already have at least one of these labels. Leave empty to match regardless of event labels. IDs of `oneuptime_label` resources.",
@@ -141,6 +144,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) schemaDefinition() schema.Schema
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "monitor_labels": schema.SetAttribute{
                 MarkdownDescription: "Only trigger for events on monitors that have at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.",
@@ -150,6 +154,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) schemaDefinition() schema.Schema
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "title_pattern": schema.StringAttribute{
                 MarkdownDescription: "Regex (case-insensitive) matched against the event title. Leave empty to match any title.",
@@ -191,6 +196,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) schemaDefinition() schema.Schema
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "inherit_labels_from_monitors": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also copy every label of the event's monitors onto the event.",
@@ -268,6 +274,17 @@ func (r *ScheduledMaintenanceLabelRuleResource) schemaDefinition() schema.Schema
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *ScheduledMaintenanceLabelRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *ScheduledMaintenanceLabelRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -964,6 +981,9 @@ func (r *ScheduledMaintenanceLabelRuleResource) Create(ctx context.Context, req 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1541,6 +1561,11 @@ func (r *ScheduledMaintenanceLabelRuleResource) Update(ctx context.Context, req 
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "criteria": !data.Criteria.Equal(state.Criteria),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config ScheduledMaintenanceLabelRuleResourceModel
@@ -2175,6 +2200,9 @@ func (r *ScheduledMaintenanceLabelRuleResource) Update(ctx context.Context, req 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2211,6 +2239,9 @@ func (r *ScheduledMaintenanceLabelRuleResource) Delete(ctx context.Context, req 
 
 func (r *ScheduledMaintenanceLabelRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"criteria"})...)
 }
 
 

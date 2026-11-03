@@ -22,8 +22,8 @@ resource "oneuptime_monitor_group_team_owner" "example" {
 
 ### Required
 
-- `monitor_group_id` (String) ID of your OneUptime MonitorGroup in which this object belongs. The ID of a `oneuptime_monitor_group`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `monitor_group_id` (String) ID of the monitor group the team owns. The ID of a `oneuptime_monitor_group`.
+- `team_id` (String) ID of the team that owns the monitor group. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_monitor_group_team_owner" "example" {
 
 ## Import
 
-Import an existing monitor group team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing monitor group team owner by its monitor group and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_monitor_group_team_owner.example
-  id = "<id>"
+  id = "<monitor_group_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_monitor_group_team_owner.example <id>
+terraform import oneuptime_monitor_group_team_owner.example <monitor_group_id>/<team_id>
 ```
+
+Its own ID works too.

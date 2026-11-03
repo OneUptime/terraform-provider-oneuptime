@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_form Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Forms"
 description: |-
   Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a scheduled maintenance event in this project.
 ---
@@ -35,7 +35,7 @@ resource "oneuptime_form" "example" {
 - `logo_file_id` (String) ID of the file the form's public page shows as its logo: upload the image to /api/file first. Leave it empty to show the OneUptime logo. The ID of a `oneuptime_file`.
 - `success_message` (String) Shown after the form is submitted, together with the number of what the submission created. Markdown.
 - `target_settings` (String) What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For scheduled maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: write it with `jsonencode()`.
-- `target_type` (String) What each submission creates: Incident, or ScheduledMaintenance (a scheduled maintenance event). Defaults to `Incident`.
+- `target_type` (String) What each submission creates: Incident, or ScheduledMaintenance (a scheduled maintenance event). Allowed values: `Incident`, `ScheduledMaintenance`. Defaults to `Incident`.
 - `templates` (String) Named sets of answers a submission can start from, in the order the form lists them. Each has an id, a name (unique within the form), isDefault (the form opens with it; at most one template), answers: an object keyed by question id, each answer as a submission sends it - text, a number, true or false, an option's value, or a list of values for a multi-select - and fieldSettings: an object keyed by question id that makes a question Required, Optional or Hidden when a submission starts from the template; a question it does not list is asked as the form asks it, and a question the form cannot create its record without is always asked and required. The public form lists the templates above its questions and fills in a template's answers when one is chosen, or when its link names one (?template=<id>). A question the submission was not asked - hidden by the form or by the template - is answered only from the template a submission started from. A JSON value: write it with `jsonencode()`.
 
 ### Read-Only

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_log_saved_view Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   Save and reuse log explorer views, including the current filters, columns, sorting, and page size.
 ---
@@ -38,9 +38,9 @@ data "oneuptime_log_saved_view" "by_id" {
 
 ### Read-Only
 
-- `columns` (String) Selected log table columns for this saved view. A JSON value: write it with `jsonencode()`.
+- `columns` (String) Selected log table columns for this saved view. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `project_id` (String) ID of the project this saved log view belongs to. The ID of a `oneuptime_project`.
-- `query` (String) Serialized log query for this saved view. A JSON value: write it with `jsonencode()`.
-- `time_range` (String) Time selection for this saved view — the rolling range token (e.g. Past 1 Hour), or an absolute window when the range is Custom. A JSON value: write it with `jsonencode()`.
+- `query` (String) Serialized log query for this saved view. A JSON value: read it with `jsondecode()`.
+- `time_range` (String) Time selection for this saved view — the rolling range token (e.g. Past 1 Hour), or an absolute window when the range is Custom. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

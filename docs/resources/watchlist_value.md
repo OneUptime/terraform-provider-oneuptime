@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_watchlist_value Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   The values on a watchlist the team keeps, each with an optional note, matched by the detection rules that read the list.
 ---
@@ -14,7 +14,7 @@ The values on a watchlist the team keeps, each with an optional note, matched by
 ```terraform
 resource "oneuptime_watchlist_value" "example" {
   security_watchlist_id = oneuptime_watchlist.example.id
-  value                 = "This is an example of longer text content that might be stored in this field."
+  value                 = "svc-backup"
 }
 ```
 

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_data_store_team_owner Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Data Security"
 description: |-
   Add teams as owners to your data stores.
 ---
@@ -22,8 +22,8 @@ resource "oneuptime_data_store_team_owner" "example" {
 
 ### Required
 
-- `data_store_id` (String) ID of your OneUptime Data Store in which this object belongs. The ID of a `oneuptime_data_store`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `data_store_id` (String) ID of the data store the team owns. The ID of a `oneuptime_data_store`.
+- `team_id` (String) ID of the team that owns the data store. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
@@ -36,17 +36,19 @@ resource "oneuptime_data_store_team_owner" "example" {
 
 ## Import
 
-Import an existing data store team owner by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+Import an existing data store team owner by its data store and its `team_id`, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
 
 ```terraform
 import {
   to = oneuptime_data_store_team_owner.example
-  id = "<id>"
+  id = "<data_store_id>/<team_id>"
 }
 ```
 
 or on the command line:
 
 ```shell
-terraform import oneuptime_data_store_team_owner.example <id>
+terraform import oneuptime_data_store_team_owner.example <data_store_id>/<team_id>
 ```
+
+Its own ID works too.

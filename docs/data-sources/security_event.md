@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_security_event Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Security"
 description: |-
   API endpoints for Security Event
 ---

@@ -30,8 +30,8 @@ data "oneuptime_service_team_owner" "by_id" {
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `service_id` (String) ID of your OneUptime Service in which this object belongs. The ID of a `oneuptime_service`.
-- `team_id` (String) ID of your OneUptime Team in which this object belongs. The ID of a `oneuptime_team`.
+- `service_id` (String) ID of the service the team owns. The ID of a `oneuptime_service`.
+- `team_id` (String) ID of the team that owns the service. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

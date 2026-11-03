@@ -87,9 +87,10 @@ func (d *NetworkAlertPolicyDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "ID of the Network Device monitor template every matching device gets a monitor cloned from. Null only after the template was deleted, which disables the policy. The ID of a `oneuptime_monitor_template`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_template"),
             },
             "scope": schema.StringAttribute{
-                MarkdownDescription: "Which devices this policy covers: site ids, device role ids and label ids. A device must match every kind that is listed (AND) and any id within a kind (OR); a kind left empty matches every device. Empty altogether means every device in the project. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Which devices this policy covers: site ids, device role ids and label ids. A device must match every kind that is listed (AND) and any id within a kind (OR); a kind left empty matches every device. Empty altogether means every device in the project. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_sync_at": schema.StringAttribute{
@@ -114,6 +115,7 @@ func (d *NetworkAlertPolicyDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

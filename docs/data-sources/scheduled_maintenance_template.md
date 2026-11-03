@@ -44,20 +44,20 @@ data "oneuptime_scheduled_maintenance_template" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `custom_fields` (String) Custom Fields on this resource. A JSON value: read it with `jsondecode()`.
 - `docker_hosts` (Set of String) List of Docker hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_docker_host` resources.
 - `first_event_ends_at` (String) When does the first event end?
 - `first_event_scheduled_at` (String) When would you like to schedule the first event?
 - `first_event_starts_at` (String) When does the first event start?
 - `hosts` (Set of String) List of hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_host` resources.
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_kubernetes_cluster` resources.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) List of monitors attached to this event. IDs of `oneuptime_monitor` resources.
 - `podman_hosts` (Set of String) List of Podman hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_podman_host` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `recurring_interval` (String) How often should this event recur? A JSON value: write it with `jsonencode()`.
+- `recurring_interval` (String) How often should this event recur? A JSON value: read it with `jsondecode()`.
 - `schedule_next_event_at` (String) When is the next event scheduled?
-- `send_subscriber_notifications_on_before_the_event` (String) Should subscribers be notified before the event? A JSON value: write it with `jsonencode()`.
+- `send_subscriber_notifications_on_before_the_event` (String) Should subscribers be notified before the event? A JSON value: read it with `jsondecode()`.
 - `services` (Set of String) List of services to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_service` resources.
 - `status_pages` (Set of String) List of status pages to show this event on. IDs of `oneuptime_status_page` resources.
 - `updated_at` (String) Date and Time when the object was updated.

@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_postmortem_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Incidents"
 description: |-
   Choose which resolved incidents OneUptime AI drafts a postmortem for, and the templates a draft may follow. With no rule, every resolved incident gets a draft; with rules, the first rule that matches decides.
 ---

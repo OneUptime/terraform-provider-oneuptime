@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_audit_log_export Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Teams & Access"
 description: |-
   Where the audit log is exported: S3 or S3-compatible storage, Google Cloud Storage, Azure Blob Storage, a webhook or a syslog receiver.
 ---
@@ -14,7 +14,7 @@ Where the audit log is exported: S3 or S3-compatible storage, Google Cloud Stora
 ```terraform
 resource "oneuptime_audit_log_export" "example" {
   name             = "Example audit log export"
-  destination_type = "Example short text"
+  destination_type = "s3"
 }
 ```
 
@@ -22,7 +22,7 @@ resource "oneuptime_audit_log_export" "example" {
 
 ### Required
 
-- `destination_type` (String) Where entries are sent: s3, s3-compatible, google-cloud-storage, azure-blob-storage, webhook or syslog. Fixed once created.
+- `destination_type` (String) Where entries are sent: s3, s3-compatible, google-cloud-storage, azure-blob-storage, webhook or syslog. Fixed once created. Allowed values: `s3`, `s3-compatible`, `google-cloud-storage`, `azure-blob-storage`, `webhook`, `syslog`.
 - `name` (String) A name for this export, such as Compliance archive.
 
 ### Optional

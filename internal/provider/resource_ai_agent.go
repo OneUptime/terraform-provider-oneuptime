@@ -27,6 +27,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &AiAgentResource{}
 var _ resource.ResourceWithImportState = &AiAgentResource{}
+var _ resource.ResourceWithModifyPlan = &AiAgentResource{}
 
 func NewAiAgentResource() resource.Resource {
     return &AiAgentResource{}
@@ -77,9 +78,16 @@ func (r *AiAgentResource) schemaDefinition() schema.Schema {
                 },
             },
             "key": schema.StringAttribute{
-                Required: true,
+                MarkdownDescription: "The secret the AI agent connects with, its AI_AGENT_KEY. Leave it out and OneUptime generates one.",
+                Optional: true,
+                Computed: true,
+                Sensitive: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "name": schema.StringAttribute{
+                MarkdownDescription: "Any friendly name of this object.",
                 CustomType: JSONSubsetType{},
                 Required: true,
                 Validators: []validator.String{
@@ -87,6 +95,7 @@ func (r *AiAgentResource) schemaDefinition() schema.Schema {
                 },
             },
             "description": schema.StringAttribute{
+                MarkdownDescription: "Friendly description that will help you remember.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -94,17 +103,24 @@ func (r *AiAgentResource) schemaDefinition() schema.Schema {
                 },
             },
             "ai_agent_version": schema.StringAttribute{
+                MarkdownDescription: "A version label for the AI agent. Leave it out and it is 1.0.0.",
                 CustomType: JSONSubsetType{},
-                Required: true,
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
                 Validators: []validator.String{
                     JSONEnvelopeValidator(),
                 },
             },
             "last_alive": schema.StringAttribute{
+                MarkdownDescription: "When the AI agent last checked in. Set by OneUptime.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -116,8 +132,10 @@ func (r *AiAgentResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_file"),
             },
             "project_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the project the AI agent belongs to. A global AI agent belongs to none.",
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -133,13 +151,14 @@ func (r *AiAgentResource) schemaDefinition() schema.Schema {
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDSetValidators("oneuptime_label"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -157,6 +176,9 @@ func (r *AiAgentResource) schemaDefinition() schema.Schema {
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User).",
@@ -171,6 +193,17 @@ func (r *AiAgentResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *AiAgentResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *AiAgentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -725,6 +758,7 @@ func (r *AiAgentResource) Create(ctx context.Context, req resource.CreateRequest
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1734,8 +1768,14 @@ func (r *AiAgentResource) ImportState(ctx context.Context, req resource.ImportSt
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
 func (r *AiAgentResource) keepPlannedValues(data *AiAgentResourceModel, plan *AiAgentResourceModel, config *AiAgentResourceModel) {
+    if config.Key.IsNull() && !plan.Key.IsUnknown() {
+        data.Key = plan.Key
+    }
     if config.Description.IsNull() && !plan.Description.IsUnknown() {
         data.Description = plan.Description
+    }
+    if config.AiAgentVersion.IsNull() && !plan.AiAgentVersion.IsUnknown() {
+        data.AiAgentVersion = plan.AiAgentVersion
     }
     if config.LastAlive.IsNull() && !plan.LastAlive.IsUnknown() {
         data.LastAlive = plan.LastAlive

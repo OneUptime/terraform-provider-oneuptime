@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_video_call_connection Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Slack, Teams & Video Calls"
 description: |-
   Zoom, Google Meet, Microsoft Teams or a standing meeting link, used to start a dedicated video call for incidents and alerts.
 ---
@@ -40,7 +40,7 @@ data "oneuptime_video_call_connection" "by_id" {
 
 ### Read-Only
 
-- `config` (String) Provider-specific, non-secret settings such as the Zoom account and meeting host, the Google Workspace user or the Microsoft Entra tenant and organizer. Keys are defined by the provider catalog. A JSON value: write it with `jsonencode()`.
+- `config` (String) Provider-specific, non-secret settings such as the Zoom account and meeting host, the Google Workspace user or the Microsoft Entra tenant and organizer. Keys are defined by the provider catalog. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `last_call_started_at` (String) When this connection last started a call.
 - `last_error_at` (String) When the most recent call could not be started.

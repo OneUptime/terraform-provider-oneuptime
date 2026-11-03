@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_table_view Resource - oneuptime"
-subcategory: "Other"
+subcategory: "Organization"
 description: |-
   Table View is view settings for a table in a project. It contains columns, filters, and other settings.
 ---
@@ -14,7 +14,7 @@ Table View is view settings for a table in a project. It contains columns, filte
 ```terraform
 resource "oneuptime_table_view" "example" {
   name        = "Example table view"
-  table_id    = "Example short text"
+  table_id    = "Monitor"
   description = "Managed by Terraform"
 }
 ```

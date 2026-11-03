@@ -18,11 +18,14 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentEpisodeMemberResource{}
 var _ resource.ResourceWithImportState = &IncidentEpisodeMemberResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentEpisodeMemberResource{}
 
 func NewIncidentEpisodeMemberResource() resource.Resource {
     return &IncidentEpisodeMemberResource{}
@@ -82,6 +85,7 @@ func (r *IncidentEpisodeMemberResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_episode"),
             },
             "incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Incident that is a member of this episode. The ID of a `oneuptime_incident`.",
@@ -89,6 +93,7 @@ func (r *IncidentEpisodeMemberResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "added_at": schema.StringAttribute{
                 MarkdownDescription: "When this incident was added to the episode.",
@@ -96,6 +101,7 @@ func (r *IncidentEpisodeMemberResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
@@ -109,6 +115,9 @@ func (r *IncidentEpisodeMemberResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("rule", "manual", "api"),
+                },
             },
             "matched_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the grouping rule that matched this incident. The ID of a `oneuptime_incident_grouping_rule`.",
@@ -118,6 +127,7 @@ func (r *IncidentEpisodeMemberResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incident_grouping_rule"),
             },
             "is_owner_notified_of_incident_added": schema.BoolAttribute{
                 MarkdownDescription: "Has the owner been notified that this incident was added to the episode?",
@@ -154,6 +164,17 @@ func (r *IncidentEpisodeMemberResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentEpisodeMemberResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentEpisodeMemberResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -595,6 +616,7 @@ func (r *IncidentEpisodeMemberResource) Create(ctx context.Context, req resource
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

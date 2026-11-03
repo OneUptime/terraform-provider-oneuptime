@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_collector_config_version Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Infrastructure"
 description: |-
   Every saved version of a Collector Config, so each host can say which version it runs.
 ---

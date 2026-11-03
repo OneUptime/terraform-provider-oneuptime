@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_incoming_call_policy_escalation_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "On-Call & Escalation"
 description: |-
   Manage escalation rules for incoming call policies that define who to call and in what order
 ---
@@ -32,7 +32,8 @@ resource "oneuptime_incoming_call_policy_escalation_rule" "example" {
 - `name` (String) Rule name (e.g., 'Primary On-Call', 'Backup Engineer').
 - `on_call_duty_policy_schedule_id` (String) ID of the on-call schedule to route to (mutually exclusive with userId). The ID of a `oneuptime_on_call_policy_schedule`.
 - `order` (Number) Where this rule sits in the escalation, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
-- `user_id` (String) ID of the user to route to directly (mutually exclusive with onCallDutyPolicyScheduleId). The ID of a `oneuptime_user` (see the data source).
+- `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
+- `user_id` (String) ID of the user to route to directly (mutually exclusive with onCallDutyPolicyScheduleId). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

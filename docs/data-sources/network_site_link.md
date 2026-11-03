@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_network_site_link Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   Explicit links between Network Sites (data center to region WAN links for example), optionally colored by the status of a Monitor.
 ---

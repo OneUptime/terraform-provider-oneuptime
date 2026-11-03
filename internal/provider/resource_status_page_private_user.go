@@ -24,6 +24,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &StatusPagePrivateUserResource{}
 var _ resource.ResourceWithImportState = &StatusPagePrivateUserResource{}
+var _ resource.ResourceWithModifyPlan = &StatusPagePrivateUserResource{}
 
 func NewStatusPagePrivateUserResource() resource.Resource {
     return &StatusPagePrivateUserResource{}
@@ -80,6 +81,7 @@ func (r *StatusPagePrivateUserResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "email": schema.StringAttribute{
                 MarkdownDescription: "Email.",
@@ -134,6 +136,17 @@ func (r *StatusPagePrivateUserResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *StatusPagePrivateUserResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *StatusPagePrivateUserResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -479,6 +492,7 @@ func (r *StatusPagePrivateUserResource) Create(ctx context.Context, req resource
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

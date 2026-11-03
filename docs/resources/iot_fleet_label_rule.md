@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_iot_fleet_label_rule Resource - oneuptime"
-subcategory: "Other"
+subcategory: "IoT"
 description: |-
   Configure rules for automatically attaching labels to IoT fleets when matching IoT fleets are created
 ---

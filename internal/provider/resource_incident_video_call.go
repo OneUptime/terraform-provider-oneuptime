@@ -16,11 +16,14 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncidentVideoCallResource{}
 var _ resource.ResourceWithImportState = &IncidentVideoCallResource{}
+var _ resource.ResourceWithModifyPlan = &IncidentVideoCallResource{}
 
 func NewIncidentVideoCallResource() resource.Resource {
     return &IncidentVideoCallResource{}
@@ -94,6 +97,7 @@ func (r *IncidentVideoCallResource) schemaDefinition() schema.Schema {
             "incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incident this call is for. The ID of a `oneuptime_incident`.",
                 Required: true,
+                Validators: recordIDValidators("oneuptime_incident"),
             },
             "provider_value": schema.StringAttribute{
                 MarkdownDescription: "Where the call is held: Zoom, GoogleMeet, MicrosoftTeams, SlackHuddle, or CustomLink for a link a person provided. Taken from the connection when one is given.",
@@ -101,6 +105,9 @@ func (r *IncidentVideoCallResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Zoom", "GoogleMeet", "MicrosoftTeams", "SlackHuddle", "CustomLink"),
                 },
             },
             "video_call_connection_id": schema.StringAttribute{
@@ -110,6 +117,7 @@ func (r *IncidentVideoCallResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_video_call_connection"),
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "What the call is called. A meeting a provider creates is named for the incident.",
@@ -161,7 +169,7 @@ func (r *IncidentVideoCallResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "transcript_info": schema.StringAttribute{
-                MarkdownDescription: "How long the transcript is - remarks, speakers, characters and how many seconds it spans - and the name of the file it was added from, so the call can be described without reading the transcript. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "How long the transcript is - remarks, speakers, characters and how many seconds it spans - and the name of the file it was added from, so the call can be described without reading the transcript. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -175,7 +183,7 @@ func (r *IncidentVideoCallResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "call_summary": schema.StringAttribute{
-                MarkdownDescription: "What OneUptime AI read in the transcript: the root cause the call points at (a suggestion, or that the call did not discuss it enough), what was found, tried, decided and left to do, and open questions - each with the transcript lines it rests on. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What OneUptime AI read in the transcript: the root cause the call points at (a suggestion, or that the call did not discuss it enough), what was found, tried, decided and left to do, and open questions - each with the transcript lines it rests on. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -232,6 +240,17 @@ func (r *IncidentVideoCallResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncidentVideoCallResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncidentVideoCallResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -1244,6 +1263,7 @@ func (r *IncidentVideoCallResource) Create(ctx context.Context, req resource.Cre
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

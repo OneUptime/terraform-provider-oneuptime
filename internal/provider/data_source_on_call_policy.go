@@ -78,7 +78,7 @@ func (d *OnCallPolicyDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -96,6 +96,7 @@ func (d *OnCallPolicyDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Archived on-call policies are hidden from the On-Call Policies list and page no one: incidents and alerts that use them skip them. Unarchiving puts them back in service.",
@@ -110,6 +111,7 @@ func (d *OnCallPolicyDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "repeat_policy_if_no_one_acknowledges": schema.BoolAttribute{
                 MarkdownDescription: "Repeat the policy if no one acknowledges the alert.",
@@ -127,7 +129,7 @@ func (d *OnCallPolicyDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Custom Fields on this resource. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

@@ -20,11 +20,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IncomingCallLogItemResource{}
 var _ resource.ResourceWithImportState = &IncomingCallLogItemResource{}
+var _ resource.ResourceWithModifyPlan = &IncomingCallLogItemResource{}
 
 func NewIncomingCallLogItemResource() resource.Resource {
     return &IncomingCallLogItemResource{}
@@ -53,6 +55,7 @@ type IncomingCallLogItemResourceModel struct {
     IsAnswered types.Bool `tfsdk:"is_answered"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    UserEmail types.String `tfsdk:"user_email"`
 }
 
 func (r *IncomingCallLogItemResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -88,6 +91,7 @@ func (r *IncomingCallLogItemResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: dataSourceRecordIDValidators("oneuptime_incoming_call_log"),
             },
             "incoming_call_policy_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the incoming call policy whose number took the call this attempt is part of. The ID of a `oneuptime_incoming_call_policy`.",
@@ -95,6 +99,7 @@ func (r *IncomingCallLogItemResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incoming_call_policy"),
             },
             "incoming_call_policy_escalation_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the escalation rule used. The ID of a `oneuptime_incoming_call_policy_escalation_rule`.",
@@ -104,15 +109,13 @@ func (r *IncomingCallLogItemResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_incoming_call_policy_escalation_rule"),
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "User ID who was called. The ID of a `oneuptime_user` (see the data source).",
+                MarkdownDescription: "User ID who was called. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
-                },
+                Validators: personIDValidators("user_email", false),
             },
             "user_phone_number": schema.StringAttribute{
                 MarkdownDescription: "Phone number that was dialed.",
@@ -130,6 +133,9 @@ func (r *IncomingCallLogItemResource) schemaDefinition() schema.Schema {
             "status": schema.StringAttribute{
                 MarkdownDescription: "Status of this dial attempt.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Initiated", "Ringing", "Connected", "Escalated", "NoAnswer", "Failed", "Completed", "CallerHungUp", "Busy"),
+                },
             },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Additional status information.",
@@ -144,6 +150,7 @@ func (r *IncomingCallLogItemResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -152,6 +159,7 @@ func (r *IncomingCallLogItemResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -161,6 +169,7 @@ func (r *IncomingCallLogItemResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -170,6 +179,7 @@ func (r *IncomingCallLogItemResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -195,8 +205,34 @@ func (r *IncomingCallLogItemResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "user_email": schema.StringAttribute{
+                MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: personEmailPlanModifiers("user_id"),
+                Validators: personEmailValidators(),
+            },
         },
     }
+}
+
+// ModifyPlan finds, by email address, the people this incoming call log item names (see people.go),
+// and keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *IncomingCallLogItemResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    planPersonID(ctx, r.client, req, resp, personAttribute{
+        id:       "user_id",
+        email:    "user_email",
+        invites:  false,
+        replaces: true,
+    })
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *IncomingCallLogItemResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -238,6 +274,11 @@ func (r *IncomingCallLogItemResource) Create(ctx context.Context, req resource.C
     }
     plan := data
 
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
 
     // Create API request body. Unset (null/unknown) optional fields are
@@ -313,6 +354,19 @@ func (r *IncomingCallLogItemResource) Create(ctx context.Context, req resource.C
         return
     }
     data.Id = types.StringValue(createdId)
+
+    // The person a create named by address, as the API has them.
+    if data.UserId.IsUnknown() {
+        created := incomingCallLogItemResponse
+        if wrapper, ok := incomingCallLogItemResponse["data"].(map[string]interface{}); ok {
+            created = wrapper
+        }
+        if id := apiStringValue(created["userId"]); id != "" {
+            data.UserId = types.StringValue(id)
+        } else {
+            data.UserId = types.StringNull()
+        }
+    }
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -705,9 +759,12 @@ func (r *IncomingCallLogItemResource) Create(ctx context.Context, req resource.C
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -742,6 +799,10 @@ func (r *IncomingCallLogItemResource) Read(ctx context.Context, req resource.Rea
         "updatedAt": true,
         "_id": true,
     }
+
+    // Who the state named, to keep their address (see people.go).
+    priorUserId := data.UserId
+    priorUserEmail := data.UserEmail
 
     // Make API call with select parameter
     httpResp, err := r.client.PostWithSelect(ctx, "/incoming-call-log-item/" + data.Id.ValueString() + "/get-item", selectParam)
@@ -1097,6 +1158,8 @@ func (r *IncomingCallLogItemResource) Read(ctx context.Context, req resource.Rea
     } else {
         data.Id = types.StringNull()
     }
+    // The person's address (see people.go).
+    data.UserEmail = personEmailAfterRead(ctx, r.client, priorUserId, data.UserId, priorUserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1128,6 +1191,11 @@ func (r *IncomingCallLogItemResource) Update(ctx context.Context, req resource.U
         return
     }
     plan := data
+
+    // People named by email address: the user IDs to send (see people.go).
+    if !personIDForWrite(ctx, r.client, &data.UserId, data.UserEmail, "user_email", &resp.Diagnostics) {
+        return
+    }
 
     // Create API request body
     incomingCallLogItemRequest := map[string]interface{}{
@@ -1549,6 +1617,8 @@ func (r *IncomingCallLogItemResource) Update(ctx context.Context, req resource.U
 
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
+    // The address of a person named by ID (see people.go).
+    data.UserEmail = personEmailAfterWrite(ctx, r.client, data.UserId, data.UserEmail)
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1623,6 +1693,9 @@ func (r *IncomingCallLogItemResource) keepPlannedValues(data *IncomingCallLogIte
     }
     if config.IsAnswered.IsNull() && !plan.IsAnswered.IsUnknown() {
         data.IsAnswered = plan.IsAnswered
+    }
+    if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
+        data.UserEmail = plan.UserEmail
     }
 }
 

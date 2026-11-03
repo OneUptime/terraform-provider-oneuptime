@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_snmp_credential_profile Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "Network"
 description: |-
   A reusable set of SNMP credentials. Attach a profile to a device or to a site and every device it covers is walked over SNMP with these credentials instead of carrying its own.
 ---

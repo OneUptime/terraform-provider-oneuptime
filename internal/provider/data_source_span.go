@@ -209,7 +209,7 @@ func (d *SpanDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 ElementType: types.StringType,
             },
             "links": schema.StringAttribute{
-                MarkdownDescription: "Links. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Links. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "status_code": schema.NumberAttribute{

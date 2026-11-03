@@ -75,6 +75,7 @@ func (d *TotpAuthDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "User ID who deleted this object (if this object was deleted by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

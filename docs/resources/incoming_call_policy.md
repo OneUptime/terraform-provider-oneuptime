@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_incoming_call_policy Resource - oneuptime"
-subcategory: "Other"
+subcategory: "On-Call & Escalation"
 description: |-
   Manage incoming call routing policies with escalation rules for on-call teams
 ---
@@ -29,7 +29,7 @@ resource "oneuptime_incoming_call_policy" "example" {
 - `description` (String) Friendly description that will help you remember.
 - `greeting_message` (String) Custom TTS greeting message for incoming calls.
 - `is_enabled` (Boolean) Enable or disable this incoming call policy. Defaults to `true`.
-- `labels` (Set of String) Relation to Labels Array where this object is categorized in. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `no_answer_message` (String) Message when escalation is exhausted and no one answers.
 - `no_one_available_message` (String) Message when no one is on-call or reachable.
 - `project_call_sms_config_id` (String) ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply.

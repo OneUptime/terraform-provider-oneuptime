@@ -21,6 +21,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &NetworkDeviceDiagnosticResource{}
 var _ resource.ResourceWithImportState = &NetworkDeviceDiagnosticResource{}
+var _ resource.ResourceWithModifyPlan = &NetworkDeviceDiagnosticResource{}
 
 func NewNetworkDeviceDiagnosticResource() resource.Resource {
     return &NetworkDeviceDiagnosticResource{}
@@ -86,6 +87,7 @@ func (r *NetworkDeviceDiagnosticResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_network_device"),
             },
             "probe_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Probe that runs this diagnostic. Defaults to the device's assigned probe. The ID of a `oneuptime_probe`.",
@@ -95,6 +97,7 @@ func (r *NetworkDeviceDiagnosticResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
+                Validators: recordIDValidators("oneuptime_probe"),
             },
             "diagnostic_type": schema.StringAttribute{
                 MarkdownDescription: "What to run against the device: \"Ping\" (ICMP echo: reachability, round-trip time, jitter, packet loss), \"Traceroute\" (the hop-by-hop path from the probe to the device) or \"SNMP Walk\" (every OID the device answers under a starting OID, read with its SNMP credentials).",
@@ -147,17 +150,17 @@ func (r *NetworkDeviceDiagnosticResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "ping_result": schema.StringAttribute{
-                MarkdownDescription: "For a Ping diagnostic: whether the device answered, the failure cause when it did not, and the packet statistics (min/avg/max round-trip time, jitter, packet loss). Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For a Ping diagnostic: whether the device answered, the failure cause when it did not, and the packet statistics (min/avg/max round-trip time, jitter, packet loss). Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "trace_route_result": schema.StringAttribute{
-                MarkdownDescription: "For a Traceroute diagnostic: the DNS lookup and the hop-by-hop path from the probe to the device, in the same shape the Network monitor records. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For a Traceroute diagnostic: the DNS lookup and the hop-by-hop path from the probe to the device, in the same shape the Network monitor records. Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "snmp_walk_result": schema.StringAttribute{
-                MarkdownDescription: "For an SNMP Walk: each OID the device answered with its type and value, why the walk stopped, where to continue from, and, when the device refused or did not answer, why. Managed by the probe. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "For an SNMP Walk: each OID the device answered with its type and value, why the walk stopped, where to continue from, and, when the device refused or did not answer, why. Managed by the probe. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -180,6 +183,17 @@ func (r *NetworkDeviceDiagnosticResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *NetworkDeviceDiagnosticResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *NetworkDeviceDiagnosticResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -852,6 +866,7 @@ func (r *NetworkDeviceDiagnosticResource) Create(ctx context.Context, req resour
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
+
 
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

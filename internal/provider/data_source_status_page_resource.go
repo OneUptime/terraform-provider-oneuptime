@@ -78,26 +78,31 @@ func (d *StatusPageResourceDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page"),
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor ID Resource in which this object belongs. The ID of a `oneuptime_monitor`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor"),
             },
             "monitor_group_id": schema.StringAttribute{
                 MarkdownDescription: "Relation to Monitor Group ID Resource in which this object belongs. The ID of a `oneuptime_monitor_group`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor_group"),
             },
             "status_page_group_id": schema.StringAttribute{
                 MarkdownDescription: "Does this monitor belong to a status page group? The ID of a `oneuptime_status_page_group`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page_group"),
             },
             "status_page_monitor_rule_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the rule that added this resource, if it was added by a rule instead of by hand. The ID of a `oneuptime_status_page_monitor_rule`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_status_page_monitor_rule"),
             },
             "display_name": schema.StringAttribute{
                 MarkdownDescription: "Display name of the monitor on the Status Page.",
@@ -138,6 +143,7 @@ func (d *StatusPageResourceDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Order / Priority of this resource.",

@@ -41,5 +41,5 @@ data "oneuptime_monitor_status_event" "by_id" {
 - `ends_at` (String) When did this status change end?
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `starts_at` (String) When did this status change?
-- `status_change_log` (String) A JSON value: write it with `jsonencode()`.
+- `status_change_log` (String) A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

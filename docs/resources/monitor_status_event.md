@@ -38,7 +38,7 @@ resource "oneuptime_monitor_status_event" "example" {
 - `id` (String) Unique identifier for the resource.
 - `is_owner_notified` (Boolean) Are owners notified of status change?
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `status_change_log` (String) A JSON value: write it with `jsonencode()`.
+- `status_change_log` (String) A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

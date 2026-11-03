@@ -72,6 +72,7 @@ func (d *RunbookVariableDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "ID of the runbook this variable belongs to. Empty for a global variable, which every runbook of the project can use. The ID of a `oneuptime_runbook`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_runbook"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Letters, numbers, hyphens and underscores. Steps use the variable by this name: {{global.variables.NAME}} for a global variable, {{local.variables.NAME}} for one of the runbook's own.",
@@ -107,6 +108,7 @@ func (d *RunbookVariableDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
         },
     }

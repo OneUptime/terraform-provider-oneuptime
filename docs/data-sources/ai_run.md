@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_ai_run Data Source - oneuptime"
-subcategory: "Other"
+subcategory: "AI"
 description: |-
   One AI agent execution: LLM calls, tool calls, cost, and the egress manifest of what was sent to the LLM.
 ---
@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_ai_run" "example" {
-  run_type = "example-run-type"
+  run_type = "Chat"
 }
 
 # Or by id:
@@ -67,7 +67,7 @@ data "oneuptime_ai_run" "by_id" {
 - `auto_grade_at` (String) When the automatic grade was recorded.
 - `completed_at` (String) When the run completed.
 - `created_at` (String) Date and Time when the object was created.
-- `egress_manifest` (String) What data was sent to which LLM during this run: provider, model, and per-tool row/byte/redaction counts. A JSON value: write it with `jsonencode()`.
+- `egress_manifest` (String) What data was sent to which LLM during this run: provider, model, and per-tool row/byte/redaction counts. A JSON value: read it with `jsondecode()`.
 - `human_verdict_at` (String) When the human verdict was recorded (or last changed).
 - `last_heartbeat_at` (String) Last time the run reported progress. Used to detect and fail stale runs.
 - `project_id` (String) ID of the project this run belongs to. The ID of a `oneuptime_project`.

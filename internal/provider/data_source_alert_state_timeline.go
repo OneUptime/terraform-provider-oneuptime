@@ -70,16 +70,19 @@ func (d *AlertStateTimelineDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "Relation to Alert ID in which this resource belongs. The ID of a `oneuptime_alert`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
                 Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "alert_state_id": schema.StringAttribute{
                 MarkdownDescription: "Alert State ID Relation. Which alert state does this alert change to? The ID of a `oneuptime_alert_state`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_alert_state"),
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of state change?",
@@ -87,7 +90,7 @@ func (d *AlertStateTimelineDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "state_change_log": schema.StringAttribute{
-                MarkdownDescription: "A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "root_cause": schema.StringAttribute{

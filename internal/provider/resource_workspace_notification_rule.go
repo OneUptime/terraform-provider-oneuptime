@@ -17,11 +17,13 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &WorkspaceNotificationRuleResource{}
 var _ resource.ResourceWithImportState = &WorkspaceNotificationRuleResource{}
+var _ resource.ResourceWithModifyPlan = &WorkspaceNotificationRuleResource{}
 
 func NewWorkspaceNotificationRuleResource() resource.Resource {
     return &WorkspaceNotificationRuleResource{}
@@ -91,6 +93,7 @@ func (r *WorkspaceNotificationRuleResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
@@ -100,10 +103,16 @@ func (r *WorkspaceNotificationRuleResource) schemaDefinition() schema.Schema {
             "event_type": schema.StringAttribute{
                 MarkdownDescription: "Event Type for the Workspace like Incident Created, Monitor Status Updated, etc.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Incident", "Monitor", "Alert", "Alert Episode", "Incident Episode", "Scheduled Maintenance", "On-Call Duty Policy", "Security Case"),
+                },
             },
             "workspace_type": schema.StringAttribute{
                 MarkdownDescription: "Type of Workspace - slack, microsoft teams etc.",
                 Required: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Slack", "MicrosoftTeams"),
+                },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -127,6 +136,17 @@ func (r *WorkspaceNotificationRuleResource) schemaDefinition() schema.Schema {
             },
         },
     }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *WorkspaceNotificationRuleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    keepStateWhenNothingChanges(ctx, req, resp)
 }
 
 func (r *WorkspaceNotificationRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -548,6 +568,9 @@ func (r *WorkspaceNotificationRuleResource) Create(ctx context.Context, req reso
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
 
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -889,6 +912,11 @@ func (r *WorkspaceNotificationRuleResource) Update(ctx context.Context, req reso
 
     // Use the ID from the current state
     data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "notification_rule": !data.NotificationRule.Equal(state.NotificationRule),
+    }
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config WorkspaceNotificationRuleResourceModel
@@ -1248,6 +1276,9 @@ func (r *WorkspaceNotificationRuleResource) Update(ctx context.Context, req reso
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1284,6 +1315,9 @@ func (r *WorkspaceNotificationRuleResource) Delete(ctx context.Context, req reso
 
 func (r *WorkspaceNotificationRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"notification_rule"})...)
 }
 
 

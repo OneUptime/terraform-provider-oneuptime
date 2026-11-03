@@ -1,6 +1,6 @@
 ---
 page_title: "oneuptime_metric_type Resource - oneuptime"
-subcategory: "Logs & Metrics"
+subcategory: "Logs, Traces & Metrics"
 description: |-
   List of all the metrics ingested with OpenTelemetry
 ---
@@ -26,7 +26,7 @@ resource "oneuptime_metric_type" "example" {
 
 ### Optional
 
-- `aggregation_temporality` (String) OpenTelemetry aggregation temporality of this metric (Delta or Cumulative), as reported at ingest. Null when unknown.
+- `aggregation_temporality` (String) OpenTelemetry aggregation temporality of this metric (Delta or Cumulative), as reported at ingest. Null when unknown. Allowed values: `Delta`, `Cumulative`.
 - `description` (String) Metric description.
 - `is_monotonic` (Boolean) Whether this metric is a monotonic counter (only ever increases), as reported by OpenTelemetry at ingest. Null when the instrument type does not carry monotonicity (e.g. gauges).
 - `services` (Set of String) List of services this metric is related to. IDs of `oneuptime_service` resources.
