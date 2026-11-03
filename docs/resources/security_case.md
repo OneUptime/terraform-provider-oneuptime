@@ -30,6 +30,7 @@ resource "oneuptime_security_case" "example" {
 - `assigned_to_user_email` (String) The email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `assigned_to_user_id` (String) ID of the person working the case. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assigned_to_user_email`.
 - `closing_note` (String) Why the case was closed the way it was, in Markdown: what was found and what was done.
+- `custom_fields` (String) The values of the project's own security case fields (Security Events > Settings > Custom Fields), by each field's name. A JSON value: write it with `jsonencode()`.
 - `description` (String) What is known about the threat, in Markdown. A case opened by a detection starts with the detection's description.
 - `entities` (String) The users, hosts, IP addresses, domains and files the case is about, each as { type, value }. Detections add theirs as they join the case. A JSON value: write it with `jsonencode()`.
 - `labels` (Set of String) Labels to filter and report on cases by. IDs of `oneuptime_label` resources.

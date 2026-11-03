@@ -45,6 +45,7 @@ resource "oneuptime_runner" "example" {
 - `last_alive` (String) Most recent heartbeat from this agent.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slug` (String) Friendly globally unique name for your object.
+- `takes_code_fixes` (Boolean) Whether this Runner takes OneUptime AI's code fixes, as it said on its last heartbeat. Empty for a Runner of a release that does not say.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

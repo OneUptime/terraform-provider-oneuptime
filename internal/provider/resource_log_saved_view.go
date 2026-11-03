@@ -43,6 +43,7 @@ type LogSavedViewResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     Name JSONSubsetValue `tfsdk:"name"`
+    Scope types.String `tfsdk:"scope"`
     Query JSONSubsetValue `tfsdk:"query"`
     Columns JSONSubsetValue `tfsdk:"columns"`
     SortField types.String `tfsdk:"sort_field"`
@@ -65,7 +66,7 @@ func (r *LogSavedViewResource) Schema(ctx context.Context, req resource.SchemaRe
 
 func (r *LogSavedViewResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Save and reuse log explorer views, including the current filters, columns, sorting, and page size.",
+        MarkdownDescription: "Save and reuse log explorer views, including the current filters, columns, sorting, and page size. Each view is listed on the page it was saved on: the Logs page, or one resource's Logs tab.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -88,6 +89,15 @@ func (r *LogSavedViewResource) schemaDefinition() schema.Schema {
                 Required: true,
                 Validators: []validator.String{
                     JSONEnvelopeValidator(),
+                },
+            },
+            "scope": schema.StringAttribute{
+                MarkdownDescription: "The page this saved log view is listed on: empty for the Logs page, or the resource page it was saved on, such as a Kubernetes cluster's Logs tab (kubernetes-cluster:<cluster id>).",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "query": schema.StringAttribute{
@@ -254,6 +264,9 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
     if parsedName := r.parseJSONField(data.Name); parsedName != nil {
         requestDataMap["name"] = parsedName
     }
+    if !data.Scope.IsNull() && !data.Scope.IsUnknown() {
+        requestDataMap["scope"] = data.Scope.ValueString()
+    }
     if parsedQuery := r.parseJSONField(data.Query); parsedQuery != nil {
         requestDataMap["query"] = parsedQuery
     }
@@ -322,6 +335,7 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
     selectParam := map[string]interface{}{
         "projectId": true,
         "name": true,
+        "scope": true,
         "query": true,
         "columns": true,
         "sortField": true,
@@ -411,6 +425,43 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         data.Name = NewJSONSubsetValue(val)
     } else {
         data.Name = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := dataMap["scope"].(string); ok {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
     }
     if obj, ok := dataMap["query"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -695,6 +746,7 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
     selectParam := map[string]interface{}{
         "projectId": true,
         "name": true,
+        "scope": true,
         "query": true,
         "columns": true,
         "sortField": true,
@@ -785,6 +837,43 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         data.Name = NewJSONSubsetValue(val)
     } else {
         data.Name = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := dataMap["scope"].(string); ok {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
     }
     if obj, ok := dataMap["query"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -1153,6 +1242,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
     selectParam := map[string]interface{}{
         "projectId": true,
         "name": true,
+        "scope": true,
         "query": true,
         "columns": true,
         "sortField": true,
@@ -1237,6 +1327,43 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         data.Name = NewJSONSubsetValue(val)
     } else {
         data.Name = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := dataMap["scope"].(string); ok {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
     }
     if obj, ok := dataMap["query"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -1549,6 +1676,9 @@ func (r *LogSavedViewResource) ImportState(ctx context.Context, req resource.Imp
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
 func (r *LogSavedViewResource) keepPlannedValues(data *LogSavedViewResourceModel, plan *LogSavedViewResourceModel, config *LogSavedViewResourceModel) {
+    if config.Scope.IsNull() && !plan.Scope.IsUnknown() {
+        data.Scope = plan.Scope
+    }
     if config.Query.IsNull() && !plan.Query.IsUnknown() {
         data.Query = plan.Query
     }

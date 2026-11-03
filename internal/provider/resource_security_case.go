@@ -53,6 +53,7 @@ type SecurityCaseResourceModel struct {
     Entities JSONSubsetValue `tfsdk:"entities"`
     MitreTactics JSONSubsetValue `tfsdk:"mitre_tactics"`
     MitreTechniques JSONSubsetValue `tfsdk:"mitre_techniques"`
+    CustomFields JSONSubsetValue `tfsdk:"custom_fields"`
     Labels types.Set `tfsdk:"labels"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -206,6 +207,19 @@ func (r *SecurityCaseResource) schemaDefinition() schema.Schema {
             },
             "mitre_techniques": schema.StringAttribute{
                 MarkdownDescription: "ATT&CK technique ids (T1110) the case's detections are tagged with. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "custom_fields": schema.StringAttribute{
+                MarkdownDescription: "The values of the project's own security case fields (Security Events > Settings > Custom Fields), by each field's name. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -492,6 +506,9 @@ func (r *SecurityCaseResource) Create(ctx context.Context, req resource.CreateRe
     if parsedMitreTechniques := r.parseJSONField(data.MitreTechniques); parsedMitreTechniques != nil {
         requestDataMap["mitreTechniques"] = parsedMitreTechniques
     }
+    if parsedCustomFields := r.parseJSONField(data.CustomFields); parsedCustomFields != nil {
+        requestDataMap["customFields"] = parsedCustomFields
+    }
     if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -565,6 +582,7 @@ func (r *SecurityCaseResource) Create(ctx context.Context, req resource.CreateRe
         "entities": true,
         "mitreTactics": true,
         "mitreTechniques": true,
+        "customFields": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1045,6 +1063,43 @@ func (r *SecurityCaseResource) Create(ctx context.Context, req resource.CreateRe
         data.MitreTechniques = NewJSONSubsetValue(val)
     } else {
         data.MitreTechniques = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["customFields"].(string); ok {
+        data.CustomFields = NewJSONSubsetValue(val)
+    } else {
+        data.CustomFields = NewJSONSubsetNull()
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1715,6 +1770,7 @@ func (r *SecurityCaseResource) Read(ctx context.Context, req resource.ReadReques
         "entities": true,
         "mitreTactics": true,
         "mitreTechniques": true,
+        "customFields": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
@@ -2200,6 +2256,43 @@ func (r *SecurityCaseResource) Read(ctx context.Context, req resource.ReadReques
         data.MitreTechniques = NewJSONSubsetValue(val)
     } else {
         data.MitreTechniques = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["customFields"].(string); ok {
+        data.CustomFields = NewJSONSubsetValue(val)
+    } else {
+        data.CustomFields = NewJSONSubsetNull()
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2856,6 +2949,7 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
 
     // The attributes this update writes from the configuration (see importsettle.go).
     writtenFromConfig := map[string]bool{
+        "custom_fields": !data.CustomFields.Equal(state.CustomFields),
         "entities": !data.Entities.Equal(state.Entities),
         "mitre_tactics": !data.MitreTactics.Equal(state.MitreTactics),
         "mitre_techniques": !data.MitreTechniques.Equal(state.MitreTechniques),
@@ -2928,6 +3022,14 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
             requestDataMap["mitreTechniques"] = data.MitreTechniques.ValueString()
         }
     }
+    if !data.CustomFields.IsUnknown() && !state.CustomFields.IsUnknown() && !data.CustomFields.Equal(state.CustomFields) {
+        var customfieldsData interface{}
+        if err := json.Unmarshal([]byte(data.CustomFields.ValueString()), &customfieldsData); err == nil {
+            requestDataMap["customFields"] = customfieldsData
+        } else {
+            requestDataMap["customFields"] = data.CustomFields.ValueString()
+        }
+    }
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -2966,6 +3068,7 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
         "entities": true,
         "mitreTactics": true,
         "mitreTechniques": true,
+        "customFields": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
@@ -3441,6 +3544,43 @@ func (r *SecurityCaseResource) Update(ctx context.Context, req resource.UpdateRe
         data.MitreTechniques = NewJSONSubsetValue(val)
     } else {
         data.MitreTechniques = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["customFields"].(string); ok {
+        data.CustomFields = NewJSONSubsetValue(val)
+    } else {
+        data.CustomFields = NewJSONSubsetNull()
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -4117,7 +4257,7 @@ func (r *SecurityCaseResource) ImportState(ctx context.Context, req resource.Imp
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
     // These hold the record as OneUptime keeps it, keys it fills in itself
     // included, until an update writes them (see importsettle.go).
-    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"entities", "mitre_tactics", "mitre_techniques"})...)
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "entities", "mitre_tactics", "mitre_techniques"})...)
 }
 
 
@@ -4158,6 +4298,9 @@ func (r *SecurityCaseResource) keepPlannedValues(data *SecurityCaseResourceModel
     }
     if config.MitreTechniques.IsNull() && !plan.MitreTechniques.IsUnknown() {
         data.MitreTechniques = plan.MitreTechniques
+    }
+    if config.CustomFields.IsNull() && !plan.CustomFields.IsUnknown() {
+        data.CustomFields = plan.CustomFields
     }
     if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
         data.Labels = plan.Labels

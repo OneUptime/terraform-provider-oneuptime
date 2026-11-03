@@ -40,6 +40,8 @@ func GetResources() []func() resource.Resource {
         NewSecurityCaseEvidenceResource,
         NewSecurityCasePriorityResource,
         NewSecurityCaseStatusResource,
+        NewSecurityCaseNoteTemplateResource,
+        NewSecurityCaseCustomFieldResource,
         NewSecurityPlaybookResource,
         NewSecurityPlaybookRunResource,
         NewDataStoreResource,

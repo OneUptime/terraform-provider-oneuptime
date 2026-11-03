@@ -46,6 +46,7 @@ type SecurityCaseDataSourceModel struct {
     Entities types.String `tfsdk:"entities"`
     MitreTactics types.String `tfsdk:"mitre_tactics"`
     MitreTechniques types.String `tfsdk:"mitre_techniques"`
+    CustomFields types.String `tfsdk:"custom_fields"`
     DetectionCount types.Number `tfsdk:"detection_count"`
     FirstDetectedAt types.String `tfsdk:"first_detected_at"`
     LastDetectedAt types.String `tfsdk:"last_detected_at"`
@@ -170,6 +171,10 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "mitre_techniques": schema.StringAttribute{
                 MarkdownDescription: "ATT&CK technique ids (T1110) the case's detections are tagged with. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "custom_fields": schema.StringAttribute{
+                MarkdownDescription: "The values of the project's own security case fields (Security Events > Settings > Custom Fields), by each field's name. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "detection_count": schema.NumberAttribute{
@@ -466,6 +471,7 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         "entities": true,
         "mitreTactics": true,
         "mitreTechniques": true,
+        "customFields": true,
         "detectionCount": true,
         "firstDetectedAt": true,
         "lastDetectedAt": true,
@@ -842,6 +848,23 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.MitreTechniques = types.StringValue(val)
     } else {
         data.MitreTechniques = types.StringNull()
+    }
+    if obj, ok := item["customFields"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFields = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CustomFields = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CustomFields = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomFields = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomFields = types.StringNull()
+        }
+    } else if val, ok := item["customFields"].(string); ok {
+        data.CustomFields = types.StringValue(val)
+    } else {
+        data.CustomFields = types.StringNull()
     }
     data.DetectionCount = numberFromAPI(data.DetectionCount, item["detectionCount"])
     if obj, ok := item["firstDetectedAt"].(map[string]interface{}); ok {

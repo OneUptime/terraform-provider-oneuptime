@@ -38,6 +38,7 @@ data "oneuptime_runner" "by_id" {
 - `is_project_default` (Boolean) Whether this is the project's default Runner: runbook steps that pick no Runner run on it instead of the Global Runner.
 - `name` (String) Friendly name for this agent. Names starting with "kubernetes-agent/" are reserved for the in-cluster Runners the Kubernetes agent chart registers, and such a Runner cannot be renamed.
 - `slug` (String) Friendly globally unique name for your object.
+- `takes_code_fixes` (Boolean) Whether this Runner takes OneUptime AI's code fixes, as it said on its last heartbeat. Empty for a Runner of a release that does not say.
 
 ### Read-Only
 

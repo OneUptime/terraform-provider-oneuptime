@@ -31,6 +31,7 @@ type LogSavedViewDataSourceModel struct {
     UpdatedAt types.String `tfsdk:"updated_at"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
+    Scope types.String `tfsdk:"scope"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Query types.String `tfsdk:"query"`
     Columns types.String `tfsdk:"columns"`
@@ -47,7 +48,7 @@ func (d *LogSavedViewDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *LogSavedViewDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Save and reuse log explorer views, including the current filters, columns, sorting, and page size. Look up an existing log saved view by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `is_default`, ...): each one set must match, and exactly one log saved view may match them all.",
+        MarkdownDescription: "Save and reuse log explorer views, including the current filters, columns, sorting, and page size. Each view is listed on the page it was saved on: the Logs page, or one resource's Logs tab. Look up an existing log saved view by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `is_default`, ...): each one set must match, and exactly one log saved view may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -69,6 +70,11 @@ func (d *LogSavedViewDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Friendly name for this saved log view.",
+                Optional: true,
+                Computed: true,
+            },
+            "scope": schema.StringAttribute{
+                MarkdownDescription: "The page this saved log view is listed on: empty for the Logs page, or the resource page it was saved on, such as a Kubernetes cluster's Logs tab (kubernetes-cluster:<cluster id>).",
                 Optional: true,
                 Computed: true,
             },
@@ -153,6 +159,10 @@ func (d *LogSavedViewDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
     }
+    if !data.Scope.IsNull() && !data.Scope.IsUnknown() {
+        filters["scope"] = data.Scope.ValueString()
+        filterNames = append(filterNames, "scope = "+fmt.Sprintf("%q", data.Scope.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -194,6 +204,7 @@ func (d *LogSavedViewDataSource) Read(ctx context.Context, req datasource.ReadRe
         "updatedAt": true,
         "projectId": true,
         "name": true,
+        "scope": true,
         "createdByUserId": true,
         "query": true,
         "columns": true,
@@ -347,6 +358,23 @@ func (d *LogSavedViewDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
+    }
+    if obj, ok := item["scope"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := item["scope"].(string); ok {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -51,6 +51,7 @@ type ProjectDataSourceModel struct {
     IncidentNumberPrefix types.String `tfsdk:"incident_number_prefix"`
     AlertNumberPrefix types.String `tfsdk:"alert_number_prefix"`
     ScheduledMaintenanceNumberPrefix types.String `tfsdk:"scheduled_maintenance_number_prefix"`
+    SecurityCaseNumberPrefix types.String `tfsdk:"security_case_number_prefix"`
     IncidentEpisodeNumberPrefix types.String `tfsdk:"incident_episode_number_prefix"`
     AlertEpisodeNumberPrefix types.String `tfsdk:"alert_episode_number_prefix"`
     IncidentNumbersStartAt types.Number `tfsdk:"incident_numbers_start_at"`
@@ -58,6 +59,7 @@ type ProjectDataSourceModel struct {
     AlertNumbersStartAt types.Number `tfsdk:"alert_numbers_start_at"`
     AlertEpisodeNumbersStartAt types.Number `tfsdk:"alert_episode_numbers_start_at"`
     ScheduledMaintenanceNumbersStartAt types.Number `tfsdk:"scheduled_maintenance_numbers_start_at"`
+    SecurityCaseNumbersStartAt types.Number `tfsdk:"security_case_numbers_start_at"`
     SmsOrCallCurrentBalanceInUsdCents types.Number `tfsdk:"sms_or_call_current_balance_in_usd_cents"`
     AutoRechargeSmsOrCallByBalanceInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_by_balance_in_usd"`
     AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_when_current_balance_falls_in_usd"`
@@ -86,6 +88,7 @@ type ProjectDataSourceModel struct {
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     LimitIncidentsToOneEpisode types.Bool `tfsdk:"limit_incidents_to_one_episode"`
     LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
+    DefaultNetworkTopologyLayout types.String `tfsdk:"default_network_topology_layout"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
     EnableAutomaticProfileRemediation types.Bool `tfsdk:"enable_automatic_profile_remediation"`
@@ -263,6 +266,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "security_case_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for security case numbers (e.g., 'CASE-', the default). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber security cases that already exist.",
+                Optional: true,
+                Computed: true,
+            },
             "incident_episode_number_prefix": schema.StringAttribute{
                 MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incident episodes that already exist.",
                 Optional: true,
@@ -295,6 +303,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "scheduled_maintenance_numbers_start_at": schema.NumberAttribute{
                 MarkdownDescription: "Where scheduled maintenance event numbers start: the next scheduled maintenance event gets this number if no scheduled maintenance event has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every scheduled maintenance event number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing scheduled maintenance events keep their numbers.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_case_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where security case numbers start: the next security case gets this number if no security case has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every security case number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing security cases keep their numbers.",
                 Optional: true,
                 Computed: true,
             },
@@ -435,6 +448,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "limit_alerts_to_one_episode": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, an alert can be in only one alert episode: adding an alert that is already in an episode to another one is refused, by hand, through the API, workflows and grouping rules alike. Remove it from its episode first to move it. Alerts that are already in several episodes stay in them. Off by default.",
+                Optional: true,
+                Computed: true,
+            },
+            "default_network_topology_layout": schema.StringAttribute{
+                MarkdownDescription: "The layout network topology maps open on: force, tiered, radial, star or parentChild. Empty: Automatic for all devices, By network layer for a site.",
                 Optional: true,
                 Computed: true,
             },
@@ -776,6 +794,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["scheduledMaintenanceNumberPrefix"] = data.ScheduledMaintenanceNumberPrefix.ValueString()
         filterNames = append(filterNames, "scheduled_maintenance_number_prefix = "+fmt.Sprintf("%q", data.ScheduledMaintenanceNumberPrefix.ValueString()))
     }
+    if !data.SecurityCaseNumberPrefix.IsNull() && !data.SecurityCaseNumberPrefix.IsUnknown() {
+        filters["securityCaseNumberPrefix"] = data.SecurityCaseNumberPrefix.ValueString()
+        filterNames = append(filterNames, "security_case_number_prefix = "+fmt.Sprintf("%q", data.SecurityCaseNumberPrefix.ValueString()))
+    }
     if !data.IncidentEpisodeNumberPrefix.IsNull() && !data.IncidentEpisodeNumberPrefix.IsUnknown() {
         filters["incidentEpisodeNumberPrefix"] = data.IncidentEpisodeNumberPrefix.ValueString()
         filterNames = append(filterNames, "incident_episode_number_prefix = "+fmt.Sprintf("%q", data.IncidentEpisodeNumberPrefix.ValueString()))
@@ -803,6 +825,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if !data.ScheduledMaintenanceNumbersStartAt.IsNull() && !data.ScheduledMaintenanceNumbersStartAt.IsUnknown() {
         filters["scheduledMaintenanceNumbersStartAt"] = lookupNumber(data.ScheduledMaintenanceNumbersStartAt)
         filterNames = append(filterNames, "scheduled_maintenance_numbers_start_at = "+data.ScheduledMaintenanceNumbersStartAt.ValueBigFloat().String())
+    }
+    if !data.SecurityCaseNumbersStartAt.IsNull() && !data.SecurityCaseNumbersStartAt.IsUnknown() {
+        filters["securityCaseNumbersStartAt"] = lookupNumber(data.SecurityCaseNumbersStartAt)
+        filterNames = append(filterNames, "security_case_numbers_start_at = "+data.SecurityCaseNumbersStartAt.ValueBigFloat().String())
     }
     if !data.SmsOrCallCurrentBalanceInUsdCents.IsNull() && !data.SmsOrCallCurrentBalanceInUsdCents.IsUnknown() {
         filters["smsOrCallCurrentBalanceInUSDCents"] = lookupNumber(data.SmsOrCallCurrentBalanceInUsdCents)
@@ -915,6 +941,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if !data.LimitAlertsToOneEpisode.IsNull() && !data.LimitAlertsToOneEpisode.IsUnknown() {
         filters["limitAlertsToOneEpisode"] = data.LimitAlertsToOneEpisode.ValueBool()
         filterNames = append(filterNames, "limit_alerts_to_one_episode = "+fmt.Sprintf("%t", data.LimitAlertsToOneEpisode.ValueBool()))
+    }
+    if !data.DefaultNetworkTopologyLayout.IsNull() && !data.DefaultNetworkTopologyLayout.IsUnknown() {
+        filters["defaultNetworkTopologyLayout"] = data.DefaultNetworkTopologyLayout.ValueString()
+        filterNames = append(filterNames, "default_network_topology_layout = "+fmt.Sprintf("%q", data.DefaultNetworkTopologyLayout.ValueString()))
     }
     if !data.EnableAiInsights.IsNull() && !data.EnableAiInsights.IsUnknown() {
         filters["enableAiInsights"] = data.EnableAiInsights.ValueBool()
@@ -1121,6 +1151,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "incidentNumberPrefix": true,
         "alertNumberPrefix": true,
         "scheduledMaintenanceNumberPrefix": true,
+        "securityCaseNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
         "incidentNumbersStartAt": true,
@@ -1128,6 +1159,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "alertNumbersStartAt": true,
         "alertEpisodeNumbersStartAt": true,
         "scheduledMaintenanceNumbersStartAt": true,
+        "securityCaseNumbersStartAt": true,
         "smsOrCallCurrentBalanceInUSDCents": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
@@ -1156,6 +1188,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
+        "defaultNetworkTopologyLayout": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
         "enableAutomaticProfileRemediation": true,
@@ -1629,6 +1662,23 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.ScheduledMaintenanceNumberPrefix = types.StringNull()
     }
+    if obj, ok := item["securityCaseNumberPrefix"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityCaseNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityCaseNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := item["securityCaseNumberPrefix"].(string); ok {
+        data.SecurityCaseNumberPrefix = types.StringValue(val)
+    } else {
+        data.SecurityCaseNumberPrefix = types.StringNull()
+    }
     if obj, ok := item["incidentEpisodeNumberPrefix"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.IncidentEpisodeNumberPrefix = types.StringValue(val)
@@ -1668,6 +1718,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     data.AlertNumbersStartAt = numberFromAPI(data.AlertNumbersStartAt, item["alertNumbersStartAt"])
     data.AlertEpisodeNumbersStartAt = numberFromAPI(data.AlertEpisodeNumbersStartAt, item["alertEpisodeNumbersStartAt"])
     data.ScheduledMaintenanceNumbersStartAt = numberFromAPI(data.ScheduledMaintenanceNumbersStartAt, item["scheduledMaintenanceNumbersStartAt"])
+    data.SecurityCaseNumbersStartAt = numberFromAPI(data.SecurityCaseNumbersStartAt, item["securityCaseNumbersStartAt"])
     data.SmsOrCallCurrentBalanceInUsdCents = numberFromAPI(data.SmsOrCallCurrentBalanceInUsdCents, item["smsOrCallCurrentBalanceInUSDCents"])
     data.AutoRechargeSmsOrCallByBalanceInUsd = numberFromAPI(data.AutoRechargeSmsOrCallByBalanceInUsd, item["autoRechargeSmsOrCallByBalanceInUSD"])
     data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd, item["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"])
@@ -1783,6 +1834,23 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.LimitAlertsToOneEpisode = types.BoolValue(val)
     } else {
         data.LimitAlertsToOneEpisode = types.BoolNull()
+    }
+    if obj, ok := item["defaultNetworkTopologyLayout"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultNetworkTopologyLayout = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DefaultNetworkTopologyLayout = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DefaultNetworkTopologyLayout = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultNetworkTopologyLayout = types.StringNull()
+        }
+    } else if val, ok := item["defaultNetworkTopologyLayout"].(string); ok {
+        data.DefaultNetworkTopologyLayout = types.StringValue(val)
+    } else {
+        data.DefaultNetworkTopologyLayout = types.StringNull()
     }
     if val, ok := item["enableAiInsights"].(bool); ok {
         data.EnableAiInsights = types.BoolValue(val)

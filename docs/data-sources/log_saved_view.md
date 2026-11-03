@@ -2,12 +2,12 @@
 page_title: "oneuptime_log_saved_view Data Source - oneuptime"
 subcategory: "Logs, Traces & Metrics"
 description: |-
-  Save and reuse log explorer views, including the current filters, columns, sorting, and page size.
+  Save and reuse log explorer views, including the current filters, columns, sorting, and page size. Each view is listed on the page it was saved on: the Logs page, or one resource's Logs tab.
 ---
 
 # oneuptime_log_saved_view (Data Source)
 
-Save and reuse log explorer views, including the current filters, columns, sorting, and page size.
+Save and reuse log explorer views, including the current filters, columns, sorting, and page size. Each view is listed on the page it was saved on: the Logs page, or one resource's Logs tab.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one log saved view may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -33,6 +33,7 @@ data "oneuptime_log_saved_view" "by_id" {
 - `is_default` (Boolean) Whether this saved log view should be applied by default.
 - `name` (String) Friendly name for this saved log view.
 - `page_size` (Number) Number of logs per page for this saved view.
+- `scope` (String) The page this saved log view is listed on: empty for the Logs page, or the resource page it was saved on, such as a Kubernetes cluster's Logs tab (kubernetes-cluster:<cluster id>).
 - `sort_field` (String) Active sort field for this saved log view.
 - `sort_order` (String) Sort order for this saved log view.
 

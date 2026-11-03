@@ -41,6 +41,7 @@ type RunnerDataSourceModel struct {
     ConnectionStatus types.String `tfsdk:"connection_status"`
     CanRunRunbooks types.Bool `tfsdk:"can_run_runbooks"`
     CanRunAiCommands types.Bool `tfsdk:"can_run_ai_commands"`
+    TakesCodeFixes types.Bool `tfsdk:"takes_code_fixes"`
     IsGlobalRunner types.Bool `tfsdk:"is_global_runner"`
     IsProjectDefault types.Bool `tfsdk:"is_project_default"`
     HostInfo types.String `tfsdk:"host_info"`
@@ -114,6 +115,11 @@ func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
             },
             "can_run_ai_commands": schema.BoolAttribute{
                 MarkdownDescription: "Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, kubectl) that either match an allowlist or wait for one-click human approval. Set by OneUptime: on once an auto remediation rule picks this Runner, and on for the in-cluster Runner the Kubernetes agent chart installs.",
+                Optional: true,
+                Computed: true,
+            },
+            "takes_code_fixes": schema.BoolAttribute{
+                MarkdownDescription: "Whether this Runner takes OneUptime AI's code fixes, as it said on its last heartbeat. Empty for a Runner of a release that does not say.",
                 Optional: true,
                 Computed: true,
             },
@@ -205,6 +211,10 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         filters["canRunAiCommands"] = data.CanRunAiCommands.ValueBool()
         filterNames = append(filterNames, "can_run_ai_commands = "+fmt.Sprintf("%t", data.CanRunAiCommands.ValueBool()))
     }
+    if !data.TakesCodeFixes.IsNull() && !data.TakesCodeFixes.IsUnknown() {
+        filters["takesCodeFixes"] = data.TakesCodeFixes.ValueBool()
+        filterNames = append(filterNames, "takes_code_fixes = "+fmt.Sprintf("%t", data.TakesCodeFixes.ValueBool()))
+    }
     if !data.IsGlobalRunner.IsNull() && !data.IsGlobalRunner.IsUnknown() {
         filters["isGlobalRunner"] = data.IsGlobalRunner.ValueBool()
         filterNames = append(filterNames, "is_global_runner = "+fmt.Sprintf("%t", data.IsGlobalRunner.ValueBool()))
@@ -246,6 +256,7 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         "connectionStatus": true,
         "canRunRunbooks": true,
         "canRunAiCommands": true,
+        "takesCodeFixes": true,
         "isGlobalRunner": true,
         "isProjectDefault": true,
         "hostInfo": true,
@@ -508,6 +519,11 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         data.CanRunAiCommands = types.BoolValue(val)
     } else {
         data.CanRunAiCommands = types.BoolNull()
+    }
+    if val, ok := item["takesCodeFixes"].(bool); ok {
+        data.TakesCodeFixes = types.BoolValue(val)
+    } else {
+        data.TakesCodeFixes = types.BoolNull()
     }
     if val, ok := item["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)

@@ -43,6 +43,8 @@ func GetDataSources() []func() datasource.DataSource {
         NewSecurityCaseEvidenceDataSource,
         NewSecurityCasePriorityDataSource,
         NewSecurityCaseStatusDataSource,
+        NewSecurityCaseNoteTemplateDataSource,
+        NewSecurityCaseCustomFieldDataSource,
         NewSecurityDetectionDataSource,
         NewSecurityPlaybookDataSource,
         NewSecurityPlaybookRunDataSource,

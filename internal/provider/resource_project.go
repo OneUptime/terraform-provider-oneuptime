@@ -16,11 +16,13 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberdefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -52,6 +54,7 @@ type ProjectResourceModel struct {
     IncidentNumberPrefix types.String `tfsdk:"incident_number_prefix"`
     AlertNumberPrefix types.String `tfsdk:"alert_number_prefix"`
     ScheduledMaintenanceNumberPrefix types.String `tfsdk:"scheduled_maintenance_number_prefix"`
+    SecurityCaseNumberPrefix types.String `tfsdk:"security_case_number_prefix"`
     IncidentEpisodeNumberPrefix types.String `tfsdk:"incident_episode_number_prefix"`
     AlertEpisodeNumberPrefix types.String `tfsdk:"alert_episode_number_prefix"`
     IncidentNumbersStartAt types.Number `tfsdk:"incident_numbers_start_at"`
@@ -59,6 +62,7 @@ type ProjectResourceModel struct {
     AlertNumbersStartAt types.Number `tfsdk:"alert_numbers_start_at"`
     AlertEpisodeNumbersStartAt types.Number `tfsdk:"alert_episode_numbers_start_at"`
     ScheduledMaintenanceNumbersStartAt types.Number `tfsdk:"scheduled_maintenance_numbers_start_at"`
+    SecurityCaseNumbersStartAt types.Number `tfsdk:"security_case_numbers_start_at"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     EnableAutomaticSecurityCaseTriage types.Bool `tfsdk:"enable_automatic_security_case_triage"`
@@ -103,6 +107,7 @@ type ProjectResourceModel struct {
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     LimitIncidentsToOneEpisode types.Bool `tfsdk:"limit_incidents_to_one_episode"`
     LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
+    DefaultNetworkTopologyLayout types.String `tfsdk:"default_network_topology_layout"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
     IncidentAiDailyAutonomousTokenLimit types.Number `tfsdk:"incident_ai_daily_autonomous_token_limit"`
@@ -260,6 +265,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "security_case_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for security case numbers (e.g., 'CASE-', the default). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber security cases that already exist.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("CASE-"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "incident_episode_number_prefix": schema.StringAttribute{
                 MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incident episodes that already exist.",
                 Optional: true,
@@ -314,6 +328,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
             },
             "scheduled_maintenance_numbers_start_at": schema.NumberAttribute{
                 MarkdownDescription: "Where scheduled maintenance event numbers start: the next scheduled maintenance event gets this number if no scheduled maintenance event has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every scheduled maintenance event number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing scheduled maintenance events keep their numbers.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "security_case_numbers_start_at": schema.NumberAttribute{
+                MarkdownDescription: "Where security case numbers start: the next security case gets this number if no security case has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every security case number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing security cases keep their numbers.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -719,6 +742,17 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "default_network_topology_layout": schema.StringAttribute{
+                MarkdownDescription: "The layout network topology maps open on: force, tiered, radial, star or parentChild. Empty: Automatic for all devices, By network layer for a site.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("force", "tiered", "radial", "star", "parentChild"),
+                },
+            },
             "alert_investigation_minimum_severity_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the minimum AlertSeverity that triggers automatic investigation. The ID of a `oneuptime_alert_severity`.",
                 Optional: true,
@@ -1112,6 +1146,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.ScheduledMaintenanceNumberPrefix.IsNull() && !data.ScheduledMaintenanceNumberPrefix.IsUnknown() {
         requestDataMap["scheduledMaintenanceNumberPrefix"] = data.ScheduledMaintenanceNumberPrefix.ValueString()
     }
+    if !data.SecurityCaseNumberPrefix.IsNull() && !data.SecurityCaseNumberPrefix.IsUnknown() {
+        requestDataMap["securityCaseNumberPrefix"] = data.SecurityCaseNumberPrefix.ValueString()
+    }
     if !data.IncidentEpisodeNumberPrefix.IsNull() && !data.IncidentEpisodeNumberPrefix.IsUnknown() {
         requestDataMap["incidentEpisodeNumberPrefix"] = data.IncidentEpisodeNumberPrefix.ValueString()
     }
@@ -1132,6 +1169,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if !data.ScheduledMaintenanceNumbersStartAt.IsNull() && !data.ScheduledMaintenanceNumbersStartAt.IsUnknown() {
         requestDataMap["scheduledMaintenanceNumbersStartAt"] = r.bigFloatToFloat64(data.ScheduledMaintenanceNumbersStartAt.ValueBigFloat())
+    }
+    if !data.SecurityCaseNumbersStartAt.IsNull() && !data.SecurityCaseNumbersStartAt.IsUnknown() {
+        requestDataMap["securityCaseNumbersStartAt"] = r.bigFloatToFloat64(data.SecurityCaseNumbersStartAt.ValueBigFloat())
     }
     if !data.EnableAutomaticIncidentInvestigation.IsNull() && !data.EnableAutomaticIncidentInvestigation.IsUnknown() {
         requestDataMap["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
@@ -1260,6 +1300,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "incidentNumberPrefix": true,
         "alertNumberPrefix": true,
         "scheduledMaintenanceNumberPrefix": true,
+        "securityCaseNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
         "incidentNumbersStartAt": true,
@@ -1267,6 +1308,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "alertNumbersStartAt": true,
         "alertEpisodeNumbersStartAt": true,
         "scheduledMaintenanceNumbersStartAt": true,
+        "securityCaseNumbersStartAt": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticSecurityCaseTriage": true,
@@ -1310,6 +1352,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
+        "defaultNetworkTopologyLayout": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "incidentAiDailyAutonomousTokenLimit": true,
@@ -1720,6 +1763,43 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.ScheduledMaintenanceNumberPrefix = types.StringNull()
     }
+    if obj, ok := dataMap["securityCaseNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SecurityCaseNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SecurityCaseNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityCaseNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityCaseNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["securityCaseNumberPrefix"].(string); ok {
+        data.SecurityCaseNumberPrefix = types.StringValue(val)
+    } else {
+        data.SecurityCaseNumberPrefix = types.StringNull()
+    }
     if obj, ok := dataMap["incidentEpisodeNumberPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1799,6 +1879,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     data.AlertNumbersStartAt = numberFromAPI(data.AlertNumbersStartAt, dataMap["alertNumbersStartAt"])
     data.AlertEpisodeNumbersStartAt = numberFromAPI(data.AlertEpisodeNumbersStartAt, dataMap["alertEpisodeNumbersStartAt"])
     data.ScheduledMaintenanceNumbersStartAt = numberFromAPI(data.ScheduledMaintenanceNumbersStartAt, dataMap["scheduledMaintenanceNumbersStartAt"])
+    data.SecurityCaseNumbersStartAt = numberFromAPI(data.SecurityCaseNumbersStartAt, dataMap["securityCaseNumbersStartAt"])
     if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
     }
@@ -1979,6 +2060,43 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["limitAlertsToOneEpisode"].(bool); ok {
         data.LimitAlertsToOneEpisode = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["defaultNetworkTopologyLayout"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultNetworkTopologyLayout = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultNetworkTopologyLayout = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultNetworkTopologyLayout = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultNetworkTopologyLayout = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultNetworkTopologyLayout = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultNetworkTopologyLayout = types.StringNull()
+        }
+    } else if val, ok := dataMap["defaultNetworkTopologyLayout"].(string); ok {
+        data.DefaultNetworkTopologyLayout = types.StringValue(val)
+    } else {
+        data.DefaultNetworkTopologyLayout = types.StringNull()
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2713,6 +2831,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "incidentNumberPrefix": true,
         "alertNumberPrefix": true,
         "scheduledMaintenanceNumberPrefix": true,
+        "securityCaseNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
         "incidentNumbersStartAt": true,
@@ -2720,6 +2839,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "alertNumbersStartAt": true,
         "alertEpisodeNumbersStartAt": true,
         "scheduledMaintenanceNumbersStartAt": true,
+        "securityCaseNumbersStartAt": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticSecurityCaseTriage": true,
@@ -2763,6 +2883,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
+        "defaultNetworkTopologyLayout": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "incidentAiDailyAutonomousTokenLimit": true,
@@ -3174,6 +3295,43 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.ScheduledMaintenanceNumberPrefix = types.StringNull()
     }
+    if obj, ok := dataMap["securityCaseNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SecurityCaseNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SecurityCaseNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityCaseNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityCaseNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["securityCaseNumberPrefix"].(string); ok {
+        data.SecurityCaseNumberPrefix = types.StringValue(val)
+    } else {
+        data.SecurityCaseNumberPrefix = types.StringNull()
+    }
     if obj, ok := dataMap["incidentEpisodeNumberPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3253,6 +3411,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     data.AlertNumbersStartAt = numberFromAPI(data.AlertNumbersStartAt, dataMap["alertNumbersStartAt"])
     data.AlertEpisodeNumbersStartAt = numberFromAPI(data.AlertEpisodeNumbersStartAt, dataMap["alertEpisodeNumbersStartAt"])
     data.ScheduledMaintenanceNumbersStartAt = numberFromAPI(data.ScheduledMaintenanceNumbersStartAt, dataMap["scheduledMaintenanceNumbersStartAt"])
+    data.SecurityCaseNumbersStartAt = numberFromAPI(data.SecurityCaseNumbersStartAt, dataMap["securityCaseNumbersStartAt"])
     if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
     }
@@ -3433,6 +3592,43 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["limitAlertsToOneEpisode"].(bool); ok {
         data.LimitAlertsToOneEpisode = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["defaultNetworkTopologyLayout"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultNetworkTopologyLayout = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultNetworkTopologyLayout = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultNetworkTopologyLayout = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultNetworkTopologyLayout = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultNetworkTopologyLayout = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultNetworkTopologyLayout = types.StringNull()
+        }
+    } else if val, ok := dataMap["defaultNetworkTopologyLayout"].(string); ok {
+        data.DefaultNetworkTopologyLayout = types.StringValue(val)
+    } else {
+        data.DefaultNetworkTopologyLayout = types.StringNull()
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4206,6 +4402,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.ScheduledMaintenanceNumberPrefix.IsUnknown() && !state.ScheduledMaintenanceNumberPrefix.IsUnknown() && !data.ScheduledMaintenanceNumberPrefix.Equal(state.ScheduledMaintenanceNumberPrefix) {
         requestDataMap["scheduledMaintenanceNumberPrefix"] = data.ScheduledMaintenanceNumberPrefix.ValueString()
     }
+    if !data.SecurityCaseNumberPrefix.IsUnknown() && !state.SecurityCaseNumberPrefix.IsUnknown() && !data.SecurityCaseNumberPrefix.Equal(state.SecurityCaseNumberPrefix) {
+        requestDataMap["securityCaseNumberPrefix"] = data.SecurityCaseNumberPrefix.ValueString()
+    }
     if !data.IncidentEpisodeNumberPrefix.IsUnknown() && !state.IncidentEpisodeNumberPrefix.IsUnknown() && !data.IncidentEpisodeNumberPrefix.Equal(state.IncidentEpisodeNumberPrefix) {
         requestDataMap["incidentEpisodeNumberPrefix"] = data.IncidentEpisodeNumberPrefix.ValueString()
     }
@@ -4226,6 +4425,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if !data.ScheduledMaintenanceNumbersStartAt.IsUnknown() && !state.ScheduledMaintenanceNumbersStartAt.IsUnknown() && !data.ScheduledMaintenanceNumbersStartAt.Equal(state.ScheduledMaintenanceNumbersStartAt) {
         requestDataMap["scheduledMaintenanceNumbersStartAt"] = r.bigFloatToFloat64(data.ScheduledMaintenanceNumbersStartAt.ValueBigFloat())
+    }
+    if !data.SecurityCaseNumbersStartAt.IsUnknown() && !state.SecurityCaseNumbersStartAt.IsUnknown() && !data.SecurityCaseNumbersStartAt.Equal(state.SecurityCaseNumbersStartAt) {
+        requestDataMap["securityCaseNumbersStartAt"] = r.bigFloatToFloat64(data.SecurityCaseNumbersStartAt.ValueBigFloat())
     }
     if !data.AutoRechargeSmsOrCallByBalanceInUsd.IsUnknown() && !state.AutoRechargeSmsOrCallByBalanceInUsd.IsUnknown() && !data.AutoRechargeSmsOrCallByBalanceInUsd.Equal(state.AutoRechargeSmsOrCallByBalanceInUsd) {
         requestDataMap["autoRechargeSmsOrCallByBalanceInUSD"] = r.bigFloatToFloat64(data.AutoRechargeSmsOrCallByBalanceInUsd.ValueBigFloat())
@@ -4304,6 +4506,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if !data.LimitAlertsToOneEpisode.IsUnknown() && !state.LimitAlertsToOneEpisode.IsUnknown() && !data.LimitAlertsToOneEpisode.Equal(state.LimitAlertsToOneEpisode) {
         requestDataMap["limitAlertsToOneEpisode"] = data.LimitAlertsToOneEpisode.ValueBool()
+    }
+    if !data.DefaultNetworkTopologyLayout.IsUnknown() && !state.DefaultNetworkTopologyLayout.IsUnknown() && !data.DefaultNetworkTopologyLayout.Equal(state.DefaultNetworkTopologyLayout) {
+        requestDataMap["defaultNetworkTopologyLayout"] = data.DefaultNetworkTopologyLayout.ValueString()
     }
     if !data.EnableAiInsights.IsUnknown() && !state.EnableAiInsights.IsUnknown() && !data.EnableAiInsights.Equal(state.EnableAiInsights) {
         requestDataMap["enableAiInsights"] = data.EnableAiInsights.ValueBool()
@@ -4456,6 +4661,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "incidentNumberPrefix": true,
         "alertNumberPrefix": true,
         "scheduledMaintenanceNumberPrefix": true,
+        "securityCaseNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
         "incidentNumbersStartAt": true,
@@ -4463,6 +4669,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "alertNumbersStartAt": true,
         "alertEpisodeNumbersStartAt": true,
         "scheduledMaintenanceNumbersStartAt": true,
+        "securityCaseNumbersStartAt": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticSecurityCaseTriage": true,
@@ -4506,6 +4713,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
+        "defaultNetworkTopologyLayout": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "incidentAiDailyAutonomousTokenLimit": true,
@@ -4911,6 +5119,43 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.ScheduledMaintenanceNumberPrefix = types.StringNull()
     }
+    if obj, ok := dataMap["securityCaseNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SecurityCaseNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SecurityCaseNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityCaseNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecurityCaseNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["securityCaseNumberPrefix"].(string); ok {
+        data.SecurityCaseNumberPrefix = types.StringValue(val)
+    } else {
+        data.SecurityCaseNumberPrefix = types.StringNull()
+    }
     if obj, ok := dataMap["incidentEpisodeNumberPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4990,6 +5235,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     data.AlertNumbersStartAt = numberFromAPI(data.AlertNumbersStartAt, dataMap["alertNumbersStartAt"])
     data.AlertEpisodeNumbersStartAt = numberFromAPI(data.AlertEpisodeNumbersStartAt, dataMap["alertEpisodeNumbersStartAt"])
     data.ScheduledMaintenanceNumbersStartAt = numberFromAPI(data.ScheduledMaintenanceNumbersStartAt, dataMap["scheduledMaintenanceNumbersStartAt"])
+    data.SecurityCaseNumbersStartAt = numberFromAPI(data.SecurityCaseNumbersStartAt, dataMap["securityCaseNumbersStartAt"])
     if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
     }
@@ -5170,6 +5416,43 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["limitAlertsToOneEpisode"].(bool); ok {
         data.LimitAlertsToOneEpisode = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["defaultNetworkTopologyLayout"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultNetworkTopologyLayout = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultNetworkTopologyLayout = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultNetworkTopologyLayout = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultNetworkTopologyLayout = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultNetworkTopologyLayout = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultNetworkTopologyLayout = types.StringNull()
+        }
+    } else if val, ok := dataMap["defaultNetworkTopologyLayout"].(string); ok {
+        data.DefaultNetworkTopologyLayout = types.StringValue(val)
+    } else {
+        data.DefaultNetworkTopologyLayout = types.StringNull()
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -5951,6 +6234,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     if config.ScheduledMaintenanceNumberPrefix.IsNull() && !plan.ScheduledMaintenanceNumberPrefix.IsUnknown() {
         data.ScheduledMaintenanceNumberPrefix = plan.ScheduledMaintenanceNumberPrefix
     }
+    if config.SecurityCaseNumberPrefix.IsNull() && !plan.SecurityCaseNumberPrefix.IsUnknown() {
+        data.SecurityCaseNumberPrefix = plan.SecurityCaseNumberPrefix
+    }
     if config.IncidentEpisodeNumberPrefix.IsNull() && !plan.IncidentEpisodeNumberPrefix.IsUnknown() {
         data.IncidentEpisodeNumberPrefix = plan.IncidentEpisodeNumberPrefix
     }
@@ -5971,6 +6257,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.ScheduledMaintenanceNumbersStartAt.IsNull() && !plan.ScheduledMaintenanceNumbersStartAt.IsUnknown() {
         data.ScheduledMaintenanceNumbersStartAt = plan.ScheduledMaintenanceNumbersStartAt
+    }
+    if config.SecurityCaseNumbersStartAt.IsNull() && !plan.SecurityCaseNumbersStartAt.IsUnknown() {
+        data.SecurityCaseNumbersStartAt = plan.SecurityCaseNumbersStartAt
     }
     if config.EnableAutomaticIncidentInvestigation.IsNull() && !plan.EnableAutomaticIncidentInvestigation.IsUnknown() {
         data.EnableAutomaticIncidentInvestigation = plan.EnableAutomaticIncidentInvestigation
@@ -6100,6 +6389,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.LimitAlertsToOneEpisode.IsNull() && !plan.LimitAlertsToOneEpisode.IsUnknown() {
         data.LimitAlertsToOneEpisode = plan.LimitAlertsToOneEpisode
+    }
+    if config.DefaultNetworkTopologyLayout.IsNull() && !plan.DefaultNetworkTopologyLayout.IsUnknown() {
+        data.DefaultNetworkTopologyLayout = plan.DefaultNetworkTopologyLayout
     }
     if config.AlertInvestigationMinimumSeverityId.IsNull() && !plan.AlertInvestigationMinimumSeverityId.IsUnknown() {
         data.AlertInvestigationMinimumSeverityId = plan.AlertInvestigationMinimumSeverityId

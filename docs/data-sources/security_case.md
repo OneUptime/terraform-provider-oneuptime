@@ -67,6 +67,7 @@ data "oneuptime_security_case" "by_id" {
 - `contain_warned_at` (String) When OneUptime told the people on the case that it was about to miss its contain target.
 - `contained_at` (String) When the case first reached Contained. The time to contain is measured to here.
 - `created_at` (String) Date and Time when the object was created.
+- `custom_fields` (String) The values of the project's own security case fields (Security Events > Settings > Custom Fields), by each field's name. A JSON value: read it with `jsondecode()`.
 - `entities` (String) The users, hosts, IP addresses, domains and files the case is about, each as { type, value }. Detections add theirs as they join the case. A JSON value: read it with `jsondecode()`.
 - `first_detected_at` (String) When the case's earliest detection fired.
 - `labels` (Set of String) Labels to filter and report on cases by. IDs of `oneuptime_label` resources.

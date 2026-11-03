@@ -56,6 +56,7 @@ type RunnerResourceModel struct {
     Slug types.String `tfsdk:"slug"`
     LastAlive RFC3339Value `tfsdk:"last_alive"`
     CanRunAiCommands types.Bool `tfsdk:"can_run_ai_commands"`
+    TakesCodeFixes types.Bool `tfsdk:"takes_code_fixes"`
     IsGlobalRunner types.Bool `tfsdk:"is_global_runner"`
     HostInfo JSONSubsetValue `tfsdk:"host_info"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -189,6 +190,10 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
             },
             "can_run_ai_commands": schema.BoolAttribute{
                 MarkdownDescription: "Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, kubectl) that either match an allowlist or wait for one-click human approval. Set by OneUptime: on once an auto remediation rule picks this Runner, and on for the in-cluster Runner the Kubernetes agent chart installs.",
+                Computed: true,
+            },
+            "takes_code_fixes": schema.BoolAttribute{
+                MarkdownDescription: "Whether this Runner takes OneUptime AI's code fixes, as it said on its last heartbeat. Empty for a Runner of a release that does not say.",
                 Computed: true,
             },
             "is_global_runner": schema.BoolAttribute{
@@ -354,6 +359,7 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
         "slug": true,
         "lastAlive": true,
         "canRunAiCommands": true,
+        "takesCodeFixes": true,
         "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
@@ -696,6 +702,11 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
     if val, ok := dataMap["canRunAiCommands"].(bool); ok {
         data.CanRunAiCommands = types.BoolValue(val)
     }
+    if val, ok := dataMap["takesCodeFixes"].(bool); ok {
+        data.TakesCodeFixes = types.BoolValue(val)
+    } else {
+        data.TakesCodeFixes = types.BoolNull()
+    }
     if val, ok := dataMap["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)
     }
@@ -818,6 +829,7 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
         "slug": true,
         "lastAlive": true,
         "canRunAiCommands": true,
+        "takesCodeFixes": true,
         "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
@@ -1161,6 +1173,11 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
     if val, ok := dataMap["canRunAiCommands"].(bool); ok {
         data.CanRunAiCommands = types.BoolValue(val)
     }
+    if val, ok := dataMap["takesCodeFixes"].(bool); ok {
+        data.TakesCodeFixes = types.BoolValue(val)
+    } else {
+        data.TakesCodeFixes = types.BoolNull()
+    }
     if val, ok := dataMap["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)
     }
@@ -1336,6 +1353,7 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
         "slug": true,
         "lastAlive": true,
         "canRunAiCommands": true,
+        "takesCodeFixes": true,
         "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
@@ -1672,6 +1690,11 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
     }
     if val, ok := dataMap["canRunAiCommands"].(bool); ok {
         data.CanRunAiCommands = types.BoolValue(val)
+    }
+    if val, ok := dataMap["takesCodeFixes"].(bool); ok {
+        data.TakesCodeFixes = types.BoolValue(val)
+    } else {
+        data.TakesCodeFixes = types.BoolNull()
     }
     if val, ok := dataMap["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)
