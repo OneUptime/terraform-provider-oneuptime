@@ -82,6 +82,7 @@ type StatusPageResourceModel struct {
     CoverImageAltText types.String `tfsdk:"cover_image_alt_text"`
     CustomFields JSONSubsetValue `tfsdk:"custom_fields"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
+    EnableMagicLinkLogin types.Bool `tfsdk:"enable_magic_link_login"`
     PrivateUserSessionLengthInHours types.Number `tfsdk:"private_user_session_length_in_hours"`
     SmtpConfigId types.String `tfsdk:"smtp_config_id"`
     CallSmsConfigId types.String `tfsdk:"call_sms_config_id"`
@@ -464,6 +465,15 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_magic_link_login": schema.BoolAttribute{
+                MarkdownDescription: "Can private users sign in to this private status page with a one-time link emailed to them (a magic link), instead of typing a password? They can still sign in with their password. Not offered while SSO is required.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },
@@ -1036,6 +1046,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if !data.RequireSsoForLogin.IsNull() && !data.RequireSsoForLogin.IsUnknown() {
         requestDataMap["requireSsoForLogin"] = data.RequireSsoForLogin.ValueBool()
     }
+    if !data.EnableMagicLinkLogin.IsNull() && !data.EnableMagicLinkLogin.IsUnknown() {
+        requestDataMap["enableMagicLinkLogin"] = data.EnableMagicLinkLogin.ValueBool()
+    }
     if !data.PrivateUserSessionLengthInHours.IsNull() && !data.PrivateUserSessionLengthInHours.IsUnknown() {
         requestDataMap["privateUserSessionLengthInHours"] = r.bigFloatToFloat64(data.PrivateUserSessionLengthInHours.ValueBigFloat())
     }
@@ -1226,6 +1239,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "coverImageAltText": true,
         "customFields": true,
         "requireSsoForLogin": true,
+        "enableMagicLinkLogin": true,
         "privateUserSessionLengthInHours": true,
         "smtpConfigId": true,
         "callSmsConfigId": true,
@@ -2061,6 +2075,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableMagicLinkLogin"].(bool); ok {
+        data.EnableMagicLinkLogin = types.BoolValue(val)
     }
     data.PrivateUserSessionLengthInHours = numberFromAPI(data.PrivateUserSessionLengthInHours, dataMap["privateUserSessionLengthInHours"])
     if obj, ok := dataMap["smtpConfigId"].(map[string]interface{}); ok {
@@ -2931,6 +2948,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "coverImageAltText": true,
         "customFields": true,
         "requireSsoForLogin": true,
+        "enableMagicLinkLogin": true,
         "privateUserSessionLengthInHours": true,
         "smtpConfigId": true,
         "callSmsConfigId": true,
@@ -3767,6 +3785,9 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableMagicLinkLogin"].(bool); ok {
+        data.EnableMagicLinkLogin = types.BoolValue(val)
     }
     data.PrivateUserSessionLengthInHours = numberFromAPI(data.PrivateUserSessionLengthInHours, dataMap["privateUserSessionLengthInHours"])
     if obj, ok := dataMap["smtpConfigId"].(map[string]interface{}); ok {
@@ -4731,6 +4752,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.RequireSsoForLogin.IsUnknown() && !state.RequireSsoForLogin.IsUnknown() && !data.RequireSsoForLogin.Equal(state.RequireSsoForLogin) {
         requestDataMap["requireSsoForLogin"] = data.RequireSsoForLogin.ValueBool()
     }
+    if !data.EnableMagicLinkLogin.IsUnknown() && !state.EnableMagicLinkLogin.IsUnknown() && !data.EnableMagicLinkLogin.Equal(state.EnableMagicLinkLogin) {
+        requestDataMap["enableMagicLinkLogin"] = data.EnableMagicLinkLogin.ValueBool()
+    }
     if !data.PrivateUserSessionLengthInHours.IsUnknown() && !state.PrivateUserSessionLengthInHours.IsUnknown() && !data.PrivateUserSessionLengthInHours.Equal(state.PrivateUserSessionLengthInHours) {
         requestDataMap["privateUserSessionLengthInHours"] = r.bigFloatToFloat64(data.PrivateUserSessionLengthInHours.ValueBigFloat())
     }
@@ -4919,6 +4943,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "coverImageAltText": true,
         "customFields": true,
         "requireSsoForLogin": true,
+        "enableMagicLinkLogin": true,
         "privateUserSessionLengthInHours": true,
         "smtpConfigId": true,
         "callSmsConfigId": true,
@@ -5749,6 +5774,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableMagicLinkLogin"].(bool); ok {
+        data.EnableMagicLinkLogin = types.BoolValue(val)
     }
     data.PrivateUserSessionLengthInHours = numberFromAPI(data.PrivateUserSessionLengthInHours, dataMap["privateUserSessionLengthInHours"])
     if obj, ok := dataMap["smtpConfigId"].(map[string]interface{}); ok {
@@ -6716,6 +6744,9 @@ func (r *StatusPageResource) keepPlannedValues(data *StatusPageResourceModel, pl
     }
     if config.RequireSsoForLogin.IsNull() && !plan.RequireSsoForLogin.IsUnknown() {
         data.RequireSsoForLogin = plan.RequireSsoForLogin
+    }
+    if config.EnableMagicLinkLogin.IsNull() && !plan.EnableMagicLinkLogin.IsUnknown() {
+        data.EnableMagicLinkLogin = plan.EnableMagicLinkLogin
     }
     if config.PrivateUserSessionLengthInHours.IsNull() && !plan.PrivateUserSessionLengthInHours.IsUnknown() {
         data.PrivateUserSessionLengthInHours = plan.PrivateUserSessionLengthInHours

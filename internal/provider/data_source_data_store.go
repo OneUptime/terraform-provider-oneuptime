@@ -66,12 +66,19 @@ type DataStoreDataSourceModel struct {
     ScanProbeId types.String `tfsdk:"scan_probe_id"`
     ProbeConnectionVariable types.String `tfsdk:"probe_connection_variable"`
     ScanExclusions types.String `tfsdk:"scan_exclusions"`
+    WatchedPaths types.String `tfsdk:"watched_paths"`
     Purpose types.String `tfsdk:"purpose"`
     Retention types.String `tfsdk:"retention"`
     ConfigurationReadAt types.String `tfsdk:"configuration_read_at"`
     ContentScannedAt types.String `tfsdk:"content_scanned_at"`
     ContentScanStatus types.String `tfsdk:"content_scan_status"`
     NextContentScanAt types.String `tfsdk:"next_content_scan_at"`
+    IsTableHealthEnabled types.Bool `tfsdk:"is_table_health_enabled"`
+    TableHealthCollectedAt types.String `tfsdk:"table_health_collected_at"`
+    TableHealthStatus types.String `tfsdk:"table_health_status"`
+    TableHealthMessage types.String `tfsdk:"table_health_message"`
+    TableHealthAssetCount types.Number `tfsdk:"table_health_asset_count"`
+    NewPersonalDataColumns types.String `tfsdk:"new_personal_data_columns"`
     FindingCount types.Number `tfsdk:"finding_count"`
     OpenIssueCount types.Number `tfsdk:"open_issue_count"`
     HighestIssueSeverity types.String `tfsdk:"highest_issue_severity"`
@@ -278,6 +285,11 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "Path prefixes, tables or attribute keys the content scan skips. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
+            "watched_paths": schema.StringAttribute{
+                MarkdownDescription: "The paths of a bucket Data Observability watches like tables, one per line.",
+                Optional: true,
+                Computed: true,
+            },
             "purpose": schema.StringAttribute{
                 MarkdownDescription: "Why the store holds personal data, for the GDPR record of processing.",
                 Optional: true,
@@ -303,6 +315,34 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "next_content_scan_at": schema.StringAttribute{
                 MarkdownDescription: "When the store's content is next sampled.",
+                Computed: true,
+            },
+            "is_table_health_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Data Observability collects the store's tables every few minutes: their columns, row counts, sizes and when they last changed. Only the catalog is read, never a row.",
+                Optional: true,
+                Computed: true,
+            },
+            "table_health_collected_at": schema.StringAttribute{
+                MarkdownDescription: "When Data Observability last collected the store's tables.",
+                Computed: true,
+            },
+            "table_health_status": schema.StringAttribute{
+                MarkdownDescription: "How the last collection of the store's tables ended: Collected, or Failed.",
+                Optional: true,
+                Computed: true,
+            },
+            "table_health_message": schema.StringAttribute{
+                MarkdownDescription: "Why the last collection failed, or what it had to leave out.",
+                Optional: true,
+                Computed: true,
+            },
+            "table_health_asset_count": schema.NumberAttribute{
+                MarkdownDescription: "How many tables and views the last collection found.",
+                Optional: true,
+                Computed: true,
+            },
+            "new_personal_data_columns": schema.StringAttribute{
+                MarkdownDescription: "Columns added lately whose names say they hold personal data, as a collection saw them appear. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "finding_count": schema.NumberAttribute{
@@ -496,6 +536,10 @@ func (d *DataStoreDataSource) Read(ctx context.Context, req datasource.ReadReque
         filters["probeConnectionVariable"] = data.ProbeConnectionVariable.ValueString()
         filterNames = append(filterNames, "probe_connection_variable = "+fmt.Sprintf("%q", data.ProbeConnectionVariable.ValueString()))
     }
+    if !data.WatchedPaths.IsNull() && !data.WatchedPaths.IsUnknown() {
+        filters["watchedPaths"] = data.WatchedPaths.ValueString()
+        filterNames = append(filterNames, "watched_paths = "+fmt.Sprintf("%q", data.WatchedPaths.ValueString()))
+    }
     if !data.Purpose.IsNull() && !data.Purpose.IsUnknown() {
         filters["purpose"] = data.Purpose.ValueString()
         filterNames = append(filterNames, "purpose = "+fmt.Sprintf("%q", data.Purpose.ValueString()))
@@ -507,6 +551,22 @@ func (d *DataStoreDataSource) Read(ctx context.Context, req datasource.ReadReque
     if !data.ContentScanStatus.IsNull() && !data.ContentScanStatus.IsUnknown() {
         filters["contentScanStatus"] = data.ContentScanStatus.ValueString()
         filterNames = append(filterNames, "content_scan_status = "+fmt.Sprintf("%q", data.ContentScanStatus.ValueString()))
+    }
+    if !data.IsTableHealthEnabled.IsNull() && !data.IsTableHealthEnabled.IsUnknown() {
+        filters["isTableHealthEnabled"] = data.IsTableHealthEnabled.ValueBool()
+        filterNames = append(filterNames, "is_table_health_enabled = "+fmt.Sprintf("%t", data.IsTableHealthEnabled.ValueBool()))
+    }
+    if !data.TableHealthStatus.IsNull() && !data.TableHealthStatus.IsUnknown() {
+        filters["tableHealthStatus"] = data.TableHealthStatus.ValueString()
+        filterNames = append(filterNames, "table_health_status = "+fmt.Sprintf("%q", data.TableHealthStatus.ValueString()))
+    }
+    if !data.TableHealthMessage.IsNull() && !data.TableHealthMessage.IsUnknown() {
+        filters["tableHealthMessage"] = data.TableHealthMessage.ValueString()
+        filterNames = append(filterNames, "table_health_message = "+fmt.Sprintf("%q", data.TableHealthMessage.ValueString()))
+    }
+    if !data.TableHealthAssetCount.IsNull() && !data.TableHealthAssetCount.IsUnknown() {
+        filters["tableHealthAssetCount"] = lookupNumber(data.TableHealthAssetCount)
+        filterNames = append(filterNames, "table_health_asset_count = "+data.TableHealthAssetCount.ValueBigFloat().String())
     }
     if !data.FindingCount.IsNull() && !data.FindingCount.IsUnknown() {
         filters["findingCount"] = lookupNumber(data.FindingCount)
@@ -586,12 +646,19 @@ func (d *DataStoreDataSource) Read(ctx context.Context, req datasource.ReadReque
         "scanProbeId": true,
         "probeConnectionVariable": true,
         "scanExclusions": true,
+        "watchedPaths": true,
         "purpose": true,
         "retention": true,
         "configurationReadAt": true,
         "contentScannedAt": true,
         "contentScanStatus": true,
         "nextContentScanAt": true,
+        "isTableHealthEnabled": true,
+        "tableHealthCollectedAt": true,
+        "tableHealthStatus": true,
+        "tableHealthMessage": true,
+        "tableHealthAssetCount": true,
+        "newPersonalDataColumns": true,
         "findingCount": true,
         "openIssueCount": true,
         "highestIssueSeverity": true,
@@ -1224,6 +1291,23 @@ func (d *DataStoreDataSource) Read(ctx context.Context, req datasource.ReadReque
     } else {
         data.ScanExclusions = types.StringNull()
     }
+    if obj, ok := item["watchedPaths"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WatchedPaths = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WatchedPaths = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WatchedPaths = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WatchedPaths = types.StringValue(string(jsonBytes))
+        } else {
+            data.WatchedPaths = types.StringNull()
+        }
+    } else if val, ok := item["watchedPaths"].(string); ok {
+        data.WatchedPaths = types.StringValue(val)
+    } else {
+        data.WatchedPaths = types.StringNull()
+    }
     if obj, ok := item["purpose"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Purpose = types.StringValue(val)
@@ -1325,6 +1409,80 @@ func (d *DataStoreDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.NextContentScanAt = types.StringValue(val)
     } else {
         data.NextContentScanAt = types.StringNull()
+    }
+    if val, ok := item["isTableHealthEnabled"].(bool); ok {
+        data.IsTableHealthEnabled = types.BoolValue(val)
+    } else {
+        data.IsTableHealthEnabled = types.BoolNull()
+    }
+    if obj, ok := item["tableHealthCollectedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TableHealthCollectedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TableHealthCollectedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TableHealthCollectedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TableHealthCollectedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TableHealthCollectedAt = types.StringNull()
+        }
+    } else if val, ok := item["tableHealthCollectedAt"].(string); ok {
+        data.TableHealthCollectedAt = types.StringValue(val)
+    } else {
+        data.TableHealthCollectedAt = types.StringNull()
+    }
+    if obj, ok := item["tableHealthStatus"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TableHealthStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TableHealthStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TableHealthStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TableHealthStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.TableHealthStatus = types.StringNull()
+        }
+    } else if val, ok := item["tableHealthStatus"].(string); ok {
+        data.TableHealthStatus = types.StringValue(val)
+    } else {
+        data.TableHealthStatus = types.StringNull()
+    }
+    if obj, ok := item["tableHealthMessage"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TableHealthMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TableHealthMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TableHealthMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TableHealthMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.TableHealthMessage = types.StringNull()
+        }
+    } else if val, ok := item["tableHealthMessage"].(string); ok {
+        data.TableHealthMessage = types.StringValue(val)
+    } else {
+        data.TableHealthMessage = types.StringNull()
+    }
+    data.TableHealthAssetCount = numberFromAPI(data.TableHealthAssetCount, item["tableHealthAssetCount"])
+    if obj, ok := item["newPersonalDataColumns"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NewPersonalDataColumns = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NewPersonalDataColumns = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NewPersonalDataColumns = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NewPersonalDataColumns = types.StringValue(string(jsonBytes))
+        } else {
+            data.NewPersonalDataColumns = types.StringNull()
+        }
+    } else if val, ok := item["newPersonalDataColumns"].(string); ok {
+        data.NewPersonalDataColumns = types.StringValue(val)
+    } else {
+        data.NewPersonalDataColumns = types.StringNull()
     }
     data.FindingCount = numberFromAPI(data.FindingCount, item["findingCount"])
     data.OpenIssueCount = numberFromAPI(data.OpenIssueCount, item["openIssueCount"])

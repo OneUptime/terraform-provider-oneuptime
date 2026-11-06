@@ -38,6 +38,7 @@ type WorkflowLogDataSourceModel struct {
     ResumeAt types.String `tfsdk:"resume_at"`
     StepTrace types.String `tfsdk:"step_trace"`
     IsTestRun types.Bool `tfsdk:"is_test_run"`
+    CanRunAgain types.Bool `tfsdk:"can_run_again"`
     StartedByUserId types.String `tfsdk:"started_by_user_id"`
 }
 
@@ -47,7 +48,7 @@ func (d *WorkflowLogDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *WorkflowLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Logs of the workflows executed Look up an existing workflow log by `id`, or by any of its other arguments (`is_test_run`, `logs`, `started_by_user_id`, ...): each one set must match, and exactly one workflow log may match them all.",
+        MarkdownDescription: "Logs of the workflows executed Look up an existing workflow log by `id`, or by any of its other arguments (`can_run_again`, `is_test_run`, `logs`, ...): each one set must match, and exactly one workflow log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -101,6 +102,11 @@ func (d *WorkflowLogDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "is_test_run": schema.BoolAttribute{
                 MarkdownDescription: "True for a run a person started by hand from the Builder while the workflow was turned off. Its steps ran for real; the workflow's trigger stayed paused.",
+                Optional: true,
+                Computed: true,
+            },
+            "can_run_again": schema.BoolAttribute{
+                MarkdownDescription: "True when OneUptime kept what this run started with, so a person can run the workflow again with the same values.",
                 Optional: true,
                 Computed: true,
             },
@@ -165,6 +171,10 @@ func (d *WorkflowLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["isTestRun"] = data.IsTestRun.ValueBool()
         filterNames = append(filterNames, "is_test_run = "+fmt.Sprintf("%t", data.IsTestRun.ValueBool()))
     }
+    if !data.CanRunAgain.IsNull() && !data.CanRunAgain.IsUnknown() {
+        filters["canRunAgain"] = data.CanRunAgain.ValueBool()
+        filterNames = append(filterNames, "can_run_again = "+fmt.Sprintf("%t", data.CanRunAgain.ValueBool()))
+    }
     if !data.StartedByUserId.IsNull() && !data.StartedByUserId.IsUnknown() {
         filters["startedByUserId"] = data.StartedByUserId.ValueString()
         filterNames = append(filterNames, "started_by_user_id = "+fmt.Sprintf("%q", data.StartedByUserId.ValueString()))
@@ -197,6 +207,7 @@ func (d *WorkflowLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         "resumeAt": true,
         "stepTrace": true,
         "isTestRun": true,
+        "canRunAgain": true,
         "startedByUserId": true,
         "_id": true,
     }
@@ -450,6 +461,11 @@ func (d *WorkflowLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.IsTestRun = types.BoolValue(val)
     } else {
         data.IsTestRun = types.BoolNull()
+    }
+    if val, ok := item["canRunAgain"].(bool); ok {
+        data.CanRunAgain = types.BoolValue(val)
+    } else {
+        data.CanRunAgain = types.BoolNull()
     }
     if obj, ok := item["startedByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -23,7 +23,7 @@ resource "oneuptime_data_store" "example" {
 
 ### Required
 
-- `kind` (String) What kind of store it is: an S3 bucket, an RDS instance, a PostgreSQL database, a service's logs. Allowed values: `AWS S3 Bucket`, `AWS RDS Instance`, `AWS Aurora Cluster`, `AWS RDS Snapshot`, `AWS DynamoDB Table`, `AWS Redshift Cluster`, `AWS DocumentDB Cluster`, `AWS OpenSearch Domain`, `AWS ElastiCache Cluster`, `AWS EFS File System`, `Azure Storage Account`, `Azure SQL Database`, `Azure Cosmos DB Account`, `Azure PostgreSQL Server`, `Azure MySQL Server`, `Google Cloud Storage Bucket`, `Google Cloud SQL Instance`, `Google BigQuery Dataset`, `Google Firestore Database`, `Google Spanner Instance`, `Google Bigtable Instance`, `PostgreSQL`, `MySQL`, `MongoDB`, `SQL Server`, `Oracle`, `Redis`, `Elasticsearch`, `Logs`, `Traces`, `Exceptions`, `Session Replays`, `AI Conversations`.
+- `kind` (String) What kind of store it is: an S3 bucket, an RDS instance, a PostgreSQL database, a service's logs. Allowed values: `AWS S3 Bucket`, `AWS RDS Instance`, `AWS Aurora Cluster`, `AWS RDS Snapshot`, `AWS DynamoDB Table`, `AWS Redshift Cluster`, `AWS DocumentDB Cluster`, `AWS OpenSearch Domain`, `AWS ElastiCache Cluster`, `AWS EFS File System`, `Azure Storage Account`, `Azure SQL Database`, `Azure Cosmos DB Account`, `Azure PostgreSQL Server`, `Azure MySQL Server`, `Google Cloud Storage Bucket`, `Google Cloud SQL Instance`, `Google BigQuery Dataset`, `Google Firestore Database`, `Google Spanner Instance`, `Google Bigtable Instance`, `PostgreSQL`, `MySQL`, `MongoDB`, `SQL Server`, `Oracle`, `Redis`, `Elasticsearch`, `Snowflake`, `ClickHouse`, `Databricks`, `Amazon Athena`, `Logs`, `Traces`, `Exceptions`, `Session Replays`, `AI Conversations`.
 - `name` (String) The store's name: a bucket, database, dataset or service name.
 
 ### Optional
@@ -34,6 +34,7 @@ resource "oneuptime_data_store" "example" {
 - `is_ai_data` (Boolean) The store holds data used to train or ground an AI model. Defaults to `false`.
 - `is_content_scan_enabled` (Boolean) Whether Data Security samples the store's content. Configuration checks run either way. Defaults to `true`.
 - `is_public_by_design` (Boolean) The store is meant to be public, such as a website's assets. Public access checks pass for it. Defaults to `false`.
+- `is_table_health_enabled` (Boolean) Data Observability collects the store's tables every few minutes: their columns, row counts, sizes and when they last changed. Only the catalog is read, never a row. Defaults to `true`.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `probe_connection_variable` (String) For a database scanned from a probe: the environment variable on that probe that holds its connection string. The connection string itself never reaches OneUptime.
 - `purpose` (String) Why the store holds personal data, for the GDPR record of processing.
@@ -41,6 +42,7 @@ resource "oneuptime_data_store" "example" {
 - `scan_exclusions` (String) Path prefixes, tables or attribute keys the content scan skips. A JSON value: write it with `jsonencode()`.
 - `scan_probe_id` (String) A probe that scans the store's content from inside your network instead of OneUptime's workers. The ID of a `oneuptime_probe`.
 - `sensitivity_override` (String) A sensitivity people set by hand, which the store is treated as instead of what the scans found. Allowed values: `Restricted`, `Confidential`, `Internal`, `Public`.
+- `watched_paths` (String) The paths of a bucket Data Observability watches like tables, one per line.
 
 ### Read-Only
 
@@ -68,6 +70,7 @@ resource "oneuptime_data_store" "example" {
 - `is_archived` (Boolean) The store is gone from its cloud or source; it is kept with its history.
 - `last_activity_at` (String) When the store was last read or written, when its metrics or traces say.
 - `last_seen_at` (String) When OneUptime last found the store.
+- `new_personal_data_columns` (String) Columns added lately whose names say they hold personal data, as a collection saw them appear. A JSON value: read it with `jsondecode()`.
 - `next_content_scan_at` (String) When the store's content is next sampled.
 - `object_count` (Number) How many objects, rows or documents the store holds, when known.
 - `open_issue_count` (Number) How many of the store's issues are open.
@@ -82,6 +85,10 @@ resource "oneuptime_data_store" "example" {
 - `size_in_bytes` (Number) How much data the store holds, from the metrics already collected.
 - `store_key` (String) What identifies the store within the project: its provider, kind and native id. One row per store, however often it is discovered.
 - `subject_countries` (String) Countries whose people's data the store holds, from country-bound data types (ISO 3166-1 alpha-2). A JSON value: read it with `jsondecode()`.
+- `table_health_asset_count` (Number) How many tables and views the last collection found.
+- `table_health_collected_at` (String) When Data Observability last collected the store's tables.
+- `table_health_message` (String) Why the last collection failed, or what it had to leave out.
+- `table_health_status` (String) How the last collection of the store's tables ended: Collected, or Failed.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

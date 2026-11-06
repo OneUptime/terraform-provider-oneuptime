@@ -28,6 +28,7 @@ resource "oneuptime_hunt" "example" {
 
 - `description` (String) Why the hunt matters and what to do when it finds something, for whoever opens it later.
 - `filters` (String) The Events sidebar's filters kept beside the search: each field's values, or with ! before the field the values it leaves out. At most 50 values. A JSON value: write it with `jsonencode()`.
+- `library_hunt_id` (String) The Hunt Library starter this hunt was added from, such as encoded-powershell. Empty for a hunt saved from a search of your own.
 - `notify_teams` (Set of String) The teams whose members are told when a scheduled run finds events, each as their notification settings say. Only members who can read security events are told. IDs of `oneuptime_team` resources.
 - `notify_user_emails` (Set of String) The email addresses of the people in `notify_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
 - `notify_users` (Set of String) The people told when a scheduled run finds events, each as their notification settings say. Only people who can read security events are told. IDs of `oneuptime_user` records. Or name them by email address, in `notify_user_emails`.

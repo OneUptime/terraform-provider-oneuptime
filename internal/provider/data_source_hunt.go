@@ -40,6 +40,7 @@ type HuntDataSourceModel struct {
     Schedule types.String `tfsdk:"schedule"`
     NotifyUsers types.Set `tfsdk:"notify_users"`
     NotifyTeams types.Set `tfsdk:"notify_teams"`
+    LibraryHuntId types.String `tfsdk:"library_hunt_id"`
     ScheduledByUserId types.String `tfsdk:"scheduled_by_user_id"`
     SearchedUpToAt types.String `tfsdk:"searched_up_to_at"`
     NextRunAt types.String `tfsdk:"next_run_at"`
@@ -116,6 +117,11 @@ func (d *HuntDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "The teams whose members are told when a scheduled run finds events, each as their notification settings say. Only members who can read security events are told. IDs of `oneuptime_team` resources.",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "library_hunt_id": schema.StringAttribute{
+                MarkdownDescription: "The Hunt Library starter this hunt was added from, such as encoded-powershell. Empty for a hunt saved from a search of your own.",
+                Optional: true,
+                Computed: true,
             },
             "scheduled_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the person the hunt's scheduled runs run as. The ID of a `oneuptime_user` (see the data source).",
@@ -223,6 +229,10 @@ func (d *HuntDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         filters["schedule"] = data.Schedule.ValueString()
         filterNames = append(filterNames, "schedule = "+fmt.Sprintf("%q", data.Schedule.ValueString()))
     }
+    if !data.LibraryHuntId.IsNull() && !data.LibraryHuntId.IsUnknown() {
+        filters["libraryHuntId"] = data.LibraryHuntId.ValueString()
+        filterNames = append(filterNames, "library_hunt_id = "+fmt.Sprintf("%q", data.LibraryHuntId.ValueString()))
+    }
     if !data.ScheduledByUserId.IsNull() && !data.ScheduledByUserId.IsUnknown() {
         filters["scheduledByUserId"] = data.ScheduledByUserId.ValueString()
         filterNames = append(filterNames, "scheduled_by_user_id = "+fmt.Sprintf("%q", data.ScheduledByUserId.ValueString()))
@@ -271,6 +281,7 @@ func (d *HuntDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "schedule": true,
         "notifyUsers": true,
         "notifyTeams": true,
+        "libraryHuntId": true,
         "scheduledByUserId": true,
         "searchedUpToAt": true,
         "nextRunAt": true,
@@ -559,6 +570,23 @@ func (d *HuntDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.NotifyTeams = types.SetValueMust(types.StringType, setItems)
     } else {
         data.NotifyTeams = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["libraryHuntId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LibraryHuntId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LibraryHuntId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LibraryHuntId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LibraryHuntId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LibraryHuntId = types.StringNull()
+        }
+    } else if val, ok := item["libraryHuntId"].(string); ok {
+        data.LibraryHuntId = types.StringValue(val)
+    } else {
+        data.LibraryHuntId = types.StringNull()
     }
     if obj, ok := item["scheduledByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

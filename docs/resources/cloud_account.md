@@ -43,6 +43,7 @@ resource "oneuptime_cloud_account" "example" {
 - `ai_access_last_error` (String) The most recent failure OneUptime AI hit in this account — an operation that failed, or a Cloud AI agent that could not connect to it — kept until the next success. Set by the server.
 - `ai_access_last_verified_at` (String) When an operation from OneUptime AI last succeeded in this account through its Cloud AI agent. Set by the server.
 - `cloud_connection_id` (String) ID of the connection that reads this account, if one does. The ID of a `oneuptime_cloud_connection`.
+- `cost_summary` (String) What the account cost this month so far, at its pace and last month, from its cloud's billing, and whether its costs could be read. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) ID of the user who created this account. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
@@ -53,6 +54,7 @@ resource "oneuptime_cloud_account" "example" {
 - `region_count` (Number) How many regions the account's live resources are in.
 - `resource_count` (Number) How many live resources the account has in OneUptime.
 - `resource_summary` (String) The account's live resources counted by type and by region (CloudAccountSummary). A JSON value: read it with `jsondecode()`.
+- `savings_summary` (String) How many ways to spend less the account's cloud recommends and what they would save a month, and whether they could be read. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

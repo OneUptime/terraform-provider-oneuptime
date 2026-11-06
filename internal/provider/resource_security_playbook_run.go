@@ -40,7 +40,7 @@ type SecurityPlaybookRunResourceModel struct {
     SecurityPlaybookId types.String `tfsdk:"security_playbook_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
-    PlaybookName JSONSubsetValue `tfsdk:"playbook_name"`
+    PlaybookName types.String `tfsdk:"playbook_name"`
     Trigger types.String `tfsdk:"trigger"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
     Status types.String `tfsdk:"status"`
@@ -112,7 +112,6 @@ func (r *SecurityPlaybookRunResource) schemaDefinition() schema.Schema {
             },
             "playbook_name": schema.StringAttribute{
                 MarkdownDescription: "The playbook's name when the run started, kept if the playbook is renamed or deleted.",
-                CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "trigger": schema.StringAttribute{
@@ -430,41 +429,41 @@ func (r *SecurityPlaybookRunResource) Create(ctx context.Context, req resource.C
         data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["playbookName"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PlaybookName = NewJSONSubsetValue(val)
+            data.PlaybookName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.PlaybookName = NewJSONSubsetValue(val)
+            data.PlaybookName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.PlaybookName = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.PlaybookName = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.PlaybookName = NewJSONSubsetValue(string(jsonBytes))
+                data.PlaybookName = types.StringValue(string(jsonBytes))
             } else {
-                data.PlaybookName = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.PlaybookName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.PlaybookName = NewJSONSubsetValue(string(jsonBytes))
+                data.PlaybookName = types.StringValue(string(jsonBytes))
             } else {
-                data.PlaybookName = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.PlaybookName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.PlaybookName = NewJSONSubsetValue(string(jsonBytes))
+            data.PlaybookName = types.StringValue(string(jsonBytes))
         } else {
-            data.PlaybookName = NewJSONSubsetNull()
+            data.PlaybookName = types.StringNull()
         }
     } else if val, ok := dataMap["playbookName"].(string); ok {
-        data.PlaybookName = NewJSONSubsetValue(val)
+        data.PlaybookName = types.StringValue(val)
     } else {
-        data.PlaybookName = NewJSONSubsetNull()
+        data.PlaybookName = types.StringNull()
     }
     if obj, ok := dataMap["trigger"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -937,41 +936,41 @@ func (r *SecurityPlaybookRunResource) Read(ctx context.Context, req resource.Rea
         data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["playbookName"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PlaybookName = NewJSONSubsetValue(val)
+            data.PlaybookName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.PlaybookName = NewJSONSubsetValue(val)
+            data.PlaybookName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.PlaybookName = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.PlaybookName = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.PlaybookName = NewJSONSubsetValue(string(jsonBytes))
+                data.PlaybookName = types.StringValue(string(jsonBytes))
             } else {
-                data.PlaybookName = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.PlaybookName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.PlaybookName = NewJSONSubsetValue(string(jsonBytes))
+                data.PlaybookName = types.StringValue(string(jsonBytes))
             } else {
-                data.PlaybookName = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.PlaybookName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.PlaybookName = NewJSONSubsetValue(string(jsonBytes))
+            data.PlaybookName = types.StringValue(string(jsonBytes))
         } else {
-            data.PlaybookName = NewJSONSubsetNull()
+            data.PlaybookName = types.StringNull()
         }
     } else if val, ok := dataMap["playbookName"].(string); ok {
-        data.PlaybookName = NewJSONSubsetValue(val)
+        data.PlaybookName = types.StringValue(val)
     } else {
-        data.PlaybookName = NewJSONSubsetNull()
+        data.PlaybookName = types.StringNull()
     }
     if obj, ok := dataMap["trigger"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1467,41 +1466,41 @@ func (r *SecurityPlaybookRunResource) Update(ctx context.Context, req resource.U
         data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["playbookName"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PlaybookName = NewJSONSubsetValue(val)
+            data.PlaybookName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.PlaybookName = NewJSONSubsetValue(val)
+            data.PlaybookName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.PlaybookName = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.PlaybookName = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.PlaybookName = NewJSONSubsetValue(string(jsonBytes))
+                data.PlaybookName = types.StringValue(string(jsonBytes))
             } else {
-                data.PlaybookName = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.PlaybookName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.PlaybookName = NewJSONSubsetValue(string(jsonBytes))
+                data.PlaybookName = types.StringValue(string(jsonBytes))
             } else {
-                data.PlaybookName = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.PlaybookName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.PlaybookName = NewJSONSubsetValue(string(jsonBytes))
+            data.PlaybookName = types.StringValue(string(jsonBytes))
         } else {
-            data.PlaybookName = NewJSONSubsetNull()
+            data.PlaybookName = types.StringNull()
         }
     } else if val, ok := dataMap["playbookName"].(string); ok {
-        data.PlaybookName = NewJSONSubsetValue(val)
+        data.PlaybookName = types.StringValue(val)
     } else {
-        data.PlaybookName = NewJSONSubsetNull()
+        data.PlaybookName = types.StringNull()
     }
     if obj, ok := dataMap["trigger"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

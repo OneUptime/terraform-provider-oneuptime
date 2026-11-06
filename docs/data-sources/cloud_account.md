@@ -48,10 +48,12 @@ data "oneuptime_cloud_account" "by_id" {
 - `ai_access_configured_at` (String) When OneUptime AI access to this account was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Cloud AI agent that connects later never overwrites a setting an operator chose.
 - `ai_access_last_verified_at` (String) When an operation from OneUptime AI last succeeded in this account through its Cloud AI agent. Set by the server.
 - `ai_command_allowlist` (String) Optional JSON array of command patterns that Automatic mode may run in this account without approval even though they are riskier changes. Each pattern is one cloud catalog command (cloud <operation> RESOURCE [--flag value]) and is compared with the command word by word: * stands for exactly one word (a resource id, a count), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid change for this account's cloud is refused. Destructive operations (Denied tier) never run regardless, and an operation that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the account can remove patterns or clear the list. A JSON value: read it with `jsondecode()`.
+- `cost_summary` (String) What the account cost this month so far, at its pace and last month, from its cloud's billing, and whether its costs could be read. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `inventory_listed_at` (String) When the account's inventory last listed every resource it has.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When a cloud connection last reached the account.
 - `project_id` (String) ID of the project this account belongs to. The ID of a `oneuptime_project`.
 - `resource_summary` (String) The account's live resources counted by type and by region (CloudAccountSummary). A JSON value: read it with `jsondecode()`.
+- `savings_summary` (String) How many ways to spend less the account's cloud recommends and what they would save a month, and whether they could be read. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

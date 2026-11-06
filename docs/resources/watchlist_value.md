@@ -27,6 +27,7 @@ resource "oneuptime_watchlist_value" "example" {
 
 ### Optional
 
+- `expires_at` (String) When the value leaves the list: from then on no rule, monitor, hunt or search reads it, and OneUptime removes it. Empty: it stays until someone removes it.
 - `note` (String) Why the value is on the list, for whoever reads it later.
 
 ### Read-Only

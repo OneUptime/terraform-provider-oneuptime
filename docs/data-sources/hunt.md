@@ -34,6 +34,7 @@ data "oneuptime_hunt" "by_id" {
 - `last_found_event_count` (Number) How many events the last run that found something found.
 - `last_run_error` (String) Why the hunt's last scheduled run could not be made. Empty when it ran.
 - `last_run_event_count` (Number) How many events the hunt's last scheduled run found.
+- `library_hunt_id` (String) The Hunt Library starter this hunt was added from, such as encoded-powershell. Empty for a hunt saved from a search of your own.
 - `name` (String) What the hunt looks for, in a few words. At most 100 characters.
 - `schedule` (String) How often the hunt runs on its own and tells people what it found: Not Scheduled, Every Hour, Every 6 Hours, Every Day or Every Week. Each run searches the events that arrived since the run before.
 - `scheduled_by_user_id` (String) ID of the person the hunt's scheduled runs run as. The ID of a `oneuptime_user` (see the data source).

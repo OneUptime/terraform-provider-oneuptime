@@ -24,9 +24,9 @@ resource "oneuptime_workspace_notification_rule" "example" {
 
 ### Required
 
-- `event_type` (String) Event Type for the Workspace like Incident Created, Monitor Status Updated, etc. Allowed values: `Incident`, `Monitor`, `Alert`, `Alert Episode`, `Incident Episode`, `Scheduled Maintenance`, `On-Call Duty Policy`, `Security Case`.
+- `event_type` (String) Event Type for the Workspace like Incident Created, Monitor Status Updated, etc. Allowed values: `Incident`, `Monitor`, `Alert`, `Alert Episode`, `Incident Episode`, `Scheduled Maintenance`, `On-Call Duty Policy`, `Security Case`, `Security Hunt`.
 - `name` (String) Name of the Notification Rule.
-- `workspace_type` (String) Type of Workspace - slack, microsoft teams etc. Allowed values: `Slack`, `MicrosoftTeams`.
+- `workspace_type` (String) Type of Workspace - slack, microsoft teams etc. Allowed values: `Slack`, `MicrosoftTeams`, `Mattermost`.
 
 ### Optional
 

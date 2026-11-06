@@ -56,6 +56,7 @@ type AlertResourceModel struct {
     DockerHosts types.Set `tfsdk:"docker_hosts"`
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    OpenStackClouds types.Set `tfsdk:"open_stack_clouds"`
     VmwareVCenters types.Set `tfsdk:"vmware_v_centers"`
     IotFleets types.Set `tfsdk:"iot_fleets"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
@@ -94,6 +95,7 @@ type AlertResourceModel struct {
     AlertEpisodeId types.String `tfsdk:"alert_episode_id"`
     NextReminderNotificationAt RFC3339Value `tfsdk:"next_reminder_notification_at"`
     ReminderNotificationSentCount types.Number `tfsdk:"reminder_notification_sent_count"`
+    NextIncidentRuleCheckAt RFC3339Value `tfsdk:"next_incident_rule_check_at"`
 }
 
 func (r *AlertResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -241,6 +243,16 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
                 Validators: recordIDSetValidators("oneuptime_proxmox_cluster"),
+            },
+            "open_stack_clouds": schema.SetAttribute{
+                MarkdownDescription: "List of OpenStack clouds affected by this alert. IDs of `oneuptime_openstack_cloud` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+                Validators: recordIDSetValidators("oneuptime_openstack_cloud"),
             },
             "vmware_v_centers": schema.SetAttribute{
                 MarkdownDescription: "List of vCenters affected by this alert. IDs of `oneuptime_vcenter` resources.",
@@ -530,6 +542,11 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "How many reminder notifications have been sent to owners of this alert so far.",
                 Computed: true,
             },
+            "next_incident_rule_check_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime next checks whether an incident should be declared from this alert: set while an alert incident rule that matched it waits for the alert to stay unresolved, and empty otherwise. Set by OneUptime; it cannot be written.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
         },
     }
 }
@@ -632,6 +649,9 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     }
     if !data.ProxmoxClusters.IsNull() && !data.ProxmoxClusters.IsUnknown() {
         requestDataMap["proxmoxClusters"] = r.convertTerraformSetToInterface(data.ProxmoxClusters)
+    }
+    if !data.OpenStackClouds.IsNull() && !data.OpenStackClouds.IsUnknown() {
+        requestDataMap["openStackClouds"] = r.convertTerraformSetToInterface(data.OpenStackClouds)
     }
     if !data.VmwareVCenters.IsNull() && !data.VmwareVCenters.IsUnknown() {
         requestDataMap["vmwareVCenters"] = r.convertTerraformSetToInterface(data.VmwareVCenters)
@@ -755,6 +775,7 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "dockerSwarmClusters": true,
@@ -793,6 +814,7 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
         "alertEpisodeId": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
+        "nextIncidentRuleCheckAt": true,
         "_id": true,
     }
 
@@ -1245,6 +1267,38 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     } else {
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["openStackClouds"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OpenStackClouds = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["vmwareVCenters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2280,6 +2334,17 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
     data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
+    if obj, ok := dataMap["nextIncidentRuleCheckAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextIncidentRuleCheckAt = NewRFC3339Value(val)
+        } else {
+            data.NextIncidentRuleCheckAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextIncidentRuleCheckAt"].(string); ok && val != "" {
+        data.NextIncidentRuleCheckAt = NewRFC3339Value(val)
+    } else {
+        data.NextIncidentRuleCheckAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2327,6 +2392,7 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "dockerSwarmClusters": true,
@@ -2365,6 +2431,7 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "alertEpisodeId": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
+        "nextIncidentRuleCheckAt": true,
         "_id": true,
     }
 
@@ -2819,6 +2886,38 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["openStackClouds"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OpenStackClouds = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["vmwareVCenters"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -3853,6 +3952,17 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
     data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
+    if obj, ok := dataMap["nextIncidentRuleCheckAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextIncidentRuleCheckAt = NewRFC3339Value(val)
+        } else {
+            data.NextIncidentRuleCheckAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextIncidentRuleCheckAt"].(string); ok && val != "" {
+        data.NextIncidentRuleCheckAt = NewRFC3339Value(val)
+    } else {
+        data.NextIncidentRuleCheckAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -3940,6 +4050,9 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
     }
     if !data.ProxmoxClusters.IsUnknown() && !state.ProxmoxClusters.IsUnknown() && !data.ProxmoxClusters.Equal(state.ProxmoxClusters) {
         requestDataMap["proxmoxClusters"] = r.convertTerraformSetToInterface(data.ProxmoxClusters)
+    }
+    if !data.OpenStackClouds.IsUnknown() && !state.OpenStackClouds.IsUnknown() && !data.OpenStackClouds.Equal(state.OpenStackClouds) {
+        requestDataMap["openStackClouds"] = r.convertTerraformSetToInterface(data.OpenStackClouds)
     }
     if !data.VmwareVCenters.IsUnknown() && !state.VmwareVCenters.IsUnknown() && !data.VmwareVCenters.Equal(state.VmwareVCenters) {
         requestDataMap["vmwareVCenters"] = r.convertTerraformSetToInterface(data.VmwareVCenters)
@@ -4051,6 +4164,7 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "dockerSwarmClusters": true,
@@ -4089,6 +4203,7 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         "alertEpisodeId": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
+        "nextIncidentRuleCheckAt": true,
         "_id": true,
     }
 
@@ -4537,6 +4652,38 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["openStackClouds"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OpenStackClouds = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["vmwareVCenters"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -5571,6 +5718,17 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         data.NextReminderNotificationAt = NewRFC3339Null()
     }
     data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, dataMap["reminderNotificationSentCount"])
+    if obj, ok := dataMap["nextIncidentRuleCheckAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextIncidentRuleCheckAt = NewRFC3339Value(val)
+        } else {
+            data.NextIncidentRuleCheckAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextIncidentRuleCheckAt"].(string); ok && val != "" {
+        data.NextIncidentRuleCheckAt = NewRFC3339Value(val)
+    } else {
+        data.NextIncidentRuleCheckAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -5669,6 +5827,9 @@ func (r *AlertResource) keepPlannedValues(data *AlertResourceModel, plan *AlertR
     }
     if config.ProxmoxClusters.IsNull() && !plan.ProxmoxClusters.IsUnknown() {
         data.ProxmoxClusters = plan.ProxmoxClusters
+    }
+    if config.OpenStackClouds.IsNull() && !plan.OpenStackClouds.IsUnknown() {
+        data.OpenStackClouds = plan.OpenStackClouds
     }
     if config.VmwareVCenters.IsNull() && !plan.VmwareVCenters.IsUnknown() {
         data.VmwareVCenters = plan.VmwareVCenters

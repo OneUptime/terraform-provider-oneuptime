@@ -39,6 +39,7 @@ type AutoRemediationSuggestionDataSourceModel struct {
     AlertId types.String `tfsdk:"alert_id"`
     RunbookId types.String `tfsdk:"runbook_id"`
     RunbookNameSnapshot types.String `tfsdk:"runbook_name_snapshot"`
+    RunbookTrackRecord types.String `tfsdk:"runbook_track_record"`
     Status types.String `tfsdk:"status"`
     ExecutionMode types.String `tfsdk:"execution_mode"`
     SuggestionType types.String `tfsdk:"suggestion_type"`
@@ -49,6 +50,7 @@ type AutoRemediationSuggestionDataSourceModel struct {
     RunbookExecutionId types.String `tfsdk:"runbook_execution_id"`
     ApprovedByUserId types.String `tfsdk:"approved_by_user_id"`
     ApprovedAt types.String `tfsdk:"approved_at"`
+    ApprovedFrom types.String `tfsdk:"approved_from"`
     DismissedByUserId types.String `tfsdk:"dismissed_by_user_id"`
     DismissedAt types.String `tfsdk:"dismissed_at"`
     VerificationStatus types.String `tfsdk:"verification_status"`
@@ -135,6 +137,10 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 Optional: true,
                 Computed: true,
             },
+            "runbook_track_record": schema.StringAttribute{
+                MarkdownDescription: "How the proposed runbook went the last times OneUptime AI ran it for other incidents and alerts, when it was proposed. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Lifecycle status: Planning, Suggested, Approved, AutoExecuted, Dismissed or NoneApplicable.",
                 Optional: true,
@@ -181,6 +187,11 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
             },
             "approved_at": schema.StringAttribute{
                 MarkdownDescription: "When this suggestion was approved.",
+                Computed: true,
+            },
+            "approved_from": schema.StringAttribute{
+                MarkdownDescription: "Where this suggestion was approved: Dashboard (the AI card), Slack or MicrosoftTeams. Empty until approved.",
+                Optional: true,
                 Computed: true,
             },
             "dismissed_by_user_id": schema.StringAttribute{
@@ -324,6 +335,10 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         filters["approvedByUserId"] = data.ApprovedByUserId.ValueString()
         filterNames = append(filterNames, "approved_by_user_id = "+fmt.Sprintf("%q", data.ApprovedByUserId.ValueString()))
     }
+    if !data.ApprovedFrom.IsNull() && !data.ApprovedFrom.IsUnknown() {
+        filters["approvedFrom"] = data.ApprovedFrom.ValueString()
+        filterNames = append(filterNames, "approved_from = "+fmt.Sprintf("%q", data.ApprovedFrom.ValueString()))
+    }
     if !data.DismissedByUserId.IsNull() && !data.DismissedByUserId.IsUnknown() {
         filters["dismissedByUserId"] = data.DismissedByUserId.ValueString()
         filterNames = append(filterNames, "dismissed_by_user_id = "+fmt.Sprintf("%q", data.DismissedByUserId.ValueString()))
@@ -373,6 +388,7 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         "alertId": true,
         "runbookId": true,
         "runbookNameSnapshot": true,
+        "runbookTrackRecord": true,
         "status": true,
         "executionMode": true,
         "suggestionType": true,
@@ -383,6 +399,7 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         "runbookExecutionId": true,
         "approvedByUserId": true,
         "approvedAt": true,
+        "approvedFrom": true,
         "dismissedByUserId": true,
         "dismissedAt": true,
         "verificationStatus": true,
@@ -673,6 +690,23 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
     } else {
         data.RunbookNameSnapshot = types.StringNull()
     }
+    if obj, ok := item["runbookTrackRecord"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunbookTrackRecord = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunbookTrackRecord = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunbookTrackRecord = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunbookTrackRecord = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunbookTrackRecord = types.StringNull()
+        }
+    } else if val, ok := item["runbookTrackRecord"].(string); ok {
+        data.RunbookTrackRecord = types.StringValue(val)
+    } else {
+        data.RunbookTrackRecord = types.StringNull()
+    }
     if obj, ok := item["status"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Status = types.StringValue(val)
@@ -842,6 +876,23 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         data.ApprovedAt = types.StringValue(val)
     } else {
         data.ApprovedAt = types.StringNull()
+    }
+    if obj, ok := item["approvedFrom"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApprovedFrom = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ApprovedFrom = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ApprovedFrom = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ApprovedFrom = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovedFrom = types.StringNull()
+        }
+    } else if val, ok := item["approvedFrom"].(string); ok {
+        data.ApprovedFrom = types.StringValue(val)
+    } else {
+        data.ApprovedFrom = types.StringNull()
     }
     if obj, ok := item["dismissedByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

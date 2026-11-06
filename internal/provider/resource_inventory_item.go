@@ -96,7 +96,7 @@ func (r *InventoryItemResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
                 Validators: []validator.String{
-                    stringvalidator.OneOf("service", "service.instance", "host", "container", "process", "k8s.cluster", "k8s.namespace", "k8s.node", "k8s.pod", "k8s.deployment", "proxmox.cluster", "proxmox.node", "proxmox.guest", "ceph.cluster", "storage.array", "vmware.vcenter", "vmware.cluster", "vmware.host", "vmware.vm", "vmware.datastore", "docker.swarm.cluster", "docker.swarm.node", "docker.swarm.service", "docker.swarm.task", "telemetry.sdk", "database", "remote.service", "database.server", "message.queue", "network.device", "cloud.resource", "serverless.function", "rum.application", "iot.device", "docker.host", "podman.host", "external.service", "external.database", "appliance"),
+                    stringvalidator.OneOf("service", "service.instance", "host", "container", "process", "k8s.cluster", "k8s.namespace", "k8s.node", "k8s.pod", "k8s.deployment", "proxmox.cluster", "openstack.cloud", "proxmox.node", "openstack.hypervisor", "proxmox.guest", "openstack.instance", "ceph.cluster", "storage.array", "vmware.vcenter", "vmware.cluster", "vmware.host", "vmware.vm", "vmware.datastore", "docker.swarm.cluster", "docker.swarm.node", "docker.swarm.service", "docker.swarm.task", "telemetry.sdk", "database", "remote.service", "database.server", "message.queue", "openstack.resource", "network.device", "cloud.resource", "serverless.function", "rum.application", "iot.device", "docker.host", "podman.host", "external.service", "external.database", "appliance"),
                 },
             },
             "entity_key": schema.StringAttribute{

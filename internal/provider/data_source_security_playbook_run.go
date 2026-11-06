@@ -86,6 +86,7 @@ func (d *SecurityPlaybookRunDataSource) Schema(ctx context.Context, req datasour
             },
             "playbook_name": schema.StringAttribute{
                 MarkdownDescription: "The playbook's name when the run started, kept if the playbook is renamed or deleted.",
+                Optional: true,
                 Computed: true,
             },
             "trigger": schema.StringAttribute{
@@ -187,6 +188,10 @@ func (d *SecurityPlaybookRunDataSource) Read(ctx context.Context, req datasource
     if !data.SecurityPlaybookId.IsNull() && !data.SecurityPlaybookId.IsUnknown() {
         filters["securityPlaybookId"] = data.SecurityPlaybookId.ValueString()
         filterNames = append(filterNames, "security_playbook_id = "+fmt.Sprintf("%q", data.SecurityPlaybookId.ValueString()))
+    }
+    if !data.PlaybookName.IsNull() && !data.PlaybookName.IsUnknown() {
+        filters["playbookName"] = data.PlaybookName.ValueString()
+        filterNames = append(filterNames, "playbook_name = "+fmt.Sprintf("%q", data.PlaybookName.ValueString()))
     }
     if !data.Trigger.IsNull() && !data.Trigger.IsUnknown() {
         filters["trigger"] = data.Trigger.ValueString()

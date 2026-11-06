@@ -28,6 +28,7 @@ data "oneuptime_workflow_log" "by_id" {
 
 ### Optional
 
+- `can_run_again` (Boolean) True when OneUptime kept what this run started with, so a person can run the workflow again with the same values.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_test_run` (Boolean) True for a run a person started by hand from the Builder while the workflow was turned off. Its steps ran for real; the workflow's trigger stayed paused.
 - `logs` (String) Logs.

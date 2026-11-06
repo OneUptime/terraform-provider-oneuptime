@@ -47,6 +47,7 @@ type AlertDataSourceModel struct {
     DockerHosts types.Set `tfsdk:"docker_hosts"`
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    OpenStackClouds types.Set `tfsdk:"open_stack_clouds"`
     VmwareVCenters types.Set `tfsdk:"vmware_v_centers"`
     IotFleets types.Set `tfsdk:"iot_fleets"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
@@ -81,6 +82,7 @@ type AlertDataSourceModel struct {
     EnableReminders types.Bool `tfsdk:"enable_reminders"`
     NextReminderNotificationAt types.String `tfsdk:"next_reminder_notification_at"`
     ReminderNotificationSentCount types.Number `tfsdk:"reminder_notification_sent_count"`
+    NextIncidentRuleCheckAt types.String `tfsdk:"next_incident_rule_check_at"`
 }
 
 func (d *AlertDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -181,6 +183,11 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Proxmox clusters affected by this alert. IDs of `oneuptime_proxmox_cluster` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "open_stack_clouds": schema.SetAttribute{
+                MarkdownDescription: "List of OpenStack clouds affected by this alert. IDs of `oneuptime_openstack_cloud` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -353,6 +360,10 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Optional: true,
                 Computed: true,
             },
+            "next_incident_rule_check_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime next checks whether an incident should be declared from this alert: set while an alert incident rule that matched it waits for the alert to stay unresolved, and empty otherwise. Set by OneUptime; it cannot be written.",
+                Computed: true,
+            },
         },
     }
 }
@@ -507,6 +518,7 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "dockerSwarmClusters": true,
@@ -541,6 +553,7 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "enableReminders": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
+        "nextIncidentRuleCheckAt": true,
         "_id": true,
     }
 
@@ -987,6 +1000,30 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.ProxmoxClusters = types.SetValueMust(types.StringType, setItems)
     } else {
         data.ProxmoxClusters = types.SetNull(types.StringType)
+    }
+    if val, ok := item["openStackClouds"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.OpenStackClouds = types.SetNull(types.StringType)
     }
     if val, ok := item["vmwareVCenters"].([]interface{}); ok {
         var setItems []attr.Value
@@ -1570,6 +1607,23 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.NextReminderNotificationAt = types.StringNull()
     }
     data.ReminderNotificationSentCount = numberFromAPI(data.ReminderNotificationSentCount, item["reminderNotificationSentCount"])
+    if obj, ok := item["nextIncidentRuleCheckAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextIncidentRuleCheckAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NextIncidentRuleCheckAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NextIncidentRuleCheckAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NextIncidentRuleCheckAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextIncidentRuleCheckAt = types.StringNull()
+        }
+    } else if val, ok := item["nextIncidentRuleCheckAt"].(string); ok {
+        data.NextIncidentRuleCheckAt = types.StringValue(val)
+    } else {
+        data.NextIncidentRuleCheckAt = types.StringNull()
+    }
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

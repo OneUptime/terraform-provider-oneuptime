@@ -35,6 +35,14 @@ type WatchlistDataSourceModel struct {
     EntityType types.String `tfsdk:"entity_type"`
     Source types.String `tfsdk:"source"`
     ThreatIntelFeedId types.String `tfsdk:"threat_intel_feed_id"`
+    ImportUrl types.String `tfsdk:"import_url"`
+    ImportSchedule types.String `tfsdk:"import_schedule"`
+    NextImportAt types.String `tfsdk:"next_import_at"`
+    LastImportAt types.String `tfsdk:"last_import_at"`
+    LastImportSucceededAt types.String `tfsdk:"last_import_succeeded_at"`
+    LastImportError types.String `tfsdk:"last_import_error"`
+    LastImportErrorDetail types.String `tfsdk:"last_import_error_detail"`
+    LastImportLinesLeftOut types.Number `tfsdk:"last_import_lines_left_out"`
     ValueCount types.Number `tfsdk:"value_count"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -81,7 +89,7 @@ func (d *WatchlistDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "source": schema.StringAttribute{
-                MarkdownDescription: "Where the values come from: Values (added by hand or imported) or Threat Intel Feed (the feed's active indicators of the list's kind).",
+                MarkdownDescription: "Where the values come from: Values (added by hand or imported), URL (a file at an https address, read again on a schedule) or Threat Intel Feed (the feed's active indicators of the list's kind).",
                 Optional: true,
                 Computed: true,
             },
@@ -90,6 +98,43 @@ func (d *WatchlistDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_threat_intel_feed"),
+            },
+            "import_url": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: the https address of a text or CSV file, one value a line, with an optional note and when the value leaves the list. Read again on the list's schedule; the list is what the file held at its last read.",
+                Optional: true,
+                Computed: true,
+            },
+            "import_schedule": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: how often it is read - Every Hour (the default), Every 6 Hours or Every Day.",
+                Optional: true,
+                Computed: true,
+            },
+            "next_import_at": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: when it is next read. Empty for any other list.",
+                Computed: true,
+            },
+            "last_import_at": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: when OneUptime last read it, or tried to.",
+                Computed: true,
+            },
+            "last_import_succeeded_at": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: when it was last read without an error. The list holds what the file held then.",
+                Computed: true,
+            },
+            "last_import_error": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: why its last read failed. The list keeps the values of the read before. Empty when it worked.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_import_error_detail": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: what the address or the network said when its last read failed, as it said it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_import_lines_left_out": schema.NumberAttribute{
+                MarkdownDescription: "For a list read from an address: how many lines of the file its last read left out - lines that are not values of the list's kind, or whose date to leave the list had passed.",
+                Optional: true,
+                Computed: true,
             },
             "value_count": schema.NumberAttribute{
                 MarkdownDescription: "How many values the list holds, counted by OneUptime as values are added and removed. 0 for a list that follows a threat intel feed.",
@@ -161,6 +206,26 @@ func (d *WatchlistDataSource) Read(ctx context.Context, req datasource.ReadReque
         filters["threatIntelFeedId"] = data.ThreatIntelFeedId.ValueString()
         filterNames = append(filterNames, "threat_intel_feed_id = "+fmt.Sprintf("%q", data.ThreatIntelFeedId.ValueString()))
     }
+    if !data.ImportUrl.IsNull() && !data.ImportUrl.IsUnknown() {
+        filters["importUrl"] = data.ImportUrl.ValueString()
+        filterNames = append(filterNames, "import_url = "+fmt.Sprintf("%q", data.ImportUrl.ValueString()))
+    }
+    if !data.ImportSchedule.IsNull() && !data.ImportSchedule.IsUnknown() {
+        filters["importSchedule"] = data.ImportSchedule.ValueString()
+        filterNames = append(filterNames, "import_schedule = "+fmt.Sprintf("%q", data.ImportSchedule.ValueString()))
+    }
+    if !data.LastImportError.IsNull() && !data.LastImportError.IsUnknown() {
+        filters["lastImportError"] = data.LastImportError.ValueString()
+        filterNames = append(filterNames, "last_import_error = "+fmt.Sprintf("%q", data.LastImportError.ValueString()))
+    }
+    if !data.LastImportErrorDetail.IsNull() && !data.LastImportErrorDetail.IsUnknown() {
+        filters["lastImportErrorDetail"] = data.LastImportErrorDetail.ValueString()
+        filterNames = append(filterNames, "last_import_error_detail = "+fmt.Sprintf("%q", data.LastImportErrorDetail.ValueString()))
+    }
+    if !data.LastImportLinesLeftOut.IsNull() && !data.LastImportLinesLeftOut.IsUnknown() {
+        filters["lastImportLinesLeftOut"] = lookupNumber(data.LastImportLinesLeftOut)
+        filterNames = append(filterNames, "last_import_lines_left_out = "+data.LastImportLinesLeftOut.ValueBigFloat().String())
+    }
     if !data.ValueCount.IsNull() && !data.ValueCount.IsUnknown() {
         filters["valueCount"] = lookupNumber(data.ValueCount)
         filterNames = append(filterNames, "value_count = "+data.ValueCount.ValueBigFloat().String())
@@ -194,6 +259,14 @@ func (d *WatchlistDataSource) Read(ctx context.Context, req datasource.ReadReque
         "entityType": true,
         "source": true,
         "threatIntelFeedId": true,
+        "importUrl": true,
+        "importSchedule": true,
+        "nextImportAt": true,
+        "lastImportAt": true,
+        "lastImportSucceededAt": true,
+        "lastImportError": true,
+        "lastImportErrorDetail": true,
+        "lastImportLinesLeftOut": true,
         "valueCount": true,
         "createdByUserId": true,
         "_id": true,
@@ -410,6 +483,126 @@ func (d *WatchlistDataSource) Read(ctx context.Context, req datasource.ReadReque
     } else {
         data.ThreatIntelFeedId = types.StringNull()
     }
+    if obj, ok := item["importUrl"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImportUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ImportUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ImportUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ImportUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImportUrl = types.StringNull()
+        }
+    } else if val, ok := item["importUrl"].(string); ok {
+        data.ImportUrl = types.StringValue(val)
+    } else {
+        data.ImportUrl = types.StringNull()
+    }
+    if obj, ok := item["importSchedule"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImportSchedule = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ImportSchedule = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ImportSchedule = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ImportSchedule = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImportSchedule = types.StringNull()
+        }
+    } else if val, ok := item["importSchedule"].(string); ok {
+        data.ImportSchedule = types.StringValue(val)
+    } else {
+        data.ImportSchedule = types.StringNull()
+    }
+    if obj, ok := item["nextImportAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextImportAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NextImportAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NextImportAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NextImportAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextImportAt = types.StringNull()
+        }
+    } else if val, ok := item["nextImportAt"].(string); ok {
+        data.NextImportAt = types.StringValue(val)
+    } else {
+        data.NextImportAt = types.StringNull()
+    }
+    if obj, ok := item["lastImportAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastImportAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastImportAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastImportAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastImportAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastImportAt = types.StringNull()
+        }
+    } else if val, ok := item["lastImportAt"].(string); ok {
+        data.LastImportAt = types.StringValue(val)
+    } else {
+        data.LastImportAt = types.StringNull()
+    }
+    if obj, ok := item["lastImportSucceededAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastImportSucceededAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastImportSucceededAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastImportSucceededAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastImportSucceededAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastImportSucceededAt = types.StringNull()
+        }
+    } else if val, ok := item["lastImportSucceededAt"].(string); ok {
+        data.LastImportSucceededAt = types.StringValue(val)
+    } else {
+        data.LastImportSucceededAt = types.StringNull()
+    }
+    if obj, ok := item["lastImportError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastImportError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastImportError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastImportError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastImportError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastImportError = types.StringNull()
+        }
+    } else if val, ok := item["lastImportError"].(string); ok {
+        data.LastImportError = types.StringValue(val)
+    } else {
+        data.LastImportError = types.StringNull()
+    }
+    if obj, ok := item["lastImportErrorDetail"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastImportErrorDetail = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastImportErrorDetail = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastImportErrorDetail = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastImportErrorDetail = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastImportErrorDetail = types.StringNull()
+        }
+    } else if val, ok := item["lastImportErrorDetail"].(string); ok {
+        data.LastImportErrorDetail = types.StringValue(val)
+    } else {
+        data.LastImportErrorDetail = types.StringNull()
+    }
+    data.LastImportLinesLeftOut = numberFromAPI(data.LastImportLinesLeftOut, item["lastImportLinesLeftOut"])
     data.ValueCount = numberFromAPI(data.ValueCount, item["valueCount"])
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

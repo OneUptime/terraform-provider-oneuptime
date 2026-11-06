@@ -120,7 +120,7 @@ func (r *ExceptionResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
                 Validators: []validator.String{
-                    stringvalidator.OneOf("OpenTelemetry", "Monitor", "NetworkDevice", "Alert", "Incident", "ScheduledMaintenance", "ServiceLevelObjective", "Host", "DockerHost", "PodmanHost", "KubernetesCluster", "ProxmoxCluster", "CephCluster", "StorageArray", "DockerSwarmCluster", "VMwareVCenter", "IoTDevice", "ServerlessFunction", "CloudResource", "RealUserMonitor", "DatabaseServer", "Unknown"),
+                    stringvalidator.OneOf("OpenTelemetry", "Monitor", "NetworkDevice", "Alert", "Incident", "ScheduledMaintenance", "ServiceLevelObjective", "Host", "DockerHost", "PodmanHost", "KubernetesCluster", "ProxmoxCluster", "OpenStackCloud", "CephCluster", "StorageArray", "DockerSwarmCluster", "VMwareVCenter", "IoTDevice", "ServerlessFunction", "CloudResource", "RealUserMonitor", "DatabaseServer", "DataStore", "DataPipeline", "DataProduct", "DataReconciliation", "Unknown"),
                 },
             },
             "message": schema.StringAttribute{

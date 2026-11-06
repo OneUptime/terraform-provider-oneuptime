@@ -96,12 +96,12 @@ func (d *TeamComplianceSettingDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "notification_channel": schema.StringAttribute{
-                MarkdownDescription: "Deprecated: use notificationChannels. The first of the rule's notification channels, or empty when it accepts any channel. Sending this field without notificationChannels sets the rule to that one channel (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Webhook or CustomChannel).",
+                MarkdownDescription: "Deprecated: use notificationChannels. The first of the rule's notification channels, or empty when it accepts any channel. Sending this field without notificationChannels sets the rule to that one channel (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Mattermost, Webhook or CustomChannel).",
                 Optional: true,
                 Computed: true,
             },
             "notification_channels": schema.StringAttribute{
-                MarkdownDescription: "On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Webhook or CustomChannel, which any custom channel that is on meets). Leave empty to accept any channel. A JSON value: read it with `jsondecode()`.",
+                MarkdownDescription: "On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Mattermost, Webhook or CustomChannel, which any custom channel that is on meets). Leave empty to accept any channel. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "incident_severities": schema.SetAttribute{

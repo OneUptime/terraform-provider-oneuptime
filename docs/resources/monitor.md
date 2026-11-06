@@ -77,7 +77,7 @@ resource "oneuptime_monitor" "example" {
 
 ### Required
 
-- `monitor_type` (String) What is the type of this monitor? Website? API? etc. Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `VMware`, `Ceph`, `Storage Array`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Database`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Security Events`, `AI / LLM`, `Network Device`, `DNS`, `DNSSEC`, `NTP`, `Domain`, `External Status Page`, `Probe Status`.
+- `monitor_type` (String) What is the type of this monitor? Website? API? etc. Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `OpenStack`, `VMware`, `Ceph`, `Storage Array`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Database`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Security Events`, `AI / LLM`, `Network Device`, `DNS`, `DNSSEC`, `NTP`, `Domain`, `External Status Page`, `Probe Status`.
 - `name` (String) Any friendly name for this monitor.
 
 ### Optional
@@ -104,6 +104,7 @@ resource "oneuptime_monitor" "example" {
 - `monitor_steps` (Attributes List) What would you like to monitor and what is the criteria? (see [below for nested schema](#nestedatt--monitor_steps))
 - `monitor_template_id` (String) ID of the Monitor Template this monitor was created from. Null for monitors not created from a template. The ID of a `oneuptime_monitor_template`.
 - `monitoring_interval` (String) How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: "*/5 * * * *" is every five minutes.
+- `open_stack_clouds` (Set of String) OpenStack clouds this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_openstack_cloud` resources.
 - `podman_hosts` (Set of String) Podman hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_podman_host` resources.
 - `proxmox_clusters` (Set of String) Proxmox clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_proxmox_cluster` resources.
 - `server_monitor_request_received_at` (String) This field is for Server Monitor only. When was the last time we received a request?
@@ -160,7 +161,7 @@ Optional:
 - `docker_swarm_monitor` (String) Raw JSON escape hatch for the Docker Swarm monitor config (clusterIdentifier, ...). Write it with `jsonencode()`.
 - `domain_monitor` (String) Raw JSON escape hatch for the Domain monitor config (domainName, lookupMethod, timeout, retries). lookupMethod is one of Auto, RDAP, WHOIS and defaults to Auto. Write it with `jsonencode()`.
 - `exception_monitor` (String) Raw JSON escape hatch for the Exceptions monitor query config. Write it with `jsonencode()`.
-- `external_status_page_monitor` (String) Raw JSON escape hatch for the External Status Page monitor config (statusPageUrl, providerType). Write it with `jsonencode()`.
+- `external_status_page_monitor` (String) Raw JSON escape hatch for the External Status Page monitor config (statusPageUrl, provider, componentGroupName, componentNames). Write it with `jsonencode()`.
 - `host_monitor` (String) Raw JSON escape hatch for the Host monitor config (hostIdentifier, ...). Write it with `jsonencode()`.
 - `iot_monitor` (String) Raw JSON escape hatch for the IoT monitor config (fleetIdentifier, ...). Write it with `jsonencode()`.
 - `kubernetes_monitor` (String) Raw JSON escape hatch for the Kubernetes monitor config (clusterIdentifier, ...). Write it with `jsonencode()`.
@@ -170,6 +171,7 @@ Optional:
 - `monitor_destination` (String) The URL, IP address or hostname this step probes (e.g. `https://example.com`, `8.8.8.8`, `example.com`). Requires `monitor_destination_type`.
 - `monitor_destination_type` (String) Kind of destination: `URL` (Website, API, SSL Certificate monitors), `IP` or `Hostname` (Ping, Port monitors). Allowed values: `URL`, `IP`, `Hostname`.
 - `network_device_monitor` (String) Raw JSON escape hatch for the Network Device monitor config (networkDeviceId). Write it with `jsonencode()`.
+- `openstack_monitor` (String) Raw JSON escape hatch for the OpenStack monitor config (cloudIdentifier, resourceFilters, ...). Write it with `jsonencode()`.
 - `podman_monitor` (String) Raw JSON escape hatch for the Podman monitor config (hostIdentifier, ...). Write it with `jsonencode()`.
 - `port` (Number) TCP port to probe (Port monitors).
 - `probe_status_monitor` (String) Raw JSON escape hatch for the Probe Status monitor config (probeIds: the ids of the probes the monitor watches - this project's own probes and the global probes). Write it with `jsonencode()`.
@@ -228,7 +230,7 @@ Optional:
 - `evaluate_over_time_minutes` (Number) Length of the evaluation window in minutes (used with `evaluate_over_time`).
 - `evaluate_over_time_no_data_policy` (String) What the filter does while the evaluation window does not hold enough data to judge it — for example a monitor that has just been created. `Ignore` (the default) does not match, `Trigger` treats the missing data as the failure, and `Treat As Zero` compares the window as a single zero. Allowed values: `Ignore`, `Treat As Zero`, `Trigger`.
 - `evaluate_over_time_type` (String) Aggregation applied over the evaluation window (e.g. `Average`, `Sum`, `Any Value`). `All Values` only matches once the window is actually covered by data, so give it a window at least twice the monitoring interval. True/false checks and the checks judged from whether they matched on each check (see `evaluate_over_time`) take `All Values` or `Any Value`; any other aggregation on them is evaluated as `All Values`. Allowed values: `Average`, `Sum`, `Maximum Value`, `Minimum Value`, `All Values`, `Any Value`.
-- `filter_type` (String) Comparison operator for the filter (e.g. `True`, `Equal To`, `Greater Than`). Allowed values: `Equal To`, `Not Equal To`, `Greater Than`, `Less Than`, `Greater Than Or Equal To`, `Less Than Or Equal To`, `Contains`, `Not Contains`, `Starts With`, `Ends With`, `Is Empty`, `Is Not Empty`, `True`, `False`, `Not Recieved In Minutes`, `Recieved In Minutes`, `Evaluates To True`, `Is Executing`, `Is Not Executing`, `Anomalously High`, `Anomalously Low`, `Anomalous`.
+- `filter_type` (String) Comparison operator for the filter (e.g. `True`, `Equal To`, `Greater Than`). Allowed values: `Equal To`, `Not Equal To`, `Greater Than`, `Less Than`, `Greater Than Or Equal To`, `Less Than Or Equal To`, `Contains`, `Not Contains`, `Starts With`, `Ends With`, `Is Empty`, `Is Not Empty`, `True`, `False`, `Not Recieved In Minutes`, `Recieved In Minutes`, `Evaluates To True`, `Is Executing`, `Is Not Executing`, `Anomalously High`, `Anomalously Low`, `Anomalous`, `Forecast Above`, `Forecast Below`.
 - `metric_monitor_options` (String) Raw JSON escape hatch for metric filter options (metricAlias, metricAggregationType, anomaly detection, ...). Write it with `jsonencode()`.
 - `snmp_monitor_options` (String) Raw JSON escape hatch for SNMP filter options (oid, interfaceName, and for SNMP table criteria tableKey, tableColumnOid and tableRow). Write it with `jsonencode()`.
 - `value` (String) Threshold or comparison value. Always a string — write numbers as strings (e.g. `"200"`).

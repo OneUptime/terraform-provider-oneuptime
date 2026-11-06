@@ -50,6 +50,7 @@ resource "oneuptime_alert" "example" {
 - `monitor_status_when_this_alert_was_created_id` (String) Monitor Status ID when this alert was created. The ID of a `oneuptime_monitor_status`.
 - `network_devices` (Set of String) List of network devices affected by this alert. IDs of `oneuptime_network_device` resources.
 - `on_call_duty_policies` (Set of String) List of on-call duty policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.
+- `open_stack_clouds` (Set of String) List of OpenStack clouds affected by this alert. IDs of `oneuptime_openstack_cloud` resources.
 - `podman_hosts` (Set of String) List of Podman hosts affected by this alert. IDs of `oneuptime_podman_host` resources.
 - `podman_resources` (Set of String) List of Podman resources (containers, images, networks, volumes) affected by this alert.
 - `proxmox_clusters` (Set of String) List of Proxmox clusters affected by this alert. IDs of `oneuptime_proxmox_cluster` resources.
@@ -76,6 +77,7 @@ resource "oneuptime_alert" "example" {
 - `is_created_automatically` (Boolean) Is this alert created by OneUptime Probe or Workers automatically (and not created manually by a user)?
 - `is_owner_notified_of_alert_creation` (Boolean) Are owners notified of when this alert is created?
 - `monitor_summary` (String) The monitor summary captured at the moment this alert was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: read it with `jsondecode()`.
+- `next_incident_rule_check_at` (String) When OneUptime next checks whether an incident should be declared from this alert: set while an alert incident rule that matched it waits for the alert to stay unresolved, and empty otherwise. Set by OneUptime; it cannot be written.
 - `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this alert? This is set automatically based on the reminder rules configured for this project.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `reminder_notification_sent_count` (Number) How many reminder notifications have been sent to owners of this alert so far.

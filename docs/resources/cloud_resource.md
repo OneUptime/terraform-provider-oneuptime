@@ -47,6 +47,8 @@ resource "oneuptime_cloud_resource" "example" {
 - `cloud_connection_id` (String) For a resource: ID of the cloud connection that reads it, when one does. The ID of a `oneuptime_cloud_connection`.
 - `cloud_endpoints` (String) For a resource a cloud connection's inventory lists: the host names and addresses it answers on, such as a load balancer's DNS name. Monitors of those hosts are linked to it. A JSON value: read it with `jsondecode()`.
 - `cloud_properties` (String) For a resource a cloud connection's inventory lists: the properties a person reads first, such as an instance's type or a database's engine and version, keyed by their path in the cloud's description. Never anything that can hold a secret. A JSON value: read it with `jsondecode()`.
+- `cloud_readings` (String) The newest value of the key metrics that say whether the resource is well, as its cloud connection last read them, keyed by metric. A JSON value: read it with `jsondecode()`.
+- `cloud_readings_at` (String) When a cloud connection last wrote the resource's readings. Readings older than an hour are not judged.
 - `cloud_relationships` (String) For a resource a cloud connection's inventory lists: what it runs in, is part of, sends traffic to or is protected by, each as the other resource's id in the cloud. The edges of the account's topology. A JSON value: read it with `jsondecode()`.
 - `cloud_resource_group` (String) For an Azure resource: the resource group it belongs to.
 - `cloud_resource_kind` (String) environment: a managed compute environment discovered from the cloud.platform, cloud.account.id and cloud.region resource attributes of a workload's own telemetry. resource: one IaaS or PaaS resource (a virtual machine, a load balancer, a bucket, a managed database, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch or Google Cloud Monitoring publish about it.
@@ -54,6 +56,7 @@ resource "oneuptime_cloud_resource" "example" {
 - `cloud_tags` (String) For a resource a cloud connection's inventory lists: its tags in the cloud (AWS tags, Azure tags, Google Cloud labels), at most 50. Label and owner rules can match them. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `health_severity` (String) Whether the resource needed attention when its readings were last written: critical or warning, empty when it did not.
 - `id` (String) Unique identifier for the resource.
 - `inventoried_at` (String) When a cloud connection's inventory last listed this resource. Empty for a resource only its metrics or telemetry have found.
 - `last_seen_at` (String) When telemetry was last received for this resource.

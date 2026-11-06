@@ -24,7 +24,7 @@ resource "oneuptime_alert_feed" "example" {
 
 ### Required
 
-- `alert_feed_event_type` (String) Alert Feed Event. Allowed values: `PublicNote`, `SubscriberNotificationSent`, `OwnerNotificationSent`, `OwnerUserAdded`, `OwnerTeamAdded`, `AlertCreated`, `AlertStateChanged`, `PrivateNote`, `AlertUpdated`, `RootCause`, `RemediationNotes`, `OwnerUserRemoved`, `OwnerTeamRemoved`, `OnCallPolicy`, `OnCallNotification`, `AddedToEpisode`, `RemovedFromEpisode`, `LinkedToIncident`, `UnlinkedFromIncident`, `LabelRuleExecuted`, `OwnerRuleExecuted`, `PrivacyRuleExecuted`, `OnCallRuleExecuted`, `AutoRemediation`, `VideoCallStarted`, `VideoCallFailed`, `ChannelMemberAdded`.
+- `alert_feed_event_type` (String) Alert Feed Event. Allowed values: `PublicNote`, `SubscriberNotificationSent`, `OwnerNotificationSent`, `OwnerUserAdded`, `OwnerTeamAdded`, `AlertCreated`, `AlertStateChanged`, `PrivateNote`, `AlertUpdated`, `RootCause`, `RemediationNotes`, `OwnerUserRemoved`, `OwnerTeamRemoved`, `OnCallPolicy`, `OnCallNotification`, `AddedToEpisode`, `RemovedFromEpisode`, `LinkedToIncident`, `UnlinkedFromIncident`, `LabelRuleExecuted`, `OwnerRuleExecuted`, `PrivacyRuleExecuted`, `OnCallRuleExecuted`, `IncidentRuleExecuted`, `AutoRemediation`, `VideoCallStarted`, `VideoCallFailed`, `ChannelMemberAdded`.
 - `alert_id` (String) Relation to Alert ID in which this resource belongs. The ID of a `oneuptime_alert`.
 - `display_color` (String) Display color for the alert log.
 - `feed_info_in_markdown` (String) Log of the entire alert state change in Markdown.

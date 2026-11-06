@@ -72,6 +72,7 @@ type StatusPageDataSourceModel struct {
     CoverImageAltText types.String `tfsdk:"cover_image_alt_text"`
     CustomFields types.String `tfsdk:"custom_fields"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
+    EnableMagicLinkLogin types.Bool `tfsdk:"enable_magic_link_login"`
     PrivateUserSessionLengthInHours types.Number `tfsdk:"private_user_session_length_in_hours"`
     SmtpConfigId types.String `tfsdk:"smtp_config_id"`
     CallSmsConfigId types.String `tfsdk:"call_sms_config_id"`
@@ -339,6 +340,11 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "require_sso_for_login": schema.BoolAttribute{
                 MarkdownDescription: "Should SSO be required to login to Private Status Page.",
+                Optional: true,
+                Computed: true,
+            },
+            "enable_magic_link_login": schema.BoolAttribute{
+                MarkdownDescription: "Can private users sign in to this private status page with a one-time link emailed to them (a magic link), instead of typing a password? They can still sign in with their password. Not offered while SSO is required.",
                 Optional: true,
                 Computed: true,
             },
@@ -709,6 +715,10 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         filters["requireSsoForLogin"] = data.RequireSsoForLogin.ValueBool()
         filterNames = append(filterNames, "require_sso_for_login = "+fmt.Sprintf("%t", data.RequireSsoForLogin.ValueBool()))
     }
+    if !data.EnableMagicLinkLogin.IsNull() && !data.EnableMagicLinkLogin.IsUnknown() {
+        filters["enableMagicLinkLogin"] = data.EnableMagicLinkLogin.ValueBool()
+        filterNames = append(filterNames, "enable_magic_link_login = "+fmt.Sprintf("%t", data.EnableMagicLinkLogin.ValueBool()))
+    }
     if !data.PrivateUserSessionLengthInHours.IsNull() && !data.PrivateUserSessionLengthInHours.IsUnknown() {
         filters["privateUserSessionLengthInHours"] = lookupNumber(data.PrivateUserSessionLengthInHours)
         filterNames = append(filterNames, "private_user_session_length_in_hours = "+data.PrivateUserSessionLengthInHours.ValueBigFloat().String())
@@ -889,6 +899,7 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "coverImageAltText": true,
         "customFields": true,
         "requireSsoForLogin": true,
+        "enableMagicLinkLogin": true,
         "privateUserSessionLengthInHours": true,
         "smtpConfigId": true,
         "callSmsConfigId": true,
@@ -1538,6 +1549,11 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.RequireSsoForLogin = types.BoolValue(val)
     } else {
         data.RequireSsoForLogin = types.BoolNull()
+    }
+    if val, ok := item["enableMagicLinkLogin"].(bool); ok {
+        data.EnableMagicLinkLogin = types.BoolValue(val)
+    } else {
+        data.EnableMagicLinkLogin = types.BoolNull()
     }
     data.PrivateUserSessionLengthInHours = numberFromAPI(data.PrivateUserSessionLengthInHours, item["privateUserSessionLengthInHours"])
     if obj, ok := item["smtpConfigId"].(map[string]interface{}); ok {

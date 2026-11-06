@@ -26,7 +26,7 @@ resource "oneuptime_on_call_user_group" "example" {
 
 - `on_call_duty_policy_schedules` (Set of String) The on-call schedules the group follows: it holds whoever is on call in any of them right now. IDs of `oneuptime_on_call_policy_schedule` resources.
 - `workspace_group_id` (String) The group's id in the workspace: a Slack user group id, such as S0604QSJC, or a Microsoft Teams tag id.
-- `workspace_type` (String) Where the group is: Slack (a user group) or MicrosoftTeams (a tag in a team). Allowed values: `Slack`, `MicrosoftTeams`.
+- `workspace_type` (String) Where the group is: Slack (a user group) or MicrosoftTeams (a tag in a team). Allowed values: `Slack`, `MicrosoftTeams`, `Mattermost`.
 
 ### Optional
 

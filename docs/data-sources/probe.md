@@ -30,6 +30,7 @@ data "oneuptime_probe" "by_id" {
 
 - `connection_status` (String) Connection Status of the Probe.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
+- `description` (String) Friendly description that will help you remember.
 - `icon_file_id` (String) Probe Page Icon File ID. The ID of a `oneuptime_file`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `name` (String) Any friendly name of this object.
@@ -39,7 +40,6 @@ data "oneuptime_probe" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `description` (String) Friendly description that will help you remember.
 - `key` (String, Sensitive) The secret the probe connects with, its PROBE_KEY. Leave it out and OneUptime generates one.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_alive` (String) When the probe last checked in. Set by OneUptime.

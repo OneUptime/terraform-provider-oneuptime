@@ -40,6 +40,7 @@ data "oneuptime_database" "by_id" {
 - `description` (String) Friendly description for this database.
 - `discovery_source` (String) How this database was first discovered: collector, client-spans, kubernetes, docker, podman or manual.
 - `docker_host_id` (String) ID of the Docker host this database runs on, when it was discovered as a container on a monitored host. The ID of a `oneuptime_docker_host`.
+- `engine_health` (String) healthy, degraded or unhealthy: the engine's latest readings against its recommended alerts' lines. Set by the server.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `instance_count` (Number) Number of running instances (pods / containers) last seen for this database's workload.
 - `is_ai_investigation_enabled` (Boolean) When on, OneUptime AI runs read-only commands (db diagnostics from a fixed catalog such as ping, version and sessions; never free-form SQL) on this database server, through its Database AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the database server can turn it on or off.
@@ -67,6 +68,8 @@ data "oneuptime_database" "by_id" {
 - `automatic_assignments` (String) Label and owner ids that label rules, owner rules or telemetry attached automatically. Maintained by OneUptime. A JSON value: read it with `jsondecode()`.
 - `collector_last_seen_at` (String) When engine telemetry from a collector / agent was last received for this database.
 - `created_at` (String) Date and Time when the object was created.
+- `engine_readings` (String) The engine's latest readings of the queries its recommended alerts read, per reporting agent. Set by the server. A JSON value: read it with `jsondecode()`.
+- `engine_readings_at` (String) When the engine's latest readings were written. Set by the server.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When this database was last seen by any discovery source - engine telemetry, application database calls or the workload inventory.
 - `manually_restored_at` (String) When a person last restored this database from the archive. Automatic archiving leaves it alone until it is seen again or a grace period passes.

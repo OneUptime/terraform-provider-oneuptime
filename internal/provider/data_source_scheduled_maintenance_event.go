@@ -42,6 +42,7 @@ type ScheduledMaintenanceEventDataSourceModel struct {
     DockerHosts types.Set `tfsdk:"docker_hosts"`
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    OpenStackClouds types.Set `tfsdk:"open_stack_clouds"`
     VmwareVCenters types.Set `tfsdk:"vmware_v_centers"`
     IotFleets types.Set `tfsdk:"iot_fleets"`
     NetworkSites types.Set `tfsdk:"network_sites"`
@@ -49,6 +50,8 @@ type ScheduledMaintenanceEventDataSourceModel struct {
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     StorageArrays types.Set `tfsdk:"storage_arrays"`
     DatabaseServers types.Set `tfsdk:"database_servers"`
+    DataStoreIds types.String `tfsdk:"data_store_ids"`
+    OpenStackParts types.String `tfsdk:"open_stack_parts"`
     Services types.Set `tfsdk:"services"`
     StatusPages types.Set `tfsdk:"status_pages"`
     Labels types.Set `tfsdk:"labels"`
@@ -151,6 +154,11 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "open_stack_clouds": schema.SetAttribute{
+                MarkdownDescription: "List of OpenStack clouds affected by this event. IDs of `oneuptime_openstack_cloud` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
             "vmware_v_centers": schema.SetAttribute{
                 MarkdownDescription: "List of vCenters affected by this event. IDs of `oneuptime_vcenter` resources.",
                 Computed: true,
@@ -185,6 +193,14 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "List of databases affected by this event. IDs of `oneuptime_database` resources.",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "data_store_ids": schema.StringAttribute{
+                MarkdownDescription: "The databases Data Observability watches that this maintenance affects: their data alerts stay quiet while it is on. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "open_stack_parts": schema.StringAttribute{
+                MarkdownDescription: "The hypervisors and availability zones of an OpenStack cloud this maintenance is on. Only what those parts say stays quiet while it is on, and the cloud's other parts go on paging. Without any, an event linked to a cloud is about the whole of it. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
             },
             "services": schema.SetAttribute{
                 MarkdownDescription: "List of services affected by this event. IDs of `oneuptime_service` resources.",
@@ -433,6 +449,7 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "networkSites": true,
@@ -440,6 +457,8 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         "cephClusters": true,
         "storageArrays": true,
         "databaseServers": true,
+        "dataStoreIds": true,
+        "openStackParts": true,
         "services": true,
         "statusPages": true,
         "labels": true,
@@ -804,6 +823,30 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
     } else {
         data.ProxmoxClusters = types.SetNull(types.StringType)
     }
+    if val, ok := item["openStackClouds"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.OpenStackClouds = types.SetNull(types.StringType)
+    }
     if val, ok := item["vmwareVCenters"].([]interface{}); ok {
         var setItems []attr.Value
         for _, item := range val {
@@ -971,6 +1014,40 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         data.DatabaseServers = types.SetValueMust(types.StringType, setItems)
     } else {
         data.DatabaseServers = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["dataStoreIds"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DataStoreIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DataStoreIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DataStoreIds = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DataStoreIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataStoreIds = types.StringNull()
+        }
+    } else if val, ok := item["dataStoreIds"].(string); ok {
+        data.DataStoreIds = types.StringValue(val)
+    } else {
+        data.DataStoreIds = types.StringNull()
+    }
+    if obj, ok := item["openStackParts"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OpenStackParts = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OpenStackParts = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OpenStackParts = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OpenStackParts = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackParts = types.StringNull()
+        }
+    } else if val, ok := item["openStackParts"].(string); ok {
+        data.OpenStackParts = types.StringValue(val)
+    } else {
+        data.OpenStackParts = types.StringNull()
     }
     if val, ok := item["services"].([]interface{}); ok {
         var setItems []attr.Value

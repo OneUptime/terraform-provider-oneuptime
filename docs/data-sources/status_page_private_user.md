@@ -37,6 +37,7 @@ data "oneuptime_status_page_private_user" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `email` (String) Email.
+- `last_active` (String) When this private user last signed in to the status page.
 - `password` (String, Sensitive) Password.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

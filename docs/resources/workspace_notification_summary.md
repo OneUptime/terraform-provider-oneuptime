@@ -30,7 +30,7 @@ resource "oneuptime_workspace_notification_summary" "example" {
 - `name` (String) Name of the Summary Rule.
 - `number_of_days_of_data` (Number) How many days of data to include in the summary.
 - `summary_type` (String) Type of summary - Incident, Alert, Incident Episode, or Alert Episode. Allowed values: `Incident`, `Alert`, `Incident Episode`, `Alert Episode`.
-- `workspace_type` (String) Type of Workspace - Slack, Microsoft Teams, etc. Allowed values: `Slack`, `MicrosoftTeams`.
+- `workspace_type` (String) Type of Workspace - Slack, Microsoft Teams, etc. Allowed values: `Slack`, `MicrosoftTeams`, `Mattermost`.
 
 ### Optional
 

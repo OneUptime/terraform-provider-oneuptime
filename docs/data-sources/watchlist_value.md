@@ -37,5 +37,6 @@ data "oneuptime_watchlist_value" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `expires_at` (String) When the value leaves the list: from then on no rule, monitor, hunt or search reads it, and OneUptime removes it. Empty: it stays until someone removes it.
 - `project_id` (String) ID of the project this value belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

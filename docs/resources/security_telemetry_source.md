@@ -2,12 +2,12 @@
 page_title: "oneuptime_security_telemetry_source Resource - oneuptime"
 subcategory: "Security"
 description: |-
-  Whether OneUptime looks for security events in one kind of telemetry the project already sends it - traces, network flows, the audit log or session replays - and what the last look found.
+  Whether OneUptime looks for security events in one kind of telemetry the project already sends it - traces, network flows, the audit log, session replays or the audit logs of its connected cloud accounts - and what the last look found.
 ---
 
 # oneuptime_security_telemetry_source (Resource)
 
-Whether OneUptime looks for security events in one kind of telemetry the project already sends it - traces, network flows, the audit log or session replays - and what the last look found.
+Whether OneUptime looks for security events in one kind of telemetry the project already sends it - traces, network flows, the audit log, session replays or the audit logs of its connected cloud accounts - and what the last look found.
 
 ## Example Usage
 
@@ -21,7 +21,7 @@ resource "oneuptime_security_telemetry_source" "example" {
 
 ### Required
 
-- `kind` (String) Which telemetry this source reads: 'traces', 'network-flows', 'audit-log' or 'rum-sessions'. Fixed once created. Allowed values: `traces`, `network-flows`, `audit-log`, `rum-sessions`.
+- `kind` (String) Which telemetry this source reads: 'traces', 'network-flows', 'audit-log', 'rum-sessions' or 'cloud-audit' (the audit logs of the cloud accounts connected under Cloud). Fixed once created. Allowed values: `traces`, `network-flows`, `audit-log`, `rum-sessions`, `cloud-audit`.
 
 ### Optional
 

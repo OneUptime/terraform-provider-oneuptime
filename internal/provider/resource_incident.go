@@ -56,6 +56,7 @@ type IncidentResourceModel struct {
     DockerHosts types.Set `tfsdk:"docker_hosts"`
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    OpenStackClouds types.Set `tfsdk:"open_stack_clouds"`
     VmwareVCenters types.Set `tfsdk:"vmware_v_centers"`
     IotFleets types.Set `tfsdk:"iot_fleets"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
@@ -262,6 +263,16 @@ func (r *IncidentResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
                 Validators: recordIDSetValidators("oneuptime_proxmox_cluster"),
+            },
+            "open_stack_clouds": schema.SetAttribute{
+                MarkdownDescription: "List of OpenStack clouds affected by this incident. IDs of `oneuptime_openstack_cloud` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+                Validators: recordIDSetValidators("oneuptime_openstack_cloud"),
             },
             "vmware_v_centers": schema.SetAttribute{
                 MarkdownDescription: "List of vCenters affected by this incident. IDs of `oneuptime_vcenter` resources.",
@@ -793,6 +804,9 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if !data.ProxmoxClusters.IsNull() && !data.ProxmoxClusters.IsUnknown() {
         requestDataMap["proxmoxClusters"] = r.convertTerraformSetToInterface(data.ProxmoxClusters)
     }
+    if !data.OpenStackClouds.IsNull() && !data.OpenStackClouds.IsUnknown() {
+        requestDataMap["openStackClouds"] = r.convertTerraformSetToInterface(data.OpenStackClouds)
+    }
     if !data.VmwareVCenters.IsNull() && !data.VmwareVCenters.IsUnknown() {
         requestDataMap["vmwareVCenters"] = r.convertTerraformSetToInterface(data.VmwareVCenters)
     }
@@ -945,6 +959,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "dockerSwarmClusters": true,
@@ -1429,6 +1444,38 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["openStackClouds"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OpenStackClouds = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["vmwareVCenters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2982,6 +3029,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "dockerSwarmClusters": true,
@@ -3467,6 +3515,38 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["openStackClouds"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OpenStackClouds = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["vmwareVCenters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -5061,6 +5141,9 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.ProxmoxClusters.IsUnknown() && !state.ProxmoxClusters.IsUnknown() && !data.ProxmoxClusters.Equal(state.ProxmoxClusters) {
         requestDataMap["proxmoxClusters"] = r.convertTerraformSetToInterface(data.ProxmoxClusters)
     }
+    if !data.OpenStackClouds.IsUnknown() && !state.OpenStackClouds.IsUnknown() && !data.OpenStackClouds.Equal(state.OpenStackClouds) {
+        requestDataMap["openStackClouds"] = r.convertTerraformSetToInterface(data.OpenStackClouds)
+    }
     if !data.VmwareVCenters.IsUnknown() && !state.VmwareVCenters.IsUnknown() && !data.VmwareVCenters.Equal(state.VmwareVCenters) {
         requestDataMap["vmwareVCenters"] = r.convertTerraformSetToInterface(data.VmwareVCenters)
     }
@@ -5198,6 +5281,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "dockerSwarmClusters": true,
@@ -5677,6 +5761,38 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["openStackClouds"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OpenStackClouds = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["vmwareVCenters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -7281,6 +7397,9 @@ func (r *IncidentResource) keepPlannedValues(data *IncidentResourceModel, plan *
     }
     if config.ProxmoxClusters.IsNull() && !plan.ProxmoxClusters.IsUnknown() {
         data.ProxmoxClusters = plan.ProxmoxClusters
+    }
+    if config.OpenStackClouds.IsNull() && !plan.OpenStackClouds.IsUnknown() {
+        data.OpenStackClouds = plan.OpenStackClouds
     }
     if config.VmwareVCenters.IsNull() && !plan.VmwareVCenters.IsUnknown() {
         data.VmwareVCenters = plan.VmwareVCenters

@@ -53,6 +53,9 @@ type DatabaseDataSourceModel struct {
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
     CollectorLastSeenAt types.String `tfsdk:"collector_last_seen_at"`
     AgentVersion types.String `tfsdk:"agent_version"`
+    EngineReadings types.String `tfsdk:"engine_readings"`
+    EngineReadingsAt types.String `tfsdk:"engine_readings_at"`
+    EngineHealth types.String `tfsdk:"engine_health"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     AutoArchivedAt types.String `tfsdk:"auto_archived_at"`
     ManuallyRestoredAt types.String `tfsdk:"manually_restored_at"`
@@ -203,6 +206,19 @@ func (d *DatabaseDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "agent_version": schema.StringAttribute{
                 MarkdownDescription: "Version of the OneUptime agent reporting this database, as self-reported via the oneuptime.agent.version resource attribute.",
+                Optional: true,
+                Computed: true,
+            },
+            "engine_readings": schema.StringAttribute{
+                MarkdownDescription: "The engine's latest readings of the queries its recommended alerts read, per reporting agent. Set by the server. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "engine_readings_at": schema.StringAttribute{
+                MarkdownDescription: "When the engine's latest readings were written. Set by the server.",
+                Computed: true,
+            },
+            "engine_health": schema.StringAttribute{
+                MarkdownDescription: "healthy, degraded or unhealthy: the engine's latest readings against its recommended alerts' lines. Set by the server.",
                 Optional: true,
                 Computed: true,
             },
@@ -408,6 +424,10 @@ func (d *DatabaseDataSource) Read(ctx context.Context, req datasource.ReadReques
         filters["agentVersion"] = data.AgentVersion.ValueString()
         filterNames = append(filterNames, "agent_version = "+fmt.Sprintf("%q", data.AgentVersion.ValueString()))
     }
+    if !data.EngineHealth.IsNull() && !data.EngineHealth.IsUnknown() {
+        filters["engineHealth"] = data.EngineHealth.ValueString()
+        filterNames = append(filterNames, "engine_health = "+fmt.Sprintf("%q", data.EngineHealth.ValueString()))
+    }
     if !data.DbSystemSource.IsNull() && !data.DbSystemSource.IsUnknown() {
         filters["dbSystemSource"] = data.DbSystemSource.ValueString()
         filterNames = append(filterNames, "db_system_source = "+fmt.Sprintf("%q", data.DbSystemSource.ValueString()))
@@ -481,6 +501,9 @@ func (d *DatabaseDataSource) Read(ctx context.Context, req datasource.ReadReques
         "otelCollectorStatus": true,
         "collectorLastSeenAt": true,
         "agentVersion": true,
+        "engineReadings": true,
+        "engineReadingsAt": true,
+        "engineHealth": true,
         "lastSeenAt": true,
         "autoArchivedAt": true,
         "manuallyRestoredAt": true,
@@ -953,6 +976,57 @@ func (d *DatabaseDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.AgentVersion = types.StringValue(val)
     } else {
         data.AgentVersion = types.StringNull()
+    }
+    if obj, ok := item["engineReadings"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EngineReadings = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EngineReadings = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EngineReadings = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EngineReadings = types.StringValue(string(jsonBytes))
+        } else {
+            data.EngineReadings = types.StringNull()
+        }
+    } else if val, ok := item["engineReadings"].(string); ok {
+        data.EngineReadings = types.StringValue(val)
+    } else {
+        data.EngineReadings = types.StringNull()
+    }
+    if obj, ok := item["engineReadingsAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EngineReadingsAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EngineReadingsAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EngineReadingsAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EngineReadingsAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.EngineReadingsAt = types.StringNull()
+        }
+    } else if val, ok := item["engineReadingsAt"].(string); ok {
+        data.EngineReadingsAt = types.StringValue(val)
+    } else {
+        data.EngineReadingsAt = types.StringNull()
+    }
+    if obj, ok := item["engineHealth"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EngineHealth = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EngineHealth = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EngineHealth = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EngineHealth = types.StringValue(string(jsonBytes))
+        } else {
+            data.EngineHealth = types.StringNull()
+        }
+    } else if val, ok := item["engineHealth"].(string); ok {
+        data.EngineHealth = types.StringValue(val)
+    } else {
+        data.EngineHealth = types.StringNull()
     }
     if obj, ok := item["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

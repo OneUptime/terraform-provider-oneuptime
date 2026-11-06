@@ -33,6 +33,7 @@ type StatusPagePrivateUserDataSourceModel struct {
     StatusPageId types.String `tfsdk:"status_page_id"`
     Email types.String `tfsdk:"email"`
     Password types.String `tfsdk:"password"`
+    LastActive types.String `tfsdk:"last_active"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsSsoUser types.Bool `tfsdk:"is_sso_user"`
 }
@@ -77,6 +78,10 @@ func (d *StatusPagePrivateUserDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Password.",
                 Computed: true,
                 Sensitive: true,
+            },
+            "last_active": schema.StringAttribute{
+                MarkdownDescription: "When this private user last signed in to the status page.",
+                Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -163,6 +168,7 @@ func (d *StatusPagePrivateUserDataSource) Read(ctx context.Context, req datasour
         "statusPageId": true,
         "email": true,
         "password": true,
+        "lastActive": true,
         "createdByUserId": true,
         "isSsoUser": true,
         "_id": true,
@@ -344,6 +350,23 @@ func (d *StatusPagePrivateUserDataSource) Read(ctx context.Context, req datasour
         data.Password = types.StringValue(val)
     } else {
         data.Password = types.StringNull()
+    }
+    if obj, ok := item["lastActive"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastActive = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastActive = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastActive = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastActive = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastActive = types.StringNull()
+        }
+    } else if val, ok := item["lastActive"].(string); ok {
+        data.LastActive = types.StringValue(val)
+    } else {
+        data.LastActive = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

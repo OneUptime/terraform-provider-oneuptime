@@ -102,7 +102,7 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
                 MarkdownDescription: "Type of Workspace - Slack, Microsoft Teams, etc.",
                 Required: true,
                 Validators: []validator.String{
-                    stringvalidator.OneOf("Slack", "MicrosoftTeams"),
+                    stringvalidator.OneOf("Slack", "MicrosoftTeams", "Mattermost"),
                 },
             },
             "summary_type": schema.StringAttribute{

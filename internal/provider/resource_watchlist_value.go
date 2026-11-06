@@ -39,6 +39,7 @@ type WatchlistValueResourceModel struct {
     SecurityWatchlistId types.String `tfsdk:"security_watchlist_id"`
     Value types.String `tfsdk:"value"`
     Note types.String `tfsdk:"note"`
+    ExpiresAt RFC3339Value `tfsdk:"expires_at"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -88,6 +89,16 @@ func (r *WatchlistValueResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "expires_at": schema.StringAttribute{
+                MarkdownDescription: "When the value leaves the list: from then on no rule, monitor, hunt or search reads it, and OneUptime removes it. Empty: it stays until someone removes it.",
+                CustomType: RFC3339Type{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
@@ -184,6 +195,9 @@ func (r *WatchlistValueResource) Create(ctx context.Context, req resource.Create
     if !data.Note.IsNull() && !data.Note.IsUnknown() {
         requestDataMap["note"] = data.Note.ValueString()
     }
+    if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() {
+        requestDataMap["expiresAt"] = data.ExpiresAt.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/security-watchlist-item", watchlistValueRequest)
@@ -233,6 +247,7 @@ func (r *WatchlistValueResource) Create(ctx context.Context, req resource.Create
         "securityWatchlistId": true,
         "value": true,
         "note": true,
+        "expiresAt": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -390,6 +405,17 @@ func (r *WatchlistValueResource) Create(ctx context.Context, req resource.Create
     } else {
         data.Note = types.StringNull()
     }
+    if obj, ok := dataMap["expiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.ExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["expiresAt"].(string); ok && val != "" {
+        data.ExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.ExpiresAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -484,6 +510,7 @@ func (r *WatchlistValueResource) Read(ctx context.Context, req resource.ReadRequ
         "securityWatchlistId": true,
         "value": true,
         "note": true,
+        "expiresAt": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -642,6 +669,17 @@ func (r *WatchlistValueResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.Note = types.StringNull()
     }
+    if obj, ok := dataMap["expiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.ExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["expiresAt"].(string); ok && val != "" {
+        data.ExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.ExpiresAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -750,6 +788,9 @@ func (r *WatchlistValueResource) Update(ctx context.Context, req resource.Update
     if !data.Note.IsUnknown() && !state.Note.IsUnknown() && !data.Note.Equal(state.Note) {
         requestDataMap["note"] = data.Note.ValueString()
     }
+    if !data.ExpiresAt.IsUnknown() && !state.ExpiresAt.IsUnknown() && !data.ExpiresAt.Equal(state.ExpiresAt) {
+        requestDataMap["expiresAt"] = data.ExpiresAt.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -777,6 +818,7 @@ func (r *WatchlistValueResource) Update(ctx context.Context, req resource.Update
         "securityWatchlistId": true,
         "value": true,
         "note": true,
+        "expiresAt": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -929,6 +971,17 @@ func (r *WatchlistValueResource) Update(ctx context.Context, req resource.Update
     } else {
         data.Note = types.StringNull()
     }
+    if obj, ok := dataMap["expiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.ExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["expiresAt"].(string); ok && val != "" {
+        data.ExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.ExpiresAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1047,6 +1100,9 @@ func (r *WatchlistValueResource) ImportState(ctx context.Context, req resource.I
 func (r *WatchlistValueResource) keepPlannedValues(data *WatchlistValueResourceModel, plan *WatchlistValueResourceModel, config *WatchlistValueResourceModel) {
     if config.Note.IsNull() && !plan.Note.IsUnknown() {
         data.Note = plan.Note
+    }
+    if config.ExpiresAt.IsNull() && !plan.ExpiresAt.IsUnknown() {
+        data.ExpiresAt = plan.ExpiresAt
     }
 }
 

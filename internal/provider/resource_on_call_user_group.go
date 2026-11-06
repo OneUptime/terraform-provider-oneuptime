@@ -88,7 +88,7 @@ func (r *OnCallUserGroupResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
                 Validators: []validator.String{
-                    stringvalidator.OneOf("Slack", "MicrosoftTeams"),
+                    stringvalidator.OneOf("Slack", "MicrosoftTeams", "Mattermost"),
                 },
             },
             "workspace_group_id": schema.StringAttribute{

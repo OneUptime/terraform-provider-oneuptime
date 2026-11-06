@@ -21,6 +21,7 @@ resource "oneuptime_security_log_source" "example" {
 
 ### Optional
 
+- `case_minimum_severity` (String) Threats security products write in the logs (CEF, LEEF, Palo Alto Networks, FortiGate, Cisco ASA) at or above this severity (Low, Medium, High or Critical) open security cases. Empty stores them as events only. Defaults to `High`.
 - `is_enabled` (Boolean) Whether OneUptime looks for security events in the project's logs. Defaults to `true`.
 
 ### Read-Only

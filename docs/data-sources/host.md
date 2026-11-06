@@ -72,6 +72,7 @@ data "oneuptime_host" "by_id" {
 - `latest_memory_percent` (Number) Memory in use in the host's last report, buffers and page cache not counted, as a percent. Set by the server.
 - `latest_swap_percent` (Number) Swap space in use in the host's last report, as a percent. Empty on a host without swap. Set by the server.
 - `name` (String) Friendly name for this host.
+- `open_stack_cloud_id` (String) Optional FK to the OpenStack cloud this host belongs to, as a hypervisor or as a guest. The ID of a `oneuptime_openstack_cloud`.
 - `os_type` (String) Operating system type of the host.
 - `os_version` (String) Operating system version of the host.
 - `otel_collector_status` (String) Connection status of the OTel Collector reporting on this host (connected or disconnected).

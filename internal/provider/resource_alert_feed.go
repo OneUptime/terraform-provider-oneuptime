@@ -101,7 +101,7 @@ func (r *AlertFeedResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Alert Feed Event.",
                 Required: true,
                 Validators: []validator.String{
-                    stringvalidator.OneOf("PublicNote", "SubscriberNotificationSent", "OwnerNotificationSent", "OwnerUserAdded", "OwnerTeamAdded", "AlertCreated", "AlertStateChanged", "PrivateNote", "AlertUpdated", "RootCause", "RemediationNotes", "OwnerUserRemoved", "OwnerTeamRemoved", "OnCallPolicy", "OnCallNotification", "AddedToEpisode", "RemovedFromEpisode", "LinkedToIncident", "UnlinkedFromIncident", "LabelRuleExecuted", "OwnerRuleExecuted", "PrivacyRuleExecuted", "OnCallRuleExecuted", "AutoRemediation", "VideoCallStarted", "VideoCallFailed", "ChannelMemberAdded"),
+                    stringvalidator.OneOf("PublicNote", "SubscriberNotificationSent", "OwnerNotificationSent", "OwnerUserAdded", "OwnerTeamAdded", "AlertCreated", "AlertStateChanged", "PrivateNote", "AlertUpdated", "RootCause", "RemediationNotes", "OwnerUserRemoved", "OwnerTeamRemoved", "OnCallPolicy", "OnCallNotification", "AddedToEpisode", "RemovedFromEpisode", "LinkedToIncident", "UnlinkedFromIncident", "LabelRuleExecuted", "OwnerRuleExecuted", "PrivacyRuleExecuted", "OnCallRuleExecuted", "IncidentRuleExecuted", "AutoRemediation", "VideoCallStarted", "VideoCallFailed", "ChannelMemberAdded"),
                 },
             },
             "display_color": schema.StringAttribute{

@@ -50,6 +50,7 @@ type HuntResourceModel struct {
     Schedule types.String `tfsdk:"schedule"`
     NotifyUsers types.Set `tfsdk:"notify_users"`
     NotifyTeams types.Set `tfsdk:"notify_teams"`
+    LibraryHuntId types.String `tfsdk:"library_hunt_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     ScheduledByUserId types.String `tfsdk:"scheduled_by_user_id"`
@@ -165,6 +166,15 @@ func (r *HuntResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
                 Validators: recordIDSetValidators("oneuptime_team"),
+            },
+            "library_hunt_id": schema.StringAttribute{
+                MarkdownDescription: "The Hunt Library starter this hunt was added from, such as encoded-powershell. Empty for a hunt saved from a search of your own.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -336,6 +346,9 @@ func (r *HuntResource) Create(ctx context.Context, req resource.CreateRequest, r
     if !data.NotifyTeams.IsNull() && !data.NotifyTeams.IsUnknown() {
         requestDataMap["notifyTeams"] = r.convertTerraformSetToInterface(data.NotifyTeams)
     }
+    if !data.LibraryHuntId.IsNull() && !data.LibraryHuntId.IsUnknown() {
+        requestDataMap["libraryHuntId"] = data.LibraryHuntId.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/security-hunt", huntRequest)
@@ -390,6 +403,7 @@ func (r *HuntResource) Create(ctx context.Context, req resource.CreateRequest, r
         "schedule": true,
         "notifyUsers": true,
         "notifyTeams": true,
+        "libraryHuntId": true,
         "createdAt": true,
         "updatedAt": true,
         "scheduledByUserId": true,
@@ -731,6 +745,43 @@ func (r *HuntResource) Create(ctx context.Context, req resource.CreateRequest, r
         // For sets, always use empty set instead of null to match default values
         data.NotifyTeams = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["libraryHuntId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LibraryHuntId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LibraryHuntId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LibraryHuntId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LibraryHuntId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LibraryHuntId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LibraryHuntId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LibraryHuntId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LibraryHuntId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LibraryHuntId = types.StringNull()
+        }
+    } else if val, ok := dataMap["libraryHuntId"].(string); ok {
+        data.LibraryHuntId = types.StringValue(val)
+    } else {
+        data.LibraryHuntId = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -965,6 +1016,7 @@ func (r *HuntResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "schedule": true,
         "notifyUsers": true,
         "notifyTeams": true,
+        "libraryHuntId": true,
         "createdAt": true,
         "updatedAt": true,
         "scheduledByUserId": true,
@@ -1311,6 +1363,43 @@ func (r *HuntResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         // For sets, always use empty set instead of null to match default values
         data.NotifyTeams = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["libraryHuntId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LibraryHuntId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LibraryHuntId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LibraryHuntId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LibraryHuntId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LibraryHuntId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LibraryHuntId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LibraryHuntId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LibraryHuntId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LibraryHuntId = types.StringNull()
+        }
+    } else if val, ok := dataMap["libraryHuntId"].(string); ok {
+        data.LibraryHuntId = types.StringValue(val)
+    } else {
+        data.LibraryHuntId = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1617,6 +1706,7 @@ func (r *HuntResource) Update(ctx context.Context, req resource.UpdateRequest, r
         "schedule": true,
         "notifyUsers": true,
         "notifyTeams": true,
+        "libraryHuntId": true,
         "createdAt": true,
         "updatedAt": true,
         "scheduledByUserId": true,
@@ -1953,6 +2043,43 @@ func (r *HuntResource) Update(ctx context.Context, req resource.UpdateRequest, r
         // For sets, always use empty set instead of null to match default values
         data.NotifyTeams = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["libraryHuntId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LibraryHuntId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LibraryHuntId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LibraryHuntId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LibraryHuntId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LibraryHuntId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LibraryHuntId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LibraryHuntId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LibraryHuntId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LibraryHuntId = types.StringNull()
+        }
+    } else if val, ok := dataMap["libraryHuntId"].(string); ok {
+        data.LibraryHuntId = types.StringValue(val)
+    } else {
+        data.LibraryHuntId = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2228,6 +2355,9 @@ func (r *HuntResource) keepPlannedValues(data *HuntResourceModel, plan *HuntReso
     }
     if config.NotifyTeams.IsNull() && !plan.NotifyTeams.IsUnknown() {
         data.NotifyTeams = plan.NotifyTeams
+    }
+    if config.LibraryHuntId.IsNull() && !plan.LibraryHuntId.IsUnknown() {
+        data.LibraryHuntId = plan.LibraryHuntId
     }
     if config.NotifyUserEmails.IsNull() && !plan.NotifyUserEmails.IsUnknown() {
         data.NotifyUserEmails = plan.NotifyUserEmails

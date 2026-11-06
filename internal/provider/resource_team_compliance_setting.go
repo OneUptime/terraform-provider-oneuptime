@@ -95,7 +95,7 @@ func (r *TeamComplianceSettingResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Type of compliance rule.",
                 Required: true,
                 Validators: []validator.String{
-                    stringvalidator.OneOf("HasNotificationEmailMethod", "HasNotificationSMSMethod", "HasNotificationCallMethod", "HasNotificationPushMethod", "HasNotificationWhatsAppMethod", "HasNotificationTelegramMethod", "HasNotificationSlackMethod", "HasNotificationMicrosoftTeamsMethod", "HasNotificationWebhookMethod", "HasIncidentOnCallRules", "HasAlertOnCallRules", "HasIncidentEpisodeOnCallRules", "HasAlertEpisodeOnCallRules"),
+                    stringvalidator.OneOf("HasNotificationEmailMethod", "HasNotificationSMSMethod", "HasNotificationCallMethod", "HasNotificationPushMethod", "HasNotificationWhatsAppMethod", "HasNotificationTelegramMethod", "HasNotificationSlackMethod", "HasNotificationMicrosoftTeamsMethod", "HasNotificationMattermostMethod", "HasNotificationWebhookMethod", "HasIncidentOnCallRules", "HasAlertOnCallRules", "HasIncidentEpisodeOnCallRules", "HasAlertEpisodeOnCallRules"),
                 },
             },
             "enabled": schema.BoolAttribute{
@@ -121,18 +121,18 @@ func (r *TeamComplianceSettingResource) schemaDefinition() schema.Schema {
                 },
             },
             "notification_channel": schema.StringAttribute{
-                MarkdownDescription: "Deprecated: use notificationChannels. The first of the rule's notification channels, or empty when it accepts any channel. Sending this field without notificationChannels sets the rule to that one channel (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Webhook or CustomChannel).",
+                MarkdownDescription: "Deprecated: use notificationChannels. The first of the rule's notification channels, or empty when it accepts any channel. Sending this field without notificationChannels sets the rule to that one channel (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Mattermost, Webhook or CustomChannel).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
-                    stringvalidator.OneOf("Call", "SMS", "Push", "Email", "WhatsApp", "Telegram", "Slack", "MicrosoftTeams", "Webhook", "CustomChannel"),
+                    stringvalidator.OneOf("Call", "SMS", "Push", "Email", "WhatsApp", "Telegram", "Slack", "MicrosoftTeams", "Mattermost", "Webhook", "CustomChannel"),
                 },
             },
             "notification_channels": schema.StringAttribute{
-                MarkdownDescription: "On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Webhook or CustomChannel, which any custom channel that is on meets). Leave empty to accept any channel. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams, Mattermost, Webhook or CustomChannel, which any custom channel that is on meets). Leave empty to accept any channel. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,

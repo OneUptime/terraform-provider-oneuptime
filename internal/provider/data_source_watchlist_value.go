@@ -33,6 +33,7 @@ type WatchlistValueDataSourceModel struct {
     SecurityWatchlistId types.String `tfsdk:"security_watchlist_id"`
     Value types.String `tfsdk:"value"`
     Note types.String `tfsdk:"note"`
+    ExpiresAt types.String `tfsdk:"expires_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -76,6 +77,10 @@ func (d *WatchlistValueDataSource) Schema(ctx context.Context, req datasource.Sc
             "note": schema.StringAttribute{
                 MarkdownDescription: "Why the value is on the list, for whoever reads it later.",
                 Optional: true,
+                Computed: true,
+            },
+            "expires_at": schema.StringAttribute{
+                MarkdownDescription: "When the value leaves the list: from then on no rule, monitor, hunt or search reads it, and OneUptime removes it. Empty: it stays until someone removes it.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -162,6 +167,7 @@ func (d *WatchlistValueDataSource) Read(ctx context.Context, req datasource.Read
         "securityWatchlistId": true,
         "value": true,
         "note": true,
+        "expiresAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -342,6 +348,23 @@ func (d *WatchlistValueDataSource) Read(ctx context.Context, req datasource.Read
         data.Note = types.StringValue(val)
     } else {
         data.Note = types.StringNull()
+    }
+    if obj, ok := item["expiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ExpiresAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ExpiresAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ExpiresAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ExpiresAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExpiresAt = types.StringNull()
+        }
+    } else if val, ok := item["expiresAt"].(string); ok {
+        data.ExpiresAt = types.StringValue(val)
+    } else {
+        data.ExpiresAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

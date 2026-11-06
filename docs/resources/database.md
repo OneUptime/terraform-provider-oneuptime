@@ -58,6 +58,9 @@ resource "oneuptime_database" "example" {
 - `db_system_source` (String) What the database engine was last determined from: manual, collector, container or client-spans. Stronger evidence may correct the engine; weaker evidence never changes it.
 - `db_version` (String) Engine version last reported for this database, from the collector receiver or the container image tag.
 - `docker_host_id` (String) ID of the Docker host this database runs on, when it was discovered as a container on a monitored host. The ID of a `oneuptime_docker_host`.
+- `engine_health` (String) healthy, degraded or unhealthy: the engine's latest readings against its recommended alerts' lines. Set by the server.
+- `engine_readings` (String) The engine's latest readings of the queries its recommended alerts read, per reporting agent. Set by the server. A JSON value: read it with `jsondecode()`.
+- `engine_readings_at` (String) When the engine's latest readings were written. Set by the server.
 - `id` (String) Unique identifier for the resource.
 - `instance_count` (Number) Number of running instances (pods / containers) last seen for this database's workload.
 - `kubernetes_cluster_id` (String) ID of the Kubernetes cluster this database runs on, when it was discovered as a workload on a monitored cluster. The ID of a `oneuptime_kubernetes_cluster`.

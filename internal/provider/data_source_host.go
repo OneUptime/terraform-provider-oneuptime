@@ -52,6 +52,7 @@ type HostDataSourceModel struct {
     DockerHostId types.String `tfsdk:"docker_host_id"`
     KubernetesClusterId types.String `tfsdk:"kubernetes_cluster_id"`
     ProxmoxClusterId types.String `tfsdk:"proxmox_cluster_id"`
+    OpenStackCloudId types.String `tfsdk:"open_stack_cloud_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     ArchivedAt types.String `tfsdk:"archived_at"`
@@ -226,6 +227,12 @@ func (d *HostDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_proxmox_cluster"),
+            },
+            "open_stack_cloud_id": schema.StringAttribute{
+                MarkdownDescription: "Optional FK to the OpenStack cloud this host belongs to, as a hypervisor or as a guest. The ID of a `oneuptime_openstack_cloud`.",
+                Optional: true,
+                Computed: true,
+                Validators: recordIDValidators("oneuptime_openstack_cloud"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
@@ -561,6 +568,10 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         filters["proxmoxClusterId"] = data.ProxmoxClusterId.ValueString()
         filterNames = append(filterNames, "proxmox_cluster_id = "+fmt.Sprintf("%q", data.ProxmoxClusterId.ValueString()))
     }
+    if !data.OpenStackCloudId.IsNull() && !data.OpenStackCloudId.IsUnknown() {
+        filters["openStackCloudId"] = data.OpenStackCloudId.ValueString()
+        filterNames = append(filterNames, "open_stack_cloud_id = "+fmt.Sprintf("%q", data.OpenStackCloudId.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -737,6 +748,7 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "dockerHostId": true,
         "kubernetesClusterId": true,
         "proxmoxClusterId": true,
+        "openStackCloudId": true,
         "createdByUserId": true,
         "isArchived": true,
         "archivedAt": true,
@@ -1202,6 +1214,23 @@ func (d *HostDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.ProxmoxClusterId = types.StringValue(val)
     } else {
         data.ProxmoxClusterId = types.StringNull()
+    }
+    if obj, ok := item["openStackCloudId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OpenStackCloudId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OpenStackCloudId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OpenStackCloudId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OpenStackCloudId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackCloudId = types.StringNull()
+        }
+    } else if val, ok := item["openStackCloudId"].(string); ok {
+        data.OpenStackCloudId = types.StringValue(val)
+    } else {
+        data.OpenStackCloudId = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_security_log_source" "example" {
-  cursor = "example-cursor"
+  case_minimum_severity = "example-case-minimum-severity"
 }
 
 # Or by id:
@@ -28,6 +28,7 @@ data "oneuptime_security_log_source" "by_id" {
 
 ### Optional
 
+- `case_minimum_severity` (String) Threats security products write in the logs (CEF, LEEF, Palo Alto Networks, FortiGate, Cisco ASA) at or above this severity (Low, Medium, High or Critical) open security cases. Empty stores them as events only.
 - `created_by_user_id` (String) ID of the user who turned this source on. The ID of a `oneuptime_user` (see the data source).
 - `cursor` (String) The time up to which logs have been read, as an ISO string: the end of the last window the scan finished.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.

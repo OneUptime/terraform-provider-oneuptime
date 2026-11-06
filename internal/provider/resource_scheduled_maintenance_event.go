@@ -51,6 +51,7 @@ type ScheduledMaintenanceEventResourceModel struct {
     DockerHosts types.Set `tfsdk:"docker_hosts"`
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    OpenStackClouds types.Set `tfsdk:"open_stack_clouds"`
     VmwareVCenters types.Set `tfsdk:"vmware_v_centers"`
     IotFleets types.Set `tfsdk:"iot_fleets"`
     NetworkSites types.Set `tfsdk:"network_sites"`
@@ -58,6 +59,8 @@ type ScheduledMaintenanceEventResourceModel struct {
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     StorageArrays types.Set `tfsdk:"storage_arrays"`
     DatabaseServers types.Set `tfsdk:"database_servers"`
+    DataStoreIds JSONSubsetValue `tfsdk:"data_store_ids"`
+    OpenStackParts JSONSubsetValue `tfsdk:"open_stack_parts"`
     Services types.Set `tfsdk:"services"`
     StatusPages types.Set `tfsdk:"status_pages"`
     Labels types.Set `tfsdk:"labels"`
@@ -186,6 +189,16 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 },
                 Validators: recordIDSetValidators("oneuptime_proxmox_cluster"),
             },
+            "open_stack_clouds": schema.SetAttribute{
+                MarkdownDescription: "List of OpenStack clouds affected by this event. IDs of `oneuptime_openstack_cloud` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+                Validators: recordIDSetValidators("oneuptime_openstack_cloud"),
+            },
             "vmware_v_centers": schema.SetAttribute{
                 MarkdownDescription: "List of vCenters affected by this event. IDs of `oneuptime_vcenter` resources.",
                 Optional: true,
@@ -255,6 +268,32 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
                 Validators: recordIDSetValidators("oneuptime_database"),
+            },
+            "data_store_ids": schema.StringAttribute{
+                MarkdownDescription: "The databases Data Observability watches that this maintenance affects: their data alerts stay quiet while it is on. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "open_stack_parts": schema.StringAttribute{
+                MarkdownDescription: "The hypervisors and availability zones of an OpenStack cloud this maintenance is on. Only what those parts say stays quiet while it is on, and the cloud's other parts go on paging. Without any, an event linked to a cloud is about the whole of it. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
             },
             "services": schema.SetAttribute{
                 MarkdownDescription: "List of services affected by this event. IDs of `oneuptime_service` resources.",
@@ -564,6 +603,9 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     if !data.ProxmoxClusters.IsNull() && !data.ProxmoxClusters.IsUnknown() {
         requestDataMap["proxmoxClusters"] = r.convertTerraformSetToInterface(data.ProxmoxClusters)
     }
+    if !data.OpenStackClouds.IsNull() && !data.OpenStackClouds.IsUnknown() {
+        requestDataMap["openStackClouds"] = r.convertTerraformSetToInterface(data.OpenStackClouds)
+    }
     if !data.VmwareVCenters.IsNull() && !data.VmwareVCenters.IsUnknown() {
         requestDataMap["vmwareVCenters"] = r.convertTerraformSetToInterface(data.VmwareVCenters)
     }
@@ -584,6 +626,12 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     }
     if !data.DatabaseServers.IsNull() && !data.DatabaseServers.IsUnknown() {
         requestDataMap["databaseServers"] = r.convertTerraformSetToInterface(data.DatabaseServers)
+    }
+    if parsedDataStoreIds := r.parseJSONField(data.DataStoreIds); parsedDataStoreIds != nil {
+        requestDataMap["dataStoreIds"] = parsedDataStoreIds
+    }
+    if parsedOpenStackParts := r.parseJSONField(data.OpenStackParts); parsedOpenStackParts != nil {
+        requestDataMap["openStackParts"] = parsedOpenStackParts
     }
     if !data.Services.IsNull() && !data.Services.IsUnknown() {
         requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
@@ -687,6 +735,7 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "networkSites": true,
@@ -694,6 +743,8 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         "cephClusters": true,
         "storageArrays": true,
         "databaseServers": true,
+        "dataStoreIds": true,
+        "openStackParts": true,
         "services": true,
         "statusPages": true,
         "labels": true,
@@ -1030,6 +1081,38 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["openStackClouds"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OpenStackClouds = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["vmwareVCenters"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1253,6 +1336,80 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     } else {
         // For sets, always use empty set instead of null to match default values
         data.DatabaseServers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["dataStoreIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DataStoreIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DataStoreIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DataStoreIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DataStoreIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DataStoreIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DataStoreIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["dataStoreIds"].(string); ok {
+        data.DataStoreIds = NewJSONSubsetValue(val)
+    } else {
+        data.DataStoreIds = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["openStackParts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OpenStackParts = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OpenStackParts = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OpenStackParts = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OpenStackParts = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OpenStackParts = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OpenStackParts = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["openStackParts"].(string); ok {
+        data.OpenStackParts = NewJSONSubsetValue(val)
+    } else {
+        data.OpenStackParts = NewJSONSubsetNull()
     }
     if val, ok := dataMap["services"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1822,6 +1979,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "networkSites": true,
@@ -1829,6 +1987,8 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "cephClusters": true,
         "storageArrays": true,
         "databaseServers": true,
+        "dataStoreIds": true,
+        "openStackParts": true,
         "services": true,
         "statusPages": true,
         "labels": true,
@@ -2166,6 +2326,38 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["openStackClouds"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OpenStackClouds = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["vmwareVCenters"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -2389,6 +2581,80 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
     } else {
         // For sets, always use empty set instead of null to match default values
         data.DatabaseServers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["dataStoreIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DataStoreIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DataStoreIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DataStoreIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DataStoreIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DataStoreIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DataStoreIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["dataStoreIds"].(string); ok {
+        data.DataStoreIds = NewJSONSubsetValue(val)
+    } else {
+        data.DataStoreIds = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["openStackParts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OpenStackParts = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OpenStackParts = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OpenStackParts = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OpenStackParts = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OpenStackParts = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OpenStackParts = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["openStackParts"].(string); ok {
+        data.OpenStackParts = NewJSONSubsetValue(val)
+    } else {
+        data.OpenStackParts = NewJSONSubsetNull()
     }
     if val, ok := dataMap["services"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2948,6 +3214,8 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     // The attributes this update writes from the configuration (see importsettle.go).
     writtenFromConfig := map[string]bool{
         "custom_fields": !data.CustomFields.Equal(state.CustomFields),
+        "data_store_ids": !data.DataStoreIds.Equal(state.DataStoreIds),
+        "open_stack_parts": !data.OpenStackParts.Equal(state.OpenStackParts),
         "send_subscriber_notifications_on_before_the_event": !data.SendSubscriberNotificationsOnBeforeTheEvent.Equal(state.SendSubscriberNotificationsOnBeforeTheEvent),
     }
 
@@ -2989,6 +3257,9 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     if !data.ProxmoxClusters.IsUnknown() && !state.ProxmoxClusters.IsUnknown() && !data.ProxmoxClusters.Equal(state.ProxmoxClusters) {
         requestDataMap["proxmoxClusters"] = r.convertTerraformSetToInterface(data.ProxmoxClusters)
     }
+    if !data.OpenStackClouds.IsUnknown() && !state.OpenStackClouds.IsUnknown() && !data.OpenStackClouds.Equal(state.OpenStackClouds) {
+        requestDataMap["openStackClouds"] = r.convertTerraformSetToInterface(data.OpenStackClouds)
+    }
     if !data.VmwareVCenters.IsUnknown() && !state.VmwareVCenters.IsUnknown() && !data.VmwareVCenters.Equal(state.VmwareVCenters) {
         requestDataMap["vmwareVCenters"] = r.convertTerraformSetToInterface(data.VmwareVCenters)
     }
@@ -3009,6 +3280,22 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     }
     if !data.DatabaseServers.IsUnknown() && !state.DatabaseServers.IsUnknown() && !data.DatabaseServers.Equal(state.DatabaseServers) {
         requestDataMap["databaseServers"] = r.convertTerraformSetToInterface(data.DatabaseServers)
+    }
+    if !data.DataStoreIds.IsUnknown() && !state.DataStoreIds.IsUnknown() && !data.DataStoreIds.Equal(state.DataStoreIds) {
+        var datastoreidsData interface{}
+        if err := json.Unmarshal([]byte(data.DataStoreIds.ValueString()), &datastoreidsData); err == nil {
+            requestDataMap["dataStoreIds"] = datastoreidsData
+        } else {
+            requestDataMap["dataStoreIds"] = data.DataStoreIds.ValueString()
+        }
+    }
+    if !data.OpenStackParts.IsUnknown() && !state.OpenStackParts.IsUnknown() && !data.OpenStackParts.Equal(state.OpenStackParts) {
+        var openstackpartsData interface{}
+        if err := json.Unmarshal([]byte(data.OpenStackParts.ValueString()), &openstackpartsData); err == nil {
+            requestDataMap["openStackParts"] = openstackpartsData
+        } else {
+            requestDataMap["openStackParts"] = data.OpenStackParts.ValueString()
+        }
     }
     if !data.Services.IsUnknown() && !state.Services.IsUnknown() && !data.Services.Equal(state.Services) {
         requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
@@ -3091,6 +3378,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "iotFleets": true,
         "networkSites": true,
@@ -3098,6 +3386,8 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "cephClusters": true,
         "storageArrays": true,
         "databaseServers": true,
+        "dataStoreIds": true,
+        "openStackParts": true,
         "services": true,
         "statusPages": true,
         "labels": true,
@@ -3429,6 +3719,38 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["openStackClouds"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OpenStackClouds = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["vmwareVCenters"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -3652,6 +3974,80 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     } else {
         // For sets, always use empty set instead of null to match default values
         data.DatabaseServers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["dataStoreIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DataStoreIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DataStoreIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DataStoreIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DataStoreIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DataStoreIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DataStoreIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["dataStoreIds"].(string); ok {
+        data.DataStoreIds = NewJSONSubsetValue(val)
+    } else {
+        data.DataStoreIds = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["openStackParts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OpenStackParts = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OpenStackParts = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OpenStackParts = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OpenStackParts = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OpenStackParts = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OpenStackParts = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["openStackParts"].(string); ok {
+        data.OpenStackParts = NewJSONSubsetValue(val)
+    } else {
+        data.OpenStackParts = NewJSONSubsetNull()
     }
     if val, ok := dataMap["services"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -4230,7 +4626,7 @@ func (r *ScheduledMaintenanceEventResource) ImportState(ctx context.Context, req
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
     // These hold the record as OneUptime keeps it, keys it fills in itself
     // included, until an update writes them (see importsettle.go).
-    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "send_subscriber_notifications_on_before_the_event"})...)
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "data_store_ids", "open_stack_parts", "send_subscriber_notifications_on_before_the_event"})...)
 }
 
 
@@ -4263,6 +4659,9 @@ func (r *ScheduledMaintenanceEventResource) keepPlannedValues(data *ScheduledMai
     if config.ProxmoxClusters.IsNull() && !plan.ProxmoxClusters.IsUnknown() {
         data.ProxmoxClusters = plan.ProxmoxClusters
     }
+    if config.OpenStackClouds.IsNull() && !plan.OpenStackClouds.IsUnknown() {
+        data.OpenStackClouds = plan.OpenStackClouds
+    }
     if config.VmwareVCenters.IsNull() && !plan.VmwareVCenters.IsUnknown() {
         data.VmwareVCenters = plan.VmwareVCenters
     }
@@ -4283,6 +4682,12 @@ func (r *ScheduledMaintenanceEventResource) keepPlannedValues(data *ScheduledMai
     }
     if config.DatabaseServers.IsNull() && !plan.DatabaseServers.IsUnknown() {
         data.DatabaseServers = plan.DatabaseServers
+    }
+    if config.DataStoreIds.IsNull() && !plan.DataStoreIds.IsUnknown() {
+        data.DataStoreIds = plan.DataStoreIds
+    }
+    if config.OpenStackParts.IsNull() && !plan.OpenStackParts.IsUnknown() {
+        data.OpenStackParts = plan.OpenStackParts
     }
     if config.Services.IsNull() && !plan.Services.IsUnknown() {
         data.Services = plan.Services

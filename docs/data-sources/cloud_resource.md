@@ -40,6 +40,7 @@ data "oneuptime_cloud_resource" "by_id" {
 - `cloud_resource_type` (String) For a resource: the provider's type for it - the Azure Resource Manager type (Microsoft.Compute/virtualMachines), the AWS CloudFormation type (AWS::EC2::Instance) or the Google Cloud Monitoring resource type (gce_instance).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.
+- `health_severity` (String) Whether the resource needed attention when its readings were last written: critical or warning, empty when it did not.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_archived` (Boolean) Is this cloud resource archived? Archived cloud resources are hidden from lists but keep collecting telemetry.
 - `name` (String) Friendly name for this cloud environment. Ingest names a discovered environment after its platform, region and account.
@@ -57,6 +58,8 @@ data "oneuptime_cloud_resource" "by_id" {
 - `auto_archived_at` (String) For a resource: when it was archived automatically for sending no metrics for the auto-archive period. Cleared when it reports again.
 - `cloud_endpoints` (String) For a resource a cloud connection's inventory lists: the host names and addresses it answers on, such as a load balancer's DNS name. Monitors of those hosts are linked to it. A JSON value: read it with `jsondecode()`.
 - `cloud_properties` (String) For a resource a cloud connection's inventory lists: the properties a person reads first, such as an instance's type or a database's engine and version, keyed by their path in the cloud's description. Never anything that can hold a secret. A JSON value: read it with `jsondecode()`.
+- `cloud_readings` (String) The newest value of the key metrics that say whether the resource is well, as its cloud connection last read them, keyed by metric. A JSON value: read it with `jsondecode()`.
+- `cloud_readings_at` (String) When a cloud connection last wrote the resource's readings. Readings older than an hour are not judged.
 - `cloud_relationships` (String) For a resource a cloud connection's inventory lists: what it runs in, is part of, sends traffic to or is protected by, each as the other resource's id in the cloud. The edges of the account's topology. A JSON value: read it with `jsondecode()`.
 - `cloud_tags` (String) For a resource a cloud connection's inventory lists: its tags in the cloud (AWS tags, Azure tags, Google Cloud labels), at most 50. Label and owner rules can match them. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.

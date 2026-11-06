@@ -62,7 +62,7 @@ func (r *SecurityTelemetrySourceResource) Schema(ctx context.Context, req resour
 
 func (r *SecurityTelemetrySourceResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Whether OneUptime looks for security events in one kind of telemetry the project already sends it - traces, network flows, the audit log or session replays - and what the last look found.",
+        MarkdownDescription: "Whether OneUptime looks for security events in one kind of telemetry the project already sends it - traces, network flows, the audit log, session replays or the audit logs of its connected cloud accounts - and what the last look found.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -80,13 +80,13 @@ func (r *SecurityTelemetrySourceResource) schemaDefinition() schema.Schema {
                 },
             },
             "kind": schema.StringAttribute{
-                MarkdownDescription: "Which telemetry this source reads: 'traces', 'network-flows', 'audit-log' or 'rum-sessions'. Fixed once created.",
+                MarkdownDescription: "Which telemetry this source reads: 'traces', 'network-flows', 'audit-log', 'rum-sessions' or 'cloud-audit' (the audit logs of the cloud accounts connected under Cloud). Fixed once created.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
                 Validators: []validator.String{
-                    stringvalidator.OneOf("traces", "network-flows", "audit-log", "rum-sessions"),
+                    stringvalidator.OneOf("traces", "network-flows", "audit-log", "rum-sessions", "cloud-audit"),
                 },
             },
             "is_enabled": schema.BoolAttribute{

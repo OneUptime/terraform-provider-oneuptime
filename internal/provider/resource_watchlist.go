@@ -44,8 +44,16 @@ type WatchlistResourceModel struct {
     EntityType types.String `tfsdk:"entity_type"`
     Source types.String `tfsdk:"source"`
     ThreatIntelFeedId types.String `tfsdk:"threat_intel_feed_id"`
+    ImportUrl types.String `tfsdk:"import_url"`
+    ImportSchedule types.String `tfsdk:"import_schedule"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    NextImportAt RFC3339Value `tfsdk:"next_import_at"`
+    LastImportAt RFC3339Value `tfsdk:"last_import_at"`
+    LastImportSucceededAt RFC3339Value `tfsdk:"last_import_succeeded_at"`
+    LastImportError types.String `tfsdk:"last_import_error"`
+    LastImportErrorDetail types.String `tfsdk:"last_import_error_detail"`
+    LastImportLinesLeftOut types.Number `tfsdk:"last_import_lines_left_out"`
     ValueCount types.Number `tfsdk:"value_count"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -100,7 +108,7 @@ func (r *WatchlistResource) schemaDefinition() schema.Schema {
                 },
             },
             "source": schema.StringAttribute{
-                MarkdownDescription: "Where the values come from: Values (added by hand or imported) or Threat Intel Feed (the feed's active indicators of the list's kind).",
+                MarkdownDescription: "Where the values come from: Values (added by hand or imported), URL (a file at an https address, read again on a schedule) or Threat Intel Feed (the feed's active indicators of the list's kind).",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Values"),
@@ -109,7 +117,7 @@ func (r *WatchlistResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
                 Validators: []validator.String{
-                    stringvalidator.OneOf("Values", "Threat Intel Feed"),
+                    stringvalidator.OneOf("Values", "Threat Intel Feed", "URL"),
                 },
             },
             "threat_intel_feed_id": schema.StringAttribute{
@@ -120,6 +128,25 @@ func (r *WatchlistResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: recordIDValidators("oneuptime_threat_intel_feed"),
+            },
+            "import_url": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: the https address of a text or CSV file, one value a line, with an optional note and when the value leaves the list. Read again on the list's schedule; the list is what the file held at its last read.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "import_schedule": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: how often it is read - Every Hour (the default), Every 6 Hours or Every Day.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Every Hour", "Every 6 Hours", "Every Day"),
+                },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -132,6 +159,33 @@ func (r *WatchlistResource) schemaDefinition() schema.Schema {
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "next_import_at": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: when it is next read. Empty for any other list.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_import_at": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: when OneUptime last read it, or tried to.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_import_succeeded_at": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: when it was last read without an error. The list holds what the file held then.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_import_error": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: why its last read failed. The list keeps the values of the read before. Empty when it worked.",
+                Computed: true,
+            },
+            "last_import_error_detail": schema.StringAttribute{
+                MarkdownDescription: "For a list read from an address: what the address or the network said when its last read failed, as it said it.",
+                Computed: true,
+            },
+            "last_import_lines_left_out": schema.NumberAttribute{
+                MarkdownDescription: "For a list read from an address: how many lines of the file its last read left out - lines that are not values of the list's kind, or whose date to leave the list had passed.",
                 Computed: true,
             },
             "value_count": schema.NumberAttribute{
@@ -224,6 +278,12 @@ func (r *WatchlistResource) Create(ctx context.Context, req resource.CreateReque
     if !data.ThreatIntelFeedId.IsNull() && !data.ThreatIntelFeedId.IsUnknown() {
         requestDataMap["threatIntelFeedId"] = data.ThreatIntelFeedId.ValueString()
     }
+    if !data.ImportUrl.IsNull() && !data.ImportUrl.IsUnknown() {
+        requestDataMap["importUrl"] = data.ImportUrl.ValueString()
+    }
+    if !data.ImportSchedule.IsNull() && !data.ImportSchedule.IsUnknown() {
+        requestDataMap["importSchedule"] = data.ImportSchedule.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/security-watchlist", watchlistRequest)
@@ -275,8 +335,16 @@ func (r *WatchlistResource) Create(ctx context.Context, req resource.CreateReque
         "entityType": true,
         "source": true,
         "threatIntelFeedId": true,
+        "importUrl": true,
+        "importSchedule": true,
         "createdAt": true,
         "updatedAt": true,
+        "nextImportAt": true,
+        "lastImportAt": true,
+        "lastImportSucceededAt": true,
+        "lastImportError": true,
+        "lastImportErrorDetail": true,
+        "lastImportLinesLeftOut": true,
         "valueCount": true,
         "createdByUserId": true,
         "_id": true,
@@ -507,6 +575,80 @@ func (r *WatchlistResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.ThreatIntelFeedId = types.StringNull()
     }
+    if obj, ok := dataMap["importUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImportUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ImportUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ImportUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ImportUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ImportUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ImportUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImportUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["importUrl"].(string); ok {
+        data.ImportUrl = types.StringValue(val)
+    } else {
+        data.ImportUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["importSchedule"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImportSchedule = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ImportSchedule = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ImportSchedule = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ImportSchedule = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportSchedule = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ImportSchedule = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportSchedule = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ImportSchedule = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImportSchedule = types.StringNull()
+        }
+    } else if val, ok := dataMap["importSchedule"].(string); ok {
+        data.ImportSchedule = types.StringValue(val)
+    } else {
+        data.ImportSchedule = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -529,6 +671,114 @@ func (r *WatchlistResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["nextImportAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextImportAt = NewRFC3339Value(val)
+        } else {
+            data.NextImportAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextImportAt"].(string); ok && val != "" {
+        data.NextImportAt = NewRFC3339Value(val)
+    } else {
+        data.NextImportAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastImportAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastImportAt = NewRFC3339Value(val)
+        } else {
+            data.LastImportAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastImportAt"].(string); ok && val != "" {
+        data.LastImportAt = NewRFC3339Value(val)
+    } else {
+        data.LastImportAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastImportSucceededAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastImportSucceededAt = NewRFC3339Value(val)
+        } else {
+            data.LastImportSucceededAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastImportSucceededAt"].(string); ok && val != "" {
+        data.LastImportSucceededAt = NewRFC3339Value(val)
+    } else {
+        data.LastImportSucceededAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastImportError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastImportError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastImportError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastImportError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastImportError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastImportError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastImportError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastImportError = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastImportError"].(string); ok {
+        data.LastImportError = types.StringValue(val)
+    } else {
+        data.LastImportError = types.StringNull()
+    }
+    if obj, ok := dataMap["lastImportErrorDetail"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastImportErrorDetail = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastImportErrorDetail = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastImportErrorDetail = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastImportErrorDetail = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportErrorDetail = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastImportErrorDetail = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportErrorDetail = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastImportErrorDetail = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastImportErrorDetail = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastImportErrorDetail"].(string); ok {
+        data.LastImportErrorDetail = types.StringValue(val)
+    } else {
+        data.LastImportErrorDetail = types.StringNull()
+    }
+    data.LastImportLinesLeftOut = numberFromAPI(data.LastImportLinesLeftOut, dataMap["lastImportLinesLeftOut"])
     data.ValueCount = numberFromAPI(data.ValueCount, dataMap["valueCount"])
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -604,8 +854,16 @@ func (r *WatchlistResource) Read(ctx context.Context, req resource.ReadRequest, 
         "entityType": true,
         "source": true,
         "threatIntelFeedId": true,
+        "importUrl": true,
+        "importSchedule": true,
         "createdAt": true,
         "updatedAt": true,
+        "nextImportAt": true,
+        "lastImportAt": true,
+        "lastImportSucceededAt": true,
+        "lastImportError": true,
+        "lastImportErrorDetail": true,
+        "lastImportLinesLeftOut": true,
         "valueCount": true,
         "createdByUserId": true,
         "_id": true,
@@ -837,6 +1095,80 @@ func (r *WatchlistResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.ThreatIntelFeedId = types.StringNull()
     }
+    if obj, ok := dataMap["importUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImportUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ImportUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ImportUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ImportUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ImportUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ImportUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImportUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["importUrl"].(string); ok {
+        data.ImportUrl = types.StringValue(val)
+    } else {
+        data.ImportUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["importSchedule"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImportSchedule = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ImportSchedule = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ImportSchedule = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ImportSchedule = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportSchedule = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ImportSchedule = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportSchedule = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ImportSchedule = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImportSchedule = types.StringNull()
+        }
+    } else if val, ok := dataMap["importSchedule"].(string); ok {
+        data.ImportSchedule = types.StringValue(val)
+    } else {
+        data.ImportSchedule = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -859,6 +1191,114 @@ func (r *WatchlistResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["nextImportAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextImportAt = NewRFC3339Value(val)
+        } else {
+            data.NextImportAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextImportAt"].(string); ok && val != "" {
+        data.NextImportAt = NewRFC3339Value(val)
+    } else {
+        data.NextImportAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastImportAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastImportAt = NewRFC3339Value(val)
+        } else {
+            data.LastImportAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastImportAt"].(string); ok && val != "" {
+        data.LastImportAt = NewRFC3339Value(val)
+    } else {
+        data.LastImportAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastImportSucceededAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastImportSucceededAt = NewRFC3339Value(val)
+        } else {
+            data.LastImportSucceededAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastImportSucceededAt"].(string); ok && val != "" {
+        data.LastImportSucceededAt = NewRFC3339Value(val)
+    } else {
+        data.LastImportSucceededAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastImportError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastImportError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastImportError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastImportError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastImportError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastImportError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastImportError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastImportError = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastImportError"].(string); ok {
+        data.LastImportError = types.StringValue(val)
+    } else {
+        data.LastImportError = types.StringNull()
+    }
+    if obj, ok := dataMap["lastImportErrorDetail"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastImportErrorDetail = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastImportErrorDetail = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastImportErrorDetail = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastImportErrorDetail = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportErrorDetail = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastImportErrorDetail = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportErrorDetail = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastImportErrorDetail = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastImportErrorDetail = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastImportErrorDetail"].(string); ok {
+        data.LastImportErrorDetail = types.StringValue(val)
+    } else {
+        data.LastImportErrorDetail = types.StringNull()
+    }
+    data.LastImportLinesLeftOut = numberFromAPI(data.LastImportLinesLeftOut, dataMap["lastImportLinesLeftOut"])
     data.ValueCount = numberFromAPI(data.ValueCount, dataMap["valueCount"])
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -949,6 +1389,12 @@ func (r *WatchlistResource) Update(ctx context.Context, req resource.UpdateReque
     if !data.ThreatIntelFeedId.IsUnknown() && !state.ThreatIntelFeedId.IsUnknown() && !data.ThreatIntelFeedId.Equal(state.ThreatIntelFeedId) {
         requestDataMap["threatIntelFeedId"] = data.ThreatIntelFeedId.ValueString()
     }
+    if !data.ImportUrl.IsUnknown() && !state.ImportUrl.IsUnknown() && !data.ImportUrl.Equal(state.ImportUrl) {
+        requestDataMap["importUrl"] = data.ImportUrl.ValueString()
+    }
+    if !data.ImportSchedule.IsUnknown() && !state.ImportSchedule.IsUnknown() && !data.ImportSchedule.Equal(state.ImportSchedule) {
+        requestDataMap["importSchedule"] = data.ImportSchedule.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -978,8 +1424,16 @@ func (r *WatchlistResource) Update(ctx context.Context, req resource.UpdateReque
         "entityType": true,
         "source": true,
         "threatIntelFeedId": true,
+        "importUrl": true,
+        "importSchedule": true,
         "createdAt": true,
         "updatedAt": true,
+        "nextImportAt": true,
+        "lastImportAt": true,
+        "lastImportSucceededAt": true,
+        "lastImportError": true,
+        "lastImportErrorDetail": true,
+        "lastImportLinesLeftOut": true,
         "valueCount": true,
         "createdByUserId": true,
         "_id": true,
@@ -1205,6 +1659,80 @@ func (r *WatchlistResource) Update(ctx context.Context, req resource.UpdateReque
     } else {
         data.ThreatIntelFeedId = types.StringNull()
     }
+    if obj, ok := dataMap["importUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImportUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ImportUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ImportUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ImportUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ImportUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ImportUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImportUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["importUrl"].(string); ok {
+        data.ImportUrl = types.StringValue(val)
+    } else {
+        data.ImportUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["importSchedule"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImportSchedule = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ImportSchedule = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ImportSchedule = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ImportSchedule = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportSchedule = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ImportSchedule = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImportSchedule = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ImportSchedule = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImportSchedule = types.StringNull()
+        }
+    } else if val, ok := dataMap["importSchedule"].(string); ok {
+        data.ImportSchedule = types.StringValue(val)
+    } else {
+        data.ImportSchedule = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1227,6 +1755,114 @@ func (r *WatchlistResource) Update(ctx context.Context, req resource.UpdateReque
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["nextImportAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextImportAt = NewRFC3339Value(val)
+        } else {
+            data.NextImportAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["nextImportAt"].(string); ok && val != "" {
+        data.NextImportAt = NewRFC3339Value(val)
+    } else {
+        data.NextImportAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastImportAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastImportAt = NewRFC3339Value(val)
+        } else {
+            data.LastImportAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastImportAt"].(string); ok && val != "" {
+        data.LastImportAt = NewRFC3339Value(val)
+    } else {
+        data.LastImportAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastImportSucceededAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastImportSucceededAt = NewRFC3339Value(val)
+        } else {
+            data.LastImportSucceededAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastImportSucceededAt"].(string); ok && val != "" {
+        data.LastImportSucceededAt = NewRFC3339Value(val)
+    } else {
+        data.LastImportSucceededAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastImportError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastImportError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastImportError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastImportError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastImportError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastImportError = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastImportError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastImportError = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastImportError"].(string); ok {
+        data.LastImportError = types.StringValue(val)
+    } else {
+        data.LastImportError = types.StringNull()
+    }
+    if obj, ok := dataMap["lastImportErrorDetail"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastImportErrorDetail = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastImportErrorDetail = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastImportErrorDetail = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastImportErrorDetail = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportErrorDetail = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastImportErrorDetail = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastImportErrorDetail = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastImportErrorDetail = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastImportErrorDetail = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastImportErrorDetail"].(string); ok {
+        data.LastImportErrorDetail = types.StringValue(val)
+    } else {
+        data.LastImportErrorDetail = types.StringNull()
+    }
+    data.LastImportLinesLeftOut = numberFromAPI(data.LastImportLinesLeftOut, dataMap["lastImportLinesLeftOut"])
     data.ValueCount = numberFromAPI(data.ValueCount, dataMap["valueCount"])
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1330,6 +1966,12 @@ func (r *WatchlistResource) keepPlannedValues(data *WatchlistResourceModel, plan
     }
     if config.ThreatIntelFeedId.IsNull() && !plan.ThreatIntelFeedId.IsUnknown() {
         data.ThreatIntelFeedId = plan.ThreatIntelFeedId
+    }
+    if config.ImportUrl.IsNull() && !plan.ImportUrl.IsUnknown() {
+        data.ImportUrl = plan.ImportUrl
+    }
+    if config.ImportSchedule.IsNull() && !plan.ImportSchedule.IsUnknown() {
+        data.ImportSchedule = plan.ImportSchedule
     }
 }
 

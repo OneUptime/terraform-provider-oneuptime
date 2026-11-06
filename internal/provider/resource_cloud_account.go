@@ -60,6 +60,8 @@ type CloudAccountResourceModel struct {
     ResourceCount types.Number `tfsdk:"resource_count"`
     RegionCount types.Number `tfsdk:"region_count"`
     ResourceSummary JSONSubsetValue `tfsdk:"resource_summary"`
+    CostSummary JSONSubsetValue `tfsdk:"cost_summary"`
+    SavingsSummary JSONSubsetValue `tfsdk:"savings_summary"`
     LastSeenAt RFC3339Value `tfsdk:"last_seen_at"`
     InventoryListedAt RFC3339Value `tfsdk:"inventory_listed_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -208,6 +210,16 @@ func (r *CloudAccountResource) schemaDefinition() schema.Schema {
             },
             "resource_summary": schema.StringAttribute{
                 MarkdownDescription: "The account's live resources counted by type and by region (CloudAccountSummary). A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "cost_summary": schema.StringAttribute{
+                MarkdownDescription: "What the account cost this month so far, at its pace and last month, from its cloud's billing, and whether its costs could be read. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "savings_summary": schema.StringAttribute{
+                MarkdownDescription: "How many ways to spend less the account's cloud recommends and what they would save a month, and whether they could be read. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -383,6 +395,8 @@ func (r *CloudAccountResource) Create(ctx context.Context, req resource.CreateRe
         "resourceCount": true,
         "regionCount": true,
         "resourceSummary": true,
+        "costSummary": true,
+        "savingsSummary": true,
         "lastSeenAt": true,
         "inventoryListedAt": true,
         "createdByUserId": true,
@@ -827,6 +841,80 @@ func (r *CloudAccountResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.ResourceSummary = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["costSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CostSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CostSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CostSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CostSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CostSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CostSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CostSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CostSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CostSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["costSummary"].(string); ok {
+        data.CostSummary = NewJSONSubsetValue(val)
+    } else {
+        data.CostSummary = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["savingsSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavingsSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SavingsSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SavingsSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SavingsSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavingsSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SavingsSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavingsSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SavingsSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavingsSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["savingsSummary"].(string); ok {
+        data.SavingsSummary = NewJSONSubsetValue(val)
+    } else {
+        data.SavingsSummary = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastSeenAt = NewRFC3339Value(val)
@@ -995,6 +1083,8 @@ func (r *CloudAccountResource) Read(ctx context.Context, req resource.ReadReques
         "resourceCount": true,
         "regionCount": true,
         "resourceSummary": true,
+        "costSummary": true,
+        "savingsSummary": true,
         "lastSeenAt": true,
         "inventoryListedAt": true,
         "createdByUserId": true,
@@ -1440,6 +1530,80 @@ func (r *CloudAccountResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.ResourceSummary = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["costSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CostSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CostSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CostSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CostSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CostSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CostSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CostSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CostSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CostSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["costSummary"].(string); ok {
+        data.CostSummary = NewJSONSubsetValue(val)
+    } else {
+        data.CostSummary = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["savingsSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavingsSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SavingsSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SavingsSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SavingsSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavingsSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SavingsSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavingsSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SavingsSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavingsSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["savingsSummary"].(string); ok {
+        data.SavingsSummary = NewJSONSubsetValue(val)
+    } else {
+        data.SavingsSummary = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastSeenAt = NewRFC3339Value(val)
@@ -1672,6 +1836,8 @@ func (r *CloudAccountResource) Update(ctx context.Context, req resource.UpdateRe
         "resourceCount": true,
         "regionCount": true,
         "resourceSummary": true,
+        "costSummary": true,
+        "savingsSummary": true,
         "lastSeenAt": true,
         "inventoryListedAt": true,
         "createdByUserId": true,
@@ -2110,6 +2276,80 @@ func (r *CloudAccountResource) Update(ctx context.Context, req resource.UpdateRe
         data.ResourceSummary = NewJSONSubsetValue(val)
     } else {
         data.ResourceSummary = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["costSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CostSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CostSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CostSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CostSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CostSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CostSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CostSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CostSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CostSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["costSummary"].(string); ok {
+        data.CostSummary = NewJSONSubsetValue(val)
+    } else {
+        data.CostSummary = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["savingsSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavingsSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SavingsSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SavingsSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SavingsSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavingsSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SavingsSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SavingsSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SavingsSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavingsSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["savingsSummary"].(string); ok {
+        data.SavingsSummary = NewJSONSubsetValue(val)
+    } else {
+        data.SavingsSummary = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

@@ -32,6 +32,7 @@ data "oneuptime_security_playbook_run" "by_id" {
 - `current_step_index` (Number) The step the run is on, counting from 0.
 - `error_message` (String) Why the run failed, when it did.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `playbook_name` (String) The playbook's name when the run started, kept if the playbook is renamed or deleted.
 - `security_case_id` (String) ID of the case the playbook runs on. The ID of a `oneuptime_security_case`.
 - `security_playbook_id` (String) ID of the playbook being run. The ID of a `oneuptime_security_playbook`.
 - `status` (String) Queued, Running, Waiting for Approval, Succeeded, Failed or Cancelled. Set it to Cancelled to stop a run that has not finished.
@@ -43,7 +44,6 @@ data "oneuptime_security_playbook_run" "by_id" {
 
 - `completed_at` (String) When the run finished, failed or was cancelled.
 - `created_at` (String) Date and Time when the object was created.
-- `playbook_name` (String) The playbook's name when the run started, kept if the playbook is renamed or deleted.
 - `project_id` (String) ID of the project this run belongs to. The ID of a `oneuptime_project`.
 - `started_at` (String) When the run started its first step.
 - `step_results` (String) What each step did: its status, when it started and finished, what it reported, and who decided on its approval. A JSON value: read it with `jsondecode()`.

@@ -80,6 +80,7 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember.",
+                Optional: true,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -171,6 +172,10 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
     }
     if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
         filters["slug"] = data.Slug.ValueString()

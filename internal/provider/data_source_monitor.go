@@ -47,6 +47,7 @@ type MonitorDataSourceModel struct {
     DockerHosts types.Set `tfsdk:"docker_hosts"`
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    OpenStackClouds types.Set `tfsdk:"open_stack_clouds"`
     VmwareVCenters types.Set `tfsdk:"vmware_v_centers"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     StorageArrays types.Set `tfsdk:"storage_arrays"`
@@ -184,6 +185,11 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "Proxmox clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_proxmox_cluster` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "open_stack_clouds": schema.SetAttribute{
+                MarkdownDescription: "OpenStack clouds this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_openstack_cloud` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -514,6 +520,7 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "openStackClouds": true,
         "vmwareVCenters": true,
         "cephClusters": true,
         "storageArrays": true,
@@ -977,6 +984,30 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.ProxmoxClusters = types.SetValueMust(types.StringType, setItems)
     } else {
         data.ProxmoxClusters = types.SetNull(types.StringType)
+    }
+    if val, ok := item["openStackClouds"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.OpenStackClouds = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.OpenStackClouds = types.SetNull(types.StringType)
     }
     if val, ok := item["vmwareVCenters"].([]interface{}); ok {
         var setItems []attr.Value

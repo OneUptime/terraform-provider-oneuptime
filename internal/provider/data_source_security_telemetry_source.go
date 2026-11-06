@@ -46,7 +46,7 @@ func (d *SecurityTelemetrySourceDataSource) Metadata(ctx context.Context, req da
 
 func (d *SecurityTelemetrySourceDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Whether OneUptime looks for security events in one kind of telemetry the project already sends it - traces, network flows, the audit log or session replays - and what the last look found. Look up an existing security telemetry source by `id`, or by any of its other arguments (`created_by_user_id`, `cursor`, `is_enabled`, ...): each one set must match, and exactly one security telemetry source may match them all.",
+        MarkdownDescription: "Whether OneUptime looks for security events in one kind of telemetry the project already sends it - traces, network flows, the audit log, session replays or the audit logs of its connected cloud accounts - and what the last look found. Look up an existing security telemetry source by `id`, or by any of its other arguments (`created_by_user_id`, `cursor`, `is_enabled`, ...): each one set must match, and exactly one security telemetry source may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -67,7 +67,7 @@ func (d *SecurityTelemetrySourceDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "kind": schema.StringAttribute{
-                MarkdownDescription: "Which telemetry this source reads: 'traces', 'network-flows', 'audit-log' or 'rum-sessions'. Fixed once created.",
+                MarkdownDescription: "Which telemetry this source reads: 'traces', 'network-flows', 'audit-log', 'rum-sessions' or 'cloud-audit' (the audit logs of the cloud accounts connected under Cloud). Fixed once created.",
                 Optional: true,
                 Computed: true,
             },

@@ -53,6 +53,7 @@ type UserOnCallLogTimelineDataSourceModel struct {
     UserTelegramId types.String `tfsdk:"user_telegram_id"`
     UserSlackId types.String `tfsdk:"user_slack_id"`
     UserMicrosoftTeamsId types.String `tfsdk:"user_microsoft_teams_id"`
+    UserMattermostId types.String `tfsdk:"user_mattermost_id"`
     UserWebhookId types.String `tfsdk:"user_webhook_id"`
     CustomNotificationChannelId types.String `tfsdk:"custom_notification_channel_id"`
     UserEmailId types.String `tfsdk:"user_email_id"`
@@ -216,6 +217,11 @@ func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req dataso
                 Optional: true,
                 Computed: true,
             },
+            "user_mattermost_id": schema.StringAttribute{
+                MarkdownDescription: "ID of User Mattermost in which this object belongs.",
+                Optional: true,
+                Computed: true,
+            },
             "user_webhook_id": schema.StringAttribute{
                 MarkdownDescription: "ID of User Webhook in which this object belongs.",
                 Optional: true,
@@ -367,6 +373,10 @@ func (d *UserOnCallLogTimelineDataSource) Read(ctx context.Context, req datasour
         filters["userMicrosoftTeamsId"] = data.UserMicrosoftTeamsId.ValueString()
         filterNames = append(filterNames, "user_microsoft_teams_id = "+fmt.Sprintf("%q", data.UserMicrosoftTeamsId.ValueString()))
     }
+    if !data.UserMattermostId.IsNull() && !data.UserMattermostId.IsUnknown() {
+        filters["userMattermostId"] = data.UserMattermostId.ValueString()
+        filterNames = append(filterNames, "user_mattermost_id = "+fmt.Sprintf("%q", data.UserMattermostId.ValueString()))
+    }
     if !data.UserWebhookId.IsNull() && !data.UserWebhookId.IsUnknown() {
         filters["userWebhookId"] = data.UserWebhookId.ValueString()
         filterNames = append(filterNames, "user_webhook_id = "+fmt.Sprintf("%q", data.UserWebhookId.ValueString()))
@@ -427,6 +437,7 @@ func (d *UserOnCallLogTimelineDataSource) Read(ctx context.Context, req datasour
         "userTelegramId": true,
         "userSlackId": true,
         "userMicrosoftTeamsId": true,
+        "userMattermostId": true,
         "userWebhookId": true,
         "customNotificationChannelId": true,
         "userEmailId": true,
@@ -938,6 +949,23 @@ func (d *UserOnCallLogTimelineDataSource) Read(ctx context.Context, req datasour
         data.UserMicrosoftTeamsId = types.StringValue(val)
     } else {
         data.UserMicrosoftTeamsId = types.StringNull()
+    }
+    if obj, ok := item["userMattermostId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UserMattermostId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UserMattermostId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UserMattermostId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UserMattermostId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserMattermostId = types.StringNull()
+        }
+    } else if val, ok := item["userMattermostId"].(string); ok {
+        data.UserMattermostId = types.StringValue(val)
+    } else {
+        data.UserMattermostId = types.StringNull()
     }
     if obj, ok := item["userWebhookId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

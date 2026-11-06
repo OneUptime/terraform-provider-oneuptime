@@ -45,6 +45,7 @@ type StatusPagePrivateUserResourceModel struct {
     IsSsoUser types.Bool `tfsdk:"is_sso_user"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    LastActive RFC3339Value `tfsdk:"last_active"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -124,6 +125,11 @@ func (r *StatusPagePrivateUserResource) schemaDefinition() schema.Schema {
             },
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_active": schema.StringAttribute{
+                MarkdownDescription: "When this private user last signed in to the status page.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -262,6 +268,7 @@ func (r *StatusPagePrivateUserResource) Create(ctx context.Context, req resource
         "isSsoUser": true,
         "createdAt": true,
         "updatedAt": true,
+        "lastActive": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -442,6 +449,17 @@ func (r *StatusPagePrivateUserResource) Create(ctx context.Context, req resource
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["lastActive"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastActive = NewRFC3339Value(val)
+        } else {
+            data.LastActive = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastActive"].(string); ok && val != "" {
+        data.LastActive = NewRFC3339Value(val)
+    } else {
+        data.LastActive = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -517,6 +535,7 @@ func (r *StatusPagePrivateUserResource) Read(ctx context.Context, req resource.R
         "isSsoUser": true,
         "createdAt": true,
         "updatedAt": true,
+        "lastActive": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -698,6 +717,17 @@ func (r *StatusPagePrivateUserResource) Read(ctx context.Context, req resource.R
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["lastActive"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastActive = NewRFC3339Value(val)
+        } else {
+            data.LastActive = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastActive"].(string); ok && val != "" {
+        data.LastActive = NewRFC3339Value(val)
+    } else {
+        data.LastActive = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -819,6 +849,7 @@ func (r *StatusPagePrivateUserResource) Update(ctx context.Context, req resource
         "isSsoUser": true,
         "createdAt": true,
         "updatedAt": true,
+        "lastActive": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -993,6 +1024,17 @@ func (r *StatusPagePrivateUserResource) Update(ctx context.Context, req resource
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastActive"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastActive = NewRFC3339Value(val)
+        } else {
+            data.LastActive = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastActive"].(string); ok && val != "" {
+        data.LastActive = NewRFC3339Value(val)
+    } else {
+        data.LastActive = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

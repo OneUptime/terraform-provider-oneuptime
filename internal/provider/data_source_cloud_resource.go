@@ -50,6 +50,9 @@ type CloudResourceDataSourceModel struct {
     CloudRelationships types.String `tfsdk:"cloud_relationships"`
     CloudEndpoints types.String `tfsdk:"cloud_endpoints"`
     InventoriedAt types.String `tfsdk:"inventoried_at"`
+    CloudReadings types.String `tfsdk:"cloud_readings"`
+    CloudReadingsAt types.String `tfsdk:"cloud_readings_at"`
+    HealthSeverity types.String `tfsdk:"health_severity"`
     CloudConnectionId types.String `tfsdk:"cloud_connection_id"`
     RuntimeName types.String `tfsdk:"runtime_name"`
     RuntimeVersion types.String `tfsdk:"runtime_version"`
@@ -174,6 +177,19 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "inventoried_at": schema.StringAttribute{
                 MarkdownDescription: "When a cloud connection's inventory last listed this resource. Empty for a resource only its metrics or telemetry have found.",
+                Computed: true,
+            },
+            "cloud_readings": schema.StringAttribute{
+                MarkdownDescription: "The newest value of the key metrics that say whether the resource is well, as its cloud connection last read them, keyed by metric. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "cloud_readings_at": schema.StringAttribute{
+                MarkdownDescription: "When a cloud connection last wrote the resource's readings. Readings older than an hour are not judged.",
+                Computed: true,
+            },
+            "health_severity": schema.StringAttribute{
+                MarkdownDescription: "Whether the resource needed attention when its readings were last written: critical or warning, empty when it did not.",
+                Optional: true,
                 Computed: true,
             },
             "cloud_connection_id": schema.StringAttribute{
@@ -332,6 +348,10 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["cloudResourceGroup"] = data.CloudResourceGroup.ValueString()
         filterNames = append(filterNames, "cloud_resource_group = "+fmt.Sprintf("%q", data.CloudResourceGroup.ValueString()))
     }
+    if !data.HealthSeverity.IsNull() && !data.HealthSeverity.IsUnknown() {
+        filters["healthSeverity"] = data.HealthSeverity.ValueString()
+        filterNames = append(filterNames, "health_severity = "+fmt.Sprintf("%q", data.HealthSeverity.ValueString()))
+    }
     if !data.CloudConnectionId.IsNull() && !data.CloudConnectionId.IsUnknown() {
         filters["cloudConnectionId"] = data.CloudConnectionId.ValueString()
         filterNames = append(filterNames, "cloud_connection_id = "+fmt.Sprintf("%q", data.CloudConnectionId.ValueString()))
@@ -406,6 +426,9 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         "cloudRelationships": true,
         "cloudEndpoints": true,
         "inventoriedAt": true,
+        "cloudReadings": true,
+        "cloudReadingsAt": true,
+        "healthSeverity": true,
         "cloudConnectionId": true,
         "runtimeName": true,
         "runtimeVersion": true,
@@ -854,6 +877,57 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.InventoriedAt = types.StringValue(val)
     } else {
         data.InventoriedAt = types.StringNull()
+    }
+    if obj, ok := item["cloudReadings"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudReadings = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudReadings = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudReadings = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudReadings = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudReadings = types.StringNull()
+        }
+    } else if val, ok := item["cloudReadings"].(string); ok {
+        data.CloudReadings = types.StringValue(val)
+    } else {
+        data.CloudReadings = types.StringNull()
+    }
+    if obj, ok := item["cloudReadingsAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudReadingsAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudReadingsAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudReadingsAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudReadingsAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudReadingsAt = types.StringNull()
+        }
+    } else if val, ok := item["cloudReadingsAt"].(string); ok {
+        data.CloudReadingsAt = types.StringValue(val)
+    } else {
+        data.CloudReadingsAt = types.StringNull()
+    }
+    if obj, ok := item["healthSeverity"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.HealthSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.HealthSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.HealthSeverity = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.HealthSeverity = types.StringValue(string(jsonBytes))
+        } else {
+            data.HealthSeverity = types.StringNull()
+        }
+    } else if val, ok := item["healthSeverity"].(string); ok {
+        data.HealthSeverity = types.StringValue(val)
+    } else {
+        data.HealthSeverity = types.StringNull()
     }
     if obj, ok := item["cloudConnectionId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

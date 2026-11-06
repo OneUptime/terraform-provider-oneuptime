@@ -40,6 +40,8 @@ type CloudConnectionDataSourceModel struct {
     LastSuccessfulPullAt types.String `tfsdk:"last_successful_pull_at"`
     LastPullResult types.String `tfsdk:"last_pull_result"`
     LastError types.String `tfsdk:"last_error"`
+    StreamKeyCreatedAt types.String `tfsdk:"stream_key_created_at"`
+    StreamSummary types.String `tfsdk:"stream_summary"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -113,6 +115,14 @@ func (d *CloudConnectionDataSource) Schema(ctx context.Context, req datasource.S
             "last_error": schema.StringAttribute{
                 MarkdownDescription: "Why the last read failed, with credentials removed. Cleared by the next read that works.",
                 Optional: true,
+                Computed: true,
+            },
+            "stream_key_created_at": schema.StringAttribute{
+                MarkdownDescription: "When the connection's stream key was made. Empty means it streams nothing.",
+                Computed: true,
+            },
+            "stream_summary": schema.StringAttribute{
+                MarkdownDescription: "What the connection's Firehose streams delivered: the accounts, Regions and namespaces of metrics, the log groups, and the last delivery refused. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -214,6 +224,8 @@ func (d *CloudConnectionDataSource) Read(ctx context.Context, req datasource.Rea
         "lastSuccessfulPullAt": true,
         "lastPullResult": true,
         "lastError": true,
+        "streamKeyCreatedAt": true,
+        "streamSummary": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -501,6 +513,40 @@ func (d *CloudConnectionDataSource) Read(ctx context.Context, req datasource.Rea
         data.LastError = types.StringValue(val)
     } else {
         data.LastError = types.StringNull()
+    }
+    if obj, ok := item["streamKeyCreatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.StreamKeyCreatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.StreamKeyCreatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.StreamKeyCreatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.StreamKeyCreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.StreamKeyCreatedAt = types.StringNull()
+        }
+    } else if val, ok := item["streamKeyCreatedAt"].(string); ok {
+        data.StreamKeyCreatedAt = types.StringValue(val)
+    } else {
+        data.StreamKeyCreatedAt = types.StringNull()
+    }
+    if obj, ok := item["streamSummary"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.StreamSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.StreamSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.StreamSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.StreamSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.StreamSummary = types.StringNull()
+        }
+    } else if val, ok := item["streamSummary"].(string); ok {
+        data.StreamSummary = types.StringValue(val)
+    } else {
+        data.StreamSummary = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

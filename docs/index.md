@@ -83,6 +83,12 @@ These resources were renamed to read the way the product names them: IoT and vCe
 | `oneuptime_io_t_fleet_owner_rule` | [`oneuptime_iot_fleet_owner_rule`](./resources/iot_fleet_owner_rule) |
 | `oneuptime_io_t_fleet_team_owner` | [`oneuptime_iot_fleet_team_owner`](./resources/iot_fleet_team_owner) |
 | `oneuptime_io_t_fleet_user_owner` | [`oneuptime_iot_fleet_user_owner`](./resources/iot_fleet_user_owner) |
+| `oneuptime_open_stack_cloud` | [`oneuptime_openstack_cloud`](./resources/openstack_cloud) |
+| `oneuptime_open_stack_cloud_feed` | [`oneuptime_openstack_cloud_feed`](./resources/openstack_cloud_feed) |
+| `oneuptime_open_stack_cloud_label_rule` | [`oneuptime_openstack_cloud_label_rule`](./resources/openstack_cloud_label_rule) |
+| `oneuptime_open_stack_cloud_owner_rule` | [`oneuptime_openstack_cloud_owner_rule`](./resources/openstack_cloud_owner_rule) |
+| `oneuptime_open_stack_cloud_team_owner` | [`oneuptime_openstack_cloud_team_owner`](./resources/openstack_cloud_team_owner) |
+| `oneuptime_open_stack_cloud_user_owner` | [`oneuptime_openstack_cloud_user_owner`](./resources/openstack_cloud_user_owner) |
 | `oneuptime_probe_owner_team` | [`oneuptime_probe_team_owner`](./resources/probe_team_owner) |
 | `oneuptime_v_center` | [`oneuptime_vcenter`](./resources/vcenter) |
 | `oneuptime_v_center_feed` | [`oneuptime_vcenter_feed`](./resources/vcenter_feed) |

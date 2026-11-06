@@ -45,6 +45,7 @@ resource "oneuptime_host" "example" {
 - `is_collector_config_pinned` (Boolean) Whether the Collector Config was picked for this host on its page. When it is not, the host runs the first config in the list that applies to it.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_seen_at` (String) When telemetry was last received from this host.
+- `open_stack_cloud_id` (String) Optional FK to the OpenStack cloud this host belongs to, as a hypervisor or as a guest. The ID of a `oneuptime_openstack_cloud`.
 - `os_type` (String) Operating system type of the host.
 - `os_version` (String) Operating system version of the host.
 - `otel_collector_status` (String) Connection status of the OTel Collector reporting on this host (connected or disconnected).

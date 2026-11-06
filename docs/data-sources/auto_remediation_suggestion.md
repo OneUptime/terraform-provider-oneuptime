@@ -31,6 +31,7 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `ai_run_id` (String) The AI planning run that picked the runbook (AI rules only).
 - `alert_id` (String) ID of the alert this suggestion remediates. The ID of a `oneuptime_alert`.
 - `approved_by_user_id` (String) ID of the user who approved this suggestion. The ID of a `oneuptime_user` (see the data source).
+- `approved_from` (String) Where this suggestion was approved: Dashboard (the AI card), Slack or MicrosoftTeams. Empty until approved.
 - `auto_remediation_rule_id` (String) ID of the AI rule that produced this suggestion. The ID of a `oneuptime_ai_rule`.
 - `auto_resolve_on_recovery` (Boolean) Snapshot of the rule's auto-resolve-on-verified-recovery setting when this suggestion was created.
 - `dismissed_by_user_id` (String) ID of the user who dismissed this suggestion. The ID of a `oneuptime_user` (see the data source).
@@ -59,6 +60,7 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `dismissed_at` (String) When this suggestion was dismissed.
 - `mcp_tool_call_plan` (String) For McpToolCalls suggestions: the tool calls OneUptime AI made, or proposes, through the project's external MCP servers, with what each server answered once called. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `runbook_track_record` (String) How the proposed runbook went the last times OneUptime AI ran it for other incidents and alerts, when it was proposed. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.
 - `verification_completed_at` (String) When verification reached a terminal outcome.
 - `verification_deadline_at` (String) When the verification window closes — the monitors must be operational by this time.

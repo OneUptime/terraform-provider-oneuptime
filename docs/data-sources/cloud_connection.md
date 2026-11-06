@@ -45,4 +45,6 @@ data "oneuptime_cloud_connection" "by_id" {
 - `last_successful_pull_at` (String) When a read last finished without an error.
 - `next_pull_at` (String) When the connection is read next. Empty means as soon as possible.
 - `project_id` (String) ID of the project this connection belongs to. The ID of a `oneuptime_project`.
+- `stream_key_created_at` (String) When the connection's stream key was made. Empty means it streams nothing.
+- `stream_summary` (String) What the connection's Firehose streams delivered: the accounts, Regions and namespaces of metrics, the log groups, and the last delivery refused. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

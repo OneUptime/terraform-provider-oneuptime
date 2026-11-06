@@ -15,6 +15,7 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -39,6 +40,7 @@ type SecurityLogSourceResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
+    CaseMinimumSeverity types.String `tfsdk:"case_minimum_severity"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Cursor types.String `tfsdk:"cursor"`
@@ -83,6 +85,15 @@ func (r *SecurityLogSourceResource) schemaDefinition() schema.Schema {
                 Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "case_minimum_severity": schema.StringAttribute{
+                MarkdownDescription: "Threats security products write in the logs (CEF, LEEF, Palo Alto Networks, FortiGate, Cisco ASA) at or above this severity (Low, Medium, High or Critical) open security cases. Empty stores them as events only.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("High"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -195,6 +206,9 @@ func (r *SecurityLogSourceResource) Create(ctx context.Context, req resource.Cre
     if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
+    if !data.CaseMinimumSeverity.IsNull() && !data.CaseMinimumSeverity.IsUnknown() {
+        requestDataMap["caseMinimumSeverity"] = data.CaseMinimumSeverity.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/security-log-source", securityLogSourceRequest)
@@ -242,6 +256,7 @@ func (r *SecurityLogSourceResource) Create(ctx context.Context, req resource.Cre
     selectParam := map[string]interface{}{
         "projectId": true,
         "isEnabled": true,
+        "caseMinimumSeverity": true,
         "createdAt": true,
         "updatedAt": true,
         "cursor": true,
@@ -295,6 +310,43 @@ func (r *SecurityLogSourceResource) Create(ctx context.Context, req resource.Cre
     }
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["caseMinimumSeverity"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+        } else {
+            data.CaseMinimumSeverity = types.StringNull()
+        }
+    } else if val, ok := dataMap["caseMinimumSeverity"].(string); ok {
+        data.CaseMinimumSeverity = types.StringValue(val)
+    } else {
+        data.CaseMinimumSeverity = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -521,6 +573,7 @@ func (r *SecurityLogSourceResource) Read(ctx context.Context, req resource.ReadR
     selectParam := map[string]interface{}{
         "projectId": true,
         "isEnabled": true,
+        "caseMinimumSeverity": true,
         "createdAt": true,
         "updatedAt": true,
         "cursor": true,
@@ -575,6 +628,43 @@ func (r *SecurityLogSourceResource) Read(ctx context.Context, req resource.ReadR
     }
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["caseMinimumSeverity"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+        } else {
+            data.CaseMinimumSeverity = types.StringNull()
+        }
+    } else if val, ok := dataMap["caseMinimumSeverity"].(string); ok {
+        data.CaseMinimumSeverity = types.StringValue(val)
+    } else {
+        data.CaseMinimumSeverity = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -814,6 +904,9 @@ func (r *SecurityLogSourceResource) Update(ctx context.Context, req resource.Upd
     if !data.IsEnabled.IsUnknown() && !state.IsEnabled.IsUnknown() && !data.IsEnabled.Equal(state.IsEnabled) {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
+    if !data.CaseMinimumSeverity.IsUnknown() && !state.CaseMinimumSeverity.IsUnknown() && !data.CaseMinimumSeverity.Equal(state.CaseMinimumSeverity) {
+        requestDataMap["caseMinimumSeverity"] = data.CaseMinimumSeverity.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -839,6 +932,7 @@ func (r *SecurityLogSourceResource) Update(ctx context.Context, req resource.Upd
     selectParam := map[string]interface{}{
         "projectId": true,
         "isEnabled": true,
+        "caseMinimumSeverity": true,
         "createdAt": true,
         "updatedAt": true,
         "cursor": true,
@@ -887,6 +981,43 @@ func (r *SecurityLogSourceResource) Update(ctx context.Context, req resource.Upd
     }
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["caseMinimumSeverity"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+            } else {
+                data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+        } else {
+            data.CaseMinimumSeverity = types.StringNull()
+        }
+    } else if val, ok := dataMap["caseMinimumSeverity"].(string); ok {
+        data.CaseMinimumSeverity = types.StringValue(val)
+    } else {
+        data.CaseMinimumSeverity = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1139,6 +1270,9 @@ func (r *SecurityLogSourceResource) ImportState(ctx context.Context, req resourc
 func (r *SecurityLogSourceResource) keepPlannedValues(data *SecurityLogSourceResourceModel, plan *SecurityLogSourceResourceModel, config *SecurityLogSourceResourceModel) {
     if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
         data.IsEnabled = plan.IsEnabled
+    }
+    if config.CaseMinimumSeverity.IsNull() && !plan.CaseMinimumSeverity.IsUnknown() {
+        data.CaseMinimumSeverity = plan.CaseMinimumSeverity
     }
 }
 

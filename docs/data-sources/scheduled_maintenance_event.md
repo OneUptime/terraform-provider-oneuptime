@@ -52,6 +52,7 @@ data "oneuptime_scheduled_maintenance_event" "by_id" {
 - `ceph_clusters` (Set of String) List of Ceph clusters affected by this event. IDs of `oneuptime_ceph_cluster` resources.
 - `created_at` (String) Date and Time when the object was created.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: read it with `jsondecode()`.
+- `data_store_ids` (String) The databases Data Observability watches that this maintenance affects: their data alerts stay quiet while it is on. A JSON value: read it with `jsondecode()`.
 - `database_servers` (Set of String) List of databases affected by this event. IDs of `oneuptime_database` resources.
 - `docker_hosts` (Set of String) List of Docker hosts affected by this event. IDs of `oneuptime_docker_host` resources.
 - `docker_swarm_clusters` (Set of String) List of Docker Swarm clusters affected by this event. IDs of `oneuptime_docker_swarm_cluster` resources.
@@ -64,6 +65,8 @@ data "oneuptime_scheduled_maintenance_event" "by_id" {
 - `network_sites` (Set of String) List of network sites affected by this event. Their descendants are covered too. IDs of `oneuptime_network_site` resources.
 - `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this scheduled maintenance event? This is set automatically based on the reminder rules configured for this project.
 - `next_subscriber_notification_before_the_event_at` (String) When will the next notification to subscribers be sent out?
+- `open_stack_clouds` (Set of String) List of OpenStack clouds affected by this event. IDs of `oneuptime_openstack_cloud` resources.
+- `open_stack_parts` (String) The hypervisors and availability zones of an OpenStack cloud this maintenance is on. Only what those parts say stays quiet while it is on, and the cloud's other parts go on paging. Without any, an event linked to a cloud is about the whole of it. A JSON value: read it with `jsondecode()`.
 - `podman_hosts` (Set of String) List of Podman hosts affected by this event. IDs of `oneuptime_podman_host` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `proxmox_clusters` (Set of String) List of Proxmox clusters affected by this event. IDs of `oneuptime_proxmox_cluster` resources.

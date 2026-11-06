@@ -34,6 +34,7 @@ resource "oneuptime_scheduled_maintenance_event" "example" {
 - `change_monitor_status_to_id` (String) Relation to Monitor Status Object ID. The monitors attached to this event change to this status when the event starts, and back to operational when it ends. It can be changed until the event starts. The ID of a `oneuptime_monitor_status`.
 - `current_scheduled_maintenance_state_id` (String) Scheduled Maintenance State ID. The state the event currently is in. The ID of a `oneuptime_scheduled_maintenance_state`.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `data_store_ids` (String) The databases Data Observability watches that this maintenance affects: their data alerts stay quiet while it is on. A JSON value: write it with `jsonencode()`.
 - `database_servers` (Set of String) List of databases affected by this event. IDs of `oneuptime_database` resources.
 - `description` (String) Description of this scheduled event that will show up on Status Page. This is in markdown.
 - `docker_hosts` (Set of String) List of Docker hosts affected by this event. IDs of `oneuptime_docker_host` resources.
@@ -47,6 +48,8 @@ resource "oneuptime_scheduled_maintenance_event" "example" {
 - `monitors` (Set of String) List of monitors attached to this event. IDs of `oneuptime_monitor` resources.
 - `network_sites` (Set of String) List of network sites affected by this event. Their descendants are covered too. IDs of `oneuptime_network_site` resources.
 - `next_subscriber_notification_before_the_event_at` (String) When will the next notification to subscribers be sent out?
+- `open_stack_clouds` (Set of String) List of OpenStack clouds affected by this event. IDs of `oneuptime_openstack_cloud` resources.
+- `open_stack_parts` (String) The hypervisors and availability zones of an OpenStack cloud this maintenance is on. Only what those parts say stays quiet while it is on, and the cloud's other parts go on paging. Without any, an event linked to a cloud is about the whole of it. A JSON value: write it with `jsonencode()`.
 - `podman_hosts` (Set of String) List of Podman hosts affected by this event. IDs of `oneuptime_podman_host` resources.
 - `proxmox_clusters` (Set of String) List of Proxmox clusters affected by this event. IDs of `oneuptime_proxmox_cluster` resources.
 - `publish_on_status_page_at` (String) When this event first shows on its status pages and their subscribers hear about it. Left empty, it shows as soon as it is created.

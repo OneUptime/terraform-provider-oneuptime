@@ -44,6 +44,7 @@ resource "oneuptime_status_page" "example" {
 - `enable_custom_subscriber_email_notification_footer_text` (Boolean) Enable custom footer text in subscriber email notifications. Defaults to `false`.
 - `enable_email_subscribers` (Boolean) Can email subscribers subscribe to this Status Page? Defaults to `true`.
 - `enable_embedded_overall_status` (Boolean) Enable embedded overall status badge that can be displayed on external websites? Defaults to `false`.
+- `enable_magic_link_login` (Boolean) Can private users sign in to this private status page with a one-time link emailed to them (a magic link), instead of typing a password? They can still sign in with their password. Not offered while SSO is required. Defaults to `true`.
 - `enable_master_password` (Boolean) Require visitors to enter a master password before viewing a private status page. Defaults to `false`.
 - `enable_mcp_server` (Boolean) Can AI agents read this status page over the public OneUptime MCP server? This does not affect the status page website, its RSS feed, or its public JSON API. Defaults to `true`.
 - `enable_microsoft_teams_subscribers` (Boolean) Can Microsoft Teams subscribers subscribe to this Status Page? Defaults to `false`.

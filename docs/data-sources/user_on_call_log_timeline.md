@@ -46,6 +46,7 @@ data "oneuptime_user_on_call_log_timeline" "by_id" {
 - `user_call_id` (String) ID of User Call in which this object belongs.
 - `user_email_id` (String) ID of User Email in which this object belongs.
 - `user_id` (String) User ID who this log belongs to. The ID of a `oneuptime_user` (see the data source).
+- `user_mattermost_id` (String) ID of User Mattermost in which this object belongs.
 - `user_microsoft_teams_id` (String) ID of User Microsoft Teams in which this object belongs.
 - `user_notification_event_type` (String) Notification Event Type of this execution.
 - `user_notification_log_id` (String) ID of your OneUptime User Notification Log in which this object belongs. The ID of a `oneuptime_user_notification_log` (see the data source).

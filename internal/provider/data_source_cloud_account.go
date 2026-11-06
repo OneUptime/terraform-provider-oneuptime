@@ -41,6 +41,8 @@ type CloudAccountDataSourceModel struct {
     ResourceCount types.Number `tfsdk:"resource_count"`
     RegionCount types.Number `tfsdk:"region_count"`
     ResourceSummary types.String `tfsdk:"resource_summary"`
+    CostSummary types.String `tfsdk:"cost_summary"`
+    SavingsSummary types.String `tfsdk:"savings_summary"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     InventoryListedAt types.String `tfsdk:"inventory_listed_at"`
     Labels types.Set `tfsdk:"labels"`
@@ -123,6 +125,14 @@ func (d *CloudAccountDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "resource_summary": schema.StringAttribute{
                 MarkdownDescription: "The account's live resources counted by type and by region (CloudAccountSummary). A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "cost_summary": schema.StringAttribute{
+                MarkdownDescription: "What the account cost this month so far, at its pace and last month, from its cloud's billing, and whether its costs could be read. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "savings_summary": schema.StringAttribute{
+                MarkdownDescription: "How many ways to spend less the account's cloud recommends and what they would save a month, and whether they could be read. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -296,6 +306,8 @@ func (d *CloudAccountDataSource) Read(ctx context.Context, req datasource.ReadRe
         "resourceCount": true,
         "regionCount": true,
         "resourceSummary": true,
+        "costSummary": true,
+        "savingsSummary": true,
         "lastSeenAt": true,
         "inventoryListedAt": true,
         "labels": true,
@@ -556,6 +568,40 @@ func (d *CloudAccountDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.ResourceSummary = types.StringValue(val)
     } else {
         data.ResourceSummary = types.StringNull()
+    }
+    if obj, ok := item["costSummary"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CostSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CostSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CostSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CostSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.CostSummary = types.StringNull()
+        }
+    } else if val, ok := item["costSummary"].(string); ok {
+        data.CostSummary = types.StringValue(val)
+    } else {
+        data.CostSummary = types.StringNull()
+    }
+    if obj, ok := item["savingsSummary"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavingsSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SavingsSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SavingsSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SavingsSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.SavingsSummary = types.StringNull()
+        }
+    } else if val, ok := item["savingsSummary"].(string); ok {
+        data.SavingsSummary = types.StringValue(val)
+    } else {
+        data.SavingsSummary = types.StringNull()
     }
     if obj, ok := item["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

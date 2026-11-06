@@ -31,6 +31,7 @@ type SecurityLogSourceDataSourceModel struct {
     UpdatedAt types.String `tfsdk:"updated_at"`
     ProjectId types.String `tfsdk:"project_id"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
+    CaseMinimumSeverity types.String `tfsdk:"case_minimum_severity"`
     Cursor types.String `tfsdk:"cursor"`
     LastScannedAt types.String `tfsdk:"last_scanned_at"`
     LastEventFoundAt types.String `tfsdk:"last_event_found_at"`
@@ -45,7 +46,7 @@ func (d *SecurityLogSourceDataSource) Metadata(ctx context.Context, req datasour
 
 func (d *SecurityLogSourceDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Whether OneUptime looks for security events in the logs the project already sends it, and what the last look found. Look up an existing security log source by `id`, or by any of its other arguments (`created_by_user_id`, `cursor`, `is_enabled`, ...): each one set must match, and exactly one security log source may match them all.",
+        MarkdownDescription: "Whether OneUptime looks for security events in the logs the project already sends it, and what the last look found. Look up an existing security log source by `id`, or by any of its other arguments (`case_minimum_severity`, `created_by_user_id`, `cursor`, ...): each one set must match, and exactly one security log source may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -67,6 +68,11 @@ func (d *SecurityLogSourceDataSource) Schema(ctx context.Context, req datasource
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether OneUptime looks for security events in the project's logs.",
+                Optional: true,
+                Computed: true,
+            },
+            "case_minimum_severity": schema.StringAttribute{
+                MarkdownDescription: "Threats security products write in the logs (CEF, LEEF, Palo Alto Networks, FortiGate, Cisco ASA) at or above this severity (Low, Medium, High or Critical) open security cases. Empty stores them as events only.",
                 Optional: true,
                 Computed: true,
             },
@@ -141,6 +147,10 @@ func (d *SecurityLogSourceDataSource) Read(ctx context.Context, req datasource.R
         filters["isEnabled"] = data.IsEnabled.ValueBool()
         filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
     }
+    if !data.CaseMinimumSeverity.IsNull() && !data.CaseMinimumSeverity.IsUnknown() {
+        filters["caseMinimumSeverity"] = data.CaseMinimumSeverity.ValueString()
+        filterNames = append(filterNames, "case_minimum_severity = "+fmt.Sprintf("%q", data.CaseMinimumSeverity.ValueString()))
+    }
     if !data.Cursor.IsNull() && !data.Cursor.IsUnknown() {
         filters["cursor"] = data.Cursor.ValueString()
         filterNames = append(filterNames, "cursor = "+fmt.Sprintf("%q", data.Cursor.ValueString()))
@@ -174,6 +184,7 @@ func (d *SecurityLogSourceDataSource) Read(ctx context.Context, req datasource.R
         "updatedAt": true,
         "projectId": true,
         "isEnabled": true,
+        "caseMinimumSeverity": true,
         "cursor": true,
         "lastScannedAt": true,
         "lastEventFoundAt": true,
@@ -313,6 +324,23 @@ func (d *SecurityLogSourceDataSource) Read(ctx context.Context, req datasource.R
         data.IsEnabled = types.BoolValue(val)
     } else {
         data.IsEnabled = types.BoolNull()
+    }
+    if obj, ok := item["caseMinimumSeverity"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CaseMinimumSeverity = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CaseMinimumSeverity = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CaseMinimumSeverity = types.StringValue(string(jsonBytes))
+        } else {
+            data.CaseMinimumSeverity = types.StringNull()
+        }
+    } else if val, ok := item["caseMinimumSeverity"].(string); ok {
+        data.CaseMinimumSeverity = types.StringValue(val)
+    } else {
+        data.CaseMinimumSeverity = types.StringNull()
     }
     if obj, ok := item["cursor"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

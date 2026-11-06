@@ -65,6 +65,7 @@ type HostResourceModel struct {
     TotalMemoryBytes types.Number `tfsdk:"total_memory_bytes"`
     ProcessCount types.Number `tfsdk:"process_count"`
     ContainerRuntime types.String `tfsdk:"container_runtime"`
+    OpenStackCloudId types.String `tfsdk:"open_stack_cloud_id"`
     IsAiInvestigationEnabled types.Bool `tfsdk:"is_ai_investigation_enabled"`
     AiRemediationMode types.String `tfsdk:"ai_remediation_mode"`
     AiCommandAllowlist JSONSubsetValue `tfsdk:"ai_command_allowlist"`
@@ -306,6 +307,15 @@ func (r *HostResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "open_stack_cloud_id": schema.StringAttribute{
+                MarkdownDescription: "Optional FK to the OpenStack cloud this host belongs to, as a hypervisor or as a guest. The ID of a `oneuptime_openstack_cloud`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: recordIDValidators("oneuptime_openstack_cloud"),
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
                 MarkdownDescription: "When on, OneUptime AI runs read-only commands (systemctl status, journalctl, df, free, uptime, ps, ss) on this host, through its Host AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the host can turn it on or off.",
@@ -700,6 +710,7 @@ func (r *HostResource) Create(ctx context.Context, req resource.CreateRequest, r
         "totalMemoryBytes": true,
         "processCount": true,
         "containerRuntime": true,
+        "openStackCloudId": true,
         "isAiInvestigationEnabled": true,
         "aiRemediationMode": true,
         "aiCommandAllowlist": true,
@@ -1320,6 +1331,43 @@ func (r *HostResource) Create(ctx context.Context, req resource.CreateRequest, r
         data.ContainerRuntime = types.StringValue(val)
     } else {
         data.ContainerRuntime = types.StringNull()
+    }
+    if obj, ok := dataMap["openStackCloudId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OpenStackCloudId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OpenStackCloudId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OpenStackCloudId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OpenStackCloudId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OpenStackCloudId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OpenStackCloudId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OpenStackCloudId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OpenStackCloudId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackCloudId = types.StringNull()
+        }
+    } else if val, ok := dataMap["openStackCloudId"].(string); ok {
+        data.OpenStackCloudId = types.StringValue(val)
+    } else {
+        data.OpenStackCloudId = types.StringNull()
     }
     if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
         data.IsAiInvestigationEnabled = types.BoolValue(val)
@@ -2530,6 +2578,7 @@ func (r *HostResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "totalMemoryBytes": true,
         "processCount": true,
         "containerRuntime": true,
+        "openStackCloudId": true,
         "isAiInvestigationEnabled": true,
         "aiRemediationMode": true,
         "aiCommandAllowlist": true,
@@ -3151,6 +3200,43 @@ func (r *HostResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         data.ContainerRuntime = types.StringValue(val)
     } else {
         data.ContainerRuntime = types.StringNull()
+    }
+    if obj, ok := dataMap["openStackCloudId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OpenStackCloudId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OpenStackCloudId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OpenStackCloudId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OpenStackCloudId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OpenStackCloudId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OpenStackCloudId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OpenStackCloudId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OpenStackCloudId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackCloudId = types.StringNull()
+        }
+    } else if val, ok := dataMap["openStackCloudId"].(string); ok {
+        data.OpenStackCloudId = types.StringValue(val)
+    } else {
+        data.OpenStackCloudId = types.StringNull()
     }
     if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
         data.IsAiInvestigationEnabled = types.BoolValue(val)
@@ -4404,6 +4490,9 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
     if !data.ContainerRuntime.IsUnknown() && !state.ContainerRuntime.IsUnknown() && !data.ContainerRuntime.Equal(state.ContainerRuntime) {
         requestDataMap["containerRuntime"] = data.ContainerRuntime.ValueString()
     }
+    if !data.OpenStackCloudId.IsUnknown() && !state.OpenStackCloudId.IsUnknown() && !data.OpenStackCloudId.Equal(state.OpenStackCloudId) {
+        requestDataMap["openStackCloudId"] = data.OpenStackCloudId.ValueString()
+    }
     if !data.IsArchived.IsUnknown() && !state.IsArchived.IsUnknown() && !data.IsArchived.Equal(state.IsArchived) {
         requestDataMap["isArchived"] = data.IsArchived.ValueBool()
     }
@@ -4488,6 +4577,7 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
         "totalMemoryBytes": true,
         "processCount": true,
         "containerRuntime": true,
+        "openStackCloudId": true,
         "isAiInvestigationEnabled": true,
         "aiRemediationMode": true,
         "aiCommandAllowlist": true,
@@ -5103,6 +5193,43 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
         data.ContainerRuntime = types.StringValue(val)
     } else {
         data.ContainerRuntime = types.StringNull()
+    }
+    if obj, ok := dataMap["openStackCloudId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OpenStackCloudId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OpenStackCloudId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OpenStackCloudId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OpenStackCloudId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OpenStackCloudId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OpenStackCloudId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OpenStackCloudId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OpenStackCloudId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackCloudId = types.StringNull()
+        }
+    } else if val, ok := dataMap["openStackCloudId"].(string); ok {
+        data.OpenStackCloudId = types.StringValue(val)
+    } else {
+        data.OpenStackCloudId = types.StringNull()
     }
     if val, ok := dataMap["isAiInvestigationEnabled"].(bool); ok {
         data.IsAiInvestigationEnabled = types.BoolValue(val)
@@ -6375,6 +6502,9 @@ func (r *HostResource) keepPlannedValues(data *HostResourceModel, plan *HostReso
     }
     if config.ContainerRuntime.IsNull() && !plan.ContainerRuntime.IsUnknown() {
         data.ContainerRuntime = plan.ContainerRuntime
+    }
+    if config.OpenStackCloudId.IsNull() && !plan.OpenStackCloudId.IsUnknown() {
+        data.OpenStackCloudId = plan.OpenStackCloudId
     }
     if config.IsAiInvestigationEnabled.IsNull() && !plan.IsAiInvestigationEnabled.IsUnknown() {
         data.IsAiInvestigationEnabled = plan.IsAiInvestigationEnabled
