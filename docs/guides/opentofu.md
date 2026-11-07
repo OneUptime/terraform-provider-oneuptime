@@ -58,7 +58,7 @@ This repository ships hand-written modules under [`modules/`](https://github.com
 
 ```terraform
 module "storefront" {
-  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v14.0.104"
+  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v14.0.105"
 
   service_name          = "storefront"
   status_page_is_public = true
@@ -75,5 +75,5 @@ Pin `ref` to a published tag: this repository is regenerated on every release, s
 ## More
 
 - OpenTofu guide: [oneuptime.com/docs/terraform/opentofu](https://oneuptime.com/docs/terraform/opentofu)
-- Runnable examples: [`Examples/opentofu/`](https://github.com/OneUptime/oneuptime/tree/master/Examples/opentofu) in the main OneUptime repository
+- Runnable examples: [`Examples/opentofu/`](https://github.com/OneUptime/oneuptime/tree/main/Examples/opentofu) in the main OneUptime repository
 - Issues, including documentation issues: [github.com/OneUptime/oneuptime/issues](https://github.com/OneUptime/oneuptime/issues)

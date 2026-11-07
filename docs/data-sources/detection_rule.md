@@ -37,7 +37,7 @@ data "oneuptime_detection_rule" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_severity_id` (String) ID of the incident severity for incidents opened by this rule. The ID of a `oneuptime_incident_severity`.
 - `is_enabled` (Boolean) Whether this detection rule is evaluated.
-- `is_real_time` (Boolean) Whether each event is checked against this rule as it arrives, within seconds, instead of every evaluation interval. Only for a rule that fires on one event: not a correlation, a match count threshold of 1, no distinct count field and no regular expression.
+- `is_real_time` (Boolean) Whether events are checked against this rule as they arrive, within seconds, instead of every evaluation interval. A rule that counts, and a correlation, count in windows as long as the evaluation interval and fire at most once in each. Not for a rule with a regular expression.
 - `last_error` (String) The most recent evaluation error, if any. Cleared on the next successful evaluation.
 - `match_count_threshold` (Number) Fire only when a group's count — distinct values when a distinct count field is set, matching events otherwise — reaches this number within one evaluation window. 1 fires on any match.
 - `name` (String) Friendly name for this detection rule.

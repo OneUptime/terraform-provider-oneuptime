@@ -47,6 +47,7 @@ type CloudCostRecommendationDataSourceModel struct {
     Currency types.String `tfsdk:"currency"`
     Effort types.String `tfsdk:"effort"`
     Source types.String `tfsdk:"source"`
+    Evidence types.String `tfsdk:"evidence"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -57,7 +58,7 @@ func (d *CloudCostRecommendationDataSource) Metadata(ctx context.Context, req da
 
 func (d *CloudCostRecommendationDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Ways to spend less in your connected cloud accounts - rightsizing, idle resources, newer generations and commitments - with what each saves a month, from AWS Cost Optimization Hub, Azure Advisor and Google Cloud's Recommender. Written by the cloud connections; not user-editable. Look up an existing cloud cost recommendation by `id`, or by any of its other arguments (`action`, `cloud_account_id`, `cloud_resource_id`, ...): each one set must match, and exactly one cloud cost recommendation may match them all.",
+        MarkdownDescription: "Ways to spend less in your connected cloud accounts - rightsizing, idle resources, newer generations and commitments - with what each saves a month, from AWS Cost Optimization Hub, Azure Advisor, Google Cloud's Recommender and OneUptime's own CPU and memory readings. Written by the cloud connections; not user-editable. Look up an existing cloud cost recommendation by `id`, or by any of its other arguments (`action`, `cloud_account_id`, `cloud_resource_id`, ...): each one set must match, and exactly one cloud cost recommendation may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -160,8 +161,12 @@ func (d *CloudCostRecommendationDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "source": schema.StringAttribute{
-                MarkdownDescription: "Which recommender made it: AWS Cost Optimization Hub, Azure Advisor or Google Cloud Recommender.",
+                MarkdownDescription: "Which recommender made it: AWS Cost Optimization Hub, Azure Advisor, Google Cloud Recommender or OneUptime.",
                 Optional: true,
+                Computed: true,
+            },
+            "evidence": schema.StringAttribute{
+                MarkdownDescription: "For a right-sizing OneUptime worked out from its own readings: the CPU and memory readings and the days it was judged from. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -321,6 +326,7 @@ func (d *CloudCostRecommendationDataSource) Read(ctx context.Context, req dataso
         "currency": true,
         "effort": true,
         "source": true,
+        "evidence": true,
         "lastSeenAt": true,
         "createdByUserId": true,
         "_id": true,
@@ -708,6 +714,23 @@ func (d *CloudCostRecommendationDataSource) Read(ctx context.Context, req dataso
         data.Source = types.StringValue(val)
     } else {
         data.Source = types.StringNull()
+    }
+    if obj, ok := item["evidence"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Evidence = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Evidence = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Evidence = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Evidence = types.StringValue(string(jsonBytes))
+        } else {
+            data.Evidence = types.StringNull()
+        }
+    } else if val, ok := item["evidence"].(string); ok {
+        data.Evidence = types.StringValue(val)
+    } else {
+        data.Evidence = types.StringNull()
     }
     if obj, ok := item["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

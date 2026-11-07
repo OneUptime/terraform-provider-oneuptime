@@ -2,12 +2,12 @@
 page_title: "oneuptime_cloud_cost_recommendation Data Source - oneuptime"
 subcategory: "Cloud"
 description: |-
-  Ways to spend less in your connected cloud accounts - rightsizing, idle resources, newer generations and commitments - with what each saves a month, from AWS Cost Optimization Hub, Azure Advisor and Google Cloud's Recommender. Written by the cloud connections; not user-editable.
+  Ways to spend less in your connected cloud accounts - rightsizing, idle resources, newer generations and commitments - with what each saves a month, from AWS Cost Optimization Hub, Azure Advisor, Google Cloud's Recommender and OneUptime's own CPU and memory readings. Written by the cloud connections; not user-editable.
 ---
 
 # oneuptime_cloud_cost_recommendation (Data Source)
 
-Ways to spend less in your connected cloud accounts - rightsizing, idle resources, newer generations and commitments - with what each saves a month, from AWS Cost Optimization Hub, Azure Advisor and Google Cloud's Recommender. Written by the cloud connections; not user-editable.
+Ways to spend less in your connected cloud accounts - rightsizing, idle resources, newer generations and commitments - with what each saves a month, from AWS Cost Optimization Hub, Azure Advisor, Google Cloud's Recommender and OneUptime's own CPU and memory readings. Written by the cloud connections; not user-editable.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one cloud cost recommendation may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -46,11 +46,12 @@ data "oneuptime_cloud_cost_recommendation" "by_id" {
 - `resource_id` (String) The resource the recommendation is about, as its cloud names it: an ARN, an ARM id, a full resource name.
 - `resource_name` (String) What the resource is called, when the recommender says.
 - `resource_type` (String) What kind of resource it is, in the recommender's words.
-- `source` (String) Which recommender made it: AWS Cost Optimization Hub, Azure Advisor or Google Cloud Recommender.
+- `source` (String) Which recommender made it: AWS Cost Optimization Hub, Azure Advisor, Google Cloud Recommender or OneUptime.
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `evidence` (String) For a right-sizing OneUptime worked out from its own readings: the CPU and memory readings and the days it was judged from. A JSON value: read it with `jsondecode()`.
 - `last_seen_at` (String) When the account's connection last read the recommendation.
 - `project_id` (String) ID of the project this recommendation belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

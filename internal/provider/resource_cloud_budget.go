@@ -50,6 +50,7 @@ type CloudBudgetResourceModel struct {
     Currency types.String `tfsdk:"currency"`
     AlertThresholds types.String `tfsdk:"alert_thresholds"`
     AlertOnProjection types.Bool `tfsdk:"alert_on_projection"`
+    AlertOnAnomaly types.Bool `tfsdk:"alert_on_anomaly"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
@@ -144,6 +145,15 @@ func (r *CloudBudgetResource) schemaDefinition() schema.Schema {
             },
             "alert_on_projection": schema.BoolAttribute{
                 MarkdownDescription: "Also alert when the month is on course to pass the budget, at the pace of the last full week: before the money is spent.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_on_anomaly": schema.BoolAttribute{
+                MarkdownDescription: "Also alert when a day costs far more than usual: a service at twice its usual day, or the whole account at one and a half times.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -291,6 +301,9 @@ func (r *CloudBudgetResource) Create(ctx context.Context, req resource.CreateReq
     if !data.AlertOnProjection.IsNull() && !data.AlertOnProjection.IsUnknown() {
         requestDataMap["alertOnProjection"] = data.AlertOnProjection.ValueBool()
     }
+    if !data.AlertOnAnomaly.IsNull() && !data.AlertOnAnomaly.IsUnknown() {
+        requestDataMap["alertOnAnomaly"] = data.AlertOnAnomaly.ValueBool()
+    }
     if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
@@ -351,6 +364,7 @@ func (r *CloudBudgetResource) Create(ctx context.Context, req resource.CreateReq
         "currency": true,
         "alertThresholds": true,
         "alertOnProjection": true,
+        "alertOnAnomaly": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
         "createdAt": true,
@@ -594,6 +608,9 @@ func (r *CloudBudgetResource) Create(ctx context.Context, req resource.CreateReq
     if val, ok := dataMap["alertOnProjection"].(bool); ok {
         data.AlertOnProjection = types.BoolValue(val)
     }
+    if val, ok := dataMap["alertOnAnomaly"].(bool); ok {
+        data.AlertOnAnomaly = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -775,6 +792,7 @@ func (r *CloudBudgetResource) Read(ctx context.Context, req resource.ReadRequest
         "currency": true,
         "alertThresholds": true,
         "alertOnProjection": true,
+        "alertOnAnomaly": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
         "createdAt": true,
@@ -1019,6 +1037,9 @@ func (r *CloudBudgetResource) Read(ctx context.Context, req resource.ReadRequest
     if val, ok := dataMap["alertOnProjection"].(bool); ok {
         data.AlertOnProjection = types.BoolValue(val)
     }
+    if val, ok := dataMap["alertOnAnomaly"].(bool); ok {
+        data.AlertOnAnomaly = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1227,6 +1248,9 @@ func (r *CloudBudgetResource) Update(ctx context.Context, req resource.UpdateReq
     if !data.AlertOnProjection.IsUnknown() && !state.AlertOnProjection.IsUnknown() && !data.AlertOnProjection.Equal(state.AlertOnProjection) {
         requestDataMap["alertOnProjection"] = data.AlertOnProjection.ValueBool()
     }
+    if !data.AlertOnAnomaly.IsUnknown() && !state.AlertOnAnomaly.IsUnknown() && !data.AlertOnAnomaly.Equal(state.AlertOnAnomaly) {
+        requestDataMap["alertOnAnomaly"] = data.AlertOnAnomaly.ValueBool()
+    }
     if !data.AlertSeverityId.IsUnknown() && !state.AlertSeverityId.IsUnknown() && !data.AlertSeverityId.Equal(state.AlertSeverityId) {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
@@ -1265,6 +1289,7 @@ func (r *CloudBudgetResource) Update(ctx context.Context, req resource.UpdateReq
         "currency": true,
         "alertThresholds": true,
         "alertOnProjection": true,
+        "alertOnAnomaly": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
         "createdAt": true,
@@ -1503,6 +1528,9 @@ func (r *CloudBudgetResource) Update(ctx context.Context, req resource.UpdateReq
     if val, ok := dataMap["alertOnProjection"].(bool); ok {
         data.AlertOnProjection = types.BoolValue(val)
     }
+    if val, ok := dataMap["alertOnAnomaly"].(bool); ok {
+        data.AlertOnAnomaly = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1718,6 +1746,9 @@ func (r *CloudBudgetResource) keepPlannedValues(data *CloudBudgetResourceModel, 
     }
     if config.AlertOnProjection.IsNull() && !plan.AlertOnProjection.IsUnknown() {
         data.AlertOnProjection = plan.AlertOnProjection
+    }
+    if config.AlertOnAnomaly.IsNull() && !plan.AlertOnAnomaly.IsUnknown() {
+        data.AlertOnAnomaly = plan.AlertOnAnomaly
     }
     if config.AlertSeverityId.IsNull() && !plan.AlertSeverityId.IsUnknown() {
         data.AlertSeverityId = plan.AlertSeverityId

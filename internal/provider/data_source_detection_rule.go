@@ -104,7 +104,7 @@ func (d *DetectionRuleDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "is_real_time": schema.BoolAttribute{
-                MarkdownDescription: "Whether each event is checked against this rule as it arrives, within seconds, instead of every evaluation interval. Only for a rule that fires on one event: not a correlation, a match count threshold of 1, no distinct count field and no regular expression.",
+                MarkdownDescription: "Whether events are checked against this rule as they arrive, within seconds, instead of every evaluation interval. A rule that counts, and a correlation, count in windows as long as the evaluation interval and fire at most once in each. Not for a rule with a regular expression.",
                 Optional: true,
                 Computed: true,
             },

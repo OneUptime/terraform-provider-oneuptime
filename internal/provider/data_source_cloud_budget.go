@@ -40,6 +40,7 @@ type CloudBudgetDataSourceModel struct {
     Currency types.String `tfsdk:"currency"`
     AlertThresholds types.String `tfsdk:"alert_thresholds"`
     AlertOnProjection types.Bool `tfsdk:"alert_on_projection"`
+    AlertOnAnomaly types.Bool `tfsdk:"alert_on_anomaly"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     SpentThisMonth types.Number `tfsdk:"spent_this_month"`
@@ -54,7 +55,7 @@ func (d *CloudBudgetDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *CloudBudgetDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Monthly budgets for what your connected cloud accounts cost. OneUptime alerts the first time in a month the spend passes each threshold, and when the month is on course to pass the budget. Look up an existing cloud budget by `id`, or by any of its other arguments (`name`, `alert_on_projection`, `alert_severity_id`, ...): each one set must match, and exactly one cloud budget may match them all.",
+        MarkdownDescription: "Monthly budgets for what your connected cloud accounts cost. OneUptime alerts the first time in a month the spend passes each threshold, and when the month is on course to pass the budget. Look up an existing cloud budget by `id`, or by any of its other arguments (`name`, `alert_on_anomaly`, `alert_on_projection`, ...): each one set must match, and exactly one cloud budget may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -112,6 +113,11 @@ func (d *CloudBudgetDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "alert_on_projection": schema.BoolAttribute{
                 MarkdownDescription: "Also alert when the month is on course to pass the budget, at the pace of the last full week: before the money is spent.",
+                Optional: true,
+                Computed: true,
+            },
+            "alert_on_anomaly": schema.BoolAttribute{
+                MarkdownDescription: "Also alert when a day costs far more than usual: a service at twice its usual day, or the whole account at one and a half times.",
                 Optional: true,
                 Computed: true,
             },
@@ -217,6 +223,10 @@ func (d *CloudBudgetDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["alertOnProjection"] = data.AlertOnProjection.ValueBool()
         filterNames = append(filterNames, "alert_on_projection = "+fmt.Sprintf("%t", data.AlertOnProjection.ValueBool()))
     }
+    if !data.AlertOnAnomaly.IsNull() && !data.AlertOnAnomaly.IsUnknown() {
+        filters["alertOnAnomaly"] = data.AlertOnAnomaly.ValueBool()
+        filterNames = append(filterNames, "alert_on_anomaly = "+fmt.Sprintf("%t", data.AlertOnAnomaly.ValueBool()))
+    }
     if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
         filters["alertSeverityId"] = data.AlertSeverityId.ValueString()
         filterNames = append(filterNames, "alert_severity_id = "+fmt.Sprintf("%q", data.AlertSeverityId.ValueString()))
@@ -261,6 +271,7 @@ func (d *CloudBudgetDataSource) Read(ctx context.Context, req datasource.ReadReq
         "currency": true,
         "alertThresholds": true,
         "alertOnProjection": true,
+        "alertOnAnomaly": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
         "spentThisMonth": true,
@@ -491,6 +502,11 @@ func (d *CloudBudgetDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.AlertOnProjection = types.BoolValue(val)
     } else {
         data.AlertOnProjection = types.BoolNull()
+    }
+    if val, ok := item["alertOnAnomaly"].(bool); ok {
+        data.AlertOnAnomaly = types.BoolValue(val)
+    } else {
+        data.AlertOnAnomaly = types.BoolNull()
     }
     if obj, ok := item["alertSeverityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

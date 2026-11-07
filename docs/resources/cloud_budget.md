@@ -28,6 +28,7 @@ resource "oneuptime_cloud_budget" "example" {
 
 ### Optional
 
+- `alert_on_anomaly` (Boolean) Also alert when a day costs far more than usual: a service at twice its usual day, or the whole account at one and a half times. Defaults to `true`.
 - `alert_on_projection` (Boolean) Also alert when the month is on course to pass the budget, at the pace of the last full week: before the money is spent. Defaults to `true`.
 - `alert_severity_id` (String) ID of the severity of the alerts the budget raises. Empty: the project's least severe. The ID of a `oneuptime_alert_severity`.
 - `alert_thresholds` (String) The shares of the budget, in percent, an alert is raised at, comma separated: the first time in a month the spend passes each. Defaults to `80,100`.
